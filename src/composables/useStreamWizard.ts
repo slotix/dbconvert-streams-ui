@@ -527,9 +527,27 @@ export function useStreamWizard() {
       nested: unknown
     ): string | null => {
       if (rootLevel) return rootLevel
-      if (nested && typeof nested === 'object' && 'schema' in (nested as Record<string, unknown>)) {
-        const schemaValue = (nested as Record<string, unknown>).schema
-        return typeof schemaValue === 'string' ? schemaValue : null
+      if (nested && typeof nested === 'object') {
+        const obj = nested as Record<string, unknown>
+        if ('schema' in obj) {
+          const schemaValue = obj.schema
+          if (typeof schemaValue === 'string') return schemaValue
+        }
+        if ('spec' in obj && obj.spec && typeof obj.spec === 'object') {
+          const spec = obj.spec as Record<string, unknown>
+          if ('database' in spec && spec.database && typeof spec.database === 'object') {
+            const dbSpec = spec.database as Record<string, unknown>
+            if ('schema' in dbSpec && typeof dbSpec.schema === 'string') {
+              return dbSpec.schema
+            }
+          }
+          if ('snowflake' in spec && spec.snowflake && typeof spec.snowflake === 'object') {
+            const sfSpec = spec.snowflake as Record<string, unknown>
+            if ('schema' in sfSpec && typeof sfSpec.schema === 'string') {
+              return sfSpec.schema
+            }
+          }
+        }
       }
       return null
     }

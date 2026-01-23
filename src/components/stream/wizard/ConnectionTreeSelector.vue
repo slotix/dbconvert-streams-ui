@@ -281,6 +281,7 @@
                     :class="schemaRowClass(connection.id, database.name, schema)"
                     @click="handleSchemaRowClick(connection, database.name, schema)"
                   >
+                    <Grid2X2 class="h-3.5 w-3.5 text-purple-500 dark:text-purple-400 shrink-0" />
                     <span class="truncate">{{ schema }}</span>
                   </div>
                 </div>
@@ -295,7 +296,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, type Ref } from 'vue'
-import { ChevronDown, ChevronRight } from 'lucide-vue-next'
+import { ChevronDown, ChevronRight, Grid2X2 } from 'lucide-vue-next'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 import HighlightedText from '@/components/common/HighlightedText.vue'
 import DatabaseIcon from '@/components/base/DatabaseIcon.vue'
