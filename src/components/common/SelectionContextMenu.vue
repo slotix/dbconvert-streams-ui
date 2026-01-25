@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
+// Get current zoom factor for position adjustment
+const getZoomFactor = () => {
+  const zoomValue = getComputedStyle(document.documentElement).getPropertyValue('--app-zoom')
+  return parseFloat(zoomValue) || 1
+}
+
 type CopyFormat = 'tsv' | 'csv' | 'json'
 
 const props = defineProps<{
@@ -21,10 +27,13 @@ const emit = defineEmits<{
   (e: 'revert-cell'): void
 }>()
 
-const menuStyle = computed(() => ({
-  left: `${props.x}px`,
-  top: `${props.y}px`
-}))
+const menuStyle = computed(() => {
+  const zoom = getZoomFactor()
+  return {
+    left: `${props.x / zoom}px`,
+    top: `${props.y / zoom}px`
+  }
+})
 
 function onBackdropClick() {
   emit('close')
