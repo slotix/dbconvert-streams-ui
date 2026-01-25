@@ -2,12 +2,10 @@
 import { useCommonStore } from '@/stores/common'
 import { storeToRefs } from 'pinia'
 import { RefreshCw, XCircle } from 'lucide-vue-next'
-import { getBackendUrl } from '@/utils/environment'
+import SystemStatusPanel from '@/components/common/SystemStatusPanel.vue'
 
 const commonStore = useCommonStore()
 const { isBackendConnected, needsApiKey } = storeToRefs(commonStore)
-const backendUrl = getBackendUrl()
-
 async function handleRetry() {
   // Perform full health check and reinitialize if backend is back online
   await commonStore.performHealthCheck()
@@ -46,14 +44,9 @@ async function handleRetry() {
         <span>Retry Connection</span>
       </button>
 
-      <!-- Additional Info -->
-      <p class="mt-6 text-sm text-gray-500 dark:text-gray-400">
-        Backend URL:
-        <code
-          class="text-xs bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-2 py-1 rounded"
-          >{{ backendUrl }}</code
-        >
-      </p>
+      <div class="mt-8 text-left">
+        <SystemStatusPanel :compact="false" :show-open-logs="true" title="System Status" />
+      </div>
     </div>
   </div>
 </template>

@@ -43,20 +43,13 @@
       <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Cards Grid -->
         <div class="py-6">
-          <!-- Priority 2: Account & System Status - Side by Side -->
-          <div class="grid grid-cols-1 gap-6 lg:grid-cols-2 mb-6">
+          <!-- Account Overview -->
+          <div class="grid grid-cols-1 gap-6 mb-6">
             <!-- Account Overview Card -->
             <div
               class="bg-white dark:bg-gray-850 overflow-hidden rounded-2xl shadow-lg dark:shadow-gray-900/50 border border-slate-200/50 dark:border-gray-700/50 hover:shadow-xl dark:hover:shadow-gray-900/60 transition-all duration-300"
             >
               <AccountOverview />
-            </div>
-
-            <!-- System Status Card -->
-            <div
-              class="bg-white dark:bg-gray-850 overflow-hidden rounded-2xl shadow-lg dark:shadow-gray-900/50 border border-slate-200/50 dark:border-gray-700/50 hover:shadow-xl dark:hover:shadow-gray-900/60 transition-all duration-300"
-            >
-              <SystemStatus />
             </div>
           </div>
         </div>
@@ -73,7 +66,6 @@ import { useDesktopMode } from '@/composables/useDesktopMode'
 import { useLucideIcons } from '@/composables/useLucideIcons'
 import { Menu } from 'lucide-vue-next'
 import AccountOverview from '@/components/home/AccountOverview.vue'
-import SystemStatus from '@/components/home/SystemStatus.vue'
 import DisconnectedOverlay from '@/components/common/DisconnectedOverlay.vue'
 
 const { strokeWidth: iconStroke } = useLucideIcons()

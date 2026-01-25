@@ -373,42 +373,6 @@
               </div>
             </button>
           </li>
-
-          <!-- Connection Status in Navigation -->
-          <li class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600 overflow-visible">
-            <div
-              :class="[
-                'group flex items-center p-2 rounded-md relative overflow-visible',
-                commonStore.isBackendConnected
-                  ? 'text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/20'
-                  : commonStore.error
-                    ? 'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/20'
-                    : 'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/20',
-                isSidebarExpanded ? 'justify-start px-3 gap-3' : 'justify-center'
-              ]"
-              :title="getConnectionStatusText()"
-            >
-              <div
-                :class="[
-                  'h-4 w-4 rounded-full border-2',
-                  commonStore.isBackendConnected
-                    ? 'bg-green-500 border-green-500 animate-pulse dark:bg-green-400 dark:border-green-400'
-                    : commonStore.error
-                      ? 'bg-red-500 border-red-500 dark:bg-red-400 dark:border-red-400'
-                      : 'bg-red-500 border-red-500 dark:bg-red-400 dark:border-red-400'
-                ]"
-              ></div>
-              <span v-if="isSidebarExpanded" class="truncate">Status</span>
-              <!-- Show tooltip on hover -->
-              <div
-                v-if="!isSidebarExpanded"
-                class="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 hidden group-hover:block bg-gray-900 dark:bg-gray-800 text-white px-2 py-1 rounded text-sm whitespace-nowrap pointer-events-none"
-                style="z-index: 99999"
-              >
-                {{ getConnectionStatusText() }}
-              </div>
-            </div>
-          </li>
         </ul>
       </nav>
 
@@ -540,11 +504,50 @@
                   </button>
                 </div>
               </div>
+              <div class="mt-4 border-t border-gray-200 dark:border-gray-700 pt-3">
+                <button
+                  type="button"
+                  class="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm font-semibold text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700/60"
+                  @click="toggleStatusExpanded"
+                >
+                  <span class="flex items-center gap-2">
+                    <span
+                      :class="[
+                        'h-2.5 w-2.5 rounded-full',
+                        commonStore.isBackendConnected ? 'bg-emerald-500' : 'bg-red-500'
+                      ]"
+                    ></span>
+                    <span>System Status</span>
+                  </span>
+                  <span
+                    :class="[
+                      'rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wide',
+                      commonStore.isBackendConnected
+                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200'
+                        : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-200'
+                    ]"
+                  >
+                    {{ commonStore.isBackendConnected ? 'Healthy' : 'Offline' }}
+                  </span>
+                </button>
+                <div
+                  v-if="statusExpanded"
+                  class="mt-3 rounded-lg border border-gray-200/60 bg-white/70 p-3 shadow-sm dark:border-gray-700/80 dark:bg-gray-900/60"
+                >
+                  <div class="max-h-[45vh] overflow-y-auto">
+                    <SystemStatusPanel
+                      compact
+                      show-open-logs
+                      :show-title="false"
+                      :show-description="false"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-          <!-- External links (hidden in desktop mode - available in Help menu) -->
+          <!-- External links -->
           <a
-            v-if="!isDesktop"
             href="https://github.com/slotix/dbconvert-streams-public/discussions"
             target="_blank"
             rel="noopener noreferrer"
@@ -574,7 +577,6 @@
             </div>
           </a>
           <a
-            v-if="!isDesktop"
             href="https://docs.dbconvert.com"
             target="_blank"
             rel="noopener noreferrer"
@@ -598,6 +600,44 @@
               Documentation
             </div>
           </a>
+
+          <!-- Backend Status (desktop + web) -->
+          <div v-if="showStatusDot" class="relative overflow-visible">
+            <button
+              type="button"
+              :class="[
+                'group flex items-center p-2 rounded-md relative overflow-visible w-full text-left',
+                commonStore.isBackendConnected
+                  ? 'text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/20'
+                  : commonStore.error
+                    ? 'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/20'
+                    : 'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/20',
+                isSidebarExpanded ? 'justify-start gap-3 px-3' : 'justify-center'
+              ]"
+              :title="getConnectionStatusText()"
+              @click="openStatusPanelFromSidebar"
+            >
+              <div
+                :class="[
+                  'h-4 w-4 rounded-full border-2',
+                  commonStore.isBackendConnected
+                    ? 'bg-green-500 border-green-500 animate-pulse dark:bg-green-400 dark:border-green-400'
+                    : commonStore.error
+                      ? 'bg-red-500 border-red-500 dark:bg-red-400 dark:border-red-400'
+                      : 'bg-red-500 border-red-500 dark:bg-red-400 dark:border-red-400'
+                ]"
+              ></div>
+              <span v-if="isSidebarExpanded" class="truncate">Status</span>
+              <!-- Show tooltip on hover -->
+              <div
+                v-if="!isSidebarExpanded"
+                class="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 hidden group-hover:block bg-gray-900 dark:bg-gray-800 text-white px-2 py-1 rounded text-sm whitespace-nowrap pointer-events-none"
+                style="z-index: 99999"
+              >
+                {{ getConnectionStatusText() }}
+              </div>
+            </button>
+          </div>
 
           <!-- Version Display -->
           <VersionDisplay />
@@ -638,6 +678,7 @@ import { setStorageValue, STORAGE_KEYS } from '@/constants/storageKeys'
 import { useDesktopZoom } from '@/utils/desktopZoom'
 import { useThemeStore } from '@/stores/theme'
 import { useConfirmDialogStore } from '@/stores/confirmDialog'
+import SystemStatusPanel from '@/components/common/SystemStatusPanel.vue'
 
 import { Dialog, DialogPanel, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import {
@@ -668,9 +709,15 @@ const toggleSidebarWidth = () => {
 }
 const settingsOpen = ref(false)
 const settingsPopoverRef = ref<HTMLElement | null>(null)
+const statusExpanded = ref(false)
 const toggleSettings = () => {
   settingsOpen.value = !settingsOpen.value
+  if (!settingsOpen.value) {
+    statusExpanded.value = false
+  }
 }
+
+const showStatusDot = computed(() => !commonStore.isBackendConnected || Boolean(commonStore.error))
 
 const handleSettingsClickOutside = (event: MouseEvent) => {
   if (!settingsOpen.value) {
@@ -679,12 +726,14 @@ const handleSettingsClickOutside = (event: MouseEvent) => {
   const target = event.target as Node
   if (settingsPopoverRef.value && !settingsPopoverRef.value.contains(target)) {
     settingsOpen.value = false
+    statusExpanded.value = false
   }
 }
 
 const handleSettingsKeydown = (event: KeyboardEvent) => {
   if (event.key === 'Escape') {
     settingsOpen.value = false
+    statusExpanded.value = false
   }
 }
 
@@ -761,6 +810,15 @@ const getConnectionStatusText = () => {
   } else {
     return 'Backend not available'
   }
+}
+
+const toggleStatusExpanded = () => {
+  statusExpanded.value = !statusExpanded.value
+}
+
+const openStatusPanelFromSidebar = () => {
+  settingsOpen.value = true
+  statusExpanded.value = true
 }
 
 const handleLogsClick = () => {
