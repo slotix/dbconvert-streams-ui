@@ -524,10 +524,24 @@ const isLoadingDatabases = computed(() => {
         />
       </div>
       <div class="hidden sm:flex flex-wrap items-center justify-end gap-2">
-        <BaseButton variant="secondary" size="sm" @click="emit('edit-wizard')"
-          >Edit Wizard</BaseButton
-        >
-        <BaseButton variant="secondary" size="sm" @click="emit('edit-json')">Edit JSON</BaseButton>
+        <div class="inline-flex rounded-md shadow-sm" role="group">
+          <BaseButton
+            class="rounded-none rounded-l-md"
+            variant="secondary"
+            size="sm"
+            @click="emit('edit-wizard')"
+          >
+            Edit
+          </BaseButton>
+          <BaseButton
+            class="rounded-none rounded-r-md -ml-px"
+            variant="secondary"
+            size="sm"
+            @click="emit('edit-json')"
+          >
+            Edit JSON
+          </BaseButton>
+        </div>
         <BaseButton variant="secondary" size="sm" @click="emit('clone')">Clone</BaseButton>
         <BaseButton variant="danger" size="sm" @click="emit('delete')">Delete</BaseButton>
       </div>

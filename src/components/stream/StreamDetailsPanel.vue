@@ -31,22 +31,28 @@
           </h2>
         </div>
         <div class="flex items-center gap-2 ml-4">
-          <BaseButton
+          <div
             v-if="!isStreamRunning || isStreamFinished"
-            v-tooltip="'Edit using step-by-step wizard'"
-            variant="secondary"
-            @click="navigateToEdit"
+            class="inline-flex rounded-md shadow-sm"
+            role="group"
           >
-            Edit Wizard
-          </BaseButton>
-          <BaseButton
-            v-if="!isStreamRunning || isStreamFinished"
-            v-tooltip="'Edit raw JSON configuration'"
-            variant="secondary"
-            @click="navigateToEditJson"
-          >
-            Edit JSON
-          </BaseButton>
+            <BaseButton
+              class="rounded-none rounded-l-md"
+              v-tooltip="'Edit using step-by-step wizard'"
+              variant="secondary"
+              @click="navigateToEdit"
+            >
+              Edit
+            </BaseButton>
+            <BaseButton
+              class="rounded-none rounded-r-md -ml-px"
+              v-tooltip="'Edit raw JSON configuration'"
+              variant="secondary"
+              @click="navigateToEditJson"
+            >
+              Edit JSON
+            </BaseButton>
+          </div>
           <BaseButton
             v-if="!isStreamRunning || isStreamFinished"
             v-tooltip="'Clone stream configuration'"
