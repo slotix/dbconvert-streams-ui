@@ -9,6 +9,7 @@ import { sseLogsService } from '@/api/sseLogsServiceStructured'
 import { useLocalStorage } from '@vueuse/core'
 import { SERVICE_STATUS, STORAGE_KEYS } from '@/constants'
 import axios from 'axios'
+import { isWailsContext } from '@/composables/useWailsEvents'
 
 // Health check and retry configuration
 const HEALTH_CHECK_INTERVAL_MS = 10000
@@ -45,6 +46,7 @@ export const useCommonStore = defineStore('common', {
     sentryHealthy: false,
     apiHealthy: false,
     apiKeyInvalidated: false,
+    requiresApiKey: false,
     serviceStatuses: [] as ServiceStatus[],
     steps: [
       {
@@ -228,6 +230,7 @@ export const useCommonStore = defineStore('common', {
         await api.validateApiKey(trimmedKey)
         apiKeyStorage.value = trimmedKey
         this.apiKeyInvalidated = false
+        this.requiresApiKey = false
         // Configure the API client with the new API key
         configureApiClient(trimmedKey)
       } catch (error) {
@@ -253,6 +256,7 @@ export const useCommonStore = defineStore('common', {
         // Keep the key locally so the user doesn't have to re-enter it.
         apiKeyStorage.value = trimmedKey
         this.apiKeyInvalidated = false
+        this.requiresApiKey = false
         configureApiClient(trimmedKey)
       }
     },
@@ -262,6 +266,14 @@ export const useCommonStore = defineStore('common', {
       this.apiKeyInvalidated = true
       // Clear the API key header from axios instance
       configureApiClient('')
+    },
+
+    requireApiKey() {
+      this.requiresApiKey = true
+    },
+
+    clearApiKeyRequirement() {
+      this.requiresApiKey = false
     },
 
     // Method to refresh API key validation without clearing localStorage
@@ -351,6 +363,12 @@ export const useCommonStore = defineStore('common', {
     },
     setCurrentPage(page: string) {
       this.currentPage = page
+      if (isWailsContext()) {
+        const needsKeyPage = page === 'CreateStream' || page === 'EditStream'
+        if (!needsKeyPage) {
+          this.clearApiKeyRequirement()
+        }
+      }
     },
     consumeLogsFromSSE() {
       // Only start SSE connection if backend is available
@@ -381,6 +399,18 @@ export const useCommonStore = defineStore('common', {
         // Check if we have a stored API key first
         const apiKey = await this.getApiKey()
         if (!apiKey) {
+          if (isWailsContext()) {
+            // Desktop IDE mode can proceed without API key
+            await Promise.all([this.checkSentryHealth(), this.checkAPIHealth()])
+            if (this.apiHealthy) {
+              this.setBackendConnected(true)
+              this.clearError()
+              this.startHealthMonitoring()
+              return 'success'
+            }
+            this.startHealthMonitoring()
+            return 'failed'
+          }
           toast.info('Please enter your API key to continue')
           return 'failed'
         }
@@ -541,6 +571,7 @@ export const useCommonStore = defineStore('common', {
             break
           case 'CreateStream':
           case 'EditStream':
+            break
           case 'AddConnection':
           case 'EditConnection':
             // These routes handle their own data loading
@@ -677,6 +708,13 @@ export const useCommonStore = defineStore('common', {
       )
     },
     hasValidApiKey: (state) => !!apiKeyStorage.value && !state.apiKeyInvalidated,
-    needsApiKey: (state) => !apiKeyStorage.value || state.apiKeyInvalidated
+    needsApiKey: (state) => !apiKeyStorage.value || state.apiKeyInvalidated,
+    shouldShowApiKeyPrompt: (state) => {
+      const needsKey = !apiKeyStorage.value || state.apiKeyInvalidated
+      if (isWailsContext()) {
+        return state.requiresApiKey && needsKey
+      }
+      return needsKey
+    }
   }
 })

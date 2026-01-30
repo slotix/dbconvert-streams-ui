@@ -21,6 +21,11 @@ export function useStreamActions() {
 
   async function startStream(stream: StreamConfig): Promise<string | null> {
     if (!stream.id) return null
+    if (commonStore.needsApiKey) {
+      commonStore.requireApiKey()
+      commonStore.showNotification('Enter your API key to run streams', 'warning')
+      return null
+    }
 
     async function runStart(): Promise<string> {
       const streamID = await streamsStore.startStream(stream.id!)

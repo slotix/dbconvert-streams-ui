@@ -15,6 +15,7 @@ import { useRouter } from 'vue-router'
 import { useConnectionsStore } from '@/stores/connections'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useMonitoringStore } from '@/stores/monitoring'
+import { useCommonStore } from '@/stores/common'
 import { useObjectTabStateStore } from '@/stores/objectTabState'
 import { updateStreamsViewState } from '@/utils/streamsViewState'
 import connectionsApi from '@/api/connections'
@@ -92,6 +93,7 @@ export function useStreamExport() {
   const connectionsStore = useConnectionsStore()
   const streamsStore = useStreamsStore()
   const monitoringStore = useMonitoringStore()
+  const commonStore = useCommonStore()
   const tabStateStore = useObjectTabStateStore()
 
   const isExporting = ref(false)
@@ -292,6 +294,14 @@ export function useStreamExport() {
       }
 
       // Step 3: Start the stream
+      if (commonStore.needsApiKey) {
+        commonStore.requireApiKey()
+        commonStore.showNotification('Enter your API key to run streams', 'warning')
+        return {
+          success: false,
+          error: 'API key required'
+        }
+      }
       const streamId = await streamsApi.startStream(streamConfigId)
 
       // Step 4: Get the created stream config and set up monitoring

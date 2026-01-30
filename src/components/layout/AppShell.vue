@@ -1,6 +1,6 @@
 <template>
   <div :style="{ '--sidebar-width': sidebarWidth }">
-    <ApiKeyInput v-if="commonStore.needsApiKey && !isInitializing" />
+    <ApiKeyInput v-if="commonStore.shouldShowApiKeyPrompt && !isInitializing" />
 
     <ApiKeyExpiredBanner :show="showExpiredBanner" @dismiss="dismissBanner" />
 

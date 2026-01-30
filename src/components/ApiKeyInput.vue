@@ -8,6 +8,15 @@
         <div
           class="relative transform overflow-hidden rounded-lg bg-white dark:bg-gray-850 px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6 backdrop-blur-sm"
         >
+          <button
+            v-if="canDismissPrompt"
+            type="button"
+            class="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+            aria-label="Close"
+            @click="dismissPrompt"
+          >
+            <X class="h-4 w-4" aria-hidden="true" />
+          </button>
           <div>
             <div
               class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700"
@@ -26,14 +35,13 @@
                       : 'Please enter your API key to continue.'
                   }}
                   Don't have an account yet?
-                  <a
-                    href="https://streams.dbconvert.com/account"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    type="button"
                     class="text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 font-medium"
+                    @click="openAccountPage"
                   >
-                    Create an account
-                  </a>
+                    Create account
+                  </button>
                 </p>
               </div>
               <div class="mt-4">
@@ -65,15 +73,17 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useCommonStore } from '@/stores/common'
-import { Key } from 'lucide-vue-next'
+import { Key, X } from 'lucide-vue-next'
 import FormInput from '@/components/base/FormInput.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
+import { isWailsContext } from '@/composables/useWailsEvents'
 
 const store = useCommonStore()
 const apiKeyInput = ref('')
 
 // Show API key prompt when we need an API key (either missing or invalidated)
-const shouldShowApiKeyPrompt = computed(() => store.needsApiKey)
+const shouldShowApiKeyPrompt = computed(() => store.shouldShowApiKeyPrompt)
+const canDismissPrompt = computed(() => isWailsContext() && store.requiresApiKey)
 
 // Check if the key was invalidated (expired) vs never set
 const isKeyExpired = computed(() => store.apiKeyInvalidated)
@@ -88,6 +98,19 @@ async function submitApiKey() {
   } catch {
     apiKeyInput.value = ''
   }
+}
+
+function dismissPrompt() {
+  store.clearApiKeyRequirement()
+}
+
+function openAccountPage() {
+  const url = 'https://streams.dbconvert.com/account'
+  if (window.runtime?.BrowserOpenURL) {
+    window.runtime.BrowserOpenURL(url)
+    return
+  }
+  window.open(url, '_blank', 'noopener,noreferrer')
 }
 
 // Auto-fill the input with the existing API key if it's just expired (not cleared)

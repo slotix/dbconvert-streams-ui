@@ -2,8 +2,49 @@
   <div class="p-6">
     <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Account Overview</h2>
     <div class="space-y-6">
+      <div
+        v-if="showConnectCta"
+        class="flex flex-col gap-4 rounded-xl border border-gray-200/70 dark:border-gray-700/70 bg-gradient-to-br from-slate-50 to-white dark:from-gray-850 dark:to-gray-900 p-5 shadow-sm"
+      >
+        <div class="flex items-start gap-4">
+          <div class="shrink-0">
+            <div class="rounded-lg bg-teal-50 dark:bg-teal-900/30 p-3">
+              <KeyRound
+                class="h-6 w-6 text-teal-600 dark:text-teal-400"
+                :stroke-width="iconStroke"
+              />
+            </div>
+          </div>
+          <div class="flex-1">
+            <p class="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              Connect your account
+            </p>
+            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+              Add an API key to unlock stream runs, usage stats, and history. Your local data stays
+              on this machine.
+            </p>
+          </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            class="inline-flex items-center rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-teal-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600"
+            @click="promptApiKey"
+          >
+            Enter API key
+          </button>
+          <button
+            type="button"
+            class="inline-flex items-center rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-850 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+            @click="openAccountPage"
+          >
+            Create account
+          </button>
+        </div>
+      </div>
+
       <!-- User Info -->
-      <div class="flex items-start p-3 rounded-lg bg-slate-50 dark:bg-gray-800/50">
+      <div v-else class="flex items-start p-3 rounded-lg bg-slate-50 dark:bg-gray-800/50">
         <div class="shrink-0">
           <div class="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-3">
             <User class="h-6 w-6 text-blue-600 dark:text-blue-400" :stroke-width="iconStroke" />
@@ -21,7 +62,10 @@
       </div>
 
       <!-- Current Plan -->
-      <div class="flex items-start p-3 rounded-lg bg-slate-50 dark:bg-gray-800/50">
+      <div
+        v-if="!showConnectCta"
+        class="flex items-start p-3 rounded-lg bg-slate-50 dark:bg-gray-800/50"
+      >
         <div class="shrink-0">
           <div class="bg-teal-50 dark:bg-teal-900/30 rounded-lg p-3">
             <CreditCard
@@ -173,7 +217,10 @@
       </div>
 
       <!-- Usage Summary -->
-      <div class="flex items-start p-3 rounded-lg bg-slate-50 dark:bg-gray-800/50">
+      <div
+        v-if="!showConnectCta"
+        class="flex items-start p-3 rounded-lg bg-slate-50 dark:bg-gray-800/50"
+      >
         <div class="shrink-0">
           <div class="bg-teal-50 dark:bg-teal-900/30 rounded-lg p-3">
             <BarChart3
@@ -231,7 +278,10 @@
       </div>
 
       <!-- API Key Management -->
-      <div class="flex items-start p-3 rounded-lg bg-slate-50 dark:bg-gray-800/50">
+      <div
+        v-if="!showConnectCta"
+        class="flex items-start p-3 rounded-lg bg-slate-50 dark:bg-gray-800/50"
+      >
         <div class="shrink-0">
           <div class="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-3">
             <Key class="h-6 w-6 text-blue-600 dark:text-blue-400" :stroke-width="iconStroke" />
@@ -297,13 +347,15 @@
 import { computed } from 'vue'
 import { useCommonStore } from '@/stores/common'
 import { useLucideIcons } from '@/composables/useLucideIcons'
-import { BarChart3, Copy, CreditCard, Key, User } from 'lucide-vue-next'
+import { BarChart3, Copy, CreditCard, Key, KeyRound, User } from 'lucide-vue-next'
 import { formatDateTime, formatDataSize } from '@/utils/formats'
+import { isWailsContext } from '@/composables/useWailsEvents'
 
 const commonStore = useCommonStore()
 const { strokeWidth: iconStroke } = useLucideIcons()
 
 const userData = computed(() => commonStore.userData)
+const showConnectCta = computed(() => isWailsContext() && !commonStore.hasValidApiKey)
 
 // Add status computation
 const subscriptionStatus = computed(() => commonStore.userData?.subscriptionStatus || 'active')
@@ -338,6 +390,19 @@ async function copyApiKey() {
     await navigator.clipboard.writeText(apiKey)
     commonStore.showNotification('API key copied to clipboard', 'success')
   }
+}
+
+function promptApiKey() {
+  commonStore.requireApiKey()
+}
+
+function openAccountPage() {
+  const url = 'https://streams.dbconvert.com/account'
+  if (window.runtime?.BrowserOpenURL) {
+    window.runtime.BrowserOpenURL(url)
+    return
+  }
+  window.open(url, '_blank', 'noopener,noreferrer')
 }
 
 // Add period information

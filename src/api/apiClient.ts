@@ -43,7 +43,23 @@ const sentryClient: AxiosInstance = axios.create({
 
 // Only log errors in interceptors
 apiClient.interceptors.request.use(
-  (config) => config,
+  (config) => {
+    const headers = config.headers as Record<string, unknown> & {
+      delete?: (key: string) => void
+      get?: (key: string) => unknown
+    }
+    if (headers) {
+      const headerValue = headers[API_HEADERS.API_KEY] ?? headers.get?.(API_HEADERS.API_KEY)
+      if (!headerValue) {
+        if (headers.delete) {
+          headers.delete(API_HEADERS.API_KEY)
+        } else {
+          delete headers[API_HEADERS.API_KEY]
+        }
+      }
+    }
+    return config
+  },
   (error) => {
     console.error('[API] Request error:', error)
     return Promise.reject(error)
