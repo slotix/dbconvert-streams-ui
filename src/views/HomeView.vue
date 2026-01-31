@@ -32,7 +32,7 @@
           src="/images/logo.svg"
           alt="DBConvert Streams"
         />
-        <h1 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Overview</h1>
+        <h1 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Account Overview</h1>
       </div>
     </header>
 

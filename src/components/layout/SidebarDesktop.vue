@@ -108,7 +108,7 @@
           isSidebarExpanded ? 'items-stretch px-2' : 'items-center'
         ]"
       >
-        <!-- Overview Link (web only - desktop has native menu) -->
+        <!-- Account Overview Link (web only - desktop has native menu) -->
         <RouterLink
           to="/"
           :class="[
@@ -117,14 +117,14 @@
           ]"
         >
           <BarChart3 :class="iconSizes.sidebarMenu" :stroke-width="iconStroke" aria-hidden="true" />
-          <span v-if="isSidebarExpanded" class="truncate">Overview</span>
-          <span v-else class="sr-only">Overview</span>
+          <span v-if="isSidebarExpanded" class="truncate">Account Overview</span>
+          <span v-else class="sr-only">Account Overview</span>
           <!-- Tooltip -->
           <div
             v-if="!isSidebarExpanded"
             class="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 hidden group-hover:block bg-gray-900 dark:bg-gray-800 text-white px-2 py-1 rounded text-sm whitespace-nowrap z-9999 pointer-events-none"
           >
-            Overview
+            Account Overview
           </div>
         </RouterLink>
         <!-- Settings -->

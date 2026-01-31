@@ -60,7 +60,7 @@
                   />
                 </ul>
 
-                <!-- Overview Link (web only - desktop has native menu) -->
+                <!-- Account Overview Link (web only - desktop has native menu) -->
                 <div class="pt-4 border-t border-gray-200 dark:border-gray-600">
                   <RouterLink
                     to="/"
@@ -72,7 +72,7 @@
                       :stroke-width="iconStroke"
                       aria-hidden="true"
                     />
-                    <span class="flex-1 text-left">Overview</span>
+                    <span class="flex-1 text-left">Account Overview</span>
                   </RouterLink>
                 </div>
 
