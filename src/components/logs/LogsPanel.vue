@@ -2,7 +2,7 @@
 import { computed, ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useLogsStore, type SystemLog } from '@/stores/logs'
 import { TransitionRoot, TransitionChild } from '@headlessui/vue'
-import { ArrowDown, ArrowUp, ChevronDown, Filter, Trash, X } from 'lucide-vue-next'
+import { ArrowDown, ArrowUp, ChevronDown, Filter, Info, Search, Trash, X } from 'lucide-vue-next'
 import { LOG_LEVELS, STREAM_PROGRESS_CATEGORIES } from '@/constants'
 import SqlConsoleView from './SqlConsoleView.vue'
 import LogRow from './LogRow.vue'
@@ -637,19 +637,9 @@ onBeforeUnmount(() => {
 
               <!-- Search Input (matching SQL Logs search style) -->
               <div class="flex-1 relative min-w-0 sm:min-w-48">
-                <svg
+                <Search
                   class="w-4 h-4 text-gray-400 dark:text-gray-500 absolute left-3 top-1/2 -translate-y-1/2"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
+                />
                 <input
                   ref="searchInputRef"
                   v-model="searchText"
@@ -752,19 +742,7 @@ onBeforeUnmount(() => {
                   class="flex items-center justify-center h-full text-gray-500 dark:text-gray-400"
                 >
                   <div class="text-center">
-                    <svg
-                      class="w-12 h-12 mx-auto mb-4 text-gray-400 dark:text-gray-500"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
+                    <Info class="w-12 h-12 mx-auto mb-4 text-gray-400 dark:text-gray-500" />
                     <p class="font-medium">No logs to display</p>
                   </div>
                 </div>

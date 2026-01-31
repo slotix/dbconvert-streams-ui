@@ -139,19 +139,7 @@
               @click.stop="sidebar.toggleSidebar"
             >
               <!-- Double chevron left icon -->
-              <svg
-                class="w-3 h-3 text-gray-500 dark:text-gray-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
-                />
-              </svg>
+              <ChevronsLeft class="w-3 h-3 text-gray-500 dark:text-gray-400" />
             </div>
           </div>
 
@@ -164,19 +152,7 @@
               @click="sidebar.toggleSidebar"
             >
               <!-- Double chevron right icon -->
-              <svg
-                class="w-3 h-3 text-gray-500 dark:text-gray-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M13 5l7 7-7 7M5 5l7 7-7 7"
-                />
-              </svg>
+              <ChevronsRight class="w-3 h-3 text-gray-500 dark:text-gray-400" />
             </button>
           </div>
 
@@ -227,7 +203,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, inject } from 'vue'
 import { useLucideIcons } from '@/composables/useLucideIcons'
-import { RefreshCw, Plus, Menu } from 'lucide-vue-next'
+import { ChevronsLeft, ChevronsRight, Menu, Plus, RefreshCw } from 'lucide-vue-next'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
 import { useMonitoringStore } from '@/stores/monitoring'

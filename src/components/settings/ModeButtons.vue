@@ -2,19 +2,7 @@
   <div class="flex items-center gap-4">
     <!-- Label with Icon -->
     <div class="flex items-center gap-2 shrink-0">
-      <svg
-        class="h-5 w-5 text-teal-600 dark:text-teal-400"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
-        />
-      </svg>
+      <ArrowLeftRight class="h-5 w-5 text-teal-600 dark:text-teal-400" />
       <label class="text-sm font-semibold text-gray-900 dark:text-gray-100">
         Data Transfer Mode
       </label>
@@ -71,6 +59,7 @@ import { useStreamsStore } from '@/stores/streamConfig'
 import { useCommonStore } from '@/stores/common'
 import { type ModeOption } from '@/stores/common'
 import { RadioGroup, RadioGroupLabel, RadioGroupOption } from '@headlessui/vue'
+import { ArrowLeftRight } from 'lucide-vue-next'
 
 const commonStore = useCommonStore()
 const modes = commonStore.modes as ModeOption[]

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Info } from 'lucide-vue-next'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import type { ExportFormat } from '@/stores/logs'
 import { useLogsStore } from '@/stores/logs'
@@ -68,19 +69,7 @@ onUnmounted(() => {
       class="flex items-center justify-center h-full text-gray-500 dark:text-gray-400"
     >
       <div class="text-center">
-        <svg
-          class="w-12 h-12 mx-auto mb-4 text-gray-400 dark:text-gray-500"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
+        <Info class="w-12 h-12 mx-auto mb-4 text-gray-400 dark:text-gray-500" />
         <p class="font-medium">No queries to display</p>
       </div>
     </div>

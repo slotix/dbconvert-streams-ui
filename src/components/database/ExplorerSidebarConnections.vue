@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, nextTick, provide } from 'vue'
 import { useDebounceFn, useResizeObserver } from '@vueuse/core'
-import { Boxes } from 'lucide-vue-next'
+import { Boxes, Loader2 } from 'lucide-vue-next'
 import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore, type ObjectType } from '@/stores/explorerNavigation'
 import { useFileExplorerStore } from '@/stores/fileExplorer'
@@ -1006,22 +1006,7 @@ watch(
             v-if="isSearchExpanding"
             class="flex flex-col items-center justify-center py-20 px-6 text-slate-500 dark:text-slate-400"
           >
-            <svg class="animate-spin h-8 w-8 text-slate-400 mb-3" viewBox="0 0 24 24">
-              <circle
-                class="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                stroke-width="4"
-                fill="none"
-              ></circle>
-              <path
-                class="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-              />
-            </svg>
+            <Loader2 class="animate-spin h-8 w-8 text-slate-400 mb-3" />
             <p class="text-sm font-medium">Searching connections…</p>
             <p class="text-xs mt-1 text-center">
               Loading metadata that matches "{{ searchQuery }}"
