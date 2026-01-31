@@ -94,7 +94,7 @@
         v-if="overflowMenu.visible"
         ref="overflowMenuRef"
         class="fixed z-50 bg-white dark:bg-gray-850 shadow-lg dark:shadow-gray-900/30 border border-gray-200 dark:border-gray-700 rounded-md py-1 min-w-56"
-        :style="{ left: `${adjustedOverflowMenuX}px`, top: `${adjustedOverflowMenuY}px` }"
+        :style="overflowMenuStyle"
       >
         <button
           v-for="(tab, i) in tabs"
@@ -434,8 +434,10 @@ const tabRefs = ref<Map<number, HTMLElement>>(new Map())
 const overflowMenu = ref({ visible: false, x: 0, y: 0 })
 const overflowMenuRef = ref<HTMLElement | null>(null)
 const overflowButtonRef = ref<HTMLElement | null>(null)
-const adjustedOverflowMenuX = computed(() => overflowMenu.value.x / getZoomFactor())
-const adjustedOverflowMenuY = computed(() => overflowMenu.value.y / getZoomFactor())
+const overflowMenuStyle = computed(() => ({
+  left: `${overflowMenu.value.x}px`,
+  top: `${overflowMenu.value.y}px`
+}))
 
 function isActiveTab(index: number): boolean {
   return paneState.value.activeIndex === index
