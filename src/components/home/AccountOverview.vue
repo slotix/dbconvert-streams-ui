@@ -113,25 +113,14 @@
             >
               Trial ends on {{ formatDateTime(userData.trialEnd) }}
             </p>
-            <a
-              href="http://streams.dbconvert.com/pricing"
-              target="_blank"
+            <button
+              type="button"
               class="mt-2 inline-flex items-center text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300"
+              @click="openPricingPage"
             >
               Manage Subscription
-              <svg
-                class="ml-1 h-4 w-4"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fill-rule="evenodd"
-                  d="M5.22 14.78a.75.75 0 001.06 0l7.22-7.22v5.69a.75.75 0 001.5 0v-7.5a.75.75 0 00-.75-.75h-7.5a.75.75 0 000 1.5h5.69l-7.22 7.22a.75.75 0 000 1.06z"
-                  clip-rule="evenodd"
-                />
-              </svg>
-            </a>
+              <ExternalLink class="ml-1 h-4 w-4" />
+            </button>
           </div>
           <div v-if="subscriptionStatus === 'paused'" class="mt-2 flex items-start space-x-2">
             <div class="shrink-0 mt-0.5">
@@ -152,25 +141,14 @@
               <p class="text-sm text-orange-800 dark:text-orange-300 font-medium">
                 {{ trialEnded ? 'Trial period ended' : 'Usage limit exceeded' }}
               </p>
-              <a
-                href="http://streams.dbconvert.com/account"
-                target="_blank"
+              <button
+                type="button"
                 class="mt-1 inline-flex items-center text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300"
+                @click="openAccountPage"
               >
                 Update subscription
-                <svg
-                  class="ml-1 h-4 w-4"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fill-rule="evenodd"
-                    d="M5.22 14.78a.75.75 0 001.06 0l7.22-7.22v5.69a.75.75 0 001.5 0v-7.5a.75.75 0 00-.75-.75h-7.5a.75.75 0 000 1.5h5.69l-7.22 7.22a.75.75 0 000 1.06z"
-                    clip-rule="evenodd"
-                  />
-                </svg>
-              </a>
+                <ExternalLink class="ml-1 h-4 w-4" />
+              </button>
             </div>
           </div>
           <div v-if="subscriptionStatus === 'canceled'" class="mt-2 flex items-start space-x-2">
@@ -192,25 +170,14 @@
               <p class="text-sm text-red-800 dark:text-red-300 font-medium">
                 Your subscription has been canceled
               </p>
-              <a
-                href="http://streams.dbconvert.com/account"
-                target="_blank"
+              <button
+                type="button"
                 class="mt-1 inline-flex items-center text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300"
+                @click="openAccountPage"
               >
                 Reactivate subscription
-                <svg
-                  class="ml-1 h-4 w-4"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fill-rule="evenodd"
-                    d="M5.22 14.78a.75.75 0 001.06 0l7.22-7.22v5.69a.75.75 0 001.5 0v-7.5a.75.75 0 00-.75-.75h-7.5a.75.75 0 000 1.5h5.69l-7.22 7.22a.75.75 0 000 1.06z"
-                    clip-rule="evenodd"
-                  />
-                </svg>
-              </a>
+                <ExternalLink class="ml-1 h-4 w-4" />
+              </button>
             </div>
           </div>
         </div>
@@ -316,25 +283,14 @@
               </button>
             </div>
             <div class="flex justify-end">
-              <a
-                href="http://streams.dbconvert.com/account"
-                target="_blank"
+              <button
+                type="button"
                 class="inline-flex items-center text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300"
+                @click="openAccountPage"
               >
                 Manage API Key
-                <svg
-                  class="ml-1 h-4 w-4"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fill-rule="evenodd"
-                    d="M5.22 14.78a.75.75 0 001.06 0l7.22-7.22v5.69a.75.75 0 001.5 0v-7.5a.75.75 0 00-.75-.75h-7.5a.75.75 0 000 1.5h5.69l-7.22 7.22a.75.75 0 000 1.06z"
-                    clip-rule="evenodd"
-                  />
-                </svg>
-              </a>
+                <ExternalLink class="ml-1 h-4 w-4" />
+              </button>
             </div>
           </div>
         </div>
@@ -347,7 +303,7 @@
 import { computed } from 'vue'
 import { useCommonStore } from '@/stores/common'
 import { useLucideIcons } from '@/composables/useLucideIcons'
-import { BarChart3, Copy, CreditCard, Key, KeyRound, User } from 'lucide-vue-next'
+import { BarChart3, Copy, CreditCard, ExternalLink, Key, KeyRound, User } from 'lucide-vue-next'
 import { formatDateTime, formatDataSize } from '@/utils/formats'
 import { isWailsContext } from '@/composables/useWailsEvents'
 
@@ -398,6 +354,15 @@ function promptApiKey() {
 
 function openAccountPage() {
   const url = 'https://streams.dbconvert.com/account'
+  if (window.runtime?.BrowserOpenURL) {
+    window.runtime.BrowserOpenURL(url)
+    return
+  }
+  window.open(url, '_blank', 'noopener,noreferrer')
+}
+
+function openPricingPage() {
+  const url = 'https://streams.dbconvert.com/pricing'
   if (window.runtime?.BrowserOpenURL) {
     window.runtime.BrowserOpenURL(url)
     return
