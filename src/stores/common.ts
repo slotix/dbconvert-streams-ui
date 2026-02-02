@@ -686,27 +686,12 @@ export const useCommonStore = defineStore('common', {
     userApiKey: (state) => state.userData?.apiKey || null,
     userID: (state) => state.userData?.userID || null,
     stripeCustomerId: (state) => state.userData?.stripeCustomerId || null,
-    trialEnd: (state) => state.userData?.trialEnd || null,
-    currentPeriodStart: (state) => {
-      const date = state.userData?.subscriptionPeriodUsage?.period_start
-      return date ? new Date(date).getTime() / 1000 : null
-    },
-    currentPeriodEnd: (state) => {
-      const date = state.userData?.subscriptionPeriodUsage?.period_end
-      return date ? new Date(date).getTime() / 1000 : null
-    },
-    currentPeriodUsage: (state) => state.userData?.subscriptionPeriodUsage?.data_volume || 0,
-    monthlyLimit: (state) => state.userData?.subscription.monthly_limit || null,
-    dailyUsage: (state) => state.userData?.dailyUsage || null,
-    monthlyUsage: (state) => state.userData?.monthlyUsage || null,
-    currentMonthUsage: (state) => {
-      const currentMonth = new Date().getMonth()
-      return (
-        state.userData?.monthlyUsage?.find(
-          (usage) => new Date(usage.month).getMonth() === currentMonth
-        ) || null
-      )
-    },
+    evaluation: (state) => state.userData?.evaluation || null,
+    evaluationStatus: (state) => state.userData?.evaluation?.status || 'inactive',
+    evalConvertBytes: (state) => state.userData?.evaluation?.convert_bytes || 0,
+    evalConvertLimit: (state) => state.userData?.evaluation?.convert_limit_bytes || 0,
+    evalCdcSeconds: (state) => state.userData?.evaluation?.cdc_seconds || 0,
+    evalCdcLimit: (state) => state.userData?.evaluation?.cdc_limit_seconds || 0,
     hasValidApiKey: (state) => !!apiKeyStorage.value && !state.apiKeyInvalidated,
     needsApiKey: (state) => !apiKeyStorage.value || state.apiKeyInvalidated,
     shouldShowApiKeyPrompt: (state) => {

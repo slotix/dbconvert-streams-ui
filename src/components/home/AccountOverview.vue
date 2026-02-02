@@ -72,18 +72,15 @@
               class="h-6 w-6"
               :stroke-width="iconStroke"
               :class="{
-                'text-teal-600 dark:text-teal-400':
-                  subscriptionStatus !== 'canceled' && subscriptionStatus !== 'paused',
-                'text-gray-400 dark:text-gray-500': subscriptionStatus === 'canceled',
-                'text-yellow-600 dark:text-yellow-500': subscriptionStatus === 'paused',
-                'text-blue-600 dark:text-blue-400': subscriptionStatus === 'trialing'
+                'text-teal-600 dark:text-teal-400': isPaid,
+                'text-gray-400 dark:text-gray-500': !isPaid
               }"
             />
           </div>
         </div>
         <div class="ml-4 flex-1">
           <div class="flex items-center justify-between">
-            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Current Subscription</p>
+            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Subscription</p>
             <span
               v-if="subscriptionStatus === 'paused'"
               class="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-medium bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-300 rounded-full"
@@ -102,16 +99,26 @@
               </svg>
               Canceled
             </span>
+            <span
+              v-if="showEvaluationBadge"
+              class="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-medium rounded-full"
+              :class="evaluationBadgeClass"
+            >
+              <svg class="w-1 h-1 fill-current" viewBox="0 0 4 4">
+                <circle cx="2" cy="2" r="2" />
+              </svg>
+              {{ evaluationBadgeText }}
+            </span>
           </div>
           <div class="mt-1">
             <p class="text-xl font-semibold text-gray-900 dark:text-gray-100">
-              {{ subscriptionStatus === 'trialing' ? 'Trial' : currentPlanName }}
+              {{ planLabel }}
             </p>
-            <p
-              v-if="subscriptionStatus === 'trialing' && userData?.trialEnd"
-              class="text-sm text-gray-500 dark:text-gray-400 mt-1"
-            >
-              Trial ends on {{ formatDateTime(userData.trialEnd) }}
+            <p v-if="isPaid" class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              Billing: {{ billingLabel }}
+            </p>
+            <p v-else class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              Evaluation limits apply
             </p>
             <button
               type="button"
@@ -139,7 +146,7 @@
             </div>
             <div class="flex-1">
               <p class="text-sm text-orange-800 dark:text-orange-300 font-medium">
-                {{ trialEnded ? 'Trial period ended' : 'Usage limit exceeded' }}
+                Subscription paused
               </p>
               <button
                 type="button"
@@ -183,7 +190,7 @@
         </div>
       </div>
 
-      <!-- Usage Summary -->
+      <!-- Evaluation Summary -->
       <div
         v-if="!showConnectCta"
         class="flex items-start p-3 rounded-lg bg-slate-50 dark:bg-gray-800/50"
@@ -198,48 +205,47 @@
         </div>
         <div class="ml-4 flex-1">
           <div class="flex items-center justify-between">
-            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Current Period Usage</p>
-            <span class="text-sm text-gray-500 dark:text-gray-400">
-              {{ currentPeriodStart ? currentPeriodStart : 'N/A' }} -
-              {{ currentPeriodEnd ? currentPeriodEnd : 'N/A' }}
-            </span>
+            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Evaluation Usage</p>
+            <span v-if="evaluationEnded" class="text-sm text-amber-600 dark:text-amber-400"
+              >Completed</span
+            >
           </div>
-          <div class="mt-3">
-            <div class="flex items-baseline">
-              <span class="text-xl font-semibold text-gray-900 dark:text-gray-100">{{
-                formatDataSize(usedData)
-              }}</span>
-              <span class="text-sm text-gray-500 dark:text-gray-400 ml-1"
-                >of {{ formatDataSize(totalData) }}</span
-              >
+          <div v-if="isPaid" class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+            Unlimited usage on active plan.
+          </div>
+          <div v-else class="mt-3 space-y-4">
+            <div>
+              <div class="flex items-baseline justify-between">
+                <span class="text-sm text-gray-600 dark:text-gray-400">Convert data</span>
+                <span class="text-xs text-gray-500 dark:text-gray-500"
+                  >{{ formatDataSize(evalConvertBytes) }} /
+                  {{ formatDataSize(evalConvertLimit) }}</span
+                >
+              </div>
+              <div class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2.5 mt-2">
+                <div
+                  class="h-2.5 rounded-full bg-teal-500 transition-all duration-300"
+                  :style="{ width: `${evalConvertPercent}%` }"
+                ></div>
+              </div>
             </div>
-            <!-- Progress bar -->
-            <div class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2.5 mt-2">
-              <div
-                class="h-2.5 rounded-full transition-all duration-300"
-                :style="{ width: `${usagePercentage}%` }"
-                :class="{
-                  'bg-red-500': usagePercentage > 90,
-                  'bg-yellow-500': usagePercentage > 75 && usagePercentage <= 90,
-                  'bg-teal-500': usagePercentage <= 75
-                }"
-              ></div>
+            <div>
+              <div class="flex items-baseline justify-between">
+                <span class="text-sm text-gray-600 dark:text-gray-400">CDC runtime</span>
+                <span class="text-xs text-gray-500 dark:text-gray-500"
+                  >{{ formatDuration(evalCdcSeconds) }} / {{ formatDuration(evalCdcLimit) }}</span
+                >
+              </div>
+              <div class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2.5 mt-2">
+                <div
+                  class="h-2.5 rounded-full bg-teal-500 transition-all duration-300"
+                  :style="{ width: `${evalCdcPercent}%` }"
+                ></div>
+              </div>
             </div>
-            <div class="flex items-center justify-between mt-1">
-              <p class="text-sm text-gray-500 dark:text-gray-400">{{ usagePercentage }}% used</p>
-              <p
-                v-if="usagePercentage > 90"
-                class="text-sm text-red-600 dark:text-red-400 font-medium"
-              >
-                Critical usage
-              </p>
-              <p
-                v-else-if="usagePercentage > 75"
-                class="text-sm text-yellow-600 dark:text-yellow-500 font-medium"
-              >
-                High usage
-              </p>
-            </div>
+            <p v-if="evaluationEnded" class="text-xs text-amber-600 dark:text-amber-400">
+              Evaluation completed. Upgrade to continue running streams.
+            </p>
           </div>
         </div>
       </div>
@@ -304,7 +310,7 @@ import { computed } from 'vue'
 import { useCommonStore } from '@/stores/common'
 import { useLucideIcons } from '@/composables/useLucideIcons'
 import { BarChart3, Copy, CreditCard, ExternalLink, Key, KeyRound, User } from 'lucide-vue-next'
-import { formatDateTime, formatDataSize } from '@/utils/formats'
+import { formatDataSize } from '@/utils/formats'
 import { isWailsContext } from '@/composables/useWailsEvents'
 
 const commonStore = useCommonStore()
@@ -313,23 +319,57 @@ const { strokeWidth: iconStroke } = useLucideIcons()
 const userData = computed(() => commonStore.userData)
 const showConnectCta = computed(() => isWailsContext() && !commonStore.hasValidApiKey)
 
-// Add status computation
-const subscriptionStatus = computed(() => commonStore.userData?.subscriptionStatus || 'active')
-const currentPlanName = computed(() => {
-  const name = commonStore.userData?.subscription?.name
-  if (subscriptionStatus.value === 'canceled' || subscriptionStatus.value === 'paused') {
-    return `${name} `
+const subscriptionStatus = computed(() => commonStore.userData?.subscriptionStatus || 'inactive')
+const isPaid = computed(() => subscriptionStatus.value === 'active')
+
+const planLabel = computed(() => {
+  if (isPaid.value && commonStore.userData?.subscription?.name) {
+    return commonStore.userData.subscription.name
   }
-  return name
+  if (isPaid.value) {
+    return 'Streams'
+  }
+  return 'Evaluation'
 })
 
-// Extract usage data
-const usedData = computed(() => commonStore.userData?.subscriptionPeriodUsage?.data_volume || 0)
-const totalData = computed(() => commonStore.userData?.subscription?.monthly_limit || 0)
-// Calculate usage percentage
-const usagePercentage = computed(() => {
-  if (totalData.value === 0) return 0
-  return Math.round((usedData.value / totalData.value) * 100)
+const billingLabel = computed(() => {
+  const interval = commonStore.userData?.subscription?.interval
+  if (!interval) return '—'
+  return interval === 'year' ? 'Yearly' : 'Monthly'
+})
+
+const evaluationStatus = computed(() => commonStore.userData?.evaluation?.status || 'inactive')
+const evaluationEnded = computed(() => evaluationStatus.value === 'ended')
+const showEvaluationBadge = computed(() => !isPaid.value && !!commonStore.userData?.evaluation)
+
+const evaluationBadgeText = computed(() => {
+  if (evaluationStatus.value === 'ended') return 'Evaluation completed'
+  if (evaluationStatus.value === 'active') return 'Evaluation active'
+  return 'Evaluation not started'
+})
+
+const evaluationBadgeClass = computed(() => {
+  if (!commonStore.userData?.evaluation)
+    return 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'
+  if (evaluationStatus.value === 'ended')
+    return 'bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200'
+  if (evaluationStatus.value === 'active')
+    return 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-200'
+  return 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'
+})
+
+const evalConvertBytes = computed(() => commonStore.userData?.evaluation?.convert_bytes || 0)
+const evalConvertLimit = computed(() => commonStore.userData?.evaluation?.convert_limit_bytes || 0)
+const evalConvertPercent = computed(() => {
+  if (!evalConvertLimit.value) return 0
+  return Math.min(Math.round((evalConvertBytes.value / evalConvertLimit.value) * 100), 100)
+})
+
+const evalCdcSeconds = computed(() => commonStore.userData?.evaluation?.cdc_seconds || 0)
+const evalCdcLimit = computed(() => commonStore.userData?.evaluation?.cdc_limit_seconds || 0)
+const evalCdcPercent = computed(() => {
+  if (!evalCdcLimit.value) return 0
+  return Math.min(Math.round((evalCdcSeconds.value / evalCdcLimit.value) * 100), 100)
 })
 
 const maskedApiKey = computed(() => {
@@ -370,19 +410,13 @@ function openPricingPage() {
   window.open(url, '_blank', 'noopener,noreferrer')
 }
 
-// Add period information
-const currentPeriodStart = computed(() => {
-  const date = commonStore.userData?.subscriptionPeriodUsage?.period_start
-  return date ? formatDateTime(date) : null
-})
-
-const currentPeriodEnd = computed(() => {
-  const date = commonStore.userData?.subscriptionPeriodUsage?.period_end
-  return date ? formatDateTime(date) : null
-})
-
-const trialEnded = computed(() => {
-  const trialEnd = commonStore.userData?.trialEnd
-  return trialEnd ? Date.now() > trialEnd * 1000 : false
-})
+function formatDuration(seconds: number) {
+  if (!seconds) return '0 h'
+  if (seconds < 3600) {
+    const minutes = Math.max(1, Math.round(seconds / 60))
+    return `${minutes} min`
+  }
+  const hours = seconds / 3600
+  return `${hours.toFixed(1)} h`
+}
 </script>

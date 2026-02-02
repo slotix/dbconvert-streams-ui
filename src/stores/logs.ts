@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { getStreamLogs } from '@/api/apiClient'
 import type { StandardLogEntry } from '@/types/logs'
 import { useMonitoringStore } from '@/stores/monitoring'
+import { useCommonStore } from '@/stores/common'
 import type { LogLevel, LogCategory, NodeType, Status } from '@/constants'
 import { STORAGE_KEYS, getStorageValue, setStorageValue } from '@/constants/storageKeys'
 
@@ -702,6 +703,31 @@ export const useLogsStore = defineStore('logs', {
 
     // Structured logging methods for new SSE service
     addSystemLog(log: StandardLogEntry) {
+      if (log.extra?.event === 'evaluation_warning') {
+        const commonStore = useCommonStore()
+        const level = log.level === 'warn' ? 'warning' : log.level === 'error' ? 'error' : 'info'
+        commonStore.showNotification(log.message, level)
+
+        const monitoringStore = useMonitoringStore()
+        const mode = log.extra?.mode
+        const threshold = Number(log.extra?.threshold ?? log.extra?.percent ?? 0)
+        const percent = Number(log.extra?.percent ?? threshold)
+        const used = Number(log.extra?.used ?? 0)
+        const limit = Number(log.extra?.limit ?? 0)
+        if (log.streamId && (mode === 'convert' || mode === 'cdc') && Number.isFinite(threshold)) {
+          monitoringStore.setEvaluationWarning({
+            streamId: log.streamId,
+            mode,
+            threshold,
+            percent,
+            used,
+            limit,
+            message: log.message,
+            updatedAt: Date.now()
+          })
+        }
+      }
+
       // Convert StandardLogEntry to SystemLog format
       this.addLog({
         message: log.message,

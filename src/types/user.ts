@@ -1,17 +1,13 @@
-export interface DailyUsage {
-  date: string
-  data_volume: number
-}
-
-export interface MonthlyUsage {
-  month: string
-  data_volume: number
-}
-
-export interface SubscriptionPeriodUsage {
-  period_start: number
-  period_end: number
-  data_volume: number
+export interface Evaluation {
+  status: 'inactive' | 'active' | 'ended'
+  started_at: number
+  ended_at: number
+  convert_bytes: number
+  convert_limit_bytes: number
+  convert_warned_percent?: number
+  cdc_seconds: number
+  cdc_limit_seconds: number
+  cdc_warned_percent?: number
 }
 
 export interface UserData {
@@ -19,11 +15,8 @@ export interface UserData {
   email: string
   name: string
   stripeCustomerId: string
-  trialEnd: number
   apiKey: string
-  dailyUsage: DailyUsage[]
-  monthlyUsage: MonthlyUsage[]
-  subscriptionPeriodUsage: SubscriptionPeriodUsage
+  evaluation?: Evaluation
   subscription: Subscription
   subscriptionStatus: string
 }
@@ -31,6 +24,8 @@ export interface UserData {
 export interface Subscription {
   id: number
   name: string
-  monthly_limit: number
-  price: number
+  monthly_price: number
+  yearly_price: number
+  interval: 'month' | 'year'
+  status: string
 }

@@ -59,6 +59,17 @@ interface Stage {
   timestamp: number | null
 }
 
+interface EvaluationWarning {
+  streamId: string
+  mode: 'convert' | 'cdc'
+  threshold: number
+  percent: number
+  used: number
+  limit: number
+  message: string
+  updatedAt: number
+}
+
 interface State {
   streamID: string
   nodes: Node[]
@@ -74,6 +85,7 @@ interface State {
   shouldShowMonitorTab: boolean
   aggregatedStats: AggregatedStatResponse | null
   tableMetadata: Map<string, TableMetadata>
+  evaluationWarning: EvaluationWarning | null
 }
 
 export const useMonitoringStore = defineStore('monitoring', {
@@ -127,7 +139,8 @@ export const useMonitoringStore = defineStore('monitoring', {
     lastStreamId: null as string | null,
     shouldShowMonitorTab: false,
     aggregatedStats: null,
-    tableMetadata: new Map()
+    tableMetadata: new Map(),
+    evaluationWarning: null
   }),
   getters: {
     currentStage(state: State): Stage | null {
@@ -547,6 +560,7 @@ export const useMonitoringStore = defineStore('monitoring', {
         this.aggregatedStats = null
         this.currentStageID = 0
         this.tableMetadata = new Map() // Clear old metadata
+        this.evaluationWarning = null
         // Reset all stage timestamps when switching streams
         this.stages.forEach((stage) => {
           stage.timestamp = null
@@ -590,6 +604,9 @@ export const useMonitoringStore = defineStore('monitoring', {
     },
     resetShowMonitorTab() {
       this.shouldShowMonitorTab = false
+    },
+    setEvaluationWarning(warning: EvaluationWarning) {
+      this.evaluationWarning = warning
     },
     addLog(log: Log) {
       if (this.logs.length >= this.maxLogs) {

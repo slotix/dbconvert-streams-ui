@@ -212,6 +212,22 @@
       <!-- Monitor Tab -->
       <div v-else-if="activeTab === 'monitor'" class="p-6">
         <div v-if="hasActiveRun" class="space-y-6">
+          <div
+            v-if="evaluationBanner"
+            class="rounded-lg border border-amber-200 bg-amber-50/70 px-4 py-3 text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100"
+          >
+            <div class="flex items-start gap-3">
+              <AlertTriangle class="h-5 w-5 text-amber-600 dark:text-amber-300 mt-0.5" />
+              <div class="space-y-1">
+                <div class="text-sm font-semibold">
+                  {{ evaluationBannerTitle }}
+                </div>
+                <p class="text-sm text-amber-800 dark:text-amber-200">
+                  {{ evaluationBannerBody }}
+                </p>
+              </div>
+            </div>
+          </div>
           <!-- Performance Stats -->
           <StatContainer
             :stream="stream"
@@ -287,7 +303,7 @@ export default {
 <script setup lang="ts">
 import { ref, computed, watch, defineAsyncComponent, toRef } from 'vue'
 import { useRouter } from 'vue-router'
-import { Play, Pause, Square } from 'lucide-vue-next'
+import { Play, Pause, Square, AlertTriangle } from 'lucide-vue-next'
 import { useLucideIcons } from '@/composables/useLucideIcons'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
@@ -303,6 +319,7 @@ import { useStreamControls } from '@/composables/useStreamControls'
 import { useStreamHistory, type StreamDetailsTab } from '@/composables/useStreamHistory'
 import { useStreamExplorerNavigation } from '@/composables/useStreamExplorerNavigation'
 import { updateStreamsViewState, setSelectedStreamInViewState } from '@/utils/streamsViewState'
+import { formatDataSize, formatElapsedTimeWithUnit } from '@/utils/formats'
 
 // Lazy load heavy components that use ag-grid
 const StreamHistoryTableAGGrid = defineAsyncComponent(
@@ -395,6 +412,75 @@ const streamIdRef = computed(() => streamRef.value.id || '')
 const hasActiveRun = computed(() => {
   return monitoringStore.streamConfig?.id === props.stream.id && monitoringStore.streamID !== ''
 })
+
+const evaluationBanner = computed(() => {
+  if (!hasActiveRun.value) return null
+  const streamID = monitoringStore.streamID
+  const mode = props.stream.mode
+
+  const liveWarning = monitoringStore.evaluationWarning
+  if (
+    liveWarning &&
+    liveWarning.streamId === streamID &&
+    liveWarning.mode === mode &&
+    liveWarning.threshold >= 90
+  ) {
+    return liveWarning
+  }
+
+  const evaluation = commonStore.userData?.evaluation
+  if (!evaluation) return null
+
+  const warnedPercent =
+    mode === 'convert' ? evaluation.convert_warned_percent || 0 : evaluation.cdc_warned_percent || 0
+  if (warnedPercent < 90) return null
+
+  const used = mode === 'convert' ? evaluation.convert_bytes : evaluation.cdc_seconds
+  const limit = mode === 'convert' ? evaluation.convert_limit_bytes : evaluation.cdc_limit_seconds
+  if (!limit) return null
+
+  const percent = Math.min(100, Math.floor((used / limit) * 100))
+  return {
+    streamId: streamID,
+    mode,
+    threshold: warnedPercent,
+    percent,
+    used,
+    limit,
+    message: '',
+    updatedAt: Date.now()
+  }
+})
+
+const evaluationBannerTitle = computed(() => {
+  if (!evaluationBanner.value) return ''
+  return evaluationBanner.value.percent >= 100
+    ? 'Evaluation limit reached'
+    : 'Evaluation limit almost reached'
+})
+
+const evaluationBannerBody = computed(() => {
+  const warning = evaluationBanner.value
+  if (!warning) return ''
+  const modeLabel = warning.mode === 'convert' ? 'Convert usage' : 'CDC runtime'
+  const usedLabel =
+    warning.mode === 'convert' ? formatDataSize(warning.used) : formatDurationSeconds(warning.used)
+  const limitLabel =
+    warning.mode === 'convert'
+      ? formatDataSize(warning.limit)
+      : formatDurationSeconds(warning.limit)
+  const percent = warning.percent || warning.threshold
+  const suffix =
+    percent >= 100
+      ? 'Streams will stop until you subscribe.'
+      : 'Subscribe soon to continue without interruption.'
+  return `${modeLabel} at ${percent}% (${usedLabel} of ${limitLabel}). ${suffix}`
+})
+
+function formatDurationSeconds(seconds: number) {
+  const formatted = formatElapsedTimeWithUnit(seconds * 1e9)
+  return `${formatted.value}${formatted.unit}`
+}
 
 const { historyRuns, handleDeleteRun, handleClearAll } = useStreamHistory({
   streamId: streamIdRef,
