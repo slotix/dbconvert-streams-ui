@@ -268,6 +268,22 @@ export const useCommonStore = defineStore('common', {
       configureApiClient('')
     },
 
+    async clearApiKeyAndReset(): Promise<void> {
+      const currentKey = apiKeyStorage.value
+      if (currentKey) {
+        try {
+          await api.clearApiKey()
+        } catch (error) {
+          console.warn('Failed to clear API key on server:', error)
+        }
+      }
+
+      await this.clearApiKey()
+      this.apiKeyInvalidated = false
+      this.userData = null
+      this.requiresApiKey = true
+    },
+
     requireApiKey() {
       this.requiresApiKey = true
     },

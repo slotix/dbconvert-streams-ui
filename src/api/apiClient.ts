@@ -189,6 +189,14 @@ const loadUserConfigs = async (apiKey: string): Promise<void> => {
   }
 }
 
+const clearApiKey = async (): Promise<void> => {
+  try {
+    await apiClient.post('/user/clear-key')
+  } catch (error) {
+    throw handleApiError(error)
+  }
+}
+
 // Health check functions - minimal logging
 const backendHealthCheck = async (): Promise<HealthCheckResponse> => {
   try {
@@ -282,6 +290,7 @@ export default {
   sentryHealthCheck,
   getServiceStatus,
   getSystemDefaults,
+  clearApiKey,
   getConnections,
   getStreams,
   getStreamLogs

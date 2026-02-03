@@ -288,7 +288,15 @@
                 />
               </button>
             </div>
-            <div class="flex justify-end">
+            <div class="flex items-center justify-end gap-3">
+              <button
+                type="button"
+                class="inline-flex items-center text-sm font-medium text-red-600 dark:text-red-400 hover:text-red-500 dark:hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-50"
+                :disabled="!hasApiKey || isClearingApiKey"
+                @click="confirmClearApiKey"
+              >
+                Clear API Key
+              </button>
               <button
                 type="button"
                 class="inline-flex items-center text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300"
@@ -306,14 +314,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useCommonStore } from '@/stores/common'
+import { useConfirmDialogStore } from '@/stores/confirmDialog'
 import { useLucideIcons } from '@/composables/useLucideIcons'
 import { BarChart3, Copy, CreditCard, ExternalLink, Key, KeyRound, User } from 'lucide-vue-next'
 import { formatDataSize } from '@/utils/formats'
 import { isWailsContext } from '@/composables/useWailsEvents'
 
 const commonStore = useCommonStore()
+const confirmDialog = useConfirmDialogStore()
+const isClearingApiKey = ref(false)
 const { strokeWidth: iconStroke } = useLucideIcons()
 
 const userData = computed(() => commonStore.userData)
@@ -373,18 +384,45 @@ const evalCdcPercent = computed(() => {
 })
 
 const maskedApiKey = computed(() => {
-  const apiKey = commonStore.userData?.apiKey || ''
+  const apiKey = commonStore.userData?.apiKey || commonStore.apiKey || ''
   if (!apiKey) return ''
   const prefix = apiKey.slice(0, 4)
   const suffix = apiKey.slice(-4)
   return `${prefix}${'•'.repeat(20)}${suffix}`
 })
 
+const hasApiKey = computed(() => !!(commonStore.userData?.apiKey || commonStore.apiKey))
+
 async function copyApiKey() {
   const apiKey = commonStore.userData?.apiKey
   if (apiKey) {
     await navigator.clipboard.writeText(apiKey)
     commonStore.showNotification('API key copied to clipboard', 'success')
+  }
+}
+
+async function confirmClearApiKey() {
+  if (!hasApiKey.value || isClearingApiKey.value) {
+    return
+  }
+
+  const confirmed = await confirmDialog.confirm({
+    title: 'Clear API key?',
+    description:
+      'This removes the API key from this device. You will need to enter it again to run streams and view usage.',
+    confirmLabel: 'Clear API key',
+    cancelLabel: 'Cancel',
+    danger: true
+  })
+
+  if (!confirmed) return
+
+  isClearingApiKey.value = true
+  try {
+    await commonStore.clearApiKeyAndReset()
+    commonStore.showNotification('API key cleared', 'success')
+  } finally {
+    isClearingApiKey.value = false
   }
 }
 
