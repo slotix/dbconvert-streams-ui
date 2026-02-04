@@ -10,6 +10,9 @@ export const API_HEADERS = {
   /** Custom header for API key authentication */
   API_KEY: 'X-API-Key',
 
+  /** Custom header for install ID */
+  INSTALL_ID: 'X-Install-ID',
+
   /** Custom header for cache control information */
   CACHE: 'X-Cache',
 

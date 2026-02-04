@@ -17,6 +17,61 @@ const HEALTH_CHECK_RETRY_DELAY_MS = 1000
 const HEALTH_CHECK_MAX_RETRIES = 2
 const CONNECTION_GRACE_PERIOD_MS = 5000
 
+const PERMISSION_ERROR_CODES = new Set([
+  'SEAT_LIMIT_REACHED',
+  'DEVICE_DEACTIVATED',
+  'PAYMENT_REQUIRED'
+])
+
+type BackendErrorPayload = {
+  code?: string
+  error?: string
+  message?: string
+}
+
+function extractBackendError(error: unknown): BackendErrorPayload | null {
+  if (!axios.isAxiosError(error)) {
+    return null
+  }
+  const data = error.response?.data as BackendErrorPayload | string | undefined
+  if (!data) {
+    return null
+  }
+  if (typeof data === 'string') {
+    return { message: data }
+  }
+  return data
+}
+
+function getPermissionError(error: unknown): { code: string; message: string } | null {
+  const payload = extractBackendError(error)
+  if (!payload) {
+    return null
+  }
+
+  if (payload.code && PERMISSION_ERROR_CODES.has(payload.code)) {
+    return {
+      code: payload.code,
+      message: payload.error || payload.message || 'Access blocked by account limits.'
+    }
+  }
+
+  const message = (payload.error || payload.message || '').toLowerCase()
+  if (
+    message.includes('seat limit') ||
+    message.includes('device deactivated') ||
+    message.includes('payment required') ||
+    message.includes('past due')
+  ) {
+    return {
+      code: payload.code || 'PERMISSION_ERROR',
+      message: payload.error || payload.message || 'Access blocked by account limits.'
+    }
+  }
+
+  return null
+}
+
 export interface Step {
   id: number
   name: string
@@ -235,6 +290,15 @@ export const useCommonStore = defineStore('common', {
         configureApiClient(trimmedKey)
       } catch (error) {
         const errMsg = error instanceof Error ? error.message : ''
+        const permissionError = getPermissionError(error)
+        if (permissionError) {
+          toast.error(permissionError.message)
+          apiKeyStorage.value = trimmedKey
+          this.apiKeyInvalidated = false
+          this.requiresApiKey = false
+          configureApiClient(trimmedKey)
+          return
+        }
         const invalidKey =
           errMsg.toLowerCase().includes('invalid api key') ||
           (axios.isAxiosError(error) && error.response?.status === 401)
@@ -318,9 +382,13 @@ export const useCommonStore = defineStore('common', {
         const toast = useToast()
         const axiosErr = axios.isAxiosError(error) ? error : null
         const errMsg = error instanceof Error ? error.message : String(error)
+        const permissionError = getPermissionError(error)
 
         // Only clear API key for authentication errors (401)
-        if (axiosErr?.response?.status === 401 || errMsg === 'Invalid API key') {
+        if (permissionError) {
+          toast.error(permissionError.message)
+          this.userData = null
+        } else if (axiosErr?.response?.status === 401 || errMsg === 'Invalid API key') {
           console.warn('API key is invalid, clearing from storage')
           await this.clearApiKey()
           toast.error('Invalid API key. Please enter a valid key to continue.')
@@ -459,6 +527,10 @@ export const useCommonStore = defineStore('common', {
             // If authentication fails, let it bubble up
             const axiosErr = axios.isAxiosError(error) ? error : null
             const errMsg = error instanceof Error ? error.message : String(error)
+            const permissionError = getPermissionError(error)
+            if (permissionError) {
+              return 'failed'
+            }
             if (axiosErr?.response?.status === 401 || errMsg === 'Invalid API key') {
               throw error
             }

@@ -63,33 +63,12 @@ export function getSentryDsn(): string {
 }
 
 /**
- * Get the API key from environment variables
- * Prioritizes window.ENV (runtime) over import.meta.env (build time)
- */
-export function getApiKey(): string {
-  // First try to get from window.ENV (runtime config)
-  const runtimeKey = window.ENV?.VITE_API_KEY
-  if (runtimeKey) {
-    return runtimeKey
-  }
-
-  // Then try import.meta.env (build time config)
-  const buildTimeKey = import.meta.env.VITE_API_KEY
-  if (buildTimeKey) {
-    return buildTimeKey
-  }
-
-  return '' // API key might be provided later by the user
-}
-
-/**
  * Log all environment variables for debugging
  */
 export function logEnvironment(): void {
   console.log('[Environment] Configuration:', {
     backendUrl: getBackendUrl(),
     sentryDsn: getSentryDsn(),
-    apiKey: getApiKey() ? '[REDACTED]' : '[NOT SET]',
     mode: import.meta.env.MODE
   })
 }

@@ -2,6 +2,7 @@ import { computed, ref } from 'vue'
 import { useCommonStore } from '@/stores/common'
 import { useDesktopMode } from '@/composables/useDesktopMode'
 import { SERVICE_STATUS, type ServiceStatus as HealthStatus } from '@/constants'
+import { getSentryDsn } from '@/utils/environment'
 
 type DesktopServiceStatus = {
   name: string
@@ -85,14 +86,25 @@ export function useSystemStatus() {
       ]
     }
 
-    if (commonStore.isBackendConnected) {
-      const hasSentry = list.some((row) => row.name.toLowerCase() === 'sentry')
-      if (!hasSentry) {
-        list = list.concat({
-          name: 'sentry',
-          status: commonStore.sentryHealthy ? SERVICE_STATUS.PASSING : SERVICE_STATUS.CRITICAL
-        })
-      }
+    const sentryConfigured = !!getSentryDsn()
+    const sentryStatus = sentryConfigured
+      ? commonStore.sentryHealthy
+        ? SERVICE_STATUS.PASSING
+        : SERVICE_STATUS.CRITICAL
+      : SERVICE_STATUS.UNKNOWN
+    const sentryMeta = sentryConfigured ? undefined : 'Not configured'
+
+    const sentryIndex = list.findIndex((row) => row.name.toLowerCase() === 'sentry')
+    const sentryRow: StatusRow = {
+      name: 'sentry',
+      status: sentryStatus,
+      meta: sentryMeta
+    }
+
+    if (sentryIndex >= 0) {
+      list = list.map((row, index) => (index === sentryIndex ? sentryRow : row))
+    } else {
+      list = list.concat(sentryRow)
     }
 
     return list
@@ -160,10 +172,27 @@ export function useSystemStatus() {
     if (commonStore.isBackendConnected) {
       return 'Backend connected'
     }
-    if (isDesktop.value) {
-      return 'Backend offline — showing local service state'
+
+    const parts: string[] = []
+    if (commonStore.apiHealthy && !commonStore.sentryHealthy) {
+      parts.push('Stream API healthy, Sentry unreachable')
+    } else if (!commonStore.apiHealthy && commonStore.sentryHealthy) {
+      parts.push('Stream API unreachable, Sentry healthy')
+    } else if (!commonStore.apiHealthy && !commonStore.sentryHealthy) {
+      parts.push('Backend offline')
+    } else if (commonStore.apiHealthy && commonStore.sentryHealthy) {
+      if (!commonStore.hasValidApiKey) {
+        parts.push('Backend reachable — API key required')
+      } else {
+        parts.push('Backend reachable — not connected')
+      }
     }
-    return 'Backend offline'
+
+    if (isDesktop.value) {
+      parts.push('showing local service state')
+    }
+
+    return parts.join(' — ') || 'Backend offline'
   })
 
   return {

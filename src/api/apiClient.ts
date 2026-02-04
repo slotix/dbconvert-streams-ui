@@ -4,6 +4,7 @@ import { type UserData } from '@/types/user'
 import { type ServiceStatusResponse, type SystemDefaults } from '@/types/common'
 import { useCommonStore } from '@/stores/common'
 import { getBackendUrl, getSentryDsn } from '@/utils/environment'
+import { getOrCreateInstallId } from '@/utils/installId'
 import { DEFAULT_API_TIMEOUT, API_RETRY, API_HEADERS, CONTENT_TYPES } from '@/constants'
 
 interface ApiResponse<T> {
@@ -40,6 +41,10 @@ const sentryClient: AxiosInstance = axios.create({
     'Content-Type': CONTENT_TYPES.JSON
   }
 })
+
+const installId = getOrCreateInstallId()
+apiClient.defaults.headers.common[API_HEADERS.INSTALL_ID] = installId
+sentryClient.defaults.headers.common[API_HEADERS.INSTALL_ID] = installId
 
 // Only log errors in interceptors
 apiClient.interceptors.request.use(

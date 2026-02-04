@@ -10,6 +10,9 @@ export const STORAGE_KEYS = {
   /** User's API key for authentication */
   API_KEY: 'dbconvert-api-key',
 
+  /** Per-device install ID for seat enforcement */
+  INSTALL_ID: 'dbconvert-install-id',
+
   /** Selected view type (cards/table) for connections list */
   VIEW_TYPE: 'viewType',
 
