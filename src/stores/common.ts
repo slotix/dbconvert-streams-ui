@@ -773,7 +773,7 @@ export const useCommonStore = defineStore('common', {
     isStreamsPage: (state) => state.currentPage === 'Streams',
     userApiKey: (state) => state.userData?.apiKey || null,
     userID: (state) => state.userData?.userID || null,
-    stripeCustomerId: (state) => state.userData?.stripeCustomerId || null,
+    stripeCustomerId: (state) => state.userData?.stripeCustomerID || null,
     evaluation: (state) => state.userData?.evaluation || null,
     evaluationStatus: (state) => state.userData?.evaluation?.status || 'inactive',
     evalConvertBytes: (state) => state.userData?.evaluation?.convert_bytes || 0,

@@ -14,8 +14,10 @@ export interface UserData {
   userID: string
   email: string
   name: string
-  stripeCustomerId: string
+  stripeCustomerID: string
   apiKey: string
+  seatLimit: number
+  activeBindings: number
   evaluation?: Evaluation
   subscription: Subscription
   subscriptionStatus: string
