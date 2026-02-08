@@ -1,10 +1,7 @@
 import { apiClient } from './apiClient'
-import { useCommonStore } from '@/stores/common'
-import { validateApiKey } from './apiClient'
 import { handleApiError } from '@/utils/errorHandler'
 import type { FileMetadata, FileDataResponse } from '@/types/files'
 import type { FileFormat } from '@/utils/fileFormat'
-import { API_HEADERS } from '@/constants'
 import type {
   S3ConfigRequest,
   S3ConfigResponse,
@@ -27,12 +24,6 @@ interface FileDataParams {
   refresh?: boolean // If true, invalidates S3 cache to fetch fresh data
 }
 
-const withAuthHeaders = () => {
-  const commonStore = useCommonStore()
-  validateApiKey(commonStore.apiKey)
-  return { headers: { [API_HEADERS.API_KEY]: commonStore.apiKey } }
-}
-
 export async function getFileMetadata(
   path: string,
   format: FileFormat,
@@ -44,8 +35,7 @@ export async function getFileMetadata(
     if (connectionId) params.connectionId = connectionId
 
     const response = await apiClient.get<FileMetadata>('/files/meta', {
-      params,
-      ...withAuthHeaders()
+      params
     })
     return response.data
   } catch (error) {
@@ -71,9 +61,7 @@ export async function getFileData(
     if (params.max_rows !== undefined) query.set('max_rows', String(params.max_rows))
     if (params.refresh) query.set('refresh', 'true')
 
-    const response = await apiClient.get<FileDataResponse>(`/files/data?${query.toString()}`, {
-      ...withAuthHeaders()
-    })
+    const response = await apiClient.get<FileDataResponse>(`/files/data?${query.toString()}`)
     return response.data
   } catch (error) {
     throw handleApiError(error)
@@ -86,8 +74,7 @@ export async function getFileExactCount(
 ): Promise<{ count: number }> {
   try {
     const response = await apiClient.get<{ count: number }>('/files/count', {
-      params: { path, format },
-      ...withAuthHeaders()
+      params: { path, format }
     })
     return response.data
   } catch (error) {
@@ -99,9 +86,7 @@ export async function getFileExactCount(
 
 export async function configureS3Session(config: S3ConfigRequest): Promise<S3ConfigResponse> {
   try {
-    const response = await apiClient.post<S3ConfigResponse>('/files/s3/configure', config, {
-      ...withAuthHeaders()
-    })
+    const response = await apiClient.post<S3ConfigResponse>('/files/s3/configure', config)
     return response.data
   } catch (error) {
     throw handleApiError(error)
@@ -118,9 +103,7 @@ export async function listS3Objects(params: S3ListRequest): Promise<S3ListRespon
     if (params.connectionId) query.set('connectionId', params.connectionId)
     if (params.recursive !== undefined) query.set('recursive', params.recursive ? 'true' : 'false')
 
-    const response = await apiClient.get<S3ListResponse>(`/files/s3/list?${query.toString()}`, {
-      ...withAuthHeaders()
-    })
+    const response = await apiClient.get<S3ListResponse>(`/files/s3/list?${query.toString()}`)
     return response.data
   } catch (error) {
     throw handleApiError(error)
@@ -135,9 +118,7 @@ export async function listS3Buckets(
     if (connectionId) query.set('connectionId', connectionId)
 
     const url = query.toString() ? `/files/s3/buckets?${query.toString()}` : '/files/s3/buckets'
-    const response = await apiClient.get<{ buckets: string[]; count: number }>(url, {
-      ...withAuthHeaders()
-    })
+    const response = await apiClient.get<{ buckets: string[]; count: number }>(url)
     return response.data
   } catch (error) {
     throw handleApiError(error)
@@ -148,9 +129,7 @@ export async function createS3Bucket(
   payload: S3CreateBucketRequest
 ): Promise<S3CreateBucketResponse> {
   try {
-    const response = await apiClient.post<S3CreateBucketResponse>('/files/s3/buckets', payload, {
-      ...withAuthHeaders()
-    })
+    const response = await apiClient.post<S3CreateBucketResponse>('/files/s3/buckets', payload)
     return response.data
   } catch (error) {
     throw handleApiError(error)
@@ -160,8 +139,7 @@ export async function createS3Bucket(
 export async function validateS3Path(path: string): Promise<S3ValidationResponse> {
   try {
     const response = await apiClient.get<S3ValidationResponse>('/files/s3/validate', {
-      params: { path },
-      ...withAuthHeaders()
+      params: { path }
     })
     return response.data
   } catch (error) {
@@ -172,8 +150,7 @@ export async function validateS3Path(path: string): Promise<S3ValidationResponse
 export async function readS3Manifest(path: string): Promise<S3ManifestResponse> {
   try {
     const response = await apiClient.get<S3ManifestResponse>('/files/s3/manifest', {
-      params: { path },
-      ...withAuthHeaders()
+      params: { path }
     })
     return response.data
   } catch (error) {
@@ -239,13 +216,10 @@ export async function executeFileQuery(
   connectionId?: string
 ): Promise<FileQueryResponse> {
   try {
-    const response = await apiClient.post<FileQueryResponse>(
-      '/files/query',
-      { query, connectionId },
-      {
-        ...withAuthHeaders()
-      }
-    )
+    const response = await apiClient.post<FileQueryResponse>('/files/query', {
+      query,
+      connectionId
+    })
     return response.data
   } catch (error) {
     throw handleApiError(error)
@@ -256,13 +230,7 @@ export async function applyFileRowChanges(
   payload: ApplyFileRowChangesRequest
 ): Promise<ApplyFileRowChangesResponse> {
   try {
-    const response = await apiClient.post<ApplyFileRowChangesResponse>(
-      '/files/rows/apply',
-      payload,
-      {
-        ...withAuthHeaders()
-      }
-    )
+    const response = await apiClient.post<ApplyFileRowChangesResponse>('/files/rows/apply', payload)
     return response.data
   } catch (error) {
     throw handleApiError(error)

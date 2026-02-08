@@ -3,10 +3,9 @@
  * Fetches column-level statistics using DuckDB SUMMARIZE
  */
 import axios, { type AxiosResponse } from 'axios'
-import { apiClient, validateApiKey } from './apiClient'
-import { useCommonStore } from '@/stores/common'
+import { apiClient } from './apiClient'
 import { handleApiError } from '@/utils/errorHandler'
-import { API_HEADERS, API_TIMEOUTS } from '@/constants'
+import { API_TIMEOUTS } from '@/constants'
 import type { FileSummaryRequest, FileSummaryResponse } from '@/types/fileSummary'
 
 /**
@@ -26,9 +25,6 @@ export async function getFileSummary(
     refresh?: boolean
   }
 ): Promise<FileSummaryResponse> {
-  const commonStore = useCommonStore()
-  validateApiKey(commonStore.apiKey)
-
   try {
     const { path, format, samplePercent, connectionId } = request
 
@@ -47,7 +43,6 @@ export async function getFileSummary(
         connectionId
       },
       {
-        headers: { [API_HEADERS.API_KEY]: commonStore.apiKey },
         timeout: API_TIMEOUTS.VERY_LONG,
         params,
         signal

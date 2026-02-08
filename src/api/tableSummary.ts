@@ -3,10 +3,9 @@
  * Fetches column-level statistics using DuckDB SUMMARIZE
  */
 import axios, { type AxiosResponse } from 'axios'
-import { apiClient, validateApiKey } from './apiClient'
-import { useCommonStore } from '@/stores/common'
+import { apiClient } from './apiClient'
 import { handleApiError } from '@/utils/errorHandler'
-import { API_HEADERS, API_TIMEOUTS } from '@/constants'
+import { API_TIMEOUTS } from '@/constants'
 import type { TableSummaryRequest, TableSummaryResponse } from '@/types/tableSummary'
 
 /**
@@ -26,9 +25,6 @@ export async function getTableSummary(
     refresh?: boolean
   }
 ): Promise<TableSummaryResponse> {
-  const commonStore = useCommonStore()
-  validateApiKey(commonStore.apiKey)
-
   try {
     const { connectionId, database, table, schema, samplePercent } = request
 
@@ -43,7 +39,6 @@ export async function getTableSummary(
       `/connections/${encodeURIComponent(connectionId)}/databases/${encodeURIComponent(database)}/tables/${encodeURIComponent(table)}/summary`,
       typeof samplePercent === 'number' ? { samplePercent } : {},
       {
-        headers: { [API_HEADERS.API_KEY]: commonStore.apiKey },
         timeout: API_TIMEOUTS.VERY_LONG, // 2 minutes for large tables
         params,
         signal // Pass abort signal for cancellation

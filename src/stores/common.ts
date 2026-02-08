@@ -282,7 +282,7 @@ export const useCommonStore = defineStore('common', {
       const trimmedKey = newApiKey.trim()
       try {
         // Validate the API key before storing
-        await api.validateApiKey(trimmedKey)
+        await api.validateApiKeyWithServer(trimmedKey)
         apiKeyStorage.value = trimmedKey
         this.apiKeyInvalidated = false
         this.requiresApiKey = false
@@ -364,7 +364,7 @@ export const useCommonStore = defineStore('common', {
       }
 
       try {
-        await api.validateApiKey(currentKey)
+        await api.validateApiKeyWithServer(currentKey)
         this.apiKeyInvalidated = false
         configureApiClient(currentKey)
         return true

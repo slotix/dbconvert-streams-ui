@@ -7,10 +7,9 @@
  */
 
 import { type AxiosResponse } from 'axios'
-import { apiClient, validateApiKey } from './apiClient'
-import { useCommonStore } from '@/stores/common'
+import { apiClient } from './apiClient'
 import { handleApiError } from '@/utils/errorHandler'
-import { API_HEADERS, API_TIMEOUTS } from '@/constants'
+import { API_TIMEOUTS } from '@/constants'
 
 /**
  * Maps a database connection to an alias for use in federated queries.
@@ -84,15 +83,11 @@ export interface AttachedDatabaseSchema {
 export async function executeFederatedQuery(
   request: FederatedQueryRequest
 ): Promise<FederatedQueryResponse> {
-  const commonStore = useCommonStore()
-  validateApiKey(commonStore.apiKey)
-
   try {
     const response: AxiosResponse<FederatedQueryResponse> = await apiClient.post(
       '/query/federated',
       request,
       {
-        headers: { [API_HEADERS.API_KEY]: commonStore.apiKey },
         timeout: API_TIMEOUTS.VERY_LONG // 2 minutes for complex cross-connection queries
       }
     )
@@ -112,15 +107,11 @@ export async function executeFederatedQuery(
 export async function validateFederatedQuery(
   request: FederatedQueryRequest
 ): Promise<{ valid: boolean; errors?: string[] }> {
-  const commonStore = useCommonStore()
-  validateApiKey(commonStore.apiKey)
-
   try {
     const response: AxiosResponse<{ valid: boolean; errors?: string[] }> = await apiClient.post(
       '/query/federated/validate',
       request,
       {
-        headers: { [API_HEADERS.API_KEY]: commonStore.apiKey },
         timeout: API_TIMEOUTS.SHORT
       }
     )
@@ -140,15 +131,11 @@ export async function validateFederatedQuery(
 export async function getFederatedSchemas(
   connections: ConnectionMapping[]
 ): Promise<AttachedDatabaseSchema[]> {
-  const commonStore = useCommonStore()
-  validateApiKey(commonStore.apiKey)
-
   try {
     const response: AxiosResponse<AttachedDatabaseSchema[]> = await apiClient.post(
       '/query/federated/schemas',
       { connections },
       {
-        headers: { [API_HEADERS.API_KEY]: commonStore.apiKey },
         timeout: API_TIMEOUTS.MEDIUM
       }
     )

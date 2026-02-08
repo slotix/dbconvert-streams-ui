@@ -1,10 +1,7 @@
-import { useCommonStore } from '@/stores/common'
 import { type StreamConfig, type StreamID } from '@/types/streamConfig'
-import { validateApiKey } from './apiClient'
 import { handleApiError } from '@/utils/errorHandler'
 import { apiClient } from './apiClient'
 import { type AxiosResponse } from 'axios'
-import { API_HEADERS } from '@/constants'
 
 type FKViolationDetail = {
   schemaName: string
@@ -29,13 +26,8 @@ export type ConstraintsActionResponse = {
 }
 
 const getStreams = async (): Promise<StreamConfig[]> => {
-  const commonStore = useCommonStore()
-  validateApiKey(commonStore.apiKey)
-
   try {
-    const response: AxiosResponse<StreamConfig[]> = await apiClient.get('/stream-configs', {
-      headers: { [API_HEADERS.API_KEY]: commonStore.apiKey }
-    })
+    const response: AxiosResponse<StreamConfig[]> = await apiClient.get('/stream-configs')
     return response.data
   } catch (error) {
     throw handleApiError(error)
@@ -43,13 +35,8 @@ const getStreams = async (): Promise<StreamConfig[]> => {
 }
 
 const createStream = async (json: Record<string, unknown>): Promise<StreamConfig> => {
-  const commonStore = useCommonStore()
-  validateApiKey(commonStore.apiKey)
-
   try {
-    const response: AxiosResponse<StreamConfig> = await apiClient.post('/stream-configs', json, {
-      headers: { [API_HEADERS.API_KEY]: commonStore.apiKey }
-    })
+    const response: AxiosResponse<StreamConfig> = await apiClient.post('/stream-configs', json)
     return response.data
   } catch (error) {
     throw handleApiError(error)
@@ -57,13 +44,9 @@ const createStream = async (json: Record<string, unknown>): Promise<StreamConfig
 }
 
 const deleteStreamConfig = async (id: string): Promise<void> => {
-  const commonStore = useCommonStore()
-  validateApiKey(commonStore.apiKey)
-
   try {
     await apiClient.delete(`/stream-configs/${id}`, {
       headers: {
-        [API_HEADERS.API_KEY]: commonStore.apiKey,
         'X-Confirm-Delete': 'true'
       }
     })
@@ -73,16 +56,10 @@ const deleteStreamConfig = async (id: string): Promise<void> => {
 }
 
 const cloneStreamConfig = async (id: string): Promise<StreamConfig> => {
-  const commonStore = useCommonStore()
-  validateApiKey(commonStore.apiKey)
-
   try {
     const response: AxiosResponse<StreamConfig> = await apiClient.put(
       `/stream-configs/${id}/clone`,
-      null,
-      {
-        headers: { [API_HEADERS.API_KEY]: commonStore.apiKey }
-      }
+      null
     )
     return response.data
   } catch (error) {
@@ -91,15 +68,10 @@ const cloneStreamConfig = async (id: string): Promise<StreamConfig> => {
 }
 
 const startStream = async (id: string): Promise<string> => {
-  const commonStore = useCommonStore()
-  validateApiKey(commonStore.apiKey)
   try {
     const response: AxiosResponse<StreamID> = await apiClient.post(
       `/stream-configs/${id}/start`,
-      null,
-      {
-        headers: { [API_HEADERS.API_KEY]: commonStore.apiKey }
-      }
+      null
     )
     return response.data.id
   } catch (error) {
@@ -108,52 +80,34 @@ const startStream = async (id: string): Promise<string> => {
 }
 
 const pauseStream = async (id: string): Promise<void> => {
-  const commonStore = useCommonStore()
-  validateApiKey(commonStore.apiKey)
   try {
-    await apiClient.post(`/streams/${id}/pause`, null, {
-      headers: { [API_HEADERS.API_KEY]: commonStore.apiKey }
-    })
+    await apiClient.post(`/streams/${id}/pause`, null)
   } catch (error) {
     throw handleApiError(error)
   }
 }
 
 const resumeStream = async (id: string): Promise<void> => {
-  const commonStore = useCommonStore()
-  validateApiKey(commonStore.apiKey)
   try {
-    await apiClient.post(`/streams/${id}/resume`, null, {
-      headers: { [API_HEADERS.API_KEY]: commonStore.apiKey }
-    })
+    await apiClient.post(`/streams/${id}/resume`, null)
   } catch (error) {
     throw handleApiError(error)
   }
 }
 
 const stopStream = async (id: string): Promise<void> => {
-  const commonStore = useCommonStore()
-  validateApiKey(commonStore.apiKey)
   try {
-    await apiClient.post(`/streams/${id}/stop`, null, {
-      headers: { [API_HEADERS.API_KEY]: commonStore.apiKey }
-    })
+    await apiClient.post(`/streams/${id}/stop`, null)
   } catch (error) {
     throw handleApiError(error)
   }
 }
 
 const updateStreamConfig = async (id: string, config: StreamConfig): Promise<StreamConfig> => {
-  const commonStore = useCommonStore()
-  validateApiKey(commonStore.apiKey)
-
   try {
     const response: AxiosResponse<StreamConfig> = await apiClient.put(
       `/stream-configs/${id}`,
-      config,
-      {
-        headers: { [API_HEADERS.API_KEY]: commonStore.apiKey }
-      }
+      config
     )
     return response.data
   } catch (error) {
@@ -162,16 +116,10 @@ const updateStreamConfig = async (id: string, config: StreamConfig): Promise<Str
 }
 
 const runTargetConstraintsAction = async (configId: string): Promise<ConstraintsActionResponse> => {
-  const commonStore = useCommonStore()
-  validateApiKey(commonStore.apiKey)
-
   try {
     const response: AxiosResponse<ConstraintsActionResponse> = await apiClient.post(
       `/stream/${configId}/validate-constraints`,
-      null,
-      {
-        headers: { [API_HEADERS.API_KEY]: commonStore.apiKey }
-      }
+      null
     )
     return response.data
   } catch (error) {

@@ -46,6 +46,25 @@ const installId = getOrCreateInstallId()
 apiClient.defaults.headers.common[API_HEADERS.INSTALL_ID] = installId
 sentryClient.defaults.headers.common[API_HEADERS.INSTALL_ID] = installId
 
+function normalizeApiKey(apiKey: string | null): string {
+  if (!apiKey) {
+    throw new Error('API key is required')
+  }
+
+  if (typeof apiKey !== 'string' || apiKey.trim().length === 0) {
+    throw new Error('Invalid API key format')
+  }
+
+  return apiKey.trim()
+}
+
+function buildAuthHeaders(apiKey: string): Record<string, string> {
+  return {
+    [API_HEADERS.API_KEY]: apiKey,
+    [API_HEADERS.INSTALL_ID]: installId
+  }
+}
+
 // Only log errors in interceptors
 apiClient.interceptors.request.use(
   (config) => {
@@ -123,19 +142,16 @@ apiClient.interceptors.response.use(
   }
 )
 
-export async function validateApiKey(apiKey: string | null): Promise<void> {
-  if (!apiKey) {
-    throw new Error('API key is required')
-  }
+export function validateApiKey(apiKey: string | null): string {
+  return normalizeApiKey(apiKey)
+}
 
-  if (typeof apiKey !== 'string' || apiKey.trim().length === 0) {
-    throw new Error('Invalid API key format')
-  }
-
+export async function validateApiKeyWithServer(apiKey: string | null): Promise<void> {
+  const normalizedApiKey = normalizeApiKey(apiKey)
   try {
     // Validate the API key by making a request to a protected endpoint
     await apiClient.get('/user', {
-      headers: { [API_HEADERS.API_KEY]: apiKey }
+      headers: buildAuthHeaders(normalizedApiKey)
     })
   } catch (error: unknown) {
     if (error && typeof error === 'object' && 'response' in error) {
@@ -150,9 +166,9 @@ export async function validateApiKey(apiKey: string | null): Promise<void> {
 
 const getUserDataFromSentry = async (apiKey: string): Promise<UserData> => {
   try {
-    await validateApiKey(apiKey)
+    const normalizedApiKey = normalizeApiKey(apiKey)
     const response: ApiResponse<UserData> = await apiClient.get('/user', {
-      headers: { [API_HEADERS.API_KEY]: apiKey }
+      headers: buildAuthHeaders(normalizedApiKey)
     })
     return response.data
   } catch (error: unknown) {
@@ -172,12 +188,11 @@ const getUserDataFromSentry = async (apiKey: string): Promise<UserData> => {
 
 const loadUserConfigs = async (apiKey: string): Promise<void> => {
   try {
-    // Validate API key first
-    await validateApiKey(apiKey)
+    const normalizedApiKey = normalizeApiKey(apiKey)
 
     // Load user configs
     await apiClient.get('/user/configs', {
-      headers: { [API_HEADERS.API_KEY]: apiKey }
+      headers: buildAuthHeaders(normalizedApiKey)
     })
   } catch (error) {
     // Provide more specific error messages
@@ -289,6 +304,7 @@ export function configureApiClient(apiKey: string): void {
 
 export default {
   validateApiKey,
+  validateApiKeyWithServer,
   getUserDataFromSentry,
   loadUserConfigs,
   backendHealthCheck,
