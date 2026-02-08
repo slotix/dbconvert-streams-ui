@@ -5,7 +5,6 @@ interface ImportMetaEnv {
   readonly VITE_API_URL: string
   readonly VITE_BACKEND_URL: string
   readonly VITE_SENTRY_DSN: string
-  readonly VITE_LEGACY_SHARED_KEY: string
   readonly PACKAGE_VERSION: string
 }
 
@@ -19,7 +18,6 @@ interface Window {
     VITE_API_URL: string
     VITE_BACKEND_URL: string
     VITE_SENTRY_DSN: string
-    VITE_LEGACY_SHARED_KEY?: string
     VITE_DESKTOP_MODE?: string
     [key: string]: unknown
   }

@@ -3,12 +3,6 @@
     <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Account Overview</h2>
     <div class="space-y-6">
       <div
-        v-if="legacySharedKeyEnabled"
-        class="rounded-lg border border-amber-200/70 bg-amber-50 text-amber-800 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-200 px-4 py-3 text-sm"
-      >
-        Legacy shared key mode is enabled. Device seats are not enforced.
-      </div>
-      <div
         v-if="showConnectCta"
         class="flex flex-col gap-4 rounded-xl border border-gray-200/70 dark:border-gray-700/70 bg-gradient-to-br from-slate-50 to-white dark:from-gray-850 dark:to-gray-900 p-5 shadow-sm"
       >
@@ -335,7 +329,6 @@ const { strokeWidth: iconStroke } = useLucideIcons()
 
 const userData = computed(() => commonStore.userData)
 const showConnectCta = computed(() => isWailsContext() && !commonStore.hasValidApiKey)
-const legacySharedKeyEnabled = computed(() => window.ENV?.VITE_LEGACY_SHARED_KEY === '1')
 
 const subscriptionStatus = computed(() => commonStore.userData?.subscriptionStatus || 'inactive')
 const isPaid = computed(() => subscriptionStatus.value === 'active')
