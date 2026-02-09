@@ -220,7 +220,7 @@
 
       <!-- Evaluation Summary -->
       <div
-        v-if="!showConnectCta"
+        v-if="!showConnectCta && !isPaid"
         class="flex items-start p-3 rounded-lg bg-slate-50 dark:bg-gray-800/50"
       >
         <div class="shrink-0">
@@ -238,10 +238,7 @@
               >Completed</span
             >
           </div>
-          <div v-if="isPaid" class="mt-2 text-sm text-gray-500 dark:text-gray-400">
-            Unlimited usage on active plan.
-          </div>
-          <div v-else class="mt-3 space-y-4">
+          <div class="mt-3 space-y-4">
             <div>
               <div class="flex items-baseline justify-between">
                 <span class="text-sm text-gray-600 dark:text-gray-400">Convert data</span>
