@@ -529,6 +529,14 @@ export const useCommonStore = defineStore('common', {
             const errMsg = error instanceof Error ? error.message : String(error)
             const permissionError = getPermissionError(error)
             if (permissionError) {
+              // Account/device restrictions are not transport outages.
+              // Keep backend marked as reachable so the UI does not show
+              // the disconnected overlay for deactivated/seat/payment states.
+              this.setBackendConnected(true)
+              this.apiHealthy = true
+              this.sentryHealthy = true
+              this.clearError()
+              this.startHealthMonitoring()
               return 'failed'
             }
             if (axiosErr?.response?.status === 401 || errMsg === 'Invalid API key') {
