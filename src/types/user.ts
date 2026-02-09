@@ -18,6 +18,7 @@ export interface UserData {
   apiKey: string
   seatLimit: number
   activeBindings: number
+  currentInstallStatus?: 'active' | 'deactivated'
   evaluation?: Evaluation
   subscription: Subscription
   subscriptionStatus: string

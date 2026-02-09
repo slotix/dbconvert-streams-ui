@@ -61,6 +61,34 @@
         </div>
       </div>
 
+      <div
+        v-if="!showConnectCta && isCurrentInstallDeactivated"
+        class="flex items-start p-3 rounded-lg border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-900/20"
+      >
+        <div class="shrink-0 mt-0.5">
+          <AlertTriangle
+            class="h-5 w-5 text-amber-600 dark:text-amber-300"
+            :stroke-width="iconStroke"
+          />
+        </div>
+        <div class="ml-3 flex-1">
+          <p class="text-sm font-medium text-amber-800 dark:text-amber-200">
+            This device is deactivated
+          </p>
+          <p class="mt-1 text-sm text-amber-700 dark:text-amber-300">
+            This device was deactivated. Reactivate it from https://streams.dbconvert.com/account
+          </p>
+          <button
+            type="button"
+            class="mt-2 inline-flex items-center text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300"
+            @click="openAccountPage"
+          >
+            Open account page
+            <ExternalLink class="ml-1 h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
       <!-- Current Plan -->
       <div
         v-if="!showConnectCta"
@@ -318,7 +346,16 @@ import { computed, ref } from 'vue'
 import { useCommonStore } from '@/stores/common'
 import { useConfirmDialogStore } from '@/stores/confirmDialog'
 import { useLucideIcons } from '@/composables/useLucideIcons'
-import { BarChart3, Copy, CreditCard, ExternalLink, Key, KeyRound, User } from 'lucide-vue-next'
+import {
+  AlertTriangle,
+  BarChart3,
+  Copy,
+  CreditCard,
+  ExternalLink,
+  Key,
+  KeyRound,
+  User
+} from 'lucide-vue-next'
 import { formatDataSize } from '@/utils/formats'
 import { isWailsContext } from '@/composables/useWailsEvents'
 
@@ -329,6 +366,9 @@ const { strokeWidth: iconStroke } = useLucideIcons()
 
 const userData = computed(() => commonStore.userData)
 const showConnectCta = computed(() => isWailsContext() && !commonStore.hasValidApiKey)
+const isCurrentInstallDeactivated = computed(
+  () => commonStore.userData?.currentInstallStatus === 'deactivated'
+)
 
 const subscriptionStatus = computed(() => commonStore.userData?.subscriptionStatus || 'inactive')
 const isPaid = computed(() => subscriptionStatus.value === 'active')
