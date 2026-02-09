@@ -35,8 +35,13 @@ export const apiClient: AxiosInstance = axios.create({
   timeout: DEFAULT_API_TIMEOUT // 5 minutes for cloud database operations
 })
 
+// "Sentry" here is an optional side-service used by some deployments.
+// In desktop/Wails builds this is often not configured; health checks should not
+// fail the whole app in that case.
+const sentryBaseUrl = (getSentryDsn() || '').trim()
+
 const sentryClient: AxiosInstance = axios.create({
-  baseURL: getSentryDsn(),
+  baseURL: sentryBaseUrl,
   headers: {
     'Content-Type': CONTENT_TYPES.JSON
   }
@@ -178,11 +183,12 @@ const getUserDataFromSentry = async (apiKey: string): Promise<UserData> => {
       if (axiosError.response?.status === 401) {
         throw new Error('Invalid API key')
       }
-      throw new Error(
-        (axiosError.response?.data as { message?: string })?.message || 'Failed to fetch user data'
-      )
+      // Preserve the original Axios error so callers can inspect backend
+      // permission codes (PAYMENT_REQUIRED, DEVICE_DEACTIVATED, etc.)
+      // instead of treating it as a transport outage.
+      throw error
     }
-    throw new Error('Failed to fetch user data')
+    throw error
   }
 }
 
@@ -228,6 +234,10 @@ const backendHealthCheck = async (): Promise<HealthCheckResponse> => {
 }
 
 const sentryHealthCheck = async (): Promise<HealthCheckResponse> => {
+  if (!sentryBaseUrl) {
+    // Treat "not configured" as healthy so connectivity logic isn't blocked.
+    return { status: 'disabled' }
+  }
   try {
     const response: ApiResponse<HealthCheckResponse> = await sentryClient.get('/health')
     return response.data

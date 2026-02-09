@@ -342,7 +342,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useCommonStore } from '@/stores/common'
 import { useConfirmDialogStore } from '@/stores/confirmDialog'
 import { useLucideIcons } from '@/composables/useLucideIcons'
@@ -432,6 +432,10 @@ const maskedApiKey = computed(() => {
 })
 
 const hasApiKey = computed(() => !!(commonStore.userData?.apiKey || commonStore.apiKey))
+
+onMounted(() => {
+  void commonStore.refreshUserDataSilently()
+})
 
 async function copyApiKey() {
   const apiKey = commonStore.userData?.apiKey

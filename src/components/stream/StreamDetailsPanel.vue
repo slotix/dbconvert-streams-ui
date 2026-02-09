@@ -190,6 +190,24 @@
           </BaseButton>
         </div>
       </div>
+
+      <!-- Evaluation Banner (always visible when user is near/over limits) -->
+      <div
+        v-if="evaluationBanner"
+        class="mt-3 rounded-lg border border-amber-200 bg-amber-50/70 px-4 py-3 text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100"
+      >
+        <div class="flex items-start gap-3">
+          <AlertTriangle class="h-5 w-5 text-amber-600 dark:text-amber-300 mt-0.5" />
+          <div class="space-y-1">
+            <div class="text-sm font-semibold">
+              {{ evaluationBannerTitle }}
+            </div>
+            <p class="text-sm text-amber-800 dark:text-amber-200">
+              {{ evaluationBannerBody }}
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Content -->
@@ -212,22 +230,6 @@
       <!-- Monitor Tab -->
       <div v-else-if="activeTab === 'monitor'" class="p-6">
         <div v-if="hasActiveRun" class="space-y-6">
-          <div
-            v-if="evaluationBanner"
-            class="rounded-lg border border-amber-200 bg-amber-50/70 px-4 py-3 text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100"
-          >
-            <div class="flex items-start gap-3">
-              <AlertTriangle class="h-5 w-5 text-amber-600 dark:text-amber-300 mt-0.5" />
-              <div class="space-y-1">
-                <div class="text-sm font-semibold">
-                  {{ evaluationBannerTitle }}
-                </div>
-                <p class="text-sm text-amber-800 dark:text-amber-200">
-                  {{ evaluationBannerBody }}
-                </p>
-              </div>
-            </div>
-          </div>
           <!-- Performance Stats -->
           <StatContainer
             :stream="stream"
@@ -414,12 +416,16 @@ const hasActiveRun = computed(() => {
 })
 
 const evaluationBanner = computed(() => {
-  if (!hasActiveRun.value) return null
-  const streamID = monitoringStore.streamID
   const mode = props.stream.mode
+
+  const subscriptionStatus = (commonStore.userData?.subscriptionStatus || '').toLowerCase()
+  if (subscriptionStatus === 'active') return null
+
+  const streamID = monitoringStore.streamID
 
   const liveWarning = monitoringStore.evaluationWarning
   if (
+    isStreamRunning.value &&
     liveWarning &&
     liveWarning.streamId === streamID &&
     liveWarning.mode === mode &&
@@ -472,7 +478,7 @@ const evaluationBannerBody = computed(() => {
   const percent = warning.percent || warning.threshold
   const suffix =
     percent >= 100
-      ? 'Streams will stop until you subscribe.'
+      ? 'New streams will not start until you subscribe.'
       : 'Subscribe soon to continue without interruption.'
   return `${modeLabel} at ${percent}% (${usedLabel} of ${limitLabel}). ${suffix}`
 })

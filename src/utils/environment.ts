@@ -29,9 +29,10 @@ export function getBackendUrl(): string {
     const isLocalhost =
       window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
 
-    // If we're on localhost, assume direct API access on port 8020
+    // If we're on localhost, assume direct API access on port 8020.
+    // Use 127.0.0.1 to avoid IPv6-only localhost resolution issues.
     // Otherwise, assume Nginx proxy is in place
-    const fallbackUrl = isLocalhost ? 'http://localhost:8020/api/v1' : '/api'
+    const fallbackUrl = isLocalhost ? 'http://127.0.0.1:8020/api/v1' : '/api'
 
     console.warn(`No backend URL configured. Using default for development: ${fallbackUrl}`)
     return fallbackUrl

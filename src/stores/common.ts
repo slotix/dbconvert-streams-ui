@@ -61,7 +61,9 @@ function getPermissionError(error: unknown): { code: string; message: string } |
     message.includes('seat limit') ||
     message.includes('device deactivated') ||
     message.includes('payment required') ||
-    message.includes('past due')
+    message.includes('past due') ||
+    message.includes('evaluation ended') ||
+    message.includes('subscription required')
   ) {
     return {
       code: payload.code || 'PERMISSION_ERROR',
@@ -401,6 +403,24 @@ export const useCommonStore = defineStore('common', {
         throw error
       }
     },
+    async refreshUserDataSilently(): Promise<void> {
+      const currentKey = apiKeyStorage.value
+      if (!currentKey) {
+        return
+      }
+
+      try {
+        const response = await api.getUserDataFromSentry(currentKey)
+        this.userData = response
+        this.apiKeyInvalidated = false
+      } catch (error: unknown) {
+        const axiosErr = axios.isAxiosError(error) ? error : null
+        const errMsg = error instanceof Error ? error.message : String(error)
+        if (axiosErr?.response?.status === 401 || errMsg === 'Invalid API key') {
+          this.apiKeyInvalidated = true
+        }
+      }
+    },
     async loadUserConfigs() {
       const currentKey = apiKeyStorage.value
       try {
@@ -548,13 +568,13 @@ export const useCommonStore = defineStore('common', {
             return 'failed'
           }
         } else if (this.apiHealthy) {
-          // Backend API is healthy but Sentry might not be - still try to initialize
-          console.log('Backend API healthy, attempting initialization even if Sentry is down')
+          // Backend API is healthy but the optional Sentry service might not be.
+          // /user is served by the backend, so we can still load evaluation/account data.
+          console.log('Backend API healthy, attempting initialization without Sentry')
           try {
-            // Try to load user configs directly since we have API access
-            await this.loadUserConfigs()
+            await this.userDataFromSentry(apiKey)
+            this.apiKeyInvalidated = false
             this.setBackendConnected(true)
-            toast.success('App initialized successfully')
             this.clearError()
 
             // Start real-time health monitoring
@@ -563,9 +583,20 @@ export const useCommonStore = defineStore('common', {
             return 'success'
           } catch (error: unknown) {
             const errMsg = error instanceof Error ? error.message : String(error)
-            console.warn('Failed to initialize with API only:', errMsg)
-            // Don't show toast - error already handled in loadUserConfigs
-            // Backend unavailable
+            const axiosErr = axios.isAxiosError(error) ? error : null
+            const permissionError = getPermissionError(error)
+            if (permissionError) {
+              this.setBackendConnected(true)
+              this.apiHealthy = true
+              this.sentryHealthy = true
+              this.clearError()
+              this.startHealthMonitoring()
+              return 'failed'
+            }
+            if (axiosErr?.response?.status === 401 || errMsg === 'Invalid API key') {
+              throw error
+            }
+            console.warn('Failed to initialize without Sentry:', errMsg)
           }
         } else {
           // Backend unavailable - cannot proceed
