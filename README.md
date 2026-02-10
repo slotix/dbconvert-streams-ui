@@ -4,6 +4,11 @@
 
 DBConvert Streams is a powerful application for efficient data migration and real-time Change Data Capture (CDC) replication between databases. This repository contains the frontend user interface component that works alongside other DBConvert Streams services in your self-hosted environment. Visit [streams.dbconvert.com](https://streams.dbconvert.com) to learn more about the platform.
 
+## Related Repositories
+
+- Backend (API/reader/writer): `../dbconvert-stream`
+- Website + licensing (Sentry): `../dbconvert-streams-website`
+
 ## Key Features
 
 ### Quick Actions Dashboard

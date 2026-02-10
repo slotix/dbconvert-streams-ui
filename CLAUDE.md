@@ -196,7 +196,16 @@ headers: {
 
 ## Backend Reference
 
-**Backend repo:** `/home/dm3/dbconvert/dbconvert-stream`
+## Related Repositories
+
+This UI repo is commonly worked on alongside:
+
+- Backend (API/reader/writer): `../dbconvert-stream`
+- Website + licensing (Sentry): `../dbconvert-streams-website`
+
+## Backend Reference
+
+**Backend repo (local):** `../dbconvert-stream`
 
 | Folder               | Purpose                                                         |
 | -------------------- | --------------------------------------------------------------- |

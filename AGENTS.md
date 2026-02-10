@@ -4,6 +4,13 @@
 DBConvert Streams UI is a Vue 3 + TypeScript frontend for managing database streaming and CDC operations.
 It provides a responsive web interface with real-time monitoring, connection management, and stream configuration.
 
+## Related Repositories
+
+This UI repo is commonly worked on alongside:
+
+- Backend (API/reader/writer): `../dbconvert-stream`
+- Website + licensing (Sentry): `../dbconvert-streams-website`
+
 ## Technology Stack
 - Vue 3 (`<script setup>` + Composition API) + TypeScript
 - Vite, Pinia, Vue Router 4
