@@ -26,3 +26,10 @@ description: Core repo preferences: simplicity-first, DRY, and avoid compatibili
 ## Backend-first caching
 - If caching is needed but not explicitly specified, prefer caching in the backend/API layer.
 - Only implement UI-side caching (Pinia/localStorage/in-memory) when the requirement explicitly calls for it (e.g., offline UX, instant back/forward, client-only data).
+
+## Parallel AI execution (for substantial tasks)
+- Use dependency gates (`G1`, `G2`, ...) before parallelization.
+- Run parallel lanes only when ownership boundaries are clear and file overlap is low.
+- Keep behavior changes behind feature flags until validation gates pass.
+- Prefer PR order: foundation -> behavior -> recovery -> observability -> validation/enablement.
+- Do not present stronger user-facing guarantees until gate tests and canary checks pass.

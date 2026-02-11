@@ -17,3 +17,7 @@ Operational rules:
 - Do not run Playwright E2E unless explicitly requested.
 - Never run `yarn dev` automatically.
 - Use Yarn only.
+
+Parallel execution support:
+- When work is lane-based, own the testing lane only and avoid editing behavior lanes.
+- Validate lane-specific tests first, then run dependency-gate suites before enablement.

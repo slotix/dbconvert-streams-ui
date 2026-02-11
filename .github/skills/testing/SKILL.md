@@ -30,3 +30,9 @@ description: Policies for unit testing, E2E testing, and test-running constraint
 
 ## Developer How-To
 For developer-facing setup and step-by-step commands, see `TESTING.md`.
+
+## Parallel work test coordination
+- For substantial lane-based work, assign tests per lane (core behavior, state/data-flow, observability, recovery).
+- Keep fast lane tests small and deterministic to preserve parallel iteration speed.
+- Add explicit gate suites before enablement: correctness, state/concurrency integrity, failure/retry handling where relevant, and regression checks.
+- Do not mark lane-based work complete until gate suites pass in CI/staging.

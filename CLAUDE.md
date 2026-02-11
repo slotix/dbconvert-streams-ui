@@ -292,3 +292,18 @@ Refer to **`DESIGN_SYSTEM.md` → Section 6** for all design and implementation 
 - Follow existing project structure and naming
 - Do not invent files or APIs
 - Keep changes minimal and focused
+
+## Parallel AI Execution Protocol
+
+For substantial tasks, use a dependency-gated parallel plan instead of linear execution.
+
+- Define gates first (`G1`, `G2`, ...), then split independent work into lanes.
+- Run lanes in parallel only when they do not contend on the same files/interfaces.
+- Recommended lane model:
+  - Lane A: primary implementation changes
+  - Lane B: dependent integration updates
+  - Lane C: supporting non-functional updates (docs/telemetry/ops notes)
+  - Lane D: verification and validation
+- Keep behavior-changing changes behind feature flags until all gate tests pass.
+- Merge in small PR batches: foundation -> behavior -> recovery -> observability -> validation/enablement.
+- Do not strengthen external claims before canary evidence exists.

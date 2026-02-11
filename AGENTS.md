@@ -106,3 +106,29 @@ Testing rules are maintained as a skill doc to avoid duplication and drift:
 - Follow existing project structure and naming
 - Do not invent files or APIs
 - Keep changes minimal and focused
+
+## Parallel AI Execution Instructions
+
+Use lane-based execution for substantial tasks so implementation speed does not reduce safety.
+
+- Define dependency gates first (`G1`, `G2`, ...). Keep only true prerequisites in gates.
+- Run work in parallel lanes only when files/interfaces are independent.
+- Prefer this lane split:
+  - Lane A: primary implementation changes
+  - Lane B: dependent integration updates
+  - Lane C: supporting non-functional updates (docs/telemetry/ops notes)
+  - Lane D: verification and validation
+- Keep behavior-changing paths behind feature flags until validation is complete.
+- Merge in small PR batches:
+  1. Foundation interfaces/composables (no behavior change)
+  2. Core behavior changes
+  3. Recovery/state safety
+  4. Observability
+  5. Validation + enablement
+- Do not publish stronger external claims until gate tests and canary validation pass.
+
+Canary-ready checklist:
+- Core behavior changes validated by appropriate tests.
+- Concurrency-sensitive behavior validated where relevant.
+- Failure, retry, and reload/restart flows validated where applicable.
+- Health and quality signals visible and actionable in staging.
