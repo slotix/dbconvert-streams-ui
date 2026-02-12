@@ -33,6 +33,7 @@
     </div>
 
     <LogsPanel />
+    <LinuxChatFallback />
 
     <!-- About Dialog -->
     <AboutDialog v-model:isOpen="showAboutDialog" />
@@ -59,6 +60,7 @@ import ApiKeyExpiredBanner from '@/components/layout/ApiKeyExpiredBanner.vue'
 import InitializingOverlay from '@/components/layout/InitializingOverlay.vue'
 import SidebarMobile from '@/components/layout/SidebarMobile.vue'
 import SidebarDesktop from '@/components/layout/SidebarDesktop.vue'
+import LinuxChatFallback from '@/components/layout/LinuxChatFallback.vue'
 
 const commonStore = useCommonStore()
 const confirmDialog = useConfirmDialogStore()
