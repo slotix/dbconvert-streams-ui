@@ -63,7 +63,7 @@
 import { computed, ref } from 'vue'
 import { useDesktopMode } from '@/composables/useDesktopMode'
 
-const TAWK_DIRECT_CHAT_URL = 'https://tawk.to/chat/698d1b591a01681c3bd8611e/1jh7j5lae'
+const TAWK_DIRECT_CHAT_URL = 'https://tawk.to/chat/69908ca3bf87551c353078f0/1jheaano8'
 
 const { isDesktop } = useDesktopMode()
 const isPanelOpen = ref(false)
