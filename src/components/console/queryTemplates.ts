@@ -222,12 +222,12 @@ export function getDatabaseTemplates(options: DatabaseTemplateOptions): QueryTem
     // Database-scoped SQL Console - data exploration templates
     if (isPostgres) {
       return [
-        { name: 'Select all rows', query: `SELECT * FROM ${tableName} LIMIT 100;` },
-        { name: 'Count rows', query: `SELECT COUNT(*) FROM ${tableName};` },
         {
           name: 'List tables',
           query: `SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';`
         },
+        { name: 'Select all rows', query: `SELECT * FROM ${tableName} LIMIT 100;` },
+        { name: 'Count rows', query: `SELECT COUNT(*) FROM ${tableName};` },
         {
           name: 'Describe table',
           query: `SELECT column_name, data_type, is_nullable FROM information_schema.columns WHERE table_name = '${bareTableName}';`
@@ -244,9 +244,9 @@ export function getDatabaseTemplates(options: DatabaseTemplateOptions): QueryTem
     } else {
       // MySQL
       return [
+        { name: 'List tables', query: `SHOW TABLES;` },
         { name: 'Select all rows', query: `SELECT * FROM ${tableName} LIMIT 100;` },
         { name: 'Count rows', query: `SELECT COUNT(*) FROM ${tableName};` },
-        { name: 'Show tables', query: `SHOW TABLES;` },
         { name: 'Describe table', query: `DESCRIBE ${tableName};` },
         {
           name: 'Find duplicates',

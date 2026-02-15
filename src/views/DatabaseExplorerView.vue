@@ -8,6 +8,7 @@ import { useConnectionsStore } from '@/stores/connections'
 import { usePaneTabsStore } from '@/stores/paneTabs'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useExplorerViewStateStore } from '@/stores/explorerViewState'
+import { useSqlConsoleStore } from '@/stores/sqlConsole'
 import ExplorerSidebarConnections from '@/components/database/ExplorerSidebarConnections.vue'
 import ExplorerContentArea from '@/components/explorer/ExplorerContentArea.vue'
 import ConnectionTypeFilter from '@/components/common/ConnectionTypeFilter.vue'
@@ -23,8 +24,8 @@ import { usePersistedState } from '@/composables/usePersistedState'
 import { useRecentConnections } from '@/composables/useRecentConnections'
 import { useTreeSearch } from '@/composables/useTreeSearch'
 import { useConnectionActions } from '@/composables/useConnectionActions'
-import { useSqlConsoleActions } from '@/composables/useSqlConsoleActions'
 import { useDesktopMode } from '@/composables/useDesktopMode'
+import { getSqlDialectFromConnection } from '@/types/specs'
 import DisconnectedOverlay from '@/components/common/DisconnectedOverlay.vue'
 import EmptyStateMessage from '@/components/explorer/EmptyStateMessage.vue'
 import { useDatabaseExplorerController } from '@/composables/useDatabaseExplorerController'
@@ -37,8 +38,8 @@ const connectionsStore = useConnectionsStore()
 const paneTabsStore = usePaneTabsStore()
 const navigationStore = useExplorerNavigationStore()
 const viewStateStore = useExplorerViewStateStore()
+const sqlConsoleStore = useSqlConsoleStore()
 const { isDesktop } = useDesktopMode()
-const { openTableInSqlConsole } = useSqlConsoleActions()
 const sidebarWidthToggle = inject<{
   isSidebarExpanded: { value: boolean }
   toggleSidebarWidth: () => void
@@ -193,29 +194,64 @@ function handleOpenSqlConsole(payload: {
   database?: string
   sqlScope: 'database' | 'connection'
 }) {
-  // If a concrete table/view is selected in this database, opening SQL console should
-  // start with a contextual SELECT query instead of a blank tab.
+  const connection = connectionsStore.connectionByID(payload.connectionId)
+  const dialect = getSqlDialectFromConnection(connection?.spec, connection?.type)
+
+  // Opening SQL console from a database item should start on a neutral default query.
   if (payload.sqlScope === 'database' && payload.database) {
-    const sel = treeSelection.value
-    if (
-      sel &&
-      sel.connectionId === payload.connectionId &&
-      sel.database === payload.database &&
-      (sel.type === 'table' || sel.type === 'view') &&
-      typeof sel.name === 'string' &&
-      sel.name.length > 0
-    ) {
-      openTableInSqlConsole({
-        connectionId: payload.connectionId,
-        database: payload.database,
-        tableName: sel.name,
-        schema: sel.schema
-      })
-      return
+    const active = sqlConsoleStore.getActiveTab(payload.connectionId, payload.database)
+    let targetTab = active
+
+    if (active && active.query.trim()) {
+      const blankTab = sqlConsoleStore
+        .getTabs(payload.connectionId, payload.database)
+        .find((tab) => !tab.query.trim())
+      if (blankTab) {
+        sqlConsoleStore.setActiveTab(payload.connectionId, payload.database, blankTab.id)
+        targetTab = blankTab
+      } else {
+        targetTab = sqlConsoleStore.addTab(payload.connectionId, payload.database, 'List tables')
+      }
+    }
+
+    const listTablesQuery =
+      dialect === 'pgsql'
+        ? "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';"
+        : 'SHOW TABLES;'
+
+    if (targetTab && !targetTab.query.trim()) {
+      sqlConsoleStore.updateTabQuery(
+        payload.connectionId,
+        payload.database,
+        targetTab.id,
+        listTablesQuery
+      )
+      sqlConsoleStore.renameTab(payload.connectionId, payload.database, targetTab.id, 'List tables')
     }
   }
 
-  const connection = connectionsStore.connectionByID(payload.connectionId)
+  // Opening SQL console from a connection item should start on a neutral admin query.
+  if (payload.sqlScope === 'connection') {
+    const active = sqlConsoleStore.getActiveTab(payload.connectionId, undefined)
+    const targetTab =
+      active && !active.query.trim()
+        ? active
+        : sqlConsoleStore.addTab(payload.connectionId, undefined, 'List databases')
+
+    const listDatabasesQuery =
+      dialect === 'pgsql'
+        ? 'SELECT datname FROM pg_database WHERE datistemplate = false;'
+        : 'SHOW DATABASES;'
+
+    sqlConsoleStore.updateTabQuery(
+      payload.connectionId,
+      undefined,
+      targetTab.id,
+      listDatabasesQuery
+    )
+    sqlConsoleStore.renameTab(payload.connectionId, undefined, targetTab.id, 'List databases')
+  }
+
   const connName = connection?.name || 'SQL'
   const tabName = payload.database ? `${connName} → ${payload.database}` : `${connName} (Admin)`
 
