@@ -415,12 +415,15 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
         result.tables = filterTables(conn.tables)
       }
 
-      // Include custom queries (only for convert mode)
+      // Include custom queries (only for convert mode), filtering out empty ones
       if (stream.mode === 'convert' && conn.queries && conn.queries.length > 0) {
-        result.queries = conn.queries.map((q) => ({
-          name: q.name,
-          query: q.query
-        }))
+        const validQueries = conn.queries.filter((q) => q.name && q.query?.trim())
+        if (validQueries.length > 0) {
+          result.queries = validQueries.map((q) => ({
+            name: q.name,
+            query: q.query
+          }))
+        }
       }
     }
 
