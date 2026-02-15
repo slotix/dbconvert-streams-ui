@@ -114,7 +114,20 @@ export function useSqlConsoleActions() {
       const query = generateSelectQuery(tableName, schema, dialect)
 
       const tableContext = { tableName, schema }
-      sqlConsoleStore.addTabWithQuery(connectionId, database, query, tableName, tableContext)
+      const existingActiveTab = sqlConsoleStore.getActiveTab(connectionId, database)
+      const shouldReuseActiveBlankTab = Boolean(
+        existingActiveTab && !existingActiveTab.query.trim()
+      )
+
+      if (existingActiveTab && shouldReuseActiveBlankTab) {
+        sqlConsoleStore.updateTabQuery(connectionId, database, existingActiveTab.id, query)
+        sqlConsoleStore.renameTab(connectionId, database, existingActiveTab.id, tableName)
+        existingActiveTab.tableContext = tableContext
+        delete existingActiveTab.fileContext
+        sqlConsoleStore.saveState()
+      } else {
+        sqlConsoleStore.addTabWithQuery(connectionId, database, query, tableName, tableContext)
+      }
 
       const connection = connectionsStore.connectionByID(connectionId)
       const connName = connection?.name || 'SQL'
@@ -156,14 +169,27 @@ export function useSqlConsoleActions() {
 
       const query = generateDuckDBReadQuery(filePath, fileName, Boolean(isDir), format)
       const fileContext = { path: filePath, format, isS3 }
-      sqlConsoleStore.addTabWithQuery(
-        connectionId,
-        undefined,
-        query,
-        fileName,
-        undefined,
-        fileContext
+      const existingActiveTab = sqlConsoleStore.getActiveTab(connectionId, undefined)
+      const shouldReuseActiveBlankTab = Boolean(
+        existingActiveTab && !existingActiveTab.query.trim()
       )
+
+      if (existingActiveTab && shouldReuseActiveBlankTab) {
+        sqlConsoleStore.updateTabQuery(connectionId, undefined, existingActiveTab.id, query)
+        sqlConsoleStore.renameTab(connectionId, undefined, existingActiveTab.id, fileName)
+        existingActiveTab.fileContext = fileContext
+        delete existingActiveTab.tableContext
+        sqlConsoleStore.saveState()
+      } else {
+        sqlConsoleStore.addTabWithQuery(
+          connectionId,
+          undefined,
+          query,
+          fileName,
+          undefined,
+          fileContext
+        )
+      }
 
       const basePath = isS3 ? conn?.spec?.s3?.scope?.bucket : conn?.spec?.files?.basePath
       const tabId = `file-console:${connectionId}`

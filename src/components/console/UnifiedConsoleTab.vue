@@ -233,6 +233,8 @@ const modeRef = computed(() => props.mode)
 const connectionIdRef = computed(() => props.connectionId)
 const databaseRef = computed(() => props.database)
 
+const sqlConsoleStoreConnectionKey = computed(() => props.connectionId)
+
 const {
   selectedConnections,
   useFederatedEngine,
@@ -305,7 +307,10 @@ const {
   initialize,
   cleanup
 } = useConsoleTab({
-  consoleKey,
+  // SQL console tabs in Pinia are keyed by connectionId + optional database.
+  // Keep this aligned with addTabWithQuery/open actions.
+  consoleKey: sqlConsoleStoreConnectionKey,
+  database: databaseRef,
   historyKey,
   dialect: currentDialect
 })

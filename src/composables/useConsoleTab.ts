@@ -164,41 +164,51 @@ export function useConsoleTab(options: ConsoleTabOptions) {
   const activeQueryTab = computed(() =>
     sqlConsoleStore.getActiveTab(consoleKey.value, database.value)
   )
+  let saveTimeout: ReturnType<typeof setTimeout> | null = null
 
   // ========== Tab Sync ==========
   watch(
-    activeQueryTab,
-    (tab) => {
-      if (tab) {
-        sqlQuery.value = tab.query
+    [activeQueryTabId, () => activeQueryTab.value?.query, () => activeQueryTab.value?.updatedAt],
+    () => {
+      const tab = activeQueryTab.value
+      if (!tab) return
 
-        // Restore cached results
-        const cached = sqlConsoleStore.getResultCache(tab.id)
-        if (cached) {
-          hasExecutedQuery.value = true
-          queryError.value = cached.error
-          queryResults.value = cached.rows
-          resultColumns.value = cached.columns
-          resultSets.value = cached.resultSets || []
-          lastQueryStats.value = cached.stats
-          currentPage.value = 1
-        } else {
-          hasExecutedQuery.value = false
-          queryError.value = null
-          queryResults.value = []
-          resultColumns.value = []
-          resultSets.value = []
-          lastQueryStats.value = null
-          currentPage.value = 1
-        }
+      // Prevent delayed save from a stale editor value overriding store-driven updates.
+      if (saveTimeout) {
+        clearTimeout(saveTimeout)
+        saveTimeout = null
+      }
+
+      sqlQuery.value = tab.query
+
+      // Restore cached results
+      const cached = sqlConsoleStore.getResultCache(tab.id)
+      if (cached) {
+        hasExecutedQuery.value = true
+        queryError.value = cached.error
+        queryResults.value = cached.rows
+        resultColumns.value = cached.columns
+        resultSets.value = cached.resultSets || []
+        lastQueryStats.value = cached.stats
+        currentPage.value = 1
+      } else {
+        hasExecutedQuery.value = false
+        queryError.value = null
+        queryResults.value = []
+        resultColumns.value = []
+        resultSets.value = []
+        lastQueryStats.value = null
+        currentPage.value = 1
       }
     },
     { immediate: true }
   )
 
   // Debounced save of query content
-  let saveTimeout: ReturnType<typeof setTimeout> | null = null
   watch(sqlQuery, (newQuery) => {
+    if (newQuery === (activeQueryTab.value?.query ?? '')) {
+      return
+    }
     const tabId = activeQueryTabId.value
     if (tabId) {
       if (saveTimeout) clearTimeout(saveTimeout)
@@ -391,10 +401,13 @@ export function useConsoleTab(options: ConsoleTabOptions) {
 
   // ========== Cleanup ==========
   function cleanup() {
-    if (saveTimeout) clearTimeout(saveTimeout)
-    const tabId = activeQueryTabId.value
-    if (tabId) {
-      sqlConsoleStore.updateTabQuery(consoleKey.value, database.value, tabId, sqlQuery.value)
+    if (saveTimeout) {
+      clearTimeout(saveTimeout)
+      saveTimeout = null
+      const tabId = activeQueryTabId.value
+      if (tabId) {
+        sqlConsoleStore.updateTabQuery(consoleKey.value, database.value, tabId, sqlQuery.value)
+      }
     }
   }
 

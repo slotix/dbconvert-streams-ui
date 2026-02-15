@@ -23,6 +23,7 @@ import { usePersistedState } from '@/composables/usePersistedState'
 import { useRecentConnections } from '@/composables/useRecentConnections'
 import { useTreeSearch } from '@/composables/useTreeSearch'
 import { useConnectionActions } from '@/composables/useConnectionActions'
+import { useSqlConsoleActions } from '@/composables/useSqlConsoleActions'
 import { useDesktopMode } from '@/composables/useDesktopMode'
 import DisconnectedOverlay from '@/components/common/DisconnectedOverlay.vue'
 import EmptyStateMessage from '@/components/explorer/EmptyStateMessage.vue'
@@ -37,6 +38,7 @@ const paneTabsStore = usePaneTabsStore()
 const navigationStore = useExplorerNavigationStore()
 const viewStateStore = useExplorerViewStateStore()
 const { isDesktop } = useDesktopMode()
+const { openTableInSqlConsole } = useSqlConsoleActions()
 const sidebarWidthToggle = inject<{
   isSidebarExpanded: { value: boolean }
   toggleSidebarWidth: () => void
@@ -191,6 +193,28 @@ function handleOpenSqlConsole(payload: {
   database?: string
   sqlScope: 'database' | 'connection'
 }) {
+  // If a concrete table/view is selected in this database, opening SQL console should
+  // start with a contextual SELECT query instead of a blank tab.
+  if (payload.sqlScope === 'database' && payload.database) {
+    const sel = treeSelection.value
+    if (
+      sel &&
+      sel.connectionId === payload.connectionId &&
+      sel.database === payload.database &&
+      (sel.type === 'table' || sel.type === 'view') &&
+      typeof sel.name === 'string' &&
+      sel.name.length > 0
+    ) {
+      openTableInSqlConsole({
+        connectionId: payload.connectionId,
+        database: payload.database,
+        tableName: sel.name,
+        schema: sel.schema
+      })
+      return
+    }
+  }
+
   const connection = connectionsStore.connectionByID(payload.connectionId)
   const connName = connection?.name || 'SQL'
   const tabName = payload.database ? `${connName} → ${payload.database}` : `${connName} (Admin)`

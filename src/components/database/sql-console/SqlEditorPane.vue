@@ -25,10 +25,10 @@
       <div class="w-px h-5 bg-gray-300 dark:bg-gray-600 mx-1"></div>
 
       <!-- Templates Dropdown -->
-      <div v-if="templates.length > 0" class="relative">
+      <div v-if="templates.length > 0" ref="templatesDropdownRef" class="relative">
         <button
           class="inline-flex items-center px-2 py-1.5 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded shadow-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
-          @click="showTemplates = !showTemplates"
+          @click="toggleTemplates"
         >
           <FileText class="h-3.5 w-3.5 mr-1" />
           Templates
@@ -43,6 +43,7 @@
               v-for="template in templates"
               :key="template.name"
               class="w-full text-left px-3 py-2 text-xs hover:bg-gray-100 dark:hover:bg-gray-700"
+              :title="`${template.name}\n\n${template.query}`"
               @click="selectTemplate(template.query)"
             >
               <div class="font-medium text-gray-700 dark:text-gray-300">{{ template.name }}</div>
@@ -55,12 +56,12 @@
       </div>
 
       <!-- History Dropdown -->
-      <div class="relative">
+      <div ref="historyDropdownRef" class="relative">
         <button
           class="inline-flex items-center px-2 py-1.5 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded shadow-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
           :disabled="history.length === 0"
           :class="{ 'opacity-50 cursor-not-allowed': history.length === 0 }"
-          @click="showHistory = !showHistory"
+          @click="toggleHistory"
         >
           <Clock class="h-3.5 w-3.5 mr-1" />
           History
@@ -124,7 +125,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { SqlMonaco } from '@/components/monaco'
 import type { SchemaContext } from '@/composables/useMonacoSqlProviders'
 import { ChevronDown, Clock, Code, FileText, Play } from 'lucide-vue-next'
@@ -162,8 +163,25 @@ const templates = computed(() => props.templates || [])
 const history = computed(() => props.history || [])
 
 const sqlEditorRef = ref()
+const templatesDropdownRef = ref<HTMLElement | null>(null)
+const historyDropdownRef = ref<HTMLElement | null>(null)
 const showTemplates = ref(false)
 const showHistory = ref(false)
+
+function toggleTemplates() {
+  showTemplates.value = !showTemplates.value
+  if (showTemplates.value) {
+    showHistory.value = false
+  }
+}
+
+function toggleHistory() {
+  if (history.value.length === 0) return
+  showHistory.value = !showHistory.value
+  if (showHistory.value) {
+    showTemplates.value = false
+  }
+}
 
 function selectTemplate(query: string) {
   emit('select-template', query)
@@ -192,9 +210,16 @@ function formatHistoryTime(timestamp: number): string {
 
 // Close dropdowns when clicking outside
 function handleClickOutside(e: MouseEvent) {
-  const target = e.target as HTMLElement
-  if (!target.closest('.relative')) {
+  const target = e.target as Node | null
+  if (!target) return
+
+  const clickedInTemplates = !!templatesDropdownRef.value?.contains(target)
+  const clickedInHistory = !!historyDropdownRef.value?.contains(target)
+
+  if (!clickedInTemplates) {
     showTemplates.value = false
+  }
+  if (!clickedInHistory) {
     showHistory.value = false
   }
 }
@@ -211,8 +236,4 @@ onUnmounted(() => {
 defineExpose({
   editorRef: sqlEditorRef
 })
-</script>
-
-<script lang="ts">
-import { computed } from 'vue'
 </script>
