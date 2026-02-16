@@ -9,6 +9,7 @@ import type { Connection } from '@/types/connections'
 import { getConnectionTypeLabel } from '@/types/specs'
 
 export type ConsoleMode = 'database' | 'file'
+export type SqlRunMode = 'single' | 'federated'
 
 export interface UseConsoleSourcesOptions {
   /** Current connection ID */
@@ -29,12 +30,15 @@ export interface UseConsoleSourcesReturn {
   // Computed
   useFederatedEngine: ComputedRef<boolean>
   primaryMapping: ComputedRef<ConnectionMapping>
+  runMode: Ref<SqlRunMode>
 
   // Methods
   handleUpdateSelectedConnections: (value: ConnectionMapping[]) => void
+  setRunMode: (mode: SqlRunMode) => void
   initializeDefaultSources: () => void
   syncPrimarySource: () => void
   restoreSelectedConnections: () => void
+  restoreRunMode: () => void
   persistSelectedConnections: () => void
 
   // Helpers
@@ -51,6 +55,7 @@ interface PersistedConsoleSourcesEntry {
 type PersistedConsoleSourcesState = Record<string, PersistedConsoleSourcesEntry>
 
 const SOURCES_STORAGE_KEY = 'explorer.sqlConsoleSources'
+const RUN_MODE_STORAGE_KEY = 'explorer.sqlRunMode'
 
 function hasBrowserStorage(): boolean {
   return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
@@ -72,6 +77,34 @@ function persistSources(state: PersistedConsoleSourcesState) {
   if (!hasBrowserStorage()) return
   try {
     window.localStorage.setItem(SOURCES_STORAGE_KEY, JSON.stringify(state))
+  } catch {
+    // ignore
+  }
+}
+
+interface PersistedRunModeEntry {
+  mode: SqlRunMode
+  explicit: boolean
+}
+
+type PersistedRunModeState = Record<string, PersistedRunModeEntry>
+
+function loadPersistedRunModes(): PersistedRunModeState {
+  if (!hasBrowserStorage()) return {}
+  try {
+    const raw = window.localStorage.getItem(RUN_MODE_STORAGE_KEY)
+    if (!raw) return {}
+    const parsed = JSON.parse(raw) as PersistedRunModeState
+    return parsed && typeof parsed === 'object' ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+
+function persistRunModes(state: PersistedRunModeState) {
+  if (!hasBrowserStorage()) return
+  try {
+    window.localStorage.setItem(RUN_MODE_STORAGE_KEY, JSON.stringify(state))
   } catch {
     // ignore
   }
@@ -119,6 +152,8 @@ export function useConsoleSources(options: UseConsoleSourcesOptions): UseConsole
   // ========== State ==========
   const selectedConnections = ref<ConnectionMapping[]>([])
   const userModifiedSources = ref(false)
+  const runMode = ref<SqlRunMode>('single')
+  const hasExplicitRunMode = ref(false)
 
   // ========== Computed ==========
   const connection = computed(() => connectionsStore.connectionByID(connectionIdValue.value))
@@ -143,18 +178,7 @@ export function useConsoleSources(options: UseConsoleSourcesOptions): UseConsole
     return mapping
   })
 
-  const useFederatedEngine = computed(() => {
-    // If user cleared all sources, allow running DuckDB file queries via federated endpoint
-    if (selectedConnections.value.length === 0) return true
-
-    // Single source: keep the current behavior when it matches the console's root connection
-    if (selectedConnections.value.length === 1) {
-      return selectedConnections.value[0].connectionId !== connectionIdValue.value
-    }
-
-    // Multiple sources => federated
-    return true
-  })
+  const useFederatedEngine = computed(() => runMode.value === 'federated')
 
   // ========== Methods ==========
   function sanitizeMappings(mappings: ConnectionMapping[]): ConnectionMapping[] {
@@ -185,6 +209,52 @@ export function useConsoleSources(options: UseConsoleSourcesOptions): UseConsole
   function handleUpdateSelectedConnections(value: ConnectionMapping[]) {
     userModifiedSources.value = true
     selectedConnections.value = value
+  }
+
+  function deriveRunModeFromSources(): SqlRunMode {
+    // Empty selection intentionally maps to federated to allow file read_* queries.
+    if (selectedConnections.value.length === 0) return 'federated'
+
+    if (selectedConnections.value.length === 1) {
+      return selectedConnections.value[0].connectionId === connectionIdValue.value
+        ? 'single'
+        : 'federated'
+    }
+
+    return 'federated'
+  }
+
+  function setRunMode(mode: SqlRunMode) {
+    runMode.value = mode
+    hasExplicitRunMode.value = true
+  }
+
+  function restoreRunMode() {
+    const saved = loadPersistedRunModes()
+    const entry = saved[sourcesKey.value]
+    if (!entry || !entry.explicit) {
+      runMode.value = deriveRunModeFromSources()
+      return
+    }
+
+    if (entry.mode === 'single' || entry.mode === 'federated') {
+      runMode.value = entry.mode
+      hasExplicitRunMode.value = true
+      return
+    }
+
+    runMode.value = deriveRunModeFromSources()
+  }
+
+  function persistRunMode() {
+    if (!hasExplicitRunMode.value) return
+
+    const saved = loadPersistedRunModes()
+    saved[sourcesKey.value] = {
+      mode: runMode.value,
+      explicit: true
+    }
+    persistRunModes(saved)
   }
 
   function restoreSelectedConnections() {
@@ -238,6 +308,17 @@ export function useConsoleSources(options: UseConsoleSourcesOptions): UseConsole
   // ========== Watchers ==========
   watch([primaryMapping, connectionIdValue], syncPrimarySource, { immediate: true })
   watch(selectedConnections, persistSelectedConnections, { deep: true })
+  watch([selectedConnections, connectionIdValue], () => {
+    if (!hasExplicitRunMode.value) {
+      runMode.value = deriveRunModeFromSources()
+    }
+  })
+  watch(sourcesKey, () => {
+    hasExplicitRunMode.value = false
+    runMode.value = deriveRunModeFromSources()
+    restoreRunMode()
+  })
+  watch(runMode, persistRunMode)
 
   return {
     // State
@@ -247,12 +328,15 @@ export function useConsoleSources(options: UseConsoleSourcesOptions): UseConsole
     // Computed
     useFederatedEngine,
     primaryMapping,
+    runMode,
 
     // Methods
     handleUpdateSelectedConnections,
+    setRunMode,
     initializeDefaultSources,
     syncPrimarySource,
     restoreSelectedConnections,
+    restoreRunMode,
     persistSelectedConnections,
 
     // Helpers

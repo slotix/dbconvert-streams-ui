@@ -108,6 +108,44 @@
       :show-create-connection-link="true"
       @update:modelValue="handleUpdateSelectedConnections"
     />
+    <div
+      class="px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between gap-3"
+    >
+      <div
+        class="inline-flex rounded-md border border-gray-300 dark:border-gray-600 overflow-hidden"
+      >
+        <button
+          type="button"
+          class="px-2.5 py-1 text-xs transition-colors"
+          :class="
+            runMode === 'single'
+              ? 'bg-teal-600 text-white'
+              : 'bg-white dark:bg-gray-850 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+          "
+          @click="setRunMode('single')"
+        >
+          Single source
+        </button>
+        <button
+          type="button"
+          class="px-2.5 py-1 text-xs border-l border-gray-300 dark:border-gray-600 transition-colors"
+          :class="
+            runMode === 'federated'
+              ? 'bg-teal-600 text-white'
+              : 'bg-white dark:bg-gray-850 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+          "
+          @click="setRunMode('federated')"
+        >
+          Multi-source
+        </button>
+      </div>
+      <p
+        v-if="runMode === 'federated'"
+        class="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[60%]"
+      >
+        Use aliases: {{ federatedAliasesHint }}
+      </p>
+    </div>
 
     <!-- Query Tabs -->
     <SqlQueryTabs
@@ -171,10 +209,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, type Component } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, type Component } from 'vue'
 import { CircleHelp, Database, Info, Terminal } from 'lucide-vue-next'
 import type { SchemaContext } from '@/composables/useMonacoSqlProviders'
 import { useConnectionsStore } from '@/stores/connections'
+import { usePaneTabsStore } from '@/stores/paneTabs'
 import connections from '@/api/connections'
 import { SqlQueryTabs, SqlEditorPane, SqlResultsPane } from '@/components/database/sql-console'
 import ConnectionAliasPanel from './ConnectionAliasPanel.vue'
@@ -206,6 +245,7 @@ const props = defineProps<{
 }>()
 
 const connectionsStore = useConnectionsStore()
+const paneTabsStore = usePaneTabsStore()
 
 const showConsoleHeader = computed(() => props.mode === 'file')
 
@@ -238,15 +278,23 @@ const sqlConsoleStoreConnectionKey = computed(() => props.connectionId)
 const {
   selectedConnections,
   useFederatedEngine,
+  runMode,
   handleUpdateSelectedConnections,
+  setRunMode,
   initializeDefaultSources,
   syncPrimarySource,
-  restoreSelectedConnections
+  restoreSelectedConnections,
+  restoreRunMode
 } = useConsoleSources({
   connectionId: connectionIdRef,
   mode: modeRef,
   database: databaseRef,
   consoleKey
+})
+
+const federatedAliasesHint = computed(() => {
+  const aliases = selectedConnections.value.map((c) => c.alias).filter(Boolean)
+  return aliases.length ? aliases.join(', ') : 'add at least one source alias'
 })
 
 // ========== SQL Dialect ==========
@@ -425,6 +473,30 @@ const scopeLabel = computed(() => {
   return connName
 })
 
+const paneTabDefaultName = computed(() => {
+  const connName = connection.value?.name || (props.mode === 'file' ? 'Files' : 'SQL')
+  if (props.mode === 'file') {
+    return `${connName} (DuckDB)`
+  }
+  if (props.database) {
+    return `${connName} → ${props.database}`
+  }
+  return `${connName} (Admin)`
+})
+
+const paneTabFederatedName = computed(() => {
+  const sourceCount = selectedConnections.value.length
+  const sourcePart = `${sourceCount} source${sourceCount === 1 ? '' : 's'}`
+  if (props.mode === 'database' && props.database) {
+    return `Multi • DB: ${props.database} • ${sourcePart}`
+  }
+  return `Multi • ${scopeLabel.value} • ${sourcePart}`
+})
+
+const paneTabName = computed(() =>
+  runMode.value === 'federated' ? paneTabFederatedName.value : paneTabDefaultName.value
+)
+
 const resultSetCount = computed(() => {
   if (!hasExecutedQuery.value) return 0
   if (Array.isArray(resultSets.value) && resultSets.value.length > 0) {
@@ -444,6 +516,7 @@ onMounted(async () => {
   restoreSelectedConnections()
   initializeDefaultSources()
   syncPrimarySource()
+  restoreRunMode()
 
   if (props.mode === 'database') await loadTableSuggestions()
 })
@@ -451,6 +524,14 @@ onMounted(async () => {
 onUnmounted(() => {
   cleanup()
 })
+
+watch(
+  paneTabName,
+  (name) => {
+    paneTabsStore.renameSqlConsoleTabs(props.connectionId, props.database, name)
+  },
+  { immediate: true }
+)
 
 // ========== Public API ==========
 function insertIntoEditor(text: string) {

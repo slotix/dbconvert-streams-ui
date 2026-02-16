@@ -11,7 +11,7 @@ import connections from '@/api/connections'
 import { executeFileQuery } from '@/api/files'
 import { executeFederatedQuery, type ConnectionMapping } from '@/api/federated'
 import { detectQueryPurpose } from '@/composables/useConsoleTab'
-import { isDuckDbFileQuery, escapeRegExp } from '@/composables/useConsoleSources'
+import { isDuckDbFileQuery } from '@/composables/useConsoleSources'
 
 export type ConsoleMode = 'database' | 'file'
 
@@ -100,6 +100,83 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
   const isExecuting = ref(false)
   const shouldLogLocally = () => !sseLogsService.isActive()
 
+  function stripSqlComments(sql: string): string {
+    return sql
+      .replace(/\/\*[\s\S]*?\*\//g, ' ')
+      .replace(/--.*$/gm, ' ')
+      .replace(/#.*$/gm, ' ')
+  }
+
+  function extractCteNames(sql: string): Set<string> {
+    const names = new Set<string>()
+    const cteRegex = /\b(?:with\s+(?:recursive\s+)?|,)\s*([a-zA-Z_][\w$]*)\s+as\s*\(/gi
+    let match: RegExpExecArray | null
+    while ((match = cteRegex.exec(sql)) !== null) {
+      const raw = match[1]
+      if (raw) names.add(raw.toLowerCase())
+    }
+    return names
+  }
+
+  function normalizeIdentifierPart(part: string): string {
+    return part.replace(/^[`"'[]+|[`"'\]]+$/g, '').toLowerCase()
+  }
+
+  function validateFederatedTableReferences(query: string, aliases: string[]): string | null {
+    if (aliases.length === 0) return null
+
+    const aliasSet = new Set(aliases.map((a) => a.toLowerCase()))
+    aliasSet.add('memory')
+
+    const cleaned = stripSqlComments(query)
+    const cteNames = extractCteNames(cleaned)
+    const refRegex = /\b(from|join|update|into|delete\s+from)\s+([^\s,;]+)/gi
+    const invalidRefs = new Set<string>()
+    let match: RegExpExecArray | null
+
+    while ((match = refRegex.exec(cleaned)) !== null) {
+      let token = (match[2] || '').trim()
+      if (!token) continue
+
+      token = token.replace(/[);]+$/g, '')
+      const lowered = token.toLowerCase()
+
+      if (!token || token.startsWith('(')) continue
+      if (lowered === 'only' || lowered === 'lateral') continue
+      if (
+        lowered.startsWith('read_') ||
+        lowered.startsWith('parquet_') ||
+        lowered.startsWith('csv_') ||
+        lowered.startsWith('json_')
+      ) {
+        continue
+      }
+      if (token.includes('(')) continue
+
+      const parts = token
+        .split('.')
+        .map((p) => p.trim())
+        .filter(Boolean)
+      if (parts.length < 2) {
+        const maybeCte = normalizeIdentifierPart(token)
+        if (!cteNames.has(maybeCte)) {
+          invalidRefs.add(token)
+        }
+        continue
+      }
+
+      const alias = normalizeIdentifierPart(parts[0])
+      if (!aliasSet.has(alias)) {
+        invalidRefs.add(token)
+      }
+    }
+
+    if (invalidRefs.size === 0) return null
+
+    const offending = Array.from(invalidRefs).slice(0, 3).join(', ')
+    return `Federated mode requires alias-qualified tables (e.g. pg1.public.table, my1.db.table). Invalid references: ${offending}`
+  }
+
   async function executeQuery() {
     const query = sqlQuery.value.trim()
     if (!query) return
@@ -122,20 +199,15 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
       return
     }
 
-    // Help catch a common confusion when users add data sources but keep unqualified table names
-    if (
-      selectedConnections.value.length > 0 &&
-      !isDuckDbFileQuery(query) &&
-      /\b(from|join|update|into|delete)\b/i.test(query)
-    ) {
-      const hasAliasReference = selectedConnections.value.some((c) => {
-        if (!c.alias) return false
-        return new RegExp(`\\b${escapeRegExp(c.alias)}\\.`, 'i').test(query)
-      })
-      if (!hasAliasReference) {
-        setExecutionError(
-          'Federated queries must reference tables using aliases (e.g. pg1.public.table, my1.db.table)'
-        )
+    // Federated mode requires explicit alias-qualified table references.
+    if (selectedConnections.value.length > 0 && !isDuckDbFileQuery(query)) {
+      const aliases = selectedConnections.value
+        .map((c) => c.alias?.trim())
+        .filter((a): a is string => Boolean(a))
+
+      const validationError = validateFederatedTableReferences(query, aliases)
+      if (validationError) {
+        setExecutionError(validationError)
         return
       }
     }

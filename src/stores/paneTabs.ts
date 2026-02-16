@@ -811,6 +811,39 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
   }
 
   /**
+   * Rename SQL console tabs that match a connection/database scope across panes.
+   */
+  function renameSqlConsoleTabs(connectionId: string, database: string | undefined, name: string) {
+    const nextName = name.trim()
+    if (!nextName) return
+
+    const normalizedDatabase = database?.trim() || ''
+    let changed = false
+
+    for (const paneId of ['left', 'right'] as const) {
+      const state = getPaneState(paneId)
+      state.tabs = state.tabs.map((tab) => {
+        if (tab.tabType !== 'sql-console') return tab
+        if (tab.connectionId !== connectionId) return tab
+
+        const tabDatabase = tab.database?.trim() || ''
+        if (tabDatabase !== normalizedDatabase) return tab
+        if (tab.name === nextName) return tab
+
+        changed = true
+        return {
+          ...tab,
+          name: nextName
+        }
+      })
+    }
+
+    if (changed) {
+      persistState()
+    }
+  }
+
+  /**
    * Reopen the most recently closed tab
    * @returns true if a tab was reopened, false if history is empty
    */
@@ -890,6 +923,7 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
     activateTab,
     activatePreviewTab,
     updateTabFileMetadata,
+    renameSqlConsoleTabs,
     clearPane,
     clearAllPanes,
     reopenClosedTab
