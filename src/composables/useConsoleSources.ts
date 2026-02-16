@@ -6,7 +6,7 @@ import { ref, computed, watch, type Ref, type ComputedRef } from 'vue'
 import { useConnectionsStore } from '@/stores/connections'
 import type { ConnectionMapping } from '@/api/federated'
 import type { Connection } from '@/types/connections'
-import { getConnectionTypeLabel } from '@/types/specs'
+import { getConnectionKindFromSpec, getConnectionTypeLabel, isDatabaseKind } from '@/types/specs'
 
 export type ConsoleMode = 'database' | 'file'
 export type SqlRunMode = 'single' | 'federated'
@@ -31,14 +31,19 @@ export interface UseConsoleSourcesReturn {
   useFederatedEngine: ComputedRef<boolean>
   primaryMapping: ComputedRef<ConnectionMapping>
   runMode: Ref<SqlRunMode>
+  databaseSourceMappings: ComputedRef<ConnectionMapping[]>
+  singleSourceConnectionId: Ref<string>
+  singleSourceMapping: ComputedRef<ConnectionMapping | null>
 
   // Methods
   handleUpdateSelectedConnections: (value: ConnectionMapping[]) => void
   setRunMode: (mode: SqlRunMode) => void
+  setSingleSourceConnectionId: (connectionId: string) => void
   initializeDefaultSources: () => void
   syncPrimarySource: () => void
   restoreSelectedConnections: () => void
   restoreRunMode: () => void
+  restoreSingleSourceConnection: () => void
   persistSelectedConnections: () => void
 
   // Helpers
@@ -56,6 +61,7 @@ type PersistedConsoleSourcesState = Record<string, PersistedConsoleSourcesEntry>
 
 const SOURCES_STORAGE_KEY = 'explorer.sqlConsoleSources'
 const RUN_MODE_STORAGE_KEY = 'explorer.sqlRunMode'
+const SINGLE_SOURCE_STORAGE_KEY = 'explorer.sqlSingleSourceConnection'
 
 function hasBrowserStorage(): boolean {
   return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
@@ -110,6 +116,29 @@ function persistRunModes(state: PersistedRunModeState) {
   }
 }
 
+type PersistedSingleSourceState = Record<string, string>
+
+function loadPersistedSingleSources(): PersistedSingleSourceState {
+  if (!hasBrowserStorage()) return {}
+  try {
+    const raw = window.localStorage.getItem(SINGLE_SOURCE_STORAGE_KEY)
+    if (!raw) return {}
+    const parsed = JSON.parse(raw) as PersistedSingleSourceState
+    return parsed && typeof parsed === 'object' ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+
+function persistSingleSources(state: PersistedSingleSourceState) {
+  if (!hasBrowserStorage()) return
+  try {
+    window.localStorage.setItem(SINGLE_SOURCE_STORAGE_KEY, JSON.stringify(state))
+  } catch {
+    // ignore
+  }
+}
+
 // ========== Helpers ==========
 function defaultAliasForConnection(connection?: Connection | null): string {
   const normalized = getConnectionTypeLabel(connection?.spec, connection?.type) || ''
@@ -154,6 +183,7 @@ export function useConsoleSources(options: UseConsoleSourcesOptions): UseConsole
   const userModifiedSources = ref(false)
   const runMode = ref<SqlRunMode>('single')
   const hasExplicitRunMode = ref(false)
+  const singleSourceConnectionId = ref('')
 
   // ========== Computed ==========
   const connection = computed(() => connectionsStore.connectionByID(connectionIdValue.value))
@@ -179,6 +209,25 @@ export function useConsoleSources(options: UseConsoleSourcesOptions): UseConsole
   })
 
   const useFederatedEngine = computed(() => runMode.value === 'federated')
+
+  const databaseSourceMappings = computed(() =>
+    selectedConnections.value.filter((mapping) => {
+      const conn = connectionsStore.connectionByID(mapping.connectionId)
+      const kind = getConnectionKindFromSpec(conn?.spec)
+      return isDatabaseKind(kind)
+    })
+  )
+
+  const singleSourceMapping = computed<ConnectionMapping | null>(() => {
+    const dbMappings = databaseSourceMappings.value
+    if (dbMappings.length === 0) return null
+
+    const selected = dbMappings.find((m) => m.connectionId === singleSourceConnectionId.value)
+    if (selected) return selected
+
+    const primaryCandidate = dbMappings.find((m) => m.connectionId === connectionIdValue.value)
+    return primaryCandidate || dbMappings[0]
+  })
 
   // ========== Methods ==========
   function sanitizeMappings(mappings: ConnectionMapping[]): ConnectionMapping[] {
@@ -215,18 +264,19 @@ export function useConsoleSources(options: UseConsoleSourcesOptions): UseConsole
     // Empty selection intentionally maps to federated to allow file read_* queries.
     if (selectedConnections.value.length === 0) return 'federated'
 
-    if (selectedConnections.value.length === 1) {
-      return selectedConnections.value[0].connectionId === connectionIdValue.value
-        ? 'single'
-        : 'federated'
-    }
+    // With exactly one selected source, single mode is the only meaningful mode.
+    if (selectedConnections.value.length === 1) return 'single'
 
     return 'federated'
   }
 
   function setRunMode(mode: SqlRunMode) {
-    runMode.value = mode
+    runMode.value = selectedConnections.value.length === 1 ? 'single' : mode
     hasExplicitRunMode.value = true
+  }
+
+  function setSingleSourceConnectionId(connectionId: string) {
+    singleSourceConnectionId.value = connectionId
   }
 
   function restoreRunMode() {
@@ -238,7 +288,7 @@ export function useConsoleSources(options: UseConsoleSourcesOptions): UseConsole
     }
 
     if (entry.mode === 'single' || entry.mode === 'federated') {
-      runMode.value = entry.mode
+      runMode.value = selectedConnections.value.length === 1 ? 'single' : entry.mode
       hasExplicitRunMode.value = true
       return
     }
@@ -255,6 +305,38 @@ export function useConsoleSources(options: UseConsoleSourcesOptions): UseConsole
       explicit: true
     }
     persistRunModes(saved)
+  }
+
+  function syncSingleSourceConnection() {
+    const dbMappings = databaseSourceMappings.value
+    if (dbMappings.length === 0) {
+      singleSourceConnectionId.value = ''
+      return
+    }
+
+    if (dbMappings.some((m) => m.connectionId === singleSourceConnectionId.value)) {
+      return
+    }
+
+    const primaryCandidate = dbMappings.find((m) => m.connectionId === connectionIdValue.value)
+    singleSourceConnectionId.value = (primaryCandidate || dbMappings[0]).connectionId
+  }
+
+  function restoreSingleSourceConnection() {
+    const saved = loadPersistedSingleSources()
+    const connectionId = saved[sourcesKey.value]
+    if (connectionId) {
+      singleSourceConnectionId.value = connectionId
+    }
+    syncSingleSourceConnection()
+  }
+
+  function persistSingleSourceConnection() {
+    if (!singleSourceConnectionId.value) return
+
+    const saved = loadPersistedSingleSources()
+    saved[sourcesKey.value] = singleSourceConnectionId.value
+    persistSingleSources(saved)
   }
 
   function restoreSelectedConnections() {
@@ -307,6 +389,7 @@ export function useConsoleSources(options: UseConsoleSourcesOptions): UseConsole
 
   // ========== Watchers ==========
   watch([primaryMapping, connectionIdValue], syncPrimarySource, { immediate: true })
+  watch([selectedConnections, connectionIdValue], syncSingleSourceConnection, { deep: true })
   watch(selectedConnections, persistSelectedConnections, { deep: true })
   watch([selectedConnections, connectionIdValue], () => {
     if (!hasExplicitRunMode.value) {
@@ -317,8 +400,10 @@ export function useConsoleSources(options: UseConsoleSourcesOptions): UseConsole
     hasExplicitRunMode.value = false
     runMode.value = deriveRunModeFromSources()
     restoreRunMode()
+    restoreSingleSourceConnection()
   })
   watch(runMode, persistRunMode)
+  watch(singleSourceConnectionId, persistSingleSourceConnection)
 
   return {
     // State
@@ -329,14 +414,19 @@ export function useConsoleSources(options: UseConsoleSourcesOptions): UseConsole
     useFederatedEngine,
     primaryMapping,
     runMode,
+    databaseSourceMappings,
+    singleSourceConnectionId,
+    singleSourceMapping,
 
     // Methods
     handleUpdateSelectedConnections,
     setRunMode,
+    setSingleSourceConnectionId,
     initializeDefaultSources,
     syncPrimarySource,
     restoreSelectedConnections,
     restoreRunMode,
+    restoreSingleSourceConnection,
     persistSelectedConnections,
 
     // Helpers

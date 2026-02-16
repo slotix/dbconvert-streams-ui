@@ -32,6 +32,7 @@ export interface DatabaseTemplateOptions {
 export function getFederatedTemplates(aliases: string[]): QueryTemplate[] {
   const pg1 = aliases.find((a) => a.startsWith('pg')) || 'pg1'
   const my1 = aliases.find((a) => a.startsWith('my')) || 'my1'
+  const distinctAliases = Array.from(new Set(aliases.filter(Boolean)))
   // Find S3 aliases (common patterns: aws, do, s3, minio)
   const s3Aliases = aliases.filter((a) =>
     ['aws', 'do', 's3', 'minio', 'gcs', 'azure'].some(
@@ -40,6 +41,26 @@ export function getFederatedTemplates(aliases: string[]): QueryTemplate[] {
   )
   const aws = s3Aliases.find((a) => a.toLowerCase().startsWith('aws')) || 'aws'
   const doAlias = s3Aliases.find((a) => a.toLowerCase().startsWith('do')) || 'do'
+  const q = (value: string) => value.replace(/'/g, "''")
+
+  const aliasMetadataTemplates: QueryTemplate[] = distinctAliases.flatMap((alias) => [
+    {
+      name: `List namespaces (${alias})`,
+      query: `-- Namespaces (database/schema) visible under alias ${alias}
+SELECT DISTINCT schema_name
+FROM duckdb_tables()
+WHERE database_name = '${q(alias)}'
+ORDER BY schema_name;`
+    },
+    {
+      name: `List tables (${alias})`,
+      query: `-- Tables visible under alias ${alias}
+SELECT schema_name, table_name
+FROM duckdb_tables()
+WHERE database_name = '${q(alias)}'
+ORDER BY schema_name, table_name;`
+    }
+  ])
 
   return [
     {
@@ -66,6 +87,7 @@ FROM duckdb_tables()
 WHERE database_name = '${pg1}'
 ORDER BY schema_name, table_name;`
     },
+    ...aliasMetadataTemplates,
     {
       name: 'Cross-database JOIN',
       query: `-- Join tables from different databases

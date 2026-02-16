@@ -52,6 +52,8 @@ export interface UseQueryExecutionOptions {
   database?: ComputedRef<string | undefined> | Ref<string | undefined>
   /** Selected data sources for federated queries */
   selectedConnections: Ref<ConnectionMapping[]>
+  /** Explicit single-source target when run mode is single */
+  singleSourceMapping?: ComputedRef<ConnectionMapping | null> | Ref<ConnectionMapping | null>
   /** Whether to use the federated query engine */
   useFederatedEngine: ComputedRef<boolean>
   /** Current SQL query */
@@ -79,6 +81,7 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
     connectionId,
     database,
     selectedConnections,
+    singleSourceMapping,
     useFederatedEngine,
     sqlQuery,
     activeQueryTabId,
@@ -96,6 +99,7 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
   const modeValue = computed(() => mode.value)
   const connectionIdValue = computed(() => connectionId.value)
   const databaseValue = computed(() => database?.value)
+  const singleSourceMappingValue = computed(() => singleSourceMapping?.value || null)
 
   const isExecuting = ref(false)
   const shouldLogLocally = () => !sseLogsService.isActive()
@@ -360,24 +364,43 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
   async function executeDatabase(query: string) {
     isExecuting.value = true
     const startTime = Date.now()
+    const target = resolveSingleSourceTarget()
 
     try {
-      const db = databaseValue.value?.trim() || undefined
-      const result = await connections.executeQuery(connectionIdValue.value, query, db)
-      handleSuccessResult(result, query, startTime)
+      const result = await connections.executeQuery(target.connectionId, query, target.database)
+      handleSuccessResult(result, query, startTime, {
+        connectionId: target.connectionId,
+        database: target.database || ''
+      })
 
       // Refresh sidebar/overview if backend reports a schema change
       if (result.affectedObjects?.length) {
-        await handleDdlChange(result.affectedObjects)
+        await handleDdlChange(result.affectedObjects, target.connectionId, target.database)
       }
     } catch (error: unknown) {
-      handleErrorResult(error, query, startTime)
+      handleErrorResult(error, query, startTime, {
+        connectionId: target.connectionId,
+        database: target.database || ''
+      })
     } finally {
       isExecuting.value = false
     }
   }
 
-  function handleSuccessResult(result: ExecuteQueryApiResult, query: string, startTime: number) {
+  function resolveSingleSourceTarget(): { connectionId: string; database?: string } {
+    const selectedSingle = singleSourceMappingValue.value
+    return {
+      connectionId: selectedSingle?.connectionId || connectionIdValue.value,
+      database: selectedSingle?.database?.trim() || databaseValue.value?.trim() || undefined
+    }
+  }
+
+  function handleSuccessResult(
+    result: ExecuteQueryApiResult,
+    query: string,
+    startTime: number,
+    executionContext?: { connectionId: string; database: string }
+  ) {
     const normalizedSets: NormalizedResultSet[] = []
 
     if (Array.isArray(result.results) && result.results.length > 0) {
@@ -427,9 +450,12 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
     if (shouldLogLocally()) {
       logsStore.addSQLLog({
         id: `sql-console-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
-        connectionId: connectionIdValue.value,
+        connectionId: executionContext?.connectionId || connectionIdValue.value,
         tabId: activeQueryTabId.value || undefined,
-        database: modeValue.value === 'file' ? '' : databaseValue.value || '',
+        database:
+          modeValue.value === 'file'
+            ? ''
+            : (executionContext?.database ?? databaseValue.value ?? ''),
         query: query,
         purpose: detectQueryPurpose(query),
         startedAt: new Date(startTime).toISOString(),
@@ -441,7 +467,12 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
     saveToHistory(query)
   }
 
-  function handleErrorResult(error: unknown, query: string, startTime: number) {
+  function handleErrorResult(
+    error: unknown,
+    query: string,
+    startTime: number,
+    executionContext?: { connectionId: string; database: string }
+  ) {
     const err = error as Error
     const errorMsg = err.message || 'Failed to execute query'
     const duration = Date.now() - startTime
@@ -451,9 +482,12 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
     if (shouldLogLocally()) {
       logsStore.addSQLLog({
         id: `sql-console-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
-        connectionId: connectionIdValue.value,
+        connectionId: executionContext?.connectionId || connectionIdValue.value,
         tabId: activeQueryTabId.value || undefined,
-        database: modeValue.value === 'file' ? '' : databaseValue.value || '',
+        database:
+          modeValue.value === 'file'
+            ? ''
+            : (executionContext?.database ?? databaseValue.value ?? ''),
         query: query,
         purpose: detectQueryPurpose(query),
         startedAt: new Date(startTime).toISOString(),
@@ -464,19 +498,23 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
     }
   }
 
-  async function handleDdlChange(affectedObjects: string[]) {
+  async function handleDdlChange(
+    affectedObjects: string[],
+    targetConnectionId: string,
+    targetDatabase?: string
+  ) {
     const selectionDb =
-      navigationStore.selection?.connectionId === connectionIdValue.value
+      navigationStore.selection?.connectionId === targetConnectionId
         ? navigationStore.selection?.database
         : undefined
-    const db = databaseValue.value?.trim() || selectionDb?.trim()
+    const db = targetDatabase?.trim() || databaseValue.value?.trim() || selectionDb?.trim()
     const hasDatabaseChange = affectedObjects.includes('database')
     const hasSchemaChange = affectedObjects.includes('schema')
     const hasTableChange = affectedObjects.includes('table')
 
     if (hasDatabaseChange || hasSchemaChange) {
-      navigationStore.invalidateDatabases(connectionIdValue.value)
-      await navigationStore.ensureDatabases(connectionIdValue.value, true)
+      navigationStore.invalidateDatabases(targetConnectionId)
+      await navigationStore.ensureDatabases(targetConnectionId, true)
     }
 
     if (hasTableChange || hasSchemaChange) {
@@ -484,13 +522,13 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
       if (db) {
         refreshTargets.add(db)
       } else {
-        const cachedMetadata = navigationStore.metadataState[connectionIdValue.value]
+        const cachedMetadata = navigationStore.metadataState[targetConnectionId]
         if (cachedMetadata) {
           for (const dbName of Object.keys(cachedMetadata)) {
             if (dbName) refreshTargets.add(dbName)
           }
         }
-        const prefix = `${connectionIdValue.value}:`
+        const prefix = `${targetConnectionId}:`
         for (const dbKey of navigationStore.expandedDatabases) {
           if (!dbKey.startsWith(prefix)) continue
           const dbName = dbKey.slice(prefix.length)
@@ -500,12 +538,12 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
 
       const refreshes: Promise<unknown>[] = []
       for (const targetDb of refreshTargets) {
-        navigationStore.invalidateMetadata(connectionIdValue.value, targetDb)
+        navigationStore.invalidateMetadata(targetConnectionId, targetDb)
         // Clear overview cache so it refetches with fresh schema/table stats
-        overviewStore.clearOverview(connectionIdValue.value, targetDb)
-        refreshes.push(navigationStore.ensureMetadata(connectionIdValue.value, targetDb, true))
+        overviewStore.clearOverview(targetConnectionId, targetDb)
+        refreshes.push(navigationStore.ensureMetadata(targetConnectionId, targetDb, true))
         // Refresh overview in background (don't await - let it update reactively)
-        overviewStore.fetchOverview(connectionIdValue.value, targetDb, true)
+        overviewStore.fetchOverview(targetConnectionId, targetDb, true)
       }
 
       if (refreshes.length > 0) {

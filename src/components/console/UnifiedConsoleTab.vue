@@ -109,35 +109,58 @@
       @update:modelValue="handleUpdateSelectedConnections"
     />
     <div
+      v-if="showRunModeControls || runMode === 'federated'"
       class="px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between gap-3"
     >
-      <div
-        class="inline-flex rounded-md border border-gray-300 dark:border-gray-600 overflow-hidden"
-      >
-        <button
-          type="button"
-          class="px-2.5 py-1 text-xs transition-colors"
-          :class="
-            runMode === 'single'
-              ? 'bg-teal-600 text-white'
-              : 'bg-white dark:bg-gray-850 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
-          "
-          @click="setRunMode('single')"
+      <div class="flex items-center gap-3">
+        <div
+          v-if="showRunModeControls"
+          class="inline-flex rounded-md border border-gray-300 dark:border-gray-600 overflow-hidden"
         >
-          Single source
-        </button>
-        <button
-          type="button"
-          class="px-2.5 py-1 text-xs border-l border-gray-300 dark:border-gray-600 transition-colors"
-          :class="
-            runMode === 'federated'
-              ? 'bg-teal-600 text-white'
-              : 'bg-white dark:bg-gray-850 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
-          "
-          @click="setRunMode('federated')"
-        >
-          Multi-source
-        </button>
+          <button
+            type="button"
+            class="px-2.5 py-1 text-xs transition-colors"
+            :class="
+              runMode === 'single'
+                ? 'bg-teal-600 text-white'
+                : 'bg-white dark:bg-gray-850 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+            "
+            @click="setRunMode('single')"
+          >
+            Single source
+          </button>
+          <button
+            type="button"
+            class="px-2.5 py-1 text-xs border-l border-gray-300 dark:border-gray-600 transition-colors"
+            :class="
+              runMode === 'federated'
+                ? 'bg-teal-600 text-white'
+                : 'bg-white dark:bg-gray-850 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+            "
+            @click="setRunMode('federated')"
+          >
+            Multi-source
+          </button>
+        </div>
+        <div v-if="showSingleSourceSelector" class="flex items-center gap-2">
+          <span class="text-xs text-gray-500 dark:text-gray-400">Source</span>
+          <div class="source-select-wrap">
+            <select
+              v-model="singleSourceConnectionId"
+              class="source-select h-8 min-w-[260px] rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-850 pl-3 pr-8 text-xs text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-500/40"
+            >
+              <option
+                v-for="option in singleSourceOptions"
+                :key="option.value"
+                :value="option.value"
+                class="source-select-option"
+              >
+                {{ option.label }}
+              </option>
+            </select>
+            <ChevronDown class="source-select-icon h-3.5 w-3.5" />
+          </div>
+        </div>
       </div>
       <p
         v-if="runMode === 'federated'"
@@ -210,7 +233,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, type Component } from 'vue'
-import { CircleHelp, Database, Info, Terminal } from 'lucide-vue-next'
+import { ChevronDown, CircleHelp, Database, Info, Terminal } from 'lucide-vue-next'
 import type { SchemaContext } from '@/composables/useMonacoSqlProviders'
 import { useConnectionsStore } from '@/stores/connections'
 import { usePaneTabsStore } from '@/stores/paneTabs'
@@ -279,12 +302,16 @@ const {
   selectedConnections,
   useFederatedEngine,
   runMode,
+  databaseSourceMappings,
+  singleSourceConnectionId,
+  singleSourceMapping,
   handleUpdateSelectedConnections,
   setRunMode,
   initializeDefaultSources,
   syncPrimarySource,
   restoreSelectedConnections,
-  restoreRunMode
+  restoreRunMode,
+  restoreSingleSourceConnection
 } = useConsoleSources({
   connectionId: connectionIdRef,
   mode: modeRef,
@@ -297,6 +324,27 @@ const federatedAliasesHint = computed(() => {
   return aliases.length ? aliases.join(', ') : 'add at least one source alias'
 })
 
+const showRunModeControls = computed(() => selectedConnections.value.length > 1)
+
+const showSingleSourceSelector = computed(
+  () =>
+    props.mode === 'database' &&
+    runMode.value === 'single' &&
+    databaseSourceMappings.value.length > 1
+)
+
+const singleSourceOptions = computed(() =>
+  databaseSourceMappings.value.map((mapping) => {
+    const conn = connectionsStore.connectionByID(mapping.connectionId)
+    const alias = mapping.alias || 'db'
+    const connName = conn?.name || mapping.connectionId
+    return {
+      value: mapping.connectionId,
+      label: `${alias} · ${connName}`
+    }
+  })
+)
+
 // ========== SQL Dialect ==========
 const currentDialect = computed(() => {
   if (useFederatedEngine.value) {
@@ -305,7 +353,11 @@ const currentDialect = computed(() => {
   if (props.mode === 'file') {
     return 'sql' // DuckDB uses standard SQL
   }
-  return getSqlDialectFromConnection(connection.value?.spec, connection.value?.type)
+  const targetConnection =
+    runMode.value === 'single' && singleSourceMapping.value
+      ? connectionsStore.connectionByID(singleSourceMapping.value.connectionId)
+      : connection.value
+  return getSqlDialectFromConnection(targetConnection?.spec, targetConnection?.type)
 })
 
 // ========== Console Tab Composable ==========
@@ -369,6 +421,7 @@ const { isExecuting, executeQuery } = useQueryExecution({
   connectionId: connectionIdRef,
   database: databaseRef,
   selectedConnections,
+  singleSourceMapping,
   useFederatedEngine,
   sqlQuery,
   activeQueryTabId,
@@ -404,7 +457,8 @@ async function loadTableSuggestionsWithRefresh(forceRefresh: boolean) {
   if (props.mode !== 'database') return
   if (useFederatedEngine.value) return
 
-  const db = props.database?.trim()
+  const targetConnectionId = singleSourceMapping.value?.connectionId || props.connectionId
+  const db = singleSourceMapping.value?.database?.trim() || props.database?.trim()
   if (!db) {
     tablesList.value = []
     columnsMap.value = {}
@@ -412,7 +466,7 @@ async function loadTableSuggestionsWithRefresh(forceRefresh: boolean) {
   }
 
   try {
-    const metadata = await connections.getMetadata(props.connectionId, db, forceRefresh)
+    const metadata = await connections.getMetadata(targetConnectionId, db, forceRefresh)
     tablesList.value = Object.keys(metadata.tables).map((name) => ({ name }))
 
     const colMap: Record<string, Array<{ name: string; type: string; nullable: boolean }>> = {}
@@ -517,6 +571,7 @@ onMounted(async () => {
   initializeDefaultSources()
   syncPrimarySource()
   restoreRunMode()
+  restoreSingleSourceConnection()
 
   if (props.mode === 'database') await loadTableSuggestions()
 })
@@ -533,6 +588,12 @@ watch(
   { immediate: true }
 )
 
+watch([runMode, singleSourceMapping], async () => {
+  if (props.mode !== 'database') return
+  if (useFederatedEngine.value) return
+  await loadTableSuggestions()
+})
+
 // ========== Public API ==========
 function insertIntoEditor(text: string) {
   sqlQuery.value = text
@@ -546,5 +607,34 @@ defineExpose({
 <style scoped>
 .console-tab {
   min-height: 400px;
+}
+
+.source-select-wrap {
+  position: relative;
+}
+
+.source-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+.source-select-icon {
+  position: absolute;
+  right: 0.625rem;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: #9ca3af;
+}
+
+.source-select-option {
+  background-color: #ffffff;
+  color: #111827;
+}
+
+:global(.dark) .source-select-option {
+  background-color: #1f2937;
+  color: #e5e7eb;
 }
 </style>
