@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import {
   Beaker,
+  ChevronsUp,
   Copy,
   Eye,
   EyeOff,
@@ -130,6 +131,18 @@ const hasMenu = computed(
     props.visible && !!props.target && (!isNavigationFolder.value || isLocalNavigationFolder.value)
 )
 
+const canCollapseSubtree = computed(() => {
+  if (!props.target) return false
+  if (
+    props.target.kind === 'connection' ||
+    props.target.kind === 'database' ||
+    props.target.kind === 'schema'
+  ) {
+    return true
+  }
+  return props.target.kind === 'file' && !!props.target.isDir
+})
+
 function click(action: string, openInRightSplit?: boolean) {
   if (!props.target) return
   emit('menu-action', { action, target: props.target, openInRightSplit })
@@ -183,6 +196,14 @@ function click(action: string, openInRightSplit?: boolean) {
           >
             <RefreshCw class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
             <span>Refresh</span>
+          </button>
+          <button
+            v-if="canCollapseSubtree"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
+            @click="click('collapse-subtree')"
+          >
+            <ChevronsUp class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
+            <span>Collapse subtree</span>
           </button>
           <button
             v-if="!props.isFileConnection"
@@ -264,6 +285,14 @@ function click(action: string, openInRightSplit?: boolean) {
             <span>Refresh metadata</span>
           </button>
           <button
+            v-if="canCollapseSubtree"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
+            @click="click('collapse-subtree')"
+          >
+            <ChevronsUp class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
+            <span>Collapse subtree</span>
+          </button>
+          <button
             v-if="canToggleSystemObjectsForDatabase"
             class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
             @click="click('toggle-system-objects')"
@@ -312,6 +341,14 @@ function click(action: string, openInRightSplit?: boolean) {
           >
             <RefreshCw class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
             <span>Refresh metadata</span>
+          </button>
+          <button
+            v-if="canCollapseSubtree"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
+            @click="click('collapse-subtree')"
+          >
+            <ChevronsUp class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
+            <span>Collapse subtree</span>
           </button>
           <button
             class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
@@ -379,6 +416,18 @@ function click(action: string, openInRightSplit?: boolean) {
           <!-- File specific actions -->
           <template v-else-if="isFileOrTableFolder">
             <button
+              v-if="target.kind === 'file' && target.isDir"
+              class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
+              @click="click('collapse-subtree')"
+            >
+              <ChevronsUp class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
+              <span>Collapse subtree</span>
+            </button>
+            <div
+              v-if="target.kind === 'file' && target.isDir"
+              class="my-1 border-t border-gray-100 dark:border-gray-700"
+            ></div>
+            <button
               class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
               @click="click('insert-into-console')"
             >
@@ -407,6 +456,14 @@ function click(action: string, openInRightSplit?: boolean) {
 
         <!-- Navigation folder menu (local file folders that are not table folders) -->
         <template v-else-if="isLocalNavigationFolder">
+          <button
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
+            @click="click('collapse-subtree')"
+          >
+            <ChevronsUp class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
+            <span>Collapse subtree</span>
+          </button>
+          <div class="my-1 border-t border-gray-100 dark:border-gray-700"></div>
           <button
             class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
             @click="click('copy-system-path')"

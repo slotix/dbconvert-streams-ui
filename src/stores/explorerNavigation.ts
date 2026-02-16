@@ -365,6 +365,25 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
       this.saveExpansionState()
     },
 
+    collapseConnectionSubtree(connectionId: string) {
+      const connectionPrefix = `${connectionId}:`
+      this.expandedConnections.delete(connectionId)
+
+      for (const key of Array.from(this.expandedDatabases)) {
+        if (key.startsWith(connectionPrefix)) {
+          this.expandedDatabases.delete(key)
+        }
+      }
+
+      for (const key of Array.from(this.expandedSchemas)) {
+        if (key.startsWith(connectionPrefix)) {
+          this.expandedSchemas.delete(key)
+        }
+      }
+
+      this.saveExpansionState()
+    },
+
     toggleDatabase(key: string) {
       if (this.expandedDatabases.has(key)) {
         this.expandedDatabases.delete(key)
@@ -384,6 +403,20 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
       this.saveExpansionState()
     },
 
+    collapseDatabaseSubtree(connectionId: string, database: string) {
+      const dbKey = `${connectionId}:${database}`
+      const schemaPrefix = `${dbKey}:`
+
+      this.expandedDatabases.delete(dbKey)
+      for (const key of Array.from(this.expandedSchemas)) {
+        if (key.startsWith(schemaPrefix)) {
+          this.expandedSchemas.delete(key)
+        }
+      }
+
+      this.saveExpansionState()
+    },
+
     toggleSchema(key: string) {
       if (this.expandedSchemas.has(key)) {
         this.expandedSchemas.delete(key)
@@ -400,6 +433,11 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
 
     collapseSchema(key: string) {
       this.expandedSchemas.delete(key)
+      this.saveExpansionState()
+    },
+
+    collapseSchemaSubtree(connectionId: string, database: string, schema: string) {
+      this.expandedSchemas.delete(`${connectionId}:${database}:${schema}`)
       this.saveExpansionState()
     },
 

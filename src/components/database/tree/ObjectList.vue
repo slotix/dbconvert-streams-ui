@@ -13,6 +13,7 @@ const props = defineProps<{
   database: string
   schema?: string
   explorerObjPrefix: string
+  depth?: number
   tableSizes?: Record<string, number> // Map of table name -> size in bytes
   parentMatchesSearch?: boolean // When true, skip item filtering (show all items)
 }>()
@@ -113,6 +114,15 @@ function getTableSize(tableName: string): string | null {
         : ''
     ]"
     :data-explorer-obj="`${explorerObjPrefix}:${objectType}:${item}`"
+    data-tree-node="true"
+    data-node-kind="object"
+    :data-tree-depth="depth ?? 2"
+    :data-connection-id="connectionId"
+    :data-database="database"
+    :data-schema="schema || ''"
+    :data-object-type="objectType"
+    :data-object-name="item"
+    tabindex="-1"
     @click.stop="handleClick(item)"
     @dblclick.stop="handleDblClick(item)"
     @click.middle.stop="handleMiddleClick(item)"

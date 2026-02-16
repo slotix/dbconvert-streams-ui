@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, nextTick, provide } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick, provide } from 'vue'
 import { useDebounceFn, useResizeObserver } from '@vueuse/core'
 import { Boxes, Loader2 } from 'lucide-vue-next'
 import { useConnectionsStore } from '@/stores/connections'
@@ -31,6 +31,7 @@ const props = defineProps<{
     schema?: string
     type?: ObjectType | null
     name?: string | null
+    filePath?: string
   }
   searchQuery: string
   typeFilters?: string[]
@@ -154,7 +155,9 @@ const isLoadingConnections = ref(false)
 // Hide table size labels when the sidebar is narrow so table names stay readable.
 // Measured on the outer sidebar card element (includes padding).
 const sidebarCardRef = ref<HTMLElement | null>(null)
+const treeScrollRef = ref<HTMLElement | null>(null)
 const sidebarCardWidth = ref(0)
+const focusedTreeNode = ref<HTMLElement | null>(null)
 
 useResizeObserver(sidebarCardRef, (entries) => {
   const entry = entries[0]
@@ -330,6 +333,315 @@ function expandFirstLevel() {
       emit('request-file-entries', { connectionId })
     } else {
       navigationStore.ensureDatabases(connectionId).catch(() => {})
+    }
+  }
+}
+
+const TREE_NAV_KEYS = new Set([
+  'ArrowUp',
+  'ArrowDown',
+  'ArrowLeft',
+  'ArrowRight',
+  'Enter',
+  'Escape',
+  'Esc'
+])
+
+function isTypingTarget(target: EventTarget | null): boolean {
+  const el = target as HTMLElement | null
+  if (!el) return false
+  return (
+    el.tagName === 'INPUT' ||
+    el.tagName === 'TEXTAREA' ||
+    el.isContentEditable ||
+    el.closest('.monaco-editor') !== null
+  )
+}
+
+function selectorEscape(value: string): string {
+  if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') {
+    return CSS.escape(value)
+  }
+  return value.replace(/["\\]/g, '\\$&')
+}
+
+function getVisibleTreeNodes(): HTMLElement[] {
+  if (!sidebarCardRef.value) return []
+  return Array.from(sidebarCardRef.value.querySelectorAll<HTMLElement>('[data-tree-node="true"]'))
+}
+
+function findSelectedNodeElement(): HTMLElement | null {
+  if (!sidebarCardRef.value || !props.selected?.connectionId) return null
+
+  const connectionId = selectorEscape(props.selected.connectionId)
+
+  if (props.selected.filePath) {
+    const filePath = selectorEscape(props.selected.filePath)
+    return (
+      sidebarCardRef.value.querySelector<HTMLElement>(
+        `[data-tree-node="true"][data-connection-id="${connectionId}"][data-file-path="${filePath}"]`
+      ) || null
+    )
+  }
+
+  if (props.selected.database && props.selected.type && props.selected.name) {
+    const database = selectorEscape(props.selected.database)
+    const schema = selectorEscape(props.selected.schema || '')
+    const objectType = selectorEscape(props.selected.type)
+    const objectName = selectorEscape(props.selected.name)
+    return (
+      sidebarCardRef.value.querySelector<HTMLElement>(
+        `[data-node-kind="object"][data-connection-id="${connectionId}"][data-database="${database}"][data-schema="${schema}"][data-object-type="${objectType}"][data-object-name="${objectName}"]`
+      ) || null
+    )
+  }
+
+  if (props.selected.database && props.selected.schema) {
+    const database = selectorEscape(props.selected.database)
+    const schema = selectorEscape(props.selected.schema)
+    return (
+      sidebarCardRef.value.querySelector<HTMLElement>(
+        `[data-node-kind="schema"][data-connection-id="${connectionId}"][data-database="${database}"][data-schema="${schema}"]`
+      ) || null
+    )
+  }
+
+  if (props.selected.database) {
+    const database = selectorEscape(props.selected.database)
+    return (
+      sidebarCardRef.value.querySelector<HTMLElement>(
+        `[data-node-kind="database"][data-connection-id="${connectionId}"][data-database="${database}"]`
+      ) || null
+    )
+  }
+
+  return (
+    sidebarCardRef.value.querySelector<HTMLElement>(
+      `[data-node-kind="connection"][data-connection-id="${connectionId}"]`
+    ) || null
+  )
+}
+
+function getCurrentTreeNode(nodes: HTMLElement[]): HTMLElement | null {
+  const active = document.activeElement as HTMLElement | null
+  if (active?.dataset?.treeNode === 'true' && nodes.includes(active)) {
+    return active
+  }
+  return findSelectedNodeElement() || nodes[0] || null
+}
+
+function focusTreeNode(node: HTMLElement | null) {
+  if (!node) return
+
+  if (focusedTreeNode.value && focusedTreeNode.value !== node) {
+    delete focusedTreeNode.value.dataset.treeFocused
+  }
+  focusedTreeNode.value = node
+  focusedTreeNode.value.dataset.treeFocused = 'true'
+
+  node.focus({ preventScroll: true })
+
+  const container = treeScrollRef.value
+  if (!container) {
+    node.scrollIntoView({ block: 'nearest' })
+    return
+  }
+
+  const containerRect = container.getBoundingClientRect()
+  const nodeRect = node.getBoundingClientRect()
+  const margin = 12
+
+  if (nodeRect.top < containerRect.top + margin) {
+    container.scrollTop -= containerRect.top + margin - nodeRect.top
+  } else if (nodeRect.bottom > containerRect.bottom - margin) {
+    container.scrollTop += nodeRect.bottom - (containerRect.bottom - margin)
+  }
+}
+
+function focusTreeNodeFromEvent(event: MouseEvent) {
+  const target = event.target as HTMLElement | null
+  if (!target) return
+  const node = target.closest<HTMLElement>('[data-tree-node="true"]')
+  if (!node) return
+  focusTreeNode(node)
+}
+
+function isTreeNodeExpandable(node: HTMLElement): boolean {
+  const kind = node.dataset.nodeKind
+  return kind === 'connection' || kind === 'database' || kind === 'schema' || kind === 'file-folder'
+}
+
+function isTreeNodeExpanded(node: HTMLElement): boolean {
+  const kind = node.dataset.nodeKind
+  const connectionId = node.dataset.connectionId || ''
+
+  if (kind === 'connection') {
+    return connectionId ? navigationStore.isConnectionExpanded(connectionId) : false
+  }
+
+  if (kind === 'database') {
+    const database = node.dataset.database || ''
+    return connectionId && database
+      ? navigationStore.isDatabaseExpanded(`${connectionId}:${database}`)
+      : false
+  }
+
+  if (kind === 'schema') {
+    const database = node.dataset.database || ''
+    const schema = node.dataset.schema || ''
+    return connectionId && database && schema
+      ? navigationStore.isSchemaExpanded(`${connectionId}:${database}:${schema}`)
+      : false
+  }
+
+  if (kind === 'file-folder') {
+    const folderPath = node.dataset.filePath || ''
+    return connectionId && folderPath
+      ? fileExplorerStore.isFolderExpanded(connectionId, folderPath)
+      : false
+  }
+
+  return false
+}
+
+function toggleTreeNode(node: HTMLElement) {
+  node.click()
+}
+
+function getTreeNodeDepth(node: HTMLElement): number {
+  const rawDepth = Number(node.dataset.treeDepth ?? 0)
+  return Number.isFinite(rawDepth) ? rawDepth : 0
+}
+
+function findParentTreeNodeIndex(nodes: HTMLElement[], childIndex: number): number {
+  if (childIndex <= 0) return -1
+
+  const childDepth = getTreeNodeDepth(nodes[childIndex])
+  for (let i = childIndex - 1; i >= 0; i -= 1) {
+    if (getTreeNodeDepth(nodes[i]) < childDepth) {
+      return i
+    }
+  }
+
+  return -1
+}
+
+function collapseTreeNode(node: HTMLElement): boolean {
+  const kind = node.dataset.nodeKind
+  const connectionId = node.dataset.connectionId || ''
+
+  if (kind === 'connection' && connectionId) {
+    if (!navigationStore.isConnectionExpanded(connectionId)) return false
+    navigationStore.collapseConnection(connectionId)
+    return true
+  }
+
+  if (kind === 'database' && connectionId) {
+    const database = node.dataset.database || ''
+    if (!database) return false
+    const dbKey = `${connectionId}:${database}`
+    if (!navigationStore.isDatabaseExpanded(dbKey)) return false
+    navigationStore.collapseDatabase(dbKey)
+    return true
+  }
+
+  if (kind === 'schema' && connectionId) {
+    const database = node.dataset.database || ''
+    const schema = node.dataset.schema || ''
+    if (!database || !schema) return false
+    const schemaKey = `${connectionId}:${database}:${schema}`
+    if (!navigationStore.isSchemaExpanded(schemaKey)) return false
+    navigationStore.collapseSchema(schemaKey)
+    return true
+  }
+
+  if (kind === 'file-folder' && connectionId) {
+    const folderPath = node.dataset.filePath || ''
+    if (!folderPath) return false
+    if (!fileExplorerStore.isFolderExpanded(connectionId, folderPath)) return false
+    fileExplorerStore.collapseFolder(connectionId, folderPath)
+    return true
+  }
+
+  return false
+}
+
+function handleTreeKeyboardNavigation(e: KeyboardEvent) {
+  if (!TREE_NAV_KEYS.has(e.key)) return
+  if (e.metaKey || e.ctrlKey || e.altKey) return
+  if (contextMenu.hasContextMenu.value) return
+  if (isTypingTarget(e.target)) return
+
+  const active = document.activeElement as HTMLElement | null
+  if (active?.dataset?.treeNode !== 'true') return
+
+  const nodes = getVisibleTreeNodes()
+  if (!nodes.length) return
+
+  const current = getCurrentTreeNode(nodes)
+  if (!current) return
+
+  const currentIndex = nodes.indexOf(current)
+  if (currentIndex < 0) return
+
+  switch (e.key) {
+    case 'ArrowDown': {
+      e.preventDefault()
+      focusTreeNode(nodes[Math.min(currentIndex + 1, nodes.length - 1)])
+      break
+    }
+    case 'ArrowUp': {
+      e.preventDefault()
+      focusTreeNode(nodes[Math.max(currentIndex - 1, 0)])
+      break
+    }
+    case 'ArrowRight': {
+      e.preventDefault()
+      if (isTreeNodeExpandable(current) && !isTreeNodeExpanded(current)) {
+        toggleTreeNode(current)
+      } else {
+        focusTreeNode(nodes[Math.min(currentIndex + 1, nodes.length - 1)])
+      }
+      break
+    }
+    case 'ArrowLeft': {
+      e.preventDefault()
+      if (collapseTreeNode(current)) {
+        focusTreeNode(current)
+      } else {
+        const parentIndex = findParentTreeNodeIndex(nodes, currentIndex)
+        if (parentIndex >= 0) {
+          focusTreeNode(nodes[parentIndex])
+        } else {
+          focusTreeNode(nodes[Math.max(currentIndex - 1, 0)])
+        }
+      }
+      break
+    }
+    case 'Enter': {
+      e.preventDefault()
+      current.click()
+      break
+    }
+    case 'Escape':
+    case 'Esc': {
+      let collapseIndex = currentIndex
+      let collapsedNode: HTMLElement | null = null
+
+      while (collapseIndex >= 0) {
+        const node = nodes[collapseIndex]
+        if (collapseTreeNode(node)) {
+          collapsedNode = node
+          break
+        }
+        collapseIndex = findParentTreeNodeIndex(nodes, collapseIndex)
+      }
+
+      if (collapsedNode) {
+        e.preventDefault()
+        focusTreeNode(collapsedNode)
+      }
+      break
     }
   }
 }
@@ -561,6 +873,20 @@ function onMenuAction(payload: {
       if (t.kind === 'database' || t.kind === 'schema')
         actions.refreshDatabase(t.connectionId, t.database)
       break
+    case 'collapse-subtree':
+      if (t.kind === 'connection') {
+        navigationStore.collapseConnectionSubtree(t.connectionId)
+        if (treeLogic.isFileConnection(t.connectionId)) {
+          fileExplorerStore.collapseAllFolders(t.connectionId)
+        }
+      } else if (t.kind === 'database') {
+        navigationStore.collapseDatabaseSubtree(t.connectionId, t.database)
+      } else if (t.kind === 'schema') {
+        navigationStore.collapseSchemaSubtree(t.connectionId, t.database, t.schema)
+      } else if (t.kind === 'file' && t.isDir) {
+        fileExplorerStore.collapseFolderSubtree(t.connectionId, t.path)
+      }
+      break
     case 'toggle-system-objects':
       if (t.kind === 'database') {
         navigationStore.toggleShowSystemObjectsFor(t.connectionId, t.database)
@@ -784,6 +1110,7 @@ function handleContextMenuFile(payload: {
 }
 
 onMounted(async () => {
+  window.addEventListener('keydown', handleTreeKeyboardNavigation)
   await loadConnections()
   // Ensure explicitly restored focus is expanded.
   if (props.initialExpandedConnectionId) {
@@ -793,6 +1120,13 @@ onMounted(async () => {
   // Restored expansion state is persisted, but tree payloads are lazy-loaded.
   // Hydrate all currently expanded connections so they don't render as empty after app restart.
   await hydrateExpandedConnections()
+})
+
+onUnmounted(() => {
+  if (focusedTreeNode.value) {
+    delete focusedTreeNode.value.dataset.treeFocused
+  }
+  window.removeEventListener('keydown', handleTreeKeyboardNavigation)
 })
 
 // Auto-expand selection path
@@ -1064,7 +1398,11 @@ watch(
       </button>
     </div>
     <!-- Scrollable tree content area with smooth scrolling and custom scrollbar -->
-    <div class="flex-1 overflow-y-auto overscroll-contain p-3 scrollbar-thin">
+    <div
+      ref="treeScrollRef"
+      class="flex-1 overflow-y-auto overscroll-contain p-3 scrollbar-thin"
+      @click.capture="focusTreeNodeFromEvent"
+    >
       <!-- Loading state with centered spinner and blue-green gradient -->
       <div
         v-if="isLoadingConnections"
@@ -1208,5 +1546,24 @@ watch(
 
 .dark .scrollbar-thin {
   scrollbar-color: rgb(75, 85, 99) transparent;
+}
+
+:deep([data-tree-node='true']:focus) {
+  outline: none;
+  box-shadow: 0 0 0 2px rgb(20 184 166 / 0.55);
+}
+
+:deep(.dark [data-tree-node='true']:focus) {
+  box-shadow: 0 0 0 2px rgb(45 212 191 / 0.55);
+}
+
+:deep([data-tree-node='true'][data-tree-focused='true']) {
+  background: rgb(15 118 110 / 0.12);
+  box-shadow: 0 0 0 2px rgb(20 184 166 / 0.7);
+}
+
+:deep(.dark [data-tree-node='true'][data-tree-focused='true']) {
+  background: rgb(20 184 166 / 0.16);
+  box-shadow: 0 0 0 2px rgb(45 212 191 / 0.8);
 }
 </style>

@@ -151,6 +151,13 @@ const handleChildExpandFolder = (payload: { entry: FileSystemEntry }) => {
           isSelected && isSelectableFile,
         'opacity-60': !isSupported && entry.type !== 'dir'
       }"
+      data-tree-node="true"
+      :data-node-kind="isFolder ? 'file-folder' : 'file'"
+      :data-tree-depth="depth + 1"
+      :data-connection-id="connectionId"
+      :data-file-path="entry.path"
+      :data-is-dir="isFolder ? 'true' : 'false'"
+      tabindex="-1"
       :style="indentStyle"
       :title="unsupportedTooltip"
       @click="handleSelect"

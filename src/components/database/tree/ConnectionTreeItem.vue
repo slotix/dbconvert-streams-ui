@@ -274,6 +274,11 @@ const connectionPort = computed(() => getConnectionPort(props.connection))
   <div class="transition-all duration-200">
     <div
       :data-explorer-connection="connection.id"
+      data-tree-node="true"
+      data-node-kind="connection"
+      data-tree-depth="0"
+      :data-connection-id="connection.id"
+      tabindex="-1"
       :class="[
         'group flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 rounded-lg cursor-pointer select-none',
         'transition-all duration-200 ease-out',

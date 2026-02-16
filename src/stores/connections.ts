@@ -4,6 +4,7 @@ import { debounce } from '@/utils/debounce'
 
 import type { Connection, DbType } from '@/types/connections'
 import { useExplorerNavigationStore } from './explorerNavigation'
+import { useFileExplorerStore } from './fileExplorer'
 import { getConnectionDatabase } from '@/utils/specBuilder'
 import {
   getConnectionKindFromSpec,
@@ -167,8 +168,10 @@ export const useConnectionsStore = defineStore('connections', {
 
         // Cleanup stale connection references in explorerNavigation store
         const explorerNavigationStore = useExplorerNavigationStore()
+        const fileExplorerStore = useFileExplorerStore()
         const validConnectionIds = this.connections.map((conn) => conn.id)
         explorerNavigationStore.cleanupStaleConnections(validConnectionIds)
+        fileExplorerStore.cleanupStaleConnections(validConnectionIds)
       } catch (error) {
         console.error('Failed to refresh connections:', error)
         throw error
@@ -189,8 +192,10 @@ export const useConnectionsStore = defineStore('connections', {
 
         // Cleanup stale connection references in explorerNavigation store
         const explorerNavigationStore = useExplorerNavigationStore()
+        const fileExplorerStore = useFileExplorerStore()
         const validConnectionIds = this.connections.map((conn) => conn.id)
         explorerNavigationStore.cleanupStaleConnections(validConnectionIds)
+        fileExplorerStore.cleanupStaleConnections(validConnectionIds)
       } catch (error) {
         console.error('Failed to delete connection:', error)
         throw error

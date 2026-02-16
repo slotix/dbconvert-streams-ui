@@ -528,6 +528,47 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     saveExpandedFolders()
   }
 
+  function collapseFolderSubtree(connectionId: string, folderPath: string) {
+    const expandedSet = expandedFoldersByConnection.value[connectionId]
+    if (!expandedSet) return
+
+    const nextExpanded = new Set<string>()
+    const normalizedPrefix = folderPath.endsWith('/') ? folderPath : `${folderPath}/`
+
+    for (const path of expandedSet) {
+      if (path === folderPath) continue
+      if (path.startsWith(normalizedPrefix)) continue
+      nextExpanded.add(path)
+    }
+
+    expandedFoldersByConnection.value = {
+      ...expandedFoldersByConnection.value,
+      [connectionId]: nextExpanded
+    }
+    saveExpandedFolders()
+  }
+
+  function cleanupStaleConnections(validConnectionIds: string[]) {
+    const validIdSet = new Set(validConnectionIds)
+    const keepValid = <T>(record: Record<string, T>): Record<string, T> => {
+      const next: Record<string, T> = {}
+      for (const [id, value] of Object.entries(record)) {
+        if (validIdSet.has(id)) {
+          next[id] = value
+        }
+      }
+      return next
+    }
+
+    entriesByConnection.value = keepValid(entriesByConnection.value)
+    directoryPathsByConnection.value = keepValid(directoryPathsByConnection.value)
+    errorsByConnection.value = keepValid(errorsByConnection.value)
+    selectedPathsByConnection.value = keepValid(selectedPathsByConnection.value)
+    loadingByConnection.value = keepValid(loadingByConnection.value)
+    expandedFoldersByConnection.value = keepValid(expandedFoldersByConnection.value)
+    saveExpandedFolders()
+  }
+
   // Immutable helper to update a folder's children in the tree
   // Returns a new array with the updated entry (no mutation)
   function updateFolderChildren(
@@ -831,6 +872,8 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     collapseFolder,
     expandFolder,
     collapseAllFolders,
+    collapseFolderSubtree,
+    cleanupStaleConnections,
     loadFolderContents
   }
 })
