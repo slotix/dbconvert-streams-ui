@@ -89,66 +89,44 @@ export function useConnectionTreeLogic() {
       })
     }
 
-    // Initialize buckets for all schemas from the API response
-    const buckets = new Map<
-      string,
-      {
-        tables: string[]
-        views: string[]
-        functions: string[]
-        procedures: string[]
-        sequences: string[]
-      }
-    >()
+    type SchemaBucket = {
+      tables: string[]
+      views: string[]
+      functions: string[]
+      procedures: string[]
+      sequences: string[]
+    }
+    const buckets = new Map<string, SchemaBucket>()
 
-    // First, add all schemas from the API response (including empty ones)
-    if (meta.schemas && Array.isArray(meta.schemas)) {
-      meta.schemas.forEach((schemaName: string) => {
-        buckets.set(schemaName, {
-          tables: [],
-          views: [],
-          functions: [],
-          procedures: [],
-          sequences: []
-        })
-      })
+    function ensureBucket(schema: string): SchemaBucket {
+      let bucket = buckets.get(schema)
+      if (!bucket) {
+        bucket = { tables: [], views: [], functions: [], procedures: [], sequences: [] }
+        buckets.set(schema, bucket)
+      }
+      return bucket
     }
 
-    // Then populate tables and views into their respective schemas
+    // Add all schemas from the API response (including empty ones)
+    if (meta.schemas && Array.isArray(meta.schemas)) {
+      meta.schemas.forEach((schemaName: string) => ensureBucket(schemaName))
+    }
+
+    // Populate objects into their respective schemas
     Object.values(meta.tables || {}).forEach((t) => {
-      const s = t.schema || ''
-      if (!buckets.has(s)) {
-        buckets.set(s, { tables: [], views: [], functions: [], procedures: [], sequences: [] })
-      }
-      buckets.get(s)!.tables.push(t.name)
+      ensureBucket(t.schema || '').tables.push(t.name)
     })
     Object.values(meta.views || {}).forEach((v) => {
-      const s = v.schema || ''
-      if (!buckets.has(s)) {
-        buckets.set(s, { tables: [], views: [], functions: [], procedures: [], sequences: [] })
-      }
-      buckets.get(s)!.views.push(v.name)
+      ensureBucket(v.schema || '').views.push(v.name)
     })
     Object.values(meta.functions || {}).forEach((fn) => {
-      const s = fn.schema || ''
-      if (!buckets.has(s)) {
-        buckets.set(s, { tables: [], views: [], functions: [], procedures: [], sequences: [] })
-      }
-      buckets.get(s)!.functions.push(formatRoutineName(fn.name, fn.signature))
+      ensureBucket(fn.schema || '').functions.push(formatRoutineName(fn.name, fn.signature))
     })
     Object.values(meta.procedures || {}).forEach((proc) => {
-      const s = proc.schema || ''
-      if (!buckets.has(s)) {
-        buckets.set(s, { tables: [], views: [], functions: [], procedures: [], sequences: [] })
-      }
-      buckets.get(s)!.procedures.push(formatRoutineName(proc.name, proc.signature))
+      ensureBucket(proc.schema || '').procedures.push(formatRoutineName(proc.name, proc.signature))
     })
     Object.values(meta.sequences || {}).forEach((seq) => {
-      const s = seq.schema || ''
-      if (!buckets.has(s)) {
-        buckets.set(s, { tables: [], views: [], functions: [], procedures: [], sequences: [] })
-      }
-      buckets.get(s)!.sequences.push(seq.name)
+      ensureBucket(seq.schema || '').sequences.push(seq.name)
     })
 
     let arr = Array.from(buckets.entries()).map(([name, bucket]) => ({
@@ -176,44 +154,37 @@ export function useConnectionTreeLogic() {
     })
   }
 
-  function getFlatTables(connId: string, db: string): string[] {
+  function getFlatObjects(
+    connId: string,
+    db: string,
+    key: 'tables' | 'views' | 'functions' | 'procedures' | 'sequences',
+    nameMapper: (item: { name: string; signature?: string }) => string = (item) => item.name
+  ): string[] {
     const meta = navigationStore.metadataState[connId]?.[db]
     if (!meta) return []
-    return Object.values(meta.tables || {})
-      .map((t) => t.name)
+    return Object.values(meta[key] || {})
+      .map((item) => nameMapper(item as { name: string; signature?: string }))
       .sort((a, b) => a.localeCompare(b))
+  }
+
+  function getFlatTables(connId: string, db: string): string[] {
+    return getFlatObjects(connId, db, 'tables')
   }
 
   function getFlatViews(connId: string, db: string): string[] {
-    const meta = navigationStore.metadataState[connId]?.[db]
-    if (!meta) return []
-    return Object.values(meta.views || {})
-      .map((v) => v.name)
-      .sort((a, b) => a.localeCompare(b))
+    return getFlatObjects(connId, db, 'views')
   }
 
   function getFlatFunctions(connId: string, db: string): string[] {
-    const meta = navigationStore.metadataState[connId]?.[db]
-    if (!meta) return []
-    return Object.values(meta.functions || {})
-      .map((f) => formatRoutineName(f.name, f.signature))
-      .sort((a, b) => a.localeCompare(b))
+    return getFlatObjects(connId, db, 'functions', (f) => formatRoutineName(f.name, f.signature))
   }
 
   function getFlatProcedures(connId: string, db: string): string[] {
-    const meta = navigationStore.metadataState[connId]?.[db]
-    if (!meta) return []
-    return Object.values(meta.procedures || {})
-      .map((p) => formatRoutineName(p.name, p.signature))
-      .sort((a, b) => a.localeCompare(b))
+    return getFlatObjects(connId, db, 'procedures', (p) => formatRoutineName(p.name, p.signature))
   }
 
   function getFlatSequences(connId: string, db: string): string[] {
-    const meta = navigationStore.metadataState[connId]?.[db]
-    if (!meta) return []
-    return Object.values(meta.sequences || {})
-      .map((s) => s.name)
-      .sort((a, b) => a.localeCompare(b))
+    return getFlatObjects(connId, db, 'sequences')
   }
 
   function isMetadataLoaded(connId: string, dbName: string): boolean {

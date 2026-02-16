@@ -18,6 +18,7 @@ import ConnectionParams from '../../params/ConnectionParams.vue'
 import AccessNotice from '../../AccessNotice.vue'
 import { useConnectionsStore } from '@/stores/connections'
 import { getPublicIp, isLocalIp } from '@/utils/ipUtils'
+import { getConnectionCategory } from '@/types/connections'
 
 interface Props {
   connectionType?: string
@@ -31,22 +32,11 @@ const emit = defineEmits<{
   'update:can-proceed': [canProceed: boolean]
 }>()
 
-type ConnectionCategory = 'database' | 'file' | null
-
-function determineConnectionCategory(type?: string): ConnectionCategory {
-  if (!type) return null
-  const normalized = type.toLowerCase()
-  const match = connectionsStore.dbTypes.find((db) => db.type.toLowerCase() === normalized)
-
-  if (match?.category && match.category !== 'all') {
-    return match.category
-  }
-
-  // Fallback: treat anything mentioning "file" as file-like, otherwise database
-  return normalized.includes('file') ? 'file' : 'database'
-}
-
-const connectionCategory = computed(() => determineConnectionCategory(props.connectionType))
+const connectionCategory = computed(() =>
+  props.connectionType
+    ? getConnectionCategory(props.connectionType, connectionsStore.dbTypes)
+    : null
+)
 
 // Check if we have minimum required connection details
 const canProceed = computed(() => {

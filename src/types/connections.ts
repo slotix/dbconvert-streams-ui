@@ -51,6 +51,28 @@ export interface DbType {
   description?: string
 }
 
+export type ConnectionCategory = 'all' | 'database' | 'file'
+
+/**
+ * Determine the connection category for a DbType or type string.
+ * Falls back to checking whether the type name contains "file".
+ */
+export function getConnectionCategory(
+  typeOrDbType: string | DbType,
+  dbTypes?: DbType[]
+): ConnectionCategory {
+  if (typeof typeOrDbType !== 'string') {
+    if (typeOrDbType.category) return typeOrDbType.category
+    if (typeOrDbType.type === 'All') return 'all'
+    return typeOrDbType.type.toLowerCase().includes('file') ? 'file' : 'database'
+  }
+
+  const normalized = typeOrDbType.toLowerCase()
+  const match = dbTypes?.find((db) => db.type.toLowerCase() === normalized)
+  if (match?.category && match.category !== 'all') return match.category
+  return normalized.includes('file') ? 'file' : 'database'
+}
+
 export interface DatabaseInfo {
   name: string
   isSystem?: boolean

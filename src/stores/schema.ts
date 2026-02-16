@@ -4,6 +4,134 @@ import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import type { SQLTableMeta, SQLViewMeta, SQLColumnMeta, SQLForeignKeyMeta } from '@/types/metadata'
 import { isSystemSchema } from '@/utils/systemSchema'
 
+type SchemaFilter = (schemaName: string | undefined | null) => boolean
+
+async function prepareSchemaFilter(
+  connectionId: string,
+  databaseName: string
+): Promise<SchemaFilter> {
+  const navigationStore = useExplorerNavigationStore()
+  await navigationStore.ensureDatabases(connectionId)
+
+  const schemaSystemInfo = new Map<string, boolean>()
+  const dbInfo = navigationStore
+    .getDatabasesRaw(connectionId)
+    ?.find((db) => db.name === databaseName)
+  dbInfo?.schemas?.forEach((s) => {
+    schemaSystemInfo.set(s.name.toLowerCase(), Boolean(s.isSystem))
+  })
+
+  const showSystemObjects = navigationStore.showSystemObjectsFor(connectionId, databaseName)
+  return (schemaName: string | undefined | null) => {
+    if (showSystemObjects) return true
+    return !isSystemSchema(schemaName, schemaSystemInfo)
+  }
+}
+
+function convertMetadataTables(
+  metadataTables: Record<string, SQLTableMeta>,
+  includeSchema: SchemaFilter
+): Table[] {
+  return Object.entries(metadataTables)
+    .filter(([_, value]) => value && typeof value === 'object')
+    .filter(([_, tableMeta]) => includeSchema((tableMeta as SQLTableMeta).schema))
+    .map(([_, tableMeta]: [string, unknown]) => {
+      const tm = tableMeta as SQLTableMeta
+      const columns =
+        tm.columns?.map((col: SQLColumnMeta) => {
+          const isForeignKey = Boolean(
+            tm.foreignKeys?.some((fk: SQLForeignKeyMeta) => fk.sourceColumn === col.name)
+          )
+
+          let formattedType = col.dataType
+          if (col.length?.Valid && col.length.Int64 !== null) {
+            formattedType += `(${col.length.Int64})`
+          } else if (col.precision?.Valid && col.precision.Int64 !== null) {
+            formattedType += `(${col.precision.Int64}${col.scale?.Valid ? `,${col.scale.Int64}` : ''})`
+          }
+
+          return {
+            name: col.name,
+            type: formattedType,
+            nullable: col.isNullable,
+            default: col.defaultValue?.String || undefined,
+            isPrimaryKey: tm.primaryKeys?.includes(col.name) || false,
+            isForeignKey
+          }
+        }) || []
+
+      const foreignKeys = (tm.foreignKeys || []).map((fk: SQLForeignKeyMeta) => ({
+        name: fk.name,
+        sourceColumn: fk.sourceColumn,
+        referencedTable: fk.referencedTable,
+        referencedColumn: fk.referencedColumn,
+        onUpdate: fk.onUpdate,
+        onDelete: fk.onDelete
+      }))
+
+      return {
+        name: tm.name,
+        schema: tm.schema,
+        columns,
+        primaryKeys: tm.primaryKeys || [],
+        foreignKeys
+      }
+    })
+}
+
+function convertMetadataViews(
+  metadataViews: Record<string, SQLViewMeta>,
+  includeSchema: SchemaFilter
+): Table[] {
+  return Object.entries(metadataViews)
+    .filter(([_, value]) => value && typeof value === 'object')
+    .filter(([_, viewMeta]) => includeSchema((viewMeta as SQLViewMeta).schema))
+    .map(([_, viewMeta]: [string, unknown]) => {
+      const vm = viewMeta as SQLViewMeta
+      const columns =
+        vm.columns?.map((col: SQLColumnMeta) => ({
+          name: col.name,
+          type: col.dataType,
+          nullable: col.isNullable,
+          default: col.defaultValue?.String || undefined,
+          isPrimaryKey: false,
+          isForeignKey: false
+        })) || []
+
+      return {
+        name: vm.name,
+        schema: vm.schema,
+        columns,
+        primaryKeys: [],
+        foreignKeys: []
+      }
+    })
+}
+
+async function loadSchemaData(
+  connectionId: string,
+  databaseName: string,
+  forceRefresh: boolean
+): Promise<{ tables: Table[]; views: Table[] }> {
+  const navigationStore = useExplorerNavigationStore()
+  const includeSchema = await prepareSchemaFilter(connectionId, databaseName)
+
+  const metadata = await navigationStore.ensureMetadata(connectionId, databaseName, forceRefresh)
+  if (!metadata || typeof metadata !== 'object') {
+    throw new Error('Invalid metadata response format')
+  }
+
+  const metadataTables = ((metadata as { tables?: Record<string, SQLTableMeta> }).tables ||
+    {}) as Record<string, SQLTableMeta>
+  const metadataViews = ((metadata as { views?: Record<string, SQLViewMeta> }).views ||
+    {}) as Record<string, SQLViewMeta>
+
+  return {
+    tables: convertMetadataTables(metadataTables, includeSchema),
+    views: convertMetadataViews(metadataViews, includeSchema)
+  }
+}
+
 export const useSchemaStore = defineStore('schema', {
   state: () => ({
     tables: [] as Table[],
@@ -80,118 +208,11 @@ export const useSchemaStore = defineStore('schema', {
       this.error = null
 
       try {
-        const navigationStore = useExplorerNavigationStore()
-        // Ensure we have schema/system info available for filtering.
-        await navigationStore.ensureDatabases(this.connectionId)
-
-        const schemaSystemInfo = new Map<string, boolean>()
-        const dbInfo = navigationStore
-          .getDatabasesRaw(this.connectionId)
-          ?.find((db) => db.name === this.databaseName)
-        dbInfo?.schemas?.forEach((s) => {
-          schemaSystemInfo.set(s.name.toLowerCase(), Boolean(s.isSystem))
-        })
-
-        const showSystemObjects = navigationStore.showSystemObjectsFor(
-          this.connectionId,
-          this.databaseName
-        )
-
-        const includeSchema = (schemaName: string | undefined | null) => {
-          if (showSystemObjects) return true
-          return !isSystemSchema(schemaName, schemaSystemInfo)
-        }
-
-        const metadata = await navigationStore.ensureMetadata(
+        const { tables, views } = await loadSchemaData(
           this.connectionId,
           this.databaseName,
           forceRefresh
         )
-
-        if (!metadata || typeof metadata !== 'object') {
-          throw new Error('Invalid metadata response format')
-        }
-
-        const metadataTables = ((metadata as { tables?: Record<string, SQLTableMeta> }).tables ||
-          {}) as Record<string, SQLTableMeta>
-        const metadataViews = ((metadata as { views?: Record<string, SQLViewMeta> }).views ||
-          {}) as Record<string, SQLViewMeta>
-
-        // Convert metadata tables to tables array
-        const tables: Table[] = Object.entries(metadataTables)
-          .filter(([_, value]) => value && typeof value === 'object')
-          .filter(([_, tableMeta]) => includeSchema((tableMeta as SQLTableMeta).schema))
-          .map(([_, tableMeta]: [string, unknown]) => {
-            const tm = tableMeta as SQLTableMeta
-            // Process columns
-            const columns =
-              tm.columns?.map((col: SQLColumnMeta) => {
-                const isForeignKey = Boolean(
-                  tm.foreignKeys?.some((fk: SQLForeignKeyMeta) => fk.sourceColumn === col.name)
-                )
-
-                // Format type with length/precision
-                let formattedType = col.dataType
-                if (col.length?.Valid && col.length.Int64 !== null) {
-                  formattedType += `(${col.length.Int64})`
-                } else if (col.precision?.Valid && col.precision.Int64 !== null) {
-                  formattedType += `(${col.precision.Int64}${col.scale?.Valid ? `,${col.scale.Int64}` : ''})`
-                }
-
-                return {
-                  name: col.name,
-                  type: formattedType,
-                  nullable: col.isNullable,
-                  default: col.defaultValue?.String || undefined,
-                  isPrimaryKey: tm.primaryKeys?.includes(col.name) || false,
-                  isForeignKey
-                }
-              }) || []
-
-            // Map foreign keys to our internal format
-            const foreignKeys = (tm.foreignKeys || []).map((fk: SQLForeignKeyMeta) => ({
-              name: fk.name,
-              sourceColumn: fk.sourceColumn,
-              referencedTable: fk.referencedTable,
-              referencedColumn: fk.referencedColumn,
-              onUpdate: fk.onUpdate,
-              onDelete: fk.onDelete
-            }))
-
-            return {
-              name: tm.name,
-              schema: tm.schema,
-              columns,
-              primaryKeys: tm.primaryKeys || [],
-              foreignKeys
-            }
-          })
-
-        // Convert metadata views to views array
-        const views: Table[] = Object.entries(metadataViews)
-          .filter(([_, value]) => value && typeof value === 'object')
-          .filter(([_, viewMeta]) => includeSchema((viewMeta as SQLViewMeta).schema))
-          .map(([_, viewMeta]: [string, unknown]) => {
-            const vm = viewMeta as SQLViewMeta
-            // Process columns
-            const columns =
-              vm.columns?.map((col: SQLColumnMeta) => ({
-                name: col.name,
-                type: col.dataType,
-                nullable: col.isNullable,
-                default: col.defaultValue?.String || undefined,
-                isPrimaryKey: false,
-                isForeignKey: false
-              })) || []
-
-            return {
-              name: vm.name,
-              schema: vm.schema,
-              columns,
-              primaryKeys: [],
-              foreignKeys: []
-            }
-          })
 
         this.tables = tables
         this.views = views
@@ -227,109 +248,7 @@ export const useSchemaStore = defineStore('schema', {
         throw new Error('No database selected')
       }
 
-      const navigationStore = useExplorerNavigationStore()
-      // Ensure we have schema/system info available for filtering.
-      await navigationStore.ensureDatabases(connectionId)
-
-      const schemaSystemInfo = new Map<string, boolean>()
-      const dbInfo = navigationStore
-        .getDatabasesRaw(connectionId)
-        ?.find((db) => db.name === databaseName)
-      dbInfo?.schemas?.forEach((s) => {
-        schemaSystemInfo.set(s.name.toLowerCase(), Boolean(s.isSystem))
-      })
-
-      const showSystemObjects = navigationStore.showSystemObjectsFor(connectionId, databaseName)
-
-      const includeSchema = (schemaName: string | undefined | null) => {
-        if (showSystemObjects) return true
-        return !isSystemSchema(schemaName, schemaSystemInfo)
-      }
-
-      const metadata = await navigationStore.ensureMetadata(
-        connectionId,
-        databaseName,
-        forceRefresh
-      )
-
-      if (!metadata || typeof metadata !== 'object') {
-        throw new Error('Invalid metadata response format')
-      }
-
-      const metadataTables = ((metadata as { tables?: Record<string, SQLTableMeta> }).tables ||
-        {}) as Record<string, SQLTableMeta>
-      const metadataViews = ((metadata as { views?: Record<string, SQLViewMeta> }).views ||
-        {}) as Record<string, SQLViewMeta>
-
-      const tables: Table[] = Object.entries(metadataTables)
-        .filter(([_, value]) => value && typeof value === 'object')
-        .filter(([_, tableMeta]) => includeSchema((tableMeta as SQLTableMeta).schema))
-        .map(([_, tableMeta]: [string, unknown]) => {
-          const tm = tableMeta as SQLTableMeta
-          const columns =
-            tm.columns?.map((col: SQLColumnMeta) => {
-              const isForeignKey = Boolean(
-                tm.foreignKeys?.some((fk: SQLForeignKeyMeta) => fk.sourceColumn === col.name)
-              )
-
-              let formattedType = col.dataType
-              if (col.length?.Valid && col.length.Int64 !== null) {
-                formattedType += `(${col.length.Int64})`
-              } else if (col.precision?.Valid && col.precision.Int64 !== null) {
-                formattedType += `(${col.precision.Int64}${col.scale?.Valid ? `,${col.scale.Int64}` : ''})`
-              }
-
-              return {
-                name: col.name,
-                type: formattedType,
-                nullable: col.isNullable,
-                default: col.defaultValue?.String || undefined,
-                isPrimaryKey: tm.primaryKeys?.includes(col.name) || false,
-                isForeignKey
-              }
-            }) || []
-
-          const foreignKeys = (tm.foreignKeys || []).map((fk: SQLForeignKeyMeta) => ({
-            name: fk.name,
-            sourceColumn: fk.sourceColumn,
-            referencedTable: fk.referencedTable,
-            referencedColumn: fk.referencedColumn,
-            onUpdate: fk.onUpdate,
-            onDelete: fk.onDelete
-          }))
-
-          return {
-            name: tm.name,
-            schema: tm.schema,
-            columns,
-            primaryKeys: tm.primaryKeys || [],
-            foreignKeys
-          }
-        })
-
-      const views: Table[] = Object.entries(metadataViews)
-        .filter(([_, value]) => value && typeof value === 'object')
-        .filter(([_, viewMeta]) => includeSchema((viewMeta as SQLViewMeta).schema))
-        .map(([_, viewMeta]: [string, unknown]) => {
-          const vm = viewMeta as SQLViewMeta
-          const columns =
-            vm.columns?.map((col: SQLColumnMeta) => ({
-              name: col.name,
-              type: col.dataType,
-              nullable: col.isNullable,
-              default: col.defaultValue?.String || undefined,
-              isPrimaryKey: false,
-              isForeignKey: false
-            })) || []
-
-          return {
-            name: vm.name,
-            schema: vm.schema,
-            columns,
-            primaryKeys: [],
-            foreignKeys: []
-          }
-        })
+      const { tables, views } = await loadSchemaData(connectionId, databaseName, forceRefresh)
 
       return {
         tables,

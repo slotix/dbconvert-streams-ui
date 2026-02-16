@@ -28,13 +28,13 @@
       >
         <div class="py-1">
           <MenuItem v-slot="{ active }">
-            <a
-              href="#"
+            <button
+              type="button"
               :class="[
                 active
                   ? 'bg-gray-100 dark:bg-gray-700 text-red-500 dark:text-red-400'
                   : 'text-red-600 dark:text-red-400',
-                'group flex items-center px-4 py-2 text-sm'
+                'group flex w-full items-center px-4 py-2 text-sm'
               ]"
               @click="$emit('deleteRow')"
             >
@@ -46,7 +46,7 @@
                 aria-hidden="true"
               />
               Delete
-            </a>
+            </button>
           </MenuItem>
         </div>
         <div class="py-1">
@@ -69,13 +69,13 @@
           </MenuItem>
            </router-link> -->
           <MenuItem v-slot="{ active }">
-            <a
-              href="#"
+            <button
+              type="button"
               :class="[
                 active
                   ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
                   : 'text-gray-700 dark:text-gray-300',
-                'group flex items-center px-4 py-2 text-sm'
+                'group flex w-full items-center px-4 py-2 text-sm'
               ]"
               @click="$emit('cloneRow')"
             >
@@ -87,7 +87,7 @@
                 aria-hidden="true"
               />
               Clone
-            </a>
+            </button>
           </MenuItem>
         </div>
       </MenuItems>

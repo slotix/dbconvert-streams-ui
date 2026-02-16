@@ -29,9 +29,12 @@
             <DialogTitle as="h3" class="text-lg font-semibold text-gray-900 dark:text-gray-100">
               {{ title }}
             </DialogTitle>
-            <p v-if="description" class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+            <DialogDescription
+              v-if="description"
+              class="mt-2 text-sm text-gray-600 dark:text-gray-400"
+            >
               {{ description }}
-            </p>
+            </DialogDescription>
 
             <div class="mt-6 flex justify-end space-x-3">
               <BaseButton variant="secondary" @click="handleCancel">
@@ -49,7 +52,14 @@
 </template>
 
 <script setup lang="ts">
-import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
+import {
+  Dialog,
+  DialogDescription,
+  DialogPanel,
+  DialogTitle,
+  TransitionChild,
+  TransitionRoot
+} from '@headlessui/vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 
 interface Props {

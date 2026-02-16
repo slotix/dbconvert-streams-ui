@@ -1,4 +1,4 @@
-import { ref, computed, watch, type ComputedRef } from 'vue'
+import { ref, computed, watch, onScopeDispose, type ComputedRef } from 'vue'
 import { useSqlConsoleStore } from '@/stores/sqlConsole'
 import type { QueryPurpose } from '@/stores/logs'
 import { format as formatSQL, type SqlLanguage } from 'sql-formatter'
@@ -541,6 +541,9 @@ export function useConsoleTab(options: ConsoleTabOptions) {
       }
     }
   }
+
+  // Auto-cleanup when the composable's scope is disposed (component unmounts)
+  onScopeDispose(cleanup)
 
   // ========== Initialization ==========
   function initialize() {

@@ -71,6 +71,11 @@ export function useSidebar() {
 
   onUnmounted(() => {
     window.removeEventListener('mousemove', onSidebarDividerMouseMove)
+    window.removeEventListener('mouseup', onSidebarDividerMouseUp)
+    if (isSidebarResizing.value) {
+      document.body.style.userSelect = prevBodySelect || ''
+      isSidebarResizing.value = false
+    }
   })
 
   return {

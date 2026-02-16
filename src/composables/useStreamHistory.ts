@@ -1,4 +1,4 @@
-import { ref, watch, type Ref } from 'vue'
+import { ref, watch, onScopeDispose, type Ref } from 'vue'
 import { apiClient } from '@/api/apiClient'
 import { useCommonStore } from '@/stores/common'
 import type { StreamRun } from '@/types/streamHistory'
@@ -20,6 +20,7 @@ export function useStreamHistory({
   const historyRuns = ref<StreamRun[]>([])
   const isLoadingHistory = ref(false)
   const historyAbortController = ref<AbortController | null>(null)
+  let delayedRefreshTimer: ReturnType<typeof setTimeout> | null = null
 
   async function loadStreamHistory() {
     if (!streamId.value) return
@@ -93,7 +94,9 @@ export function useStreamHistory({
     isStreamFinished,
     (finished, wasFinished) => {
       if (finished && !wasFinished) {
-        setTimeout(async () => {
+        if (delayedRefreshTimer) clearTimeout(delayedRefreshTimer)
+        delayedRefreshTimer = setTimeout(async () => {
+          delayedRefreshTimer = null
           if (activeTab.value === 'history') {
             await loadStreamHistory()
           }
@@ -102,6 +105,16 @@ export function useStreamHistory({
     },
     { immediate: false }
   )
+
+  onScopeDispose(() => {
+    if (delayedRefreshTimer) {
+      clearTimeout(delayedRefreshTimer)
+      delayedRefreshTimer = null
+    }
+    if (historyAbortController.value) {
+      historyAbortController.value.abort()
+    }
+  })
 
   return {
     historyRuns,

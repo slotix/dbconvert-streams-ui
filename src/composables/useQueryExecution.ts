@@ -126,11 +126,20 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
     return part.replace(/^[`"'[]+|[`"'\]]+$/g, '').toLowerCase()
   }
 
-  function extractReferencedAliases(query: string): Set<string> {
-    const aliases = new Set<string>()
+  interface ParsedTableRef {
+    /** Original token from the SQL (e.g. "pg1.public.users") */
+    raw: string
+    /** Dot-split parts with quotes stripped and lowercased */
+    parts: string[]
+    /** Whether the reference is CTE-only (single-part that matches a CTE name) */
+    isCte: boolean
+  }
+
+  function parseTableReferences(query: string): ParsedTableRef[] {
     const cleaned = stripSqlComments(query)
     const cteNames = extractCteNames(cleaned)
     const refRegex = /\b(from|join|update|into|delete\s+from)\s+([^\s,;]+)/gi
+    const refs: ParsedTableRef[] = []
     let match: RegExpExecArray | null
 
     while ((match = refRegex.exec(cleaned)) !== null) {
@@ -154,18 +163,22 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
 
       const parts = token
         .split('.')
-        .map((p) => p.trim())
+        .map((p) => normalizeIdentifierPart(p.trim()))
         .filter(Boolean)
 
-      if (parts.length < 2) {
-        const maybeCte = normalizeIdentifierPart(token)
-        if (cteNames.has(maybeCte)) continue
-        continue
-      }
-
-      aliases.add(normalizeIdentifierPart(parts[0]))
+      const isCte = parts.length === 1 && cteNames.has(parts[0])
+      refs.push({ raw: token, parts, isCte })
     }
 
+    return refs
+  }
+
+  function extractReferencedAliases(query: string): Set<string> {
+    const aliases = new Set<string>()
+    for (const ref of parseTableReferences(query)) {
+      if (ref.isCte || ref.parts.length < 2) continue
+      aliases.add(ref.parts[0])
+    }
     return aliases
   }
 
@@ -175,46 +188,15 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
     const aliasSet = new Set(aliases.map((a) => a.toLowerCase()))
     aliasSet.add('memory')
 
-    const cleaned = stripSqlComments(query)
-    const cteNames = extractCteNames(cleaned)
-    const refRegex = /\b(from|join|update|into|delete\s+from)\s+([^\s,;]+)/gi
     const invalidRefs = new Set<string>()
-    let match: RegExpExecArray | null
-
-    while ((match = refRegex.exec(cleaned)) !== null) {
-      let token = (match[2] || '').trim()
-      if (!token) continue
-
-      token = token.replace(/[);]+$/g, '')
-      const lowered = token.toLowerCase()
-
-      if (!token || token.startsWith('(')) continue
-      if (lowered === 'only' || lowered === 'lateral') continue
-      if (
-        lowered.startsWith('read_') ||
-        lowered.startsWith('parquet_') ||
-        lowered.startsWith('csv_') ||
-        lowered.startsWith('json_')
-      ) {
+    for (const ref of parseTableReferences(query)) {
+      if (ref.isCte) continue
+      if (ref.parts.length < 2) {
+        invalidRefs.add(ref.raw)
         continue
       }
-      if (token.includes('(')) continue
-
-      const parts = token
-        .split('.')
-        .map((p) => p.trim())
-        .filter(Boolean)
-      if (parts.length < 2) {
-        const maybeCte = normalizeIdentifierPart(token)
-        if (!cteNames.has(maybeCte)) {
-          invalidRefs.add(token)
-        }
-        continue
-      }
-
-      const alias = normalizeIdentifierPart(parts[0])
-      if (!aliasSet.has(alias)) {
-        invalidRefs.add(token)
+      if (!aliasSet.has(ref.parts[0])) {
+        invalidRefs.add(ref.raw)
       }
     }
 
@@ -330,8 +312,8 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
         aliases: aliases.length > 0 ? aliases : undefined
       })
     } catch (error: unknown) {
-      const err = error as Error
-      const errorMsg = err.message || 'Failed to execute federated query'
+      const errorMsg =
+        error instanceof Error ? error.message : 'Failed to execute federated query'
       const duration = Date.now() - startTime
 
       setExecutionError(errorMsg)
@@ -503,8 +485,7 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
     startTime: number,
     executionContext?: { connectionId: string; database: string }
   ) {
-    const err = error as Error
-    const errorMsg = err.message || 'Failed to execute query'
+    const errorMsg = error instanceof Error ? error.message : 'Failed to execute query'
     const duration = Date.now() - startTime
 
     setExecutionError(errorMsg)

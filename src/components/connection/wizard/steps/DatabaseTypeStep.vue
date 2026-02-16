@@ -10,6 +10,7 @@
           v-for="dbType in databaseTypes"
           :key="dbType.id"
           :disabled="isComingSoon(dbType)"
+          :aria-selected="selectedDBType?.id === dbType.id"
           :class="[
             isComingSoon(dbType)
               ? 'opacity-50 cursor-not-allowed border-gray-300 dark:border-gray-700'
@@ -72,6 +73,7 @@
           <button
             v-for="dbType in fileTypes"
             :key="dbType.id"
+            :aria-selected="selectedDBType?.id === dbType.id"
             :class="[
               selectedDBType?.id === dbType.id
                 ? 'ring-2 ring-teal-500 dark:ring-teal-400 border-teal-500 dark:border-teal-400 bg-teal-50 dark:bg-teal-900/20'
@@ -185,7 +187,7 @@ import { ref, computed, onMounted } from 'vue'
 import { Check } from 'lucide-vue-next'
 import ConnectionStringInput from '../../ConnectionStringInput.vue'
 import { useConnectionsStore } from '@/stores/connections'
-import type { DbType, Connection } from '@/types/connections'
+import { type DbType, type Connection, getConnectionCategory } from '@/types/connections'
 
 interface Props {
   initialSelectedType?: string
@@ -197,26 +199,13 @@ const connectionsStore = useConnectionsStore()
 
 const selectedDBType = ref<DbType | null>(null)
 
-const categorizeDbType = (dbType: DbType): 'all' | 'database' | 'file' => {
-  if (dbType.category) {
-    return dbType.category
-  }
-  if (dbType.type === 'All') {
-    return 'all'
-  }
-  if (dbType.type.toLowerCase().includes('file')) {
-    return 'file'
-  }
-  return 'database'
-}
-
 // Get database types from store, separated by category
 const databaseTypes = computed(() =>
-  connectionsStore.dbTypes.filter((dbType) => categorizeDbType(dbType) === 'database')
+  connectionsStore.dbTypes.filter((dbType) => getConnectionCategory(dbType) === 'database')
 )
 
 const fileTypes = computed(() =>
-  connectionsStore.dbTypes.filter((dbType) => categorizeDbType(dbType) === 'file')
+  connectionsStore.dbTypes.filter((dbType) => getConnectionCategory(dbType) === 'file')
 )
 
 const emit = defineEmits<{

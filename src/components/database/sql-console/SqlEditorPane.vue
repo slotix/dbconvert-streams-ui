@@ -319,7 +319,7 @@
               />
             </div>
           </div>
-          <div class="min-h-0 flex-1 overflow-y-auto p-1.5 pb-3">
+          <div class="min-h-0 flex-1 overflow-y-auto p-1.5 pb-3" role="list">
             <div
               v-for="(item, index) in filteredHistory"
               :key="historyKey(item, index)"
@@ -329,7 +329,7 @@
                   mostRecentHistoryId && item.id === mostRecentHistoryId,
                 'font-semibold': item.pinned
               }"
-              role="button"
+              role="listitem"
               tabindex="0"
               @click="selectHistoryItem(item)"
               @keydown.enter.prevent="selectHistoryItem(item)"
