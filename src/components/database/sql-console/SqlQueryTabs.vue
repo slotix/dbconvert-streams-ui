@@ -1,17 +1,17 @@
 <template>
   <div
-    class="bg-gray-100 dark:bg-gray-850 border-b border-gray-200 dark:border-gray-700 flex items-center overflow-x-auto scrollbar-thin"
+    class="sql-query-tabs bg-gray-100 dark:bg-gray-850 border-b border-gray-200 dark:border-gray-700 flex items-center overflow-x-auto scrollbar-thin min-h-[44px] py-1"
   >
     <!-- Query Tabs with drag support -->
     <template v-for="(tab, index) in tabs" :key="tab.id">
       <!-- Drop indicator before tab -->
       <div
         v-if="shouldShowDropIndicator(index, 'before')"
-        class="w-0.5 h-5 bg-teal-500 rounded-full shrink-0 animate-pulse mx-0.5"
+        class="w-0.5 h-6 bg-teal-500 rounded-full shrink-0 animate-pulse mx-0.5"
       />
       <div
         :draggable="renamingTabId !== tab.id"
-        class="group flex items-center gap-1 px-3 py-1.5 border-r border-gray-200 dark:border-gray-700 cursor-pointer text-xs transition-colors min-w-0 shrink-0"
+        class="group flex items-center gap-1 px-3 py-2 border-r border-gray-200 dark:border-gray-700 cursor-pointer text-xs transition-colors min-w-0 shrink-0"
         :class="[
           tab.id === activeTabId
             ? 'bg-white dark:bg-gray-900 text-teal-600 dark:text-teal-400'
@@ -51,12 +51,12 @@
       <!-- Drop indicator after tab -->
       <div
         v-if="shouldShowDropIndicator(index, 'after')"
-        class="w-0.5 h-5 bg-teal-500 rounded-full shrink-0 animate-pulse mx-0.5"
+        class="w-0.5 h-6 bg-teal-500 rounded-full shrink-0 animate-pulse mx-0.5"
       />
     </template>
     <!-- Add Tab Button - positioned right after the last tab -->
     <button
-      class="shrink-0 px-2 py-1.5 text-gray-500 dark:text-gray-400 hover:text-teal-500 dark:hover:text-teal-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+      class="shrink-0 px-2 py-2 text-gray-500 dark:text-gray-400 hover:text-teal-500 dark:hover:text-teal-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
       title="New Query Tab"
       @click="$emit('add')"
     >
@@ -65,7 +65,7 @@
     <!-- Close All Tabs Button -->
     <button
       v-if="tabs.length > 1"
-      class="shrink-0 px-2 py-1.5 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ml-auto"
+      class="shrink-0 px-2 py-2 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ml-auto"
       title="Close All Tabs"
       @click="$emit('closeAll')"
     >
@@ -340,3 +340,9 @@ onBeforeUnmount(() => {
   document.removeEventListener('click', handleDocumentClick)
 })
 </script>
+
+<style scoped>
+.sql-query-tabs {
+  scrollbar-gutter: stable;
+}
+</style>

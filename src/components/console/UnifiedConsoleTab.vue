@@ -100,74 +100,42 @@
       </div>
     </div>
 
-    <!-- Data Sources (collapsed by default) -->
-    <ConnectionAliasPanel
-      :model-value="selectedConnections"
-      :show-file-connections="true"
-      :default-collapsed="true"
-      :show-create-connection-link="true"
-      @update:modelValue="handleUpdateSelectedConnections"
-    />
-    <div
-      v-if="showRunModeControls || runMode === 'federated'"
-      class="px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between gap-3"
-    >
-      <div class="flex items-center gap-3">
-        <div
-          v-if="showRunModeControls"
-          class="inline-flex rounded-md border border-gray-300 dark:border-gray-600 overflow-hidden"
-        >
-          <button
-            type="button"
-            class="px-2.5 py-1 text-xs transition-colors"
-            :class="
-              runMode === 'single'
-                ? 'bg-teal-600 text-white'
-                : 'bg-white dark:bg-gray-850 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
-            "
-            @click="setRunMode('single')"
-          >
-            Single source
-          </button>
-          <button
-            type="button"
-            class="px-2.5 py-1 text-xs border-l border-gray-300 dark:border-gray-600 transition-colors"
-            :class="
-              runMode === 'federated'
-                ? 'bg-teal-600 text-white'
-                : 'bg-white dark:bg-gray-850 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
-            "
-            @click="setRunMode('federated')"
-          >
-            Multi-source
-          </button>
+    <!-- Execution Context Toolbar -->
+    <div class="px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex items-center gap-3">
+      <button
+        type="button"
+        class="group min-w-0 flex-1 inline-flex items-center gap-2 text-sm text-left rounded-md px-2.5 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-850 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+        title="Manage attached sources"
+        aria-label="Manage attached sources"
+        @click="isSourceDrawerOpen = true"
+      >
+        <span class="text-gray-500 dark:text-gray-400 shrink-0 text-xs">Attached</span>
+        <span class="truncate text-gray-700 dark:text-gray-300">{{ attachedSourcesLabel }}</span>
+        <span class="shrink-0 text-[11px] text-teal-600 dark:text-teal-400 group-hover:underline">
+          Manage
+        </span>
+        <ChevronRight
+          class="h-3.5 w-3.5 shrink-0 text-gray-400 dark:text-gray-500 group-hover:text-teal-600 dark:group-hover:text-teal-400"
+        />
+      </button>
+
+      <div class="shrink-0 execution-context-wrap">
+        <div v-if="showUnifiedExecutionSelector">
+          <FormSelect
+            v-model="executionContextValue"
+            :options="executionContextOptions"
+            class="execution-context-select"
+            placeholder="Select execution mode"
+          />
         </div>
-        <div v-if="showSingleSourceSelector" class="flex items-center gap-2">
-          <span class="text-xs text-gray-500 dark:text-gray-400">Source</span>
-          <div class="source-select-wrap">
-            <select
-              v-model="singleSourceConnectionId"
-              class="source-select h-8 min-w-[260px] rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-850 pl-3 pr-8 text-xs text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-500/40"
-            >
-              <option
-                v-for="option in singleSourceOptions"
-                :key="option.value"
-                :value="option.value"
-                class="source-select-option"
-              >
-                {{ option.label }}
-              </option>
-            </select>
-            <ChevronDown class="source-select-icon h-3.5 w-3.5" />
-          </div>
+
+        <div
+          v-else
+          class="px-2.5 py-1.5 text-xs rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-850 text-gray-700 dark:text-gray-300 max-w-[320px] truncate"
+        >
+          {{ singleExecutionLabel }}
         </div>
       </div>
-      <p
-        v-if="runMode === 'federated'"
-        class="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[60%]"
-      >
-        Use aliases: {{ federatedAliasesHint }}
-      </p>
     </div>
 
     <!-- Query Tabs -->
@@ -228,17 +196,40 @@
         />
       </div>
     </div>
+
+    <SlideOverPanel
+      :open="isSourceDrawerOpen"
+      title="Query Session"
+      size="lg"
+      :body-scrollable="false"
+      :body-padding="false"
+      @close="isSourceDrawerOpen = false"
+    >
+      <ConnectionAliasPanel
+        class="h-full"
+        :model-value="selectedConnections"
+        :show-file-connections="true"
+        :default-collapsed="false"
+        :compact="true"
+        :show-hints="true"
+        :show-header="false"
+        :show-create-connection-link="true"
+        @update:modelValue="handleUpdateSelectedConnections"
+      />
+    </SlideOverPanel>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, type Component } from 'vue'
-import { ChevronDown, CircleHelp, Database, Info, Terminal } from 'lucide-vue-next'
+import { ChevronRight, CircleHelp, Database, Info, Terminal } from 'lucide-vue-next'
 import type { SchemaContext } from '@/composables/useMonacoSqlProviders'
 import { useConnectionsStore } from '@/stores/connections'
 import { usePaneTabsStore } from '@/stores/paneTabs'
 import connections from '@/api/connections'
 import { SqlQueryTabs, SqlEditorPane, SqlResultsPane } from '@/components/database/sql-console'
+import FormSelect from '@/components/base/FormSelect.vue'
+import SlideOverPanel from '@/components/common/SlideOverPanel.vue'
 import ConnectionAliasPanel from './ConnectionAliasPanel.vue'
 import { useConsoleTab } from '@/composables/useConsoleTab'
 import { useConsoleSources, type ConsoleMode } from '@/composables/useConsoleSources'
@@ -269,6 +260,7 @@ const props = defineProps<{
 
 const connectionsStore = useConnectionsStore()
 const paneTabsStore = usePaneTabsStore()
+const isSourceDrawerOpen = ref(false)
 
 const showConsoleHeader = computed(() => props.mode === 'file')
 
@@ -303,10 +295,10 @@ const {
   useFederatedEngine,
   runMode,
   databaseSourceMappings,
-  singleSourceConnectionId,
   singleSourceMapping,
   handleUpdateSelectedConnections,
   setRunMode,
+  setSingleSourceConnectionId,
   initializeDefaultSources,
   syncPrimarySource,
   restoreSelectedConnections,
@@ -319,31 +311,63 @@ const {
   consoleKey
 })
 
-const federatedAliasesHint = computed(() => {
-  const aliases = selectedConnections.value.map((c) => c.alias).filter(Boolean)
-  return aliases.length ? aliases.join(', ') : 'add at least one source alias'
+const attachedSourcesLabel = computed(() => {
+  if (selectedConnections.value.length === 0) return 'none'
+
+  const previewLimit = 2
+  const aliases = selectedConnections.value.slice(0, previewLimit).map((m) => m.alias || 'db')
+  const overflow = Math.max(0, selectedConnections.value.length - previewLimit)
+  return overflow > 0 ? `${aliases.join(', ')} +${overflow}` : aliases.join(', ')
 })
 
-const showRunModeControls = computed(() => selectedConnections.value.length > 1)
-
-const showSingleSourceSelector = computed(
-  () =>
-    props.mode === 'database' &&
-    runMode.value === 'single' &&
-    databaseSourceMappings.value.length > 1
+const showUnifiedExecutionSelector = computed(
+  () => props.mode === 'database' && databaseSourceMappings.value.length > 1
 )
 
-const singleSourceOptions = computed(() =>
-  databaseSourceMappings.value.map((mapping) => {
+const executionContextOptions = computed(() => {
+  const direct = databaseSourceMappings.value.map((mapping) => {
     const conn = connectionsStore.connectionByID(mapping.connectionId)
     const alias = mapping.alias || 'db'
     const connName = conn?.name || mapping.connectionId
     return {
-      value: mapping.connectionId,
-      label: `${alias} · ${connName}`
+      value: `direct:${mapping.connectionId}`,
+      label: `Direct: ${alias} · ${connName}`
     }
   })
-)
+  return [...direct, { value: 'federated', label: 'Multi source' }]
+})
+
+const executionContextValue = computed<string>({
+  get() {
+    if (runMode.value === 'federated') return 'federated'
+    const directId =
+      singleSourceMapping.value?.connectionId || databaseSourceMappings.value[0]?.connectionId
+    return directId ? `direct:${directId}` : 'federated'
+  },
+  set(value) {
+    if (value === 'federated') {
+      setRunMode('federated')
+      return
+    }
+    if (value.startsWith('direct:')) {
+      const connectionId = value.slice('direct:'.length)
+      if (connectionId) {
+        setSingleSourceConnectionId(connectionId)
+      }
+      setRunMode('single')
+    }
+  }
+})
+
+const singleExecutionLabel = computed(() => {
+  if (runMode.value === 'federated') return 'Executing: Multi source'
+
+  const mapping = singleSourceMapping.value || databaseSourceMappings.value[0]
+  if (!mapping) return 'Executing: Single source'
+
+  const conn = connectionsStore.connectionByID(mapping.connectionId)
+  return `Executing: ${mapping.alias || 'db'} · ${conn?.name || mapping.connectionId}`
+})
 
 // ========== SQL Dialect ==========
 const currentDialect = computed(() => {
@@ -609,32 +633,40 @@ defineExpose({
   min-height: 400px;
 }
 
-.source-select-wrap {
-  position: relative;
+.execution-context-select {
+  width: 100%;
 }
 
-.source-select {
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
+.execution-context-wrap {
+  width: 280px;
 }
 
-.source-select-icon {
-  position: absolute;
-  right: 0.625rem;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
-  color: #9ca3af;
+.execution-context-select :deep(button) {
+  height: 2rem;
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+  padding-left: 0.75rem;
+  padding-right: 2rem;
+  font-size: 0.75rem;
+  line-height: 1rem;
 }
 
-.source-select-option {
-  background-color: #ffffff;
-  color: #111827;
+.execution-context-select :deep(ul) {
+  left: auto;
+  right: 0;
+  width: max-content;
+  min-width: max(100%, 340px);
+  max-width: min(78vw, 520px);
+  font-size: 0.75rem;
+  background-color: #f9fafb;
 }
 
-:global(.dark) .source-select-option {
-  background-color: #1f2937;
-  color: #e5e7eb;
+:global(.dark) .execution-context-select :deep(ul) {
+  background-color: #374151;
+}
+
+.execution-context-select :deep(li span) {
+  overflow: visible;
+  text-overflow: clip;
 }
 </style>

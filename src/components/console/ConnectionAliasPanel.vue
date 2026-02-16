@@ -1,10 +1,15 @@
 <template>
   <div
-    class="bg-white dark:bg-gray-850 border-b border-gray-200 dark:border-gray-700"
-    :class="{ 'border-b-0': isCollapsed }"
+    class="bg-white dark:bg-gray-850"
+    :class="{
+      'h-full flex flex-col': props.compact && !props.showHeader,
+      'border-b border-gray-200 dark:border-gray-700': props.showHeader,
+      'border-b-0': props.showHeader && isCollapsed
+    }"
   >
     <!-- Header -->
     <button
+      v-if="props.showHeader"
       class="w-full flex items-center justify-between px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
       @click="toggleCollapse"
     >
@@ -78,160 +83,207 @@
     </button>
 
     <!-- Collapsible Content -->
-    <div v-show="!isCollapsed" class="px-4 pb-3 border-t border-gray-100 dark:border-gray-700/50">
-      <div v-if="showCreateConnectionLink" class="pt-3 flex justify-end">
-        <RouterLink
-          :to="createConnectionTo"
-          class="text-xs font-medium text-teal-700 dark:text-teal-300 hover:text-teal-800 dark:hover:text-teal-200 transition-colors"
-          @click.stop
+    <div
+      v-show="isContentVisible"
+      class="px-4 pb-3"
+      :class="{
+        'flex-1 min-h-0 flex flex-col': props.compact && !props.showHeader,
+        'border-t border-gray-100 dark:border-gray-700/50': props.showHeader,
+        'pt-2': !props.showHeader
+      }"
+    >
+      <div v-if="props.showHints" class="mt-2 mb-6">
+        <button
+          type="button"
+          class="w-full inline-flex items-center justify-between px-0.5 py-1 text-[11px] text-gray-500 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400 transition-colors"
+          @click="isHintsExpanded = !isHintsExpanded"
         >
-          + New connection
-        </RouterLink>
-      </div>
+          <span>Aliases help</span>
+          <ChevronDown
+            class="h-3.5 w-3.5 transition-transform duration-200"
+            :class="{ '-rotate-180': isHintsExpanded }"
+          />
+        </button>
 
-      <!-- Info Banner -->
-      <div
-        class="mt-3 mb-3 flex items-start space-x-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-md text-xs"
-      >
-        <Info class="h-4 w-4 text-blue-500 dark:text-blue-400 shrink-0 mt-0.5" />
-        <div class="text-blue-700 dark:text-blue-300">
+        <div
+          v-if="isHintsExpanded"
+          class="mt-1 space-y-1.5 pl-0.5 text-[11px] text-gray-600 dark:text-gray-400"
+        >
           <p>
-            <strong>Databases:</strong> Use aliases in your SQL:
-            <code class="px-1 py-0.5 bg-blue-100 dark:bg-blue-800 rounded font-mono"
-              >pg1.schema.table</code
+            <strong class="text-gray-700 dark:text-gray-300">Database:</strong>
+            <code class="ml-1 px-1 py-0.5 bg-gray-200/80 dark:bg-gray-700/70 rounded font-mono"
+              >alias.schema.table</code
             >
           </p>
-          <p class="mt-1">
-            <strong>S3:</strong> Use alias as URL scheme:
-            <code class="px-1 py-0.5 bg-blue-100 dark:bg-blue-800 rounded font-mono"
-              >read_parquet('aws://bucket/path/*.parquet')</code
+          <p>
+            <strong class="text-gray-700 dark:text-gray-300">S3:</strong>
+            <code class="ml-1 px-1 py-0.5 bg-gray-200/80 dark:bg-gray-700/70 rounded font-mono"
+              >read_parquet('alias://bucket/path/*.parquet')</code
             >
           </p>
-          <p class="mt-1 text-blue-600 dark:text-blue-400">
-            <strong>Local files:</strong> Query directly without selecting a connection:
-            <code class="px-1 py-0.5 bg-blue-100 dark:bg-blue-800 rounded font-mono"
+          <p>
+            <strong class="text-gray-700 dark:text-gray-300">Local file:</strong>
+            <code class="ml-1 px-1 py-0.5 bg-gray-200/80 dark:bg-gray-700/70 rounded font-mono"
               >read_parquet('/path/file.parquet')</code
             >
           </p>
-        </div>
-      </div>
-
-      <!-- Multi-S3 Info Note -->
-      <div
-        v-if="hasMultipleS3Connections"
-        class="mb-3 flex items-start space-x-2 p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-md text-xs"
-      >
-        <Info class="h-4 w-4 text-emerald-500 dark:text-emerald-400 shrink-0 mt-0.5" />
-        <div class="text-emerald-700 dark:text-emerald-300">
-          <p>
-            <strong>Multi-S3 Query:</strong> Use aliases to query different providers in one query:
+          <p v-if="hasMultipleS3Connections">
+            <strong class="text-gray-700 dark:text-gray-300">Multi-S3:</strong>
             <code
-              class="px-1 py-0.5 bg-emerald-100 dark:bg-emerald-800 rounded font-mono text-[10px]"
-              >SELECT * FROM read_parquet('aws://bucket/a.parquet') JOIN
-              read_parquet('do://bucket/b.parquet')</code
+              class="ml-1 px-1 py-0.5 bg-gray-200/80 dark:bg-gray-700/70 rounded font-mono text-[10px]"
+              >read_parquet('aws://...') JOIN read_parquet('do://...')</code
             >
           </p>
         </div>
       </div>
 
       <!-- Connection List -->
-      <div class="space-y-2 max-h-60 overflow-y-auto">
-        <div
-          v-for="conn in availableConnections"
-          :key="conn.id"
-          class="flex items-center space-x-3 p-2 rounded-md transition-colors"
-          :class="[
-            isSelected(conn.id)
-              ? 'bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800'
-              : 'hover:bg-gray-50 dark:hover:bg-gray-800 border border-transparent'
-          ]"
-        >
-          <!-- Checkbox -->
-          <input
-            :id="`conn-${conn.id}`"
-            type="checkbox"
-            :checked="isSelected(conn.id)"
-            class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-teal-600 focus:ring-teal-500 bg-white dark:bg-gray-800"
-            @change="toggleConnection(conn)"
-          />
-
-          <!-- Connection Icon -->
-          <div class="shrink-0">
-            <component
-              :is="getConnectionIcon(getConnectionTypeLabelForUI(conn))"
-              class="h-5 w-5"
-              :class="getConnectionIconColor(getConnectionTypeLabelForUI(conn))"
-            />
-          </div>
-
-          <!-- Connection Info -->
-          <div class="flex-1 min-w-0">
-            <label
-              :for="`conn-${conn.id}`"
-              class="block text-sm font-medium text-gray-900 dark:text-gray-100 truncate cursor-pointer"
-            >
-              {{ conn.name }}
-            </label>
-            <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
-              {{ getConnectionTypeLabelForUI(conn) }} · {{ getConnectionHost(conn) }}
-            </p>
-            <!-- File connection hint (local files only) -->
-            <p
-              v-if="isLocalFileConnection(conn.id) && isSelected(conn.id)"
-              class="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5"
-            >
-              Use read_parquet() or read_csv_auto() with file paths
-            </p>
-            <!-- S3 connection hint -->
-            <p
-              v-if="isS3Connection(conn.id) && isSelected(conn.id)"
-              class="text-xs text-amber-600 dark:text-amber-400 mt-0.5"
-            >
-              Use {{ getAlias(conn.id) }}://bucket/path in SQL queries
-            </p>
-          </div>
-
-          <!-- Alias Input (shown when selected) - for database and S3 connections -->
+      <div
+        class="overflow-y-auto"
+        :class="
+          props.compact && !props.showHeader
+            ? 'flex-1 min-h-0'
+            : props.compact
+              ? 'max-h-[70vh]'
+              : 'max-h-60'
+        "
+      >
+        <template v-if="connectionGroups.length > 0">
           <div
-            v-if="isSelected(conn.id) && showAliasForConnection(conn)"
-            class="flex items-center space-x-2 shrink-0"
+            v-for="(group, groupIndex) in connectionGroups"
+            :key="group.key"
+            :class="groupIndex > 0 ? 'mt-3' : ''"
           >
-            <span class="text-xs text-gray-500 dark:text-gray-400">as</span>
-            <input
-              type="text"
-              :value="getAlias(conn.id)"
-              class="w-20 px-2 py-1 text-xs font-mono border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
-              placeholder="alias"
-              @input="updateAlias(conn.id, ($event.target as HTMLInputElement).value)"
-            />
-
-            <!-- Database Selector (for connections with multiple databases) -->
-            <select
-              v-if="conn.databasesInfo && conn.databasesInfo.length > 1"
-              :value="getDatabase(conn.id)"
-              class="px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
-              @change="updateDatabase(conn.id, ($event.target as HTMLSelectElement).value)"
-            >
-              <option
-                v-for="db in conn.databasesInfo.filter((d) => !d.isSystem)"
-                :key="db.name"
-                :value="db.name"
+            <div class="flex items-center justify-between px-0.5 pb-1">
+              <div class="flex items-center gap-2 flex-1 pr-3">
+                <span
+                  class="text-[9px] font-semibold tracking-[0.1em] text-gray-500 dark:text-gray-500"
+                >
+                  {{ group.label }}
+                </span>
+                <div class="h-px flex-1 bg-gray-200/70 dark:bg-gray-700/60" />
+              </div>
+              <RouterLink
+                v-if="group.showCreateLink"
+                :to="createConnectionTo"
+                class="text-xs font-medium text-teal-700 dark:text-teal-300 hover:text-teal-800 dark:hover:text-teal-200 transition-colors"
+                @click.stop
               >
-                {{ db.name }}
-              </option>
-            </select>
+                + Add
+              </RouterLink>
+            </div>
+
+            <div class="divide-y divide-gray-200 dark:divide-gray-700/70">
+              <div
+                v-for="conn in group.items"
+                :key="conn.id"
+                class="flex items-center gap-2 py-2 rounded-sm hover:bg-gray-100/40 dark:hover:bg-gray-800/20"
+              >
+                <!-- Checkbox -->
+                <input
+                  :id="`conn-${conn.id}`"
+                  type="checkbox"
+                  :checked="isSelected(conn.id)"
+                  class="h-3 w-3 rounded-[3px] border-gray-400/70 dark:border-gray-600/70 text-teal-500 focus:ring-0 focus:ring-offset-0 bg-transparent"
+                  @change="toggleConnection(conn)"
+                />
+
+                <!-- Connection Icon -->
+                <div class="shrink-0 w-5 flex items-center justify-center">
+                  <img
+                    v-if="getPrimaryDatabaseLogoForConnection(conn)"
+                    :src="getPrimaryDatabaseLogoForConnection(conn)"
+                    :alt="`${getConnectionTypeLabelForUI(conn)} logo`"
+                    class="h-4 w-4 object-contain opacity-90 dark:opacity-100 dark:brightness-0 dark:invert"
+                  />
+                  <component
+                    :is="getConnectionIcon(getConnectionTypeLabelForUI(conn))"
+                    v-else
+                    class="h-4 w-4"
+                    :class="getConnectionIconColor(getConnectionTypeLabelForUI(conn))"
+                  />
+                </div>
+
+                <!-- Connection Info -->
+                <div class="flex-1 min-w-0">
+                  <label
+                    :for="`conn-${conn.id}`"
+                    class="block font-semibold text-gray-950 dark:text-gray-100 truncate cursor-pointer text-sm"
+                  >
+                    {{ conn.name }}
+                  </label>
+                  <p
+                    class="truncate text-gray-500 dark:text-gray-400 text-[11px]"
+                    :title="getConnectionMeta(conn)"
+                  >
+                    {{ getConnectionMeta(conn) }}
+                  </p>
+                </div>
+
+                <!-- Alias Input (shown when selected) - for database and S3 connections -->
+                <div
+                  v-if="isSelected(conn.id) && showAliasForConnection(conn)"
+                  class="flex items-center shrink-0 gap-1 self-start mt-0.5"
+                >
+                  <span v-if="!props.compact" class="text-xs text-gray-500 dark:text-gray-400"
+                    >as</span
+                  >
+                  <button
+                    v-if="editingAliasConnectionId !== conn.id"
+                    type="button"
+                    :title="`Edit alias for ${conn.name}`"
+                    class="alias-inline-display text-xs font-mono leading-none text-gray-600 dark:text-gray-300 focus:outline-none transition-colors"
+                    :class="[
+                      props.compact ? 'w-[4.25rem] truncate py-0.5' : 'w-[4.25rem] py-0.5',
+                      !getAlias(conn.id) && 'text-gray-400 dark:text-gray-500'
+                    ]"
+                    @click="startAliasEdit(conn.id)"
+                  >
+                    {{ getAlias(conn.id) || 'alias' }}
+                  </button>
+                  <input
+                    v-else
+                    :ref="(el) => setAliasInputRef(conn.id, el as HTMLInputElement | null)"
+                    type="text"
+                    :value="aliasDraftByConnectionId[conn.id] ?? getAlias(conn.id)"
+                    :title="`Alias for ${conn.name}`"
+                    placeholder="alias"
+                    class="alias-inline-input text-xs font-mono leading-none bg-transparent border-0 border-b border-gray-400 dark:border-gray-500 rounded-none text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-0 focus:border-teal-500 dark:focus:border-teal-400 caret-teal-500"
+                    :class="props.compact ? 'w-[4.25rem] py-0.5' : 'w-[4.25rem] py-0.5'"
+                    @input="setAliasDraft(conn.id, ($event.target as HTMLInputElement).value)"
+                    @blur="finishAliasEdit(conn.id)"
+                    @keydown.enter.prevent="finishAliasEdit(conn.id)"
+                    @keydown.escape.prevent="cancelAliasEdit(conn.id)"
+                  />
+
+                  <!-- Database Selector (for connections with multiple databases) -->
+                  <select
+                    v-if="conn.databasesInfo && conn.databasesInfo.length > 1"
+                    :value="getDatabase(conn.id)"
+                    class="text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
+                    :class="props.compact ? 'h-7 px-2 rounded-full' : 'px-2 py-1 rounded'"
+                    @change="updateDatabase(conn.id, ($event.target as HTMLSelectElement).value)"
+                  >
+                    <option
+                      v-for="db in conn.databasesInfo.filter((d) => !d.isSystem)"
+                      :key="db.name"
+                      :value="db.name"
+                    >
+                      {{ db.name }}
+                    </option>
+                  </select>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
+        </template>
 
         <!-- Empty State -->
-        <div
-          v-if="availableConnections.length === 0"
-          class="py-6 text-center text-gray-500 dark:text-gray-400"
-        >
+        <div v-else class="py-6 text-center text-gray-500 dark:text-gray-400">
           <Database class="h-8 w-8 mx-auto mb-2 text-gray-300 dark:text-gray-600" />
           <p class="text-sm">No connections found</p>
           <p class="text-xs mt-1">
-            Add PostgreSQL, MySQL, or file connections to use federated queries.
+            Add PostgreSQL, MySQL, or file connections to use multi-source queries.
           </p>
         </div>
       </div>
@@ -240,9 +292,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, nextTick, watch } from 'vue'
 import { RouterLink } from 'vue-router'
-import { ChevronDown, Cloud, Database, Folder, Info, Plus } from 'lucide-vue-next'
+import { ChevronDown, Cloud, Database, Folder, Plus } from 'lucide-vue-next'
 import { useConnectionsStore } from '@/stores/connections'
 import type { Connection } from '@/types/connections'
 import type { ConnectionMapping } from '@/api/federated'
@@ -261,6 +313,12 @@ interface Props {
   showFileConnections?: boolean
   /** Whether the panel is collapsed initially */
   defaultCollapsed?: boolean
+  /** Render dense rows and compact spacing */
+  compact?: boolean
+  /** Show helper banners inside the panel */
+  showHints?: boolean
+  /** Show collapsible header */
+  showHeader?: boolean
   /** Show a shortcut to the New Connection flow */
   showCreateConnectionLink?: boolean
   /** Route to the New Connection flow */
@@ -270,6 +328,9 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   showFileConnections: false,
   defaultCollapsed: false,
+  compact: false,
+  showHints: true,
+  showHeader: true,
   showCreateConnectionLink: false,
   createConnectionTo: '/explorer/add'
 })
@@ -283,7 +344,12 @@ const emit = defineEmits<{
 const connectionsStore = useConnectionsStore()
 
 // Local State
-const isCollapsed = ref(props.defaultCollapsed)
+const isCollapsed = ref(props.showHeader ? props.defaultCollapsed : false)
+const isContentVisible = computed(() => (props.showHeader ? !isCollapsed.value : true))
+const isHintsExpanded = ref(false)
+const editingAliasConnectionId = ref<string | null>(null)
+const aliasDraftByConnectionId = ref<Record<string, string>>({})
+const aliasInputByConnectionId = ref<Record<string, HTMLInputElement | null>>({})
 
 function isDatabaseConnection(conn: Connection): boolean {
   const kind = getConnectionKindFromSpec(conn.spec)
@@ -343,6 +409,45 @@ const selectedPreview = computed(() => {
 
 const selectedOverflowCount = computed(() => Math.max(0, props.modelValue.length - 2))
 
+const connectionGroups = computed(() => {
+  const groups: Array<{
+    key: 'databases' | 'files'
+    label: string
+    items: Connection[]
+    showCreateLink: boolean
+  }> = []
+
+  const databaseItems = availableConnections.value.filter((conn) => isDatabaseConnection(conn))
+  const fileItems = availableConnections.value.filter((conn) => isFileConnectionKind(conn))
+
+  if (databaseItems.length > 0) {
+    groups.push({
+      key: 'databases',
+      label: 'DATABASES',
+      items: databaseItems,
+      showCreateLink: false
+    })
+  }
+
+  if (fileItems.length > 0) {
+    groups.push({
+      key: 'files',
+      label: 'FILES',
+      items: fileItems,
+      showCreateLink: false
+    })
+  }
+
+  if (props.showCreateConnectionLink) {
+    const firstGroup = groups[0]
+    if (firstGroup) {
+      firstGroup.showCreateLink = true
+    }
+  }
+
+  return groups
+})
+
 // Methods
 function toggleCollapse() {
   isCollapsed.value = !isCollapsed.value
@@ -355,6 +460,41 @@ function isSelected(connectionId: string): boolean {
 function getAlias(connectionId: string): string {
   const mapping = props.modelValue.find((m) => m.connectionId === connectionId)
   return mapping?.alias || ''
+}
+
+function setAliasInputRef(connectionId: string, inputEl: HTMLInputElement | null) {
+  if (inputEl) {
+    aliasInputByConnectionId.value[connectionId] = inputEl
+    return
+  }
+  delete aliasInputByConnectionId.value[connectionId]
+}
+
+function startAliasEdit(connectionId: string) {
+  editingAliasConnectionId.value = connectionId
+  aliasDraftByConnectionId.value[connectionId] = getAlias(connectionId)
+
+  nextTick(() => {
+    const aliasInput = aliasInputByConnectionId.value[connectionId]
+    aliasInput?.focus()
+    aliasInput?.select()
+  })
+}
+
+function setAliasDraft(connectionId: string, alias: string) {
+  aliasDraftByConnectionId.value[connectionId] = alias
+}
+
+function finishAliasEdit(connectionId: string) {
+  const nextAlias = aliasDraftByConnectionId.value[connectionId] ?? getAlias(connectionId)
+  updateAlias(connectionId, nextAlias)
+  editingAliasConnectionId.value = null
+  delete aliasDraftByConnectionId.value[connectionId]
+}
+
+function cancelAliasEdit(connectionId: string) {
+  editingAliasConnectionId.value = null
+  delete aliasDraftByConnectionId.value[connectionId]
 }
 
 function getDatabase(connectionId: string): string {
@@ -446,6 +586,43 @@ function getConnectionHost(conn: Connection): string {
   return 'localhost'
 }
 
+function normalizeHomePath(path: string): string {
+  if (!path.startsWith('/home/')) {
+    return path
+  }
+
+  const segments = path.split('/')
+  if (segments.length <= 3) {
+    return '~'
+  }
+
+  return `~/${segments.slice(3).join('/')}`
+}
+
+function getConnectionMeta(conn: Connection): string {
+  const kind = getConnectionKindFromSpec(conn.spec)
+  const location = getConnectionHost(conn)
+  const normalizedLocation = kind === 'files' ? normalizeHomePath(location) : location
+  const typeLabel = getConnectionTypeLabelForUI(conn)
+  return `${typeLabel} — ${normalizedLocation}`
+}
+
+function getPrimaryDatabaseLogoForConnection(conn: Connection): string {
+  const typeLabel = getConnectionTypeLabelForUI(conn).toLowerCase()
+  if (typeLabel === 'mysql' || typeLabel === 'mariadb') {
+    return '/images/db-logos/mysql.svg'
+  }
+  if (
+    typeLabel === 'postgresql' ||
+    typeLabel === 'postgres' ||
+    typeLabel === 'pg' ||
+    typeLabel === 'pgsql'
+  ) {
+    return '/images/db-logos/postgresql.svg'
+  }
+  return ''
+}
+
 function getConnectionIcon(type: string) {
   const normalized = type?.toLowerCase() || ''
   if (normalized === 'files') {
@@ -460,40 +637,24 @@ function getConnectionIcon(type: string) {
 function getConnectionIconColor(type: string): string {
   const normalized = type?.toLowerCase() || ''
   if (normalized === 'postgresql' || normalized === 'postgres') {
-    return 'text-blue-500 dark:text-blue-400'
+    return 'text-blue-400 dark:text-blue-500'
   }
   if (normalized === 'mysql' || normalized === 'mariadb') {
-    return 'text-orange-500 dark:text-orange-400'
+    return 'text-orange-400 dark:text-orange-500'
   }
   if (normalized === 's3') {
-    return 'text-amber-500 dark:text-amber-400'
+    return 'text-amber-400 dark:text-amber-500'
   }
   if (normalized === 'gcs') {
-    return 'text-red-500 dark:text-red-400'
+    return 'text-red-400 dark:text-red-500'
   }
   if (normalized === 'azure') {
-    return 'text-sky-500 dark:text-sky-400'
+    return 'text-sky-400 dark:text-sky-500'
   }
   if (normalized === 'files') {
-    return 'text-emerald-500 dark:text-emerald-400'
+    return 'text-emerald-400 dark:text-emerald-500'
   }
-  return 'text-gray-500 dark:text-gray-400'
-}
-
-// Check if a connection is specifically an S3 connection
-function isS3Connection(connectionId: string): boolean {
-  const conn = connectionsStore.connections.find((c) => c.id === connectionId)
-  if (!conn) return false
-  const kind = getConnectionKindFromSpec(conn.spec)
-  return kind === 's3'
-}
-
-// Check if a connection is a local file connection (not S3/GCS/Azure)
-function isLocalFileConnection(connectionId: string): boolean {
-  const conn = connectionsStore.connections.find((c) => c.id === connectionId)
-  if (!conn) return false
-  const kind = getConnectionKindFromSpec(conn.spec)
-  return kind === 'files'
+  return 'text-gray-400 dark:text-gray-500'
 }
 
 // Determine if alias input should be shown for a connection
@@ -510,3 +671,26 @@ watch(
   { immediate: true }
 )
 </script>
+
+<style scoped>
+.alias-inline-display,
+.alias-inline-input {
+  min-height: 1.25rem;
+}
+
+.alias-inline-display {
+  border-bottom: 1px solid transparent;
+}
+
+.alias-inline-display:hover {
+  border-bottom-color: rgb(156 163 175 / 0.75);
+}
+
+:global(.dark) .alias-inline-display:hover {
+  border-bottom-color: rgb(107 114 128 / 0.9);
+}
+
+.alias-inline-display:focus-visible {
+  border-bottom-color: rgb(20 184 166 / 0.9);
+}
+</style>

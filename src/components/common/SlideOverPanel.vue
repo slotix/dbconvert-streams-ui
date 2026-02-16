@@ -9,6 +9,8 @@ const props = defineProps<{
   title: string
   subtitle?: string
   size?: 'sm' | 'md' | 'lg'
+  bodyScrollable?: boolean
+  bodyPadding?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -31,6 +33,14 @@ const panelWidthClass = computed(() => {
 })
 
 const hasFooter = computed(() => Boolean(slots.footer))
+
+const bodyClass = computed(() => ({
+  'flex-1': true,
+  'overflow-y-auto': props.bodyScrollable !== false,
+  'overflow-hidden': props.bodyScrollable === false,
+  'px-4 py-4': props.bodyPadding !== false,
+  'p-0': props.bodyPadding === false
+}))
 </script>
 
 <template>
@@ -86,7 +96,7 @@ const hasFooter = computed(() => Boolean(slots.footer))
                     </button>
                   </div>
 
-                  <div class="flex-1 overflow-y-auto px-4 py-4">
+                  <div :class="bodyClass">
                     <slot />
                   </div>
 
