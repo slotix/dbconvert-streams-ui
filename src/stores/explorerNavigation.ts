@@ -328,6 +328,18 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
       this.expandedSchemas.delete(key)
     },
 
+    collapseAllExpansions() {
+      this.expandedConnections = new Set<string>()
+      this.expandedDatabases = new Set<string>()
+      this.expandedSchemas = new Set<string>()
+    },
+
+    expandConnectionsOnly(connectionIds: string[]) {
+      this.expandedConnections = new Set(connectionIds)
+      this.expandedDatabases = new Set<string>()
+      this.expandedSchemas = new Set<string>()
+    },
+
     // Selection actions
     selectConnection(connectionId: string) {
       this.activeConnectionId = connectionId

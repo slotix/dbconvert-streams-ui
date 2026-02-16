@@ -301,6 +301,39 @@ const filteredConnections = computed<Connection[]>(() => {
   return treeSearch.filterConnections(typeFiltered)
 })
 
+const hasExpandedFileFolders = computed(() =>
+  Object.values(fileExplorerStore.expandedFoldersByConnection).some((expanded) => expanded.size > 0)
+)
+
+const hasExpandedTreeState = computed(
+  () =>
+    navigationStore.expandedConnections.size > 0 ||
+    navigationStore.expandedDatabases.size > 0 ||
+    navigationStore.expandedSchemas.size > 0 ||
+    hasExpandedFileFolders.value
+)
+
+const canExpandFirstLevel = computed(() => filteredConnections.value.length > 0)
+
+function collapseAllTreeNodes() {
+  navigationStore.collapseAllExpansions()
+  fileExplorerStore.collapseAllFolders()
+}
+
+function expandFirstLevel() {
+  const connectionIds = filteredConnections.value.map((conn) => conn.id)
+  navigationStore.expandConnectionsOnly(connectionIds)
+  fileExplorerStore.collapseAllFolders()
+
+  for (const connectionId of connectionIds) {
+    if (treeLogic.isFileConnection(connectionId)) {
+      emit('request-file-entries', { connectionId })
+    } else {
+      navigationStore.ensureDatabases(connectionId).catch(() => {})
+    }
+  }
+}
+
 async function loadConnections() {
   isLoadingConnections.value = true
   loadError.value = null
@@ -982,6 +1015,26 @@ watch(
     ref="sidebarCardRef"
     class="bg-linear-to-br from-white via-slate-50/50 to-white dark:from-gray-850 dark:via-gray-850 dark:to-gray-900 shadow-xl dark:shadow-gray-900/50 rounded-2xl overflow-hidden h-[calc(100vh-140px)] flex flex-col transition-all duration-300 hover:shadow-2xl dark:hover:shadow-gray-900/70 border border-slate-200/50 dark:border-gray-700"
   >
+    <div
+      class="px-3 pt-3 pb-2 border-b border-slate-200/70 dark:border-gray-700/80 flex items-center gap-2"
+    >
+      <button
+        type="button"
+        class="inline-flex items-center justify-center rounded-md border border-slate-300 dark:border-gray-600 bg-white/90 dark:bg-gray-800/90 px-2.5 py-1.5 text-xs font-medium text-slate-700 dark:text-gray-200 transition-colors hover:bg-slate-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        :disabled="!canExpandFirstLevel"
+        @click="expandFirstLevel"
+      >
+        Expand first level
+      </button>
+      <button
+        type="button"
+        class="inline-flex items-center justify-center rounded-md border border-slate-300 dark:border-gray-600 bg-white/90 dark:bg-gray-800/90 px-2.5 py-1.5 text-xs font-medium text-slate-700 dark:text-gray-200 transition-colors hover:bg-slate-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        :disabled="!hasExpandedTreeState"
+        @click="collapseAllTreeNodes"
+      >
+        Collapse all
+      </button>
+    </div>
     <!-- Scrollable tree content area with smooth scrolling and custom scrollbar -->
     <div class="flex-1 overflow-y-auto overscroll-contain p-3 scrollbar-thin">
       <!-- Loading state with centered spinner and blue-green gradient -->

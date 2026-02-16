@@ -443,6 +443,23 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     expandedFoldersByConnection.value[connectionId].add(folderPath)
   }
 
+  function collapseAllFolders(connectionId?: string) {
+    if (connectionId) {
+      if (!expandedFoldersByConnection.value[connectionId]) return
+      expandedFoldersByConnection.value = {
+        ...expandedFoldersByConnection.value,
+        [connectionId]: new Set()
+      }
+      return
+    }
+
+    const next: Record<string, Set<string>> = {}
+    for (const id of Object.keys(expandedFoldersByConnection.value)) {
+      next[id] = new Set()
+    }
+    expandedFoldersByConnection.value = next
+  }
+
   // Immutable helper to update a folder's children in the tree
   // Returns a new array with the updated entry (no mutation)
   function updateFolderChildren(
@@ -745,6 +762,7 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     toggleFolder,
     collapseFolder,
     expandFolder,
+    collapseAllFolders,
     loadFolderContents
   }
 })
