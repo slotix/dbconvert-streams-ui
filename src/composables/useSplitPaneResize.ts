@@ -34,9 +34,10 @@ export function useSplitPaneResize(initialPercent = 50) {
     window.addEventListener('mousemove', onDividerMouseMove)
     window.addEventListener('mouseup', onDividerMouseUp, { once: true })
 
-    // Prevent text selection during resize; remember previous value
+    // Prevent text selection during resize
     prevUserSelect = document.body.style.userSelect
     document.body.style.userSelect = 'none'
+    splitContainerRef.value?.classList.add('select-none')
   }
 
   /**
@@ -57,6 +58,7 @@ export function useSplitPaneResize(initialPercent = 50) {
   function onDividerMouseUp() {
     isResizing.value = false
     document.body.style.userSelect = prevUserSelect || ''
+    splitContainerRef.value?.classList.remove('select-none')
     window.removeEventListener('mousemove', onDividerMouseMove)
   }
 

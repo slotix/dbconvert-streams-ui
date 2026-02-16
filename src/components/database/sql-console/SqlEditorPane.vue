@@ -2,9 +2,7 @@
   <div class="flex flex-col min-h-0 h-full">
     <!-- Toolbar -->
     <div
-      ref="toolbarRef"
-      class="bg-gray-100 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-3 py-1.5 flex items-center gap-2"
-      :class="{ 'gap-1.5 px-2.5': isCompactToolbar }"
+      class="@container/toolbar bg-gray-100 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 gap-1.5 px-2.5 @[620px]/toolbar:gap-2 @[620px]/toolbar:px-3 py-1.5 flex items-center"
     >
       <button
         :disabled="isExecuting"
@@ -33,9 +31,9 @@
           :title="`Open template picker (${shortcutHint})`"
           @click="toggleTemplates"
         >
-          <FileText class="h-3.5 w-3.5" :class="{ 'mr-1': !isCompactToolbar }" />
-          <span v-if="!isCompactToolbar">Templates</span>
-          <ChevronDown class="h-3 w-3" :class="isCompactToolbar ? 'ml-0.5' : 'ml-1'" />
+          <FileText class="h-3.5 w-3.5 @[620px]/toolbar:mr-1" />
+          <span class="hidden @[620px]/toolbar:inline">Templates</span>
+          <ChevronDown class="h-3 w-3 ml-0.5 @[620px]/toolbar:ml-1" />
         </button>
       </div>
       <Teleport to="body">
@@ -281,14 +279,14 @@
           :title="historyButtonTitle"
           @click="toggleHistory"
         >
-          <Clock class="h-3.5 w-3.5" :class="{ 'mr-1': !isCompactToolbar }" />
-          <span v-if="!isCompactToolbar">History</span>
-          <span v-if="history.length > 0 && !isCompactToolbar" class="ml-1 text-gray-400">
+          <Clock class="h-3.5 w-3.5 @[620px]/toolbar:mr-1" />
+          <span class="hidden @[620px]/toolbar:inline">History</span>
+          <span v-if="history.length > 0" class="ml-1 text-gray-400 hidden @[620px]/toolbar:inline">
             ({{ history.length }})
           </span>
           <span
-            v-else-if="history.length > 0 && isCompactToolbar"
-            class="ml-1 rounded-full bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 text-[10px] leading-none text-gray-600 dark:text-gray-300"
+            v-if="history.length > 0"
+            class="ml-1 rounded-full bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 text-[10px] leading-none text-gray-600 dark:text-gray-300 @[620px]/toolbar:hidden"
           >
             {{ history.length }}
           </span>
@@ -414,7 +412,7 @@
         </div>
       </Teleport>
 
-      <span v-if="!isCompactToolbar" class="text-xs text-gray-400 dark:text-gray-500 ml-2"
+      <span class="text-xs text-gray-400 dark:text-gray-500 ml-2 hidden @[620px]/toolbar:inline"
         >Ctrl+Enter</span
       >
 
@@ -510,7 +508,6 @@ const templates = computed(() => props.templates || [])
 const history = computed(() => props.history || [])
 
 const sqlEditorRef = ref()
-const toolbarRef = ref<HTMLElement | null>(null)
 const templatesDropdownRef = ref<HTMLElement | null>(null)
 const templateMenuRef = ref<HTMLElement | null>(null)
 const historyDropdownRef = ref<HTMLElement | null>(null)
@@ -525,8 +522,6 @@ const activeTemplateKey = ref('')
 const expandedAliasGroups = ref<Record<string, boolean>>({})
 const templateMenuStyle = ref<Record<string, string>>({})
 const historyMenuStyle = ref<Record<string, string>>({})
-const isCompactToolbar = ref(false)
-
 const isMacPlatform = computed(
   () =>
     typeof navigator !== 'undefined' &&
@@ -1018,12 +1013,6 @@ function historyAliasBadge(item: HistoryItem): string {
   return 'db'
 }
 
-function updateToolbarDensity() {
-  const width = toolbarRef.value?.clientWidth || 0
-  if (!width) return
-  isCompactToolbar.value = width < 620
-}
-
 function formatHistoryTime(timestamp: number): string {
   const now = new Date()
   const date = new Date(timestamp)
@@ -1076,7 +1065,6 @@ function handleClickOutside(e: MouseEvent) {
 }
 
 function handleViewportChange() {
-  updateToolbarDensity()
   if (showTemplates.value) {
     updateTemplateMenuPosition()
   }
@@ -1116,18 +1104,7 @@ watch(showHistory, async (isOpen) => {
   await focusHistorySearch()
 })
 
-let toolbarResizeObserver: ResizeObserver | null = null
-
 onMounted(() => {
-  updateToolbarDensity()
-  if (typeof ResizeObserver !== 'undefined') {
-    toolbarResizeObserver = new ResizeObserver(() => {
-      updateToolbarDensity()
-    })
-    if (toolbarRef.value) {
-      toolbarResizeObserver.observe(toolbarRef.value)
-    }
-  }
   document.addEventListener('click', handleClickOutside)
   document.addEventListener('keydown', handleGlobalShortcut)
   window.addEventListener('resize', handleViewportChange)
@@ -1135,10 +1112,6 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  if (toolbarResizeObserver) {
-    toolbarResizeObserver.disconnect()
-    toolbarResizeObserver = null
-  }
   document.removeEventListener('click', handleClickOutside)
   document.removeEventListener('keydown', handleGlobalShortcut)
   window.removeEventListener('resize', handleViewportChange)

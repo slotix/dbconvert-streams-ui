@@ -1,6 +1,6 @@
 <template>
   <div class="flex items-center gap-1.5">
-    <!-- Primary buttons (adaptive count) -->
+    <!-- Primary buttons (adaptive count controlled by parent) -->
     <button
       v-for="format in visiblePrimaryFormats"
       :key="format.id"
@@ -9,8 +9,8 @@
       :title="`Export current page as ${format.label}`"
       @click="handleExport(format.id)"
     >
-      <Download class="h-3.5 w-3.5" :class="{ 'mr-1': !effectiveCompact }" />
-      <span v-if="!effectiveCompact">{{ format.label }}</span>
+      <Download class="h-3.5 w-3.5 mr-1" />
+      {{ format.label }}
     </button>
 
     <!-- More Formats Dropdown -->
@@ -37,7 +37,7 @@
           Current Page
         </div>
         <button
-          v-for="format in menuFormats"
+          v-for="format in allFormats"
           :key="format.id"
           class="w-full px-3 py-1.5 text-left text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
           @click="handleExport(format.id)"
@@ -73,8 +73,8 @@
 import { computed, ref } from 'vue'
 import { CloudUpload, Download, Loader2, MoreHorizontal } from 'lucide-vue-next'
 import {
+  allExportFormats,
   primaryExportFormats,
-  secondaryExportFormats,
   type ExportFormat
 } from '@/composables/useDataExport'
 import type { StreamExportFormat } from '@/composables/useStreamExport'
@@ -86,10 +86,6 @@ const props = defineProps<{
   showStreamExport?: boolean
   /** Whether a stream export is in progress */
   isExporting?: boolean
-  /** Use icon-only primary export buttons */
-  compact?: boolean
-  /** Collapse primary exports and keep only the "more" menu button */
-  menuOnly?: boolean
   /** Maximum number of primary export buttons to show (0-3) */
   primaryCount?: number
 }>()
@@ -100,23 +96,15 @@ const emit = defineEmits<{
 }>()
 
 const showExportMenu = ref(false)
-const secondaryFormats = secondaryExportFormats
+const allFormats = allExportFormats
+
 const normalizedPrimaryCount = computed(() => {
-  if (props.menuOnly) return 0
   const raw = props.primaryCount ?? primaryExportFormats.length
   return Math.max(0, Math.min(primaryExportFormats.length, raw))
 })
+
 const visiblePrimaryFormats = computed(() =>
   primaryExportFormats.slice(0, normalizedPrimaryCount.value)
-)
-const hiddenPrimaryFormats = computed(() =>
-  primaryExportFormats.slice(normalizedPrimaryCount.value)
-)
-const effectiveCompact = computed(() => Boolean(props.compact || props.menuOnly))
-const menuFormats = computed(() =>
-  [...hiddenPrimaryFormats.value, ...secondaryFormats].filter(
-    (format, index, self) => self.findIndex((item) => item.id === format.id) === index
-  )
 )
 
 // Stream export formats (server-side processing)

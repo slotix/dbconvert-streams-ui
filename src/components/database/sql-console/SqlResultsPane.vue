@@ -3,7 +3,7 @@
     <!-- Results Toolbar -->
     <div
       ref="resultsToolbarRef"
-      class="bg-gray-100 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-3 py-1.5 flex items-center gap-2"
+      class="bg-gray-100 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-3 py-1.5 flex items-center gap-2 overflow-hidden"
     >
       <span class="text-xs font-medium text-gray-600 dark:text-gray-400">Results</span>
 
@@ -434,20 +434,34 @@ async function updateToolbarDensity() {
     const toolbar = resultsToolbarRef.value
     if (!toolbar) return
 
-    exportPrimaryCount.value = 3
-    await nextTick()
-
+    // Shrink if overflowing
     while (toolbar.scrollWidth > toolbar.clientWidth + 1 && exportPrimaryCount.value > 0) {
       exportPrimaryCount.value -= 1
       await nextTick()
+    }
+
+    // Grow if there's room
+    while (exportPrimaryCount.value < 3) {
+      exportPrimaryCount.value += 1
+      await nextTick()
+      if (toolbar.scrollWidth > toolbar.clientWidth + 1) {
+        exportPrimaryCount.value -= 1
+        await nextTick()
+        break
+      }
     }
   } finally {
     isMeasuringToolbar = false
   }
 }
 
-function handleWindowResize() {
-  void updateToolbarDensity()
+let resizeDebounceTimer: ReturnType<typeof setTimeout> | null = null
+
+function scheduleToolbarUpdate() {
+  if (resizeDebounceTimer) clearTimeout(resizeDebounceTimer)
+  resizeDebounceTimer = setTimeout(() => {
+    void updateToolbarDensity()
+  }, 60)
 }
 
 let resizeObserver: ResizeObserver | null = null
@@ -455,17 +469,13 @@ let resizeObserver: ResizeObserver | null = null
 onMounted(() => {
   void updateToolbarDensity()
   if (typeof ResizeObserver !== 'undefined') {
-    resizeObserver = new ResizeObserver(() => {
-      void updateToolbarDensity()
-    })
+    resizeObserver = new ResizeObserver(scheduleToolbarUpdate)
     if (resultsPaneRef.value) {
       resizeObserver.observe(resultsPaneRef.value)
     }
     if (resultsToolbarRef.value) {
       resizeObserver.observe(resultsToolbarRef.value)
     }
-  } else {
-    window.addEventListener('resize', handleWindowResize)
   }
 })
 
@@ -487,11 +497,13 @@ onUnmounted(() => {
     clearTimeout(exportFeedbackTimeout)
     exportFeedbackTimeout = null
   }
+  if (resizeDebounceTimer) {
+    clearTimeout(resizeDebounceTimer)
+    resizeDebounceTimer = null
+  }
   if (resizeObserver) {
     resizeObserver.disconnect()
     resizeObserver = null
-  } else {
-    window.removeEventListener('resize', handleWindowResize)
   }
 })
 </script>
