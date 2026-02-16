@@ -31,7 +31,7 @@
 
       <button
         type="button"
-        class="group min-w-0 flex-1 inline-flex items-center gap-2 text-sm text-left rounded-md px-2.5 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-850 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+        class="sources-inline-trigger group min-w-0 flex-1 inline-flex items-center gap-2 text-sm text-left px-0 py-1"
         title="Edit sources"
         aria-label="Edit sources"
         @click="isSourceDrawerOpen = true"
@@ -52,7 +52,7 @@
           </span>
         </div>
         <ChevronRight
-          class="h-3.5 w-3.5 shrink-0 text-gray-400 dark:text-gray-500 group-hover:text-teal-600 dark:group-hover:text-teal-400"
+          class="h-3.5 w-3.5 shrink-0 text-gray-400 dark:text-gray-500 group-hover:text-gray-500 dark:group-hover:text-gray-400 transition-colors"
         />
       </button>
     </div>
@@ -151,7 +151,10 @@ import { useConnectionsStore } from '@/stores/connections'
 import { usePaneTabsStore } from '@/stores/paneTabs'
 import connections from '@/api/connections'
 import { SqlQueryTabs, SqlEditorPane, SqlResultsPane } from '@/components/database/sql-console'
-import FormSelect from '@/components/base/FormSelect.vue'
+import FormSelect, {
+  type SelectOption,
+  type SelectValueOption
+} from '@/components/base/FormSelect.vue'
 import SlideOverPanel from '@/components/common/SlideOverPanel.vue'
 import ConnectionAliasPanel from './ConnectionAliasPanel.vue'
 import { useConsoleTab, type QueryHistoryItem } from '@/composables/useConsoleTab'
@@ -343,26 +346,30 @@ const effectiveSelectedConnections = computed(() => {
   return scoped ? [scoped] : selectedConnections.value
 })
 
-const directExecutionOptions = computed(() =>
+const directExecutionOptions = computed<SelectValueOption[]>(() =>
   databaseSourceMappings.value.map((mapping) => {
     const alias = mapping.alias || 'db'
     const databaseType = getDatabaseTypeDisplay(mapping.connectionId)
     const typePart = databaseType ? ` (${databaseType})` : ''
     return {
       value: `direct:${mapping.connectionId}`,
-      label: `Database: ${alias}${typePart}`
+      label: `${alias}${typePart}`,
+      selectedLabel: `Database: ${alias}${typePart}`,
+      indented: true
     }
   })
 )
 
-const scopedExecutionOptions = computed(() =>
+const scopedExecutionOptions = computed<SelectValueOption[]>(() =>
   selectedConnections.value
     .filter((mapping) => !isDatabaseMapping(mapping))
     .map((mapping) => {
       const alias = mapping.alias || 'files'
       return {
         value: `scoped:${mapping.connectionId}`,
-        label: `Files: ${alias}`
+        label: alias,
+        selectedLabel: `Files: ${alias}`,
+        indented: true
       }
     })
 )
@@ -371,12 +378,25 @@ const showUnifiedExecutionSelector = computed(() => {
   return databaseSourceMappings.value.length > 1 || scopedExecutionOptions.value.length > 0
 })
 
-const executionContextOptions = computed(() => {
-  return [
-    { value: 'federated', label: 'Multi-source' },
-    ...directExecutionOptions.value,
-    ...scopedExecutionOptions.value
+const executionContextOptions = computed<SelectOption[]>(() => {
+  const options: SelectOption[] = [
+    { type: 'header', label: 'Mode' },
+    { value: 'federated', label: 'Multi-source', selectedLabel: 'Multi-source', indented: true }
   ]
+
+  if (directExecutionOptions.value.length > 0) {
+    options.push({ type: 'divider' })
+    options.push({ type: 'header', label: 'Databases' })
+    options.push(...directExecutionOptions.value)
+  }
+
+  if (scopedExecutionOptions.value.length > 0) {
+    options.push({ type: 'divider' })
+    options.push({ type: 'header', label: 'Files' })
+    options.push(...scopedExecutionOptions.value)
+  }
+
+  return options
 })
 
 const executionContextValue = computed<string>({
@@ -815,6 +835,17 @@ defineExpose({
 
 .sources-pills::-webkit-scrollbar {
   display: none;
+}
+
+.sources-inline-trigger {
+  border: 0;
+  background: transparent;
+}
+
+.sources-inline-trigger:focus-visible {
+  outline: 2px solid #14b8a6;
+  outline-offset: 2px;
+  border-radius: 0.375rem;
 }
 
 .execution-context-group {
