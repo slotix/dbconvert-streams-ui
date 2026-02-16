@@ -9,14 +9,17 @@
         <button
           v-for="dbType in databaseTypes"
           :key="dbType.id"
+          :disabled="isComingSoon(dbType)"
           :class="[
-            selectedDBType?.id === dbType.id
-              ? 'ring-2 ring-teal-500 dark:ring-teal-400 border-teal-500 dark:border-teal-400 bg-teal-50 dark:bg-teal-900/20'
-              : 'border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800',
+            isComingSoon(dbType)
+              ? 'opacity-50 cursor-not-allowed border-gray-300 dark:border-gray-700'
+              : selectedDBType?.id === dbType.id
+                ? 'ring-2 ring-teal-500 dark:ring-teal-400 border-teal-500 dark:border-teal-400 bg-teal-50 dark:bg-teal-900/20'
+                : 'border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800',
             'relative p-4 border rounded-xl flex flex-col items-center text-center bg-white dark:bg-gray-850 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-900 focus:ring-teal-500 dark:focus:ring-teal-400 transition-all duration-200'
           ]"
-          @click="selectDBType(dbType)"
-          @dblclick.prevent="selectDBTypeAndProceed(dbType)"
+          @click="!isComingSoon(dbType) && selectDBType(dbType)"
+          @dblclick.prevent="!isComingSoon(dbType) && selectDBTypeAndProceed(dbType)"
         >
           <img
             :src="dbType.logo"
@@ -26,6 +29,14 @@
           <span class="text-sm font-medium text-gray-900 dark:text-gray-100">{{
             dbType.type
           }}</span>
+
+          <!-- Coming Soon badge -->
+          <span
+            v-if="isComingSoon(dbType)"
+            class="mt-1 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300"
+          >
+            Coming Soon
+          </span>
 
           <!-- Selection indicator -->
           <div
@@ -213,6 +224,12 @@ const emit = defineEmits<{
   'update:can-proceed': [canProceed: boolean]
   proceed: []
 }>()
+
+const comingSoonTypes = new Set(['Snowflake'])
+
+function isComingSoon(dbType: DbType): boolean {
+  return comingSoonTypes.has(dbType.type)
+}
 
 function selectDBType(dbType: DbType) {
   selectedDBType.value = dbType

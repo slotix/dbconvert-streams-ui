@@ -234,7 +234,11 @@ import ConnectionAliasPanel from './ConnectionAliasPanel.vue'
 import { useConsoleTab } from '@/composables/useConsoleTab'
 import { useConsoleSources, type ConsoleMode } from '@/composables/useConsoleSources'
 import { useQueryExecution } from '@/composables/useQueryExecution'
-import { getSqlDialectFromConnection } from '@/types/specs'
+import {
+  getConnectionKindFromSpec,
+  getSqlDialectFromConnection,
+  isDatabaseKind
+} from '@/types/specs'
 import {
   getFederatedTemplates,
   getFileTemplates,
@@ -320,12 +324,32 @@ const attachedSourcesLabel = computed(() => {
   return overflow > 0 ? `${aliases.join(', ')} +${overflow}` : aliases.join(', ')
 })
 
-const showUnifiedExecutionSelector = computed(
-  () => props.mode === 'database' && databaseSourceMappings.value.length > 1
-)
+const federatedScopeConnectionId = ref('')
 
-const executionContextOptions = computed(() => {
-  const direct = databaseSourceMappings.value.map((mapping) => {
+function isDatabaseMapping(mapping: { connectionId: string }): boolean {
+  const conn = connectionsStore.connectionByID(mapping.connectionId)
+  const kind = getConnectionKindFromSpec(conn?.spec)
+  return isDatabaseKind(kind)
+}
+
+const effectiveSelectedConnections = computed(() => {
+  if (runMode.value !== 'federated') {
+    return selectedConnections.value
+  }
+
+  if (!federatedScopeConnectionId.value) {
+    return selectedConnections.value
+  }
+
+  const scoped = selectedConnections.value.find(
+    (mapping) =>
+      mapping.connectionId === federatedScopeConnectionId.value && !isDatabaseMapping(mapping)
+  )
+  return scoped ? [scoped] : selectedConnections.value
+})
+
+const directExecutionOptions = computed(() =>
+  databaseSourceMappings.value.map((mapping) => {
     const conn = connectionsStore.connectionByID(mapping.connectionId)
     const alias = mapping.alias || 'db'
     const connName = conn?.name || mapping.connectionId
@@ -334,22 +358,69 @@ const executionContextOptions = computed(() => {
       label: `Direct: ${alias} · ${connName}`
     }
   })
-  return [...direct, { value: 'federated', label: 'Multi source' }]
+)
+
+const scopedExecutionOptions = computed(() =>
+  selectedConnections.value
+    .filter((mapping) => !isDatabaseMapping(mapping))
+    .map((mapping) => {
+      const conn = connectionsStore.connectionByID(mapping.connectionId)
+      const alias = mapping.alias || 'src'
+      const connName = conn?.name || mapping.connectionId
+      return {
+        value: `scoped:${mapping.connectionId}`,
+        label: `Scoped: ${alias} · ${connName}`
+      }
+    })
+)
+
+const showUnifiedExecutionSelector = computed(() => {
+  if (props.mode !== 'database') return false
+  return databaseSourceMappings.value.length > 1 || scopedExecutionOptions.value.length > 0
+})
+
+const executionContextOptions = computed(() => {
+  return [
+    ...directExecutionOptions.value,
+    ...scopedExecutionOptions.value,
+    { value: 'federated', label: 'Multi source' }
+  ]
 })
 
 const executionContextValue = computed<string>({
   get() {
-    if (runMode.value === 'federated') return 'federated'
+    if (runMode.value === 'federated') {
+      if (
+        federatedScopeConnectionId.value &&
+        scopedExecutionOptions.value.some(
+          (option) => option.value === `scoped:${federatedScopeConnectionId.value}`
+        )
+      ) {
+        return `scoped:${federatedScopeConnectionId.value}`
+      }
+      return 'federated'
+    }
+
     const directId =
       singleSourceMapping.value?.connectionId || databaseSourceMappings.value[0]?.connectionId
     return directId ? `direct:${directId}` : 'federated'
   },
   set(value) {
     if (value === 'federated') {
+      federatedScopeConnectionId.value = ''
+      setRunMode('federated')
+      return
+    }
+    if (value.startsWith('scoped:')) {
+      const connectionId = value.slice('scoped:'.length)
+      if (connectionId) {
+        federatedScopeConnectionId.value = connectionId
+      }
       setRunMode('federated')
       return
     }
     if (value.startsWith('direct:')) {
+      federatedScopeConnectionId.value = ''
       const connectionId = value.slice('direct:'.length)
       if (connectionId) {
         setSingleSourceConnectionId(connectionId)
@@ -360,7 +431,18 @@ const executionContextValue = computed<string>({
 })
 
 const singleExecutionLabel = computed(() => {
-  if (runMode.value === 'federated') return 'Executing: Multi source'
+  if (runMode.value === 'federated') {
+    if (federatedScopeConnectionId.value) {
+      const mapping = selectedConnections.value.find(
+        (m) => m.connectionId === federatedScopeConnectionId.value
+      )
+      const conn = mapping ? connectionsStore.connectionByID(mapping.connectionId) : null
+      if (mapping) {
+        return `Executing: Scoped · ${mapping.alias || 'src'} · ${conn?.name || mapping.connectionId}`
+      }
+    }
+    return 'Executing: Multi source'
+  }
 
   const mapping = singleSourceMapping.value || databaseSourceMappings.value[0]
   if (!mapping) return 'Executing: Single source'
@@ -444,7 +526,7 @@ const { isExecuting, executeQuery } = useQueryExecution({
   mode: modeRef,
   connectionId: connectionIdRef,
   database: databaseRef,
-  selectedConnections,
+  selectedConnections: effectiveSelectedConnections,
   singleSourceMapping,
   useFederatedEngine,
   sqlQuery,
@@ -512,8 +594,25 @@ async function loadTableSuggestionsWithRefresh(forceRefresh: boolean) {
 // ========== Query Templates ==========
 const queryTemplates = computed(() => {
   if (useFederatedEngine.value) {
-    const aliases = selectedConnections.value.map((c) => c.alias)
-    return getFederatedTemplates(aliases)
+    const sources = effectiveSelectedConnections.value
+      .map((mapping) => {
+        const conn = connectionsStore.connectionByID(mapping.connectionId)
+        const kind = getConnectionKindFromSpec(conn?.spec)
+        if (!kind || !mapping.alias) return null
+        return {
+          alias: mapping.alias,
+          kind
+        }
+      })
+      .filter(
+        (
+          source
+        ): source is {
+          alias: string
+          kind: NonNullable<ReturnType<typeof getConnectionKindFromSpec>>
+        } => Boolean(source)
+      )
+    return getFederatedTemplates(sources)
   }
   if (props.mode === 'file') {
     const prefix = computeFileTemplatePrefix({
@@ -563,7 +662,7 @@ const paneTabDefaultName = computed(() => {
 })
 
 const paneTabFederatedName = computed(() => {
-  const sourceCount = selectedConnections.value.length
+  const sourceCount = effectiveSelectedConnections.value.length
   const sourcePart = `${sourceCount} source${sourceCount === 1 ? '' : 's'}`
   if (props.mode === 'database' && props.database) {
     return `Multi • DB: ${props.database} • ${sourcePart}`
@@ -608,6 +707,32 @@ watch(
   paneTabName,
   (name) => {
     paneTabsStore.renameSqlConsoleTabs(props.connectionId, props.database, name)
+  },
+  { immediate: true }
+)
+
+watch(
+  selectedConnections,
+  (mappings) => {
+    if (!federatedScopeConnectionId.value) return
+    const stillExists = mappings.some(
+      (mapping) =>
+        mapping.connectionId === federatedScopeConnectionId.value && !isDatabaseMapping(mapping)
+    )
+    if (!stillExists) {
+      federatedScopeConnectionId.value = ''
+    }
+  },
+  { deep: true }
+)
+
+watch(
+  databaseSourceMappings,
+  (mappings) => {
+    if (props.mode !== 'database') return
+    if (runMode.value === 'single' && mappings.length === 0) {
+      setRunMode('federated')
+    }
   },
   { immediate: true }
 )

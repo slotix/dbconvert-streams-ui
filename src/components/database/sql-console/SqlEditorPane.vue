@@ -39,18 +39,30 @@
           class="absolute left-0 mt-1 w-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-50 max-h-96 overflow-y-auto"
         >
           <div class="py-1">
-            <button
-              v-for="template in templates"
-              :key="template.name"
-              class="w-full text-left px-3 py-2 text-xs hover:bg-gray-100 dark:hover:bg-gray-700"
-              :title="`${template.name}\n\n${template.query}`"
-              @click="selectTemplate(template.query)"
-            >
-              <div class="font-medium text-gray-700 dark:text-gray-300">{{ template.name }}</div>
-              <div class="text-gray-500 dark:text-gray-400 truncate font-mono text-[10px]">
-                {{ template.query.split('\n')[0] }}
+            <template v-for="group in groupedTemplates" :key="group.name">
+              <div
+                v-if="showTemplateGroupHeaders"
+                class="px-3 pt-2 pb-1 text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400 font-semibold"
+              >
+                {{ group.name }}
               </div>
-            </button>
+              <div>
+                <button
+                  v-for="template in group.items"
+                  :key="`${group.name}-${template.name}`"
+                  class="w-full text-left px-3 py-2 text-xs hover:bg-gray-100 dark:hover:bg-gray-700"
+                  :title="`${template.name}\n\n${template.query}`"
+                  @click="selectTemplate(template.query)"
+                >
+                  <div class="font-medium text-gray-700 dark:text-gray-300">
+                    {{ template.name }}
+                  </div>
+                  <div class="text-gray-500 dark:text-gray-400 truncate font-mono text-[10px]">
+                    {{ template.query.split('\n')[0] }}
+                  </div>
+                </button>
+              </div>
+            </template>
           </div>
         </div>
       </div>
@@ -138,6 +150,7 @@ interface HistoryItem {
 interface Template {
   name: string
   query: string
+  group?: string
 }
 
 const props = defineProps<{
@@ -161,6 +174,36 @@ const emit = defineEmits<{
 // Use defaults for optional props
 const templates = computed(() => props.templates || [])
 const history = computed(() => props.history || [])
+const templateGroupPriority = ['General', 'Database', 'S3', 'Files', 'Cross-source']
+
+const groupedTemplates = computed(() => {
+  const grouped = new Map<string, Template[]>()
+  for (const template of templates.value) {
+    const groupName = template.group?.trim() || 'General'
+    const existing = grouped.get(groupName)
+    if (existing) {
+      existing.push(template)
+      continue
+    }
+    grouped.set(groupName, [template])
+  }
+
+  const result: Array<{ name: string; items: Template[] }> = []
+  for (const groupName of templateGroupPriority) {
+    const items = grouped.get(groupName)
+    if (!items?.length) continue
+    result.push({ name: groupName, items })
+    grouped.delete(groupName)
+  }
+
+  const remaining = Array.from(grouped.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([name, items]) => ({ name, items }))
+
+  return [...result, ...remaining]
+})
+
+const showTemplateGroupHeaders = computed(() => groupedTemplates.value.length > 1)
 
 const sqlEditorRef = ref()
 const templatesDropdownRef = ref<HTMLElement | null>(null)

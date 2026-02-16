@@ -51,7 +51,7 @@ export interface UseQueryExecutionOptions {
   /** Database name (for database mode) */
   database?: ComputedRef<string | undefined> | Ref<string | undefined>
   /** Selected data sources for federated queries */
-  selectedConnections: Ref<ConnectionMapping[]>
+  selectedConnections: Ref<ConnectionMapping[]> | ComputedRef<ConnectionMapping[]>
   /** Explicit single-source target when run mode is single */
   singleSourceMapping?: ComputedRef<ConnectionMapping | null> | Ref<ConnectionMapping | null>
   /** Whether to use the federated query engine */
