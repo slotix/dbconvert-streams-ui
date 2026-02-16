@@ -1,29 +1,21 @@
 <template>
   <div class="console-tab h-full flex flex-col bg-gray-50 dark:bg-gray-900 pb-2">
     <!-- Execution Context Toolbar -->
-    <div class="px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex items-center gap-3">
-      <button
-        type="button"
-        class="group min-w-0 flex-1 inline-flex items-center gap-2 text-sm text-left rounded-md px-2.5 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-850 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-        title="Manage attached sources"
-        aria-label="Manage attached sources"
-        @click="isSourceDrawerOpen = true"
-      >
-        <span class="text-gray-500 dark:text-gray-400 shrink-0 text-xs">Attached</span>
-        <span class="truncate text-gray-700 dark:text-gray-300">{{ attachedSourcesLabel }}</span>
-        <span class="shrink-0 text-[11px] text-teal-600 dark:text-teal-400 group-hover:underline">
-          Manage
-        </span>
-        <ChevronRight
-          class="h-3.5 w-3.5 shrink-0 text-gray-400 dark:text-gray-500 group-hover:text-teal-600 dark:group-hover:text-teal-400"
-        />
-      </button>
-
+    <div
+      ref="executionToolbarRef"
+      class="px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex items-center gap-3"
+    >
       <div class="shrink-0 execution-context-wrap">
-        <div v-if="showUnifiedExecutionSelector">
+        <div
+          v-if="showUnifiedExecutionSelector"
+          class="execution-context-group"
+          :class="{ 'execution-context-group--compact': hideToolbarLabels }"
+        >
+          <span v-show="!hideToolbarLabels" class="execution-context-label">Run on:</span>
           <FormSelect
             v-model="executionContextValue"
             :options="executionContextOptions"
+            dropdown-footer="Templates are scoped to selected context"
             class="execution-context-select"
             placeholder="Select execution mode"
           />
@@ -36,6 +28,33 @@
           {{ singleExecutionLabel }}
         </div>
       </div>
+
+      <button
+        type="button"
+        class="group min-w-0 flex-1 inline-flex items-center gap-2 text-sm text-left rounded-md px-2.5 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-850 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+        title="Edit sources"
+        aria-label="Edit sources"
+        @click="isSourceDrawerOpen = true"
+      >
+        <span v-show="!hideToolbarLabels" class="text-gray-500 dark:text-gray-400 shrink-0 text-xs"
+          >Sources:</span
+        >
+        <div ref="sourcesPillsRef" class="sources-pills">
+          <span
+            v-for="pill in sourcePills"
+            :key="pill.connectionId"
+            class="inline-flex shrink-0 items-center max-w-[140px] px-2 py-0.5 text-[11px] rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700"
+          >
+            <span class="truncate">{{ pill.alias }}</span>
+          </span>
+          <span v-if="sourcePills.length === 0" class="text-xs text-gray-500 dark:text-gray-400">
+            none
+          </span>
+        </div>
+        <ChevronRight
+          class="h-3.5 w-3.5 shrink-0 text-gray-400 dark:text-gray-500 group-hover:text-teal-600 dark:group-hover:text-teal-400"
+        />
+      </button>
     </div>
 
     <!-- Query Tabs -->
@@ -140,6 +159,7 @@ import { useConsoleSources, type ConsoleMode } from '@/composables/useConsoleSou
 import { useQueryExecution } from '@/composables/useQueryExecution'
 import {
   getConnectionKindFromSpec,
+  getConnectionTypeLabel,
   getSqlDialectFromConnection,
   isDatabaseKind
 } from '@/types/specs'
@@ -171,6 +191,64 @@ const props = defineProps<{
 const connectionsStore = useConnectionsStore()
 const paneTabsStore = usePaneTabsStore()
 const isSourceDrawerOpen = ref(false)
+const executionToolbarRef = ref<HTMLElement | null>(null)
+const sourcesPillsRef = ref<HTMLElement | null>(null)
+const hideToolbarLabels = ref(false)
+const TOOLBAR_LABEL_RECOVERY_SPACE = 120
+const TOOLBAR_KEEP_LABELS_MIN_WIDTH = 980
+
+let executionToolbarResizeObserver: ResizeObserver | null = null
+
+function updateToolbarLabelVisibility() {
+  const toolbar = executionToolbarRef.value
+  if (!toolbar) return
+
+  // Keep labels visible on wide layouts; compact mode is for constrained widths only.
+  if (toolbar.clientWidth >= TOOLBAR_KEEP_LABELS_MIN_WIDTH) {
+    hideToolbarLabels.value = false
+    return
+  }
+
+  const overflows = toolbar.scrollWidth > toolbar.clientWidth + 1
+  const pills = sourcesPillsRef.value
+  const pillsOverflow = pills ? pills.scrollWidth > pills.clientWidth + 1 : false
+  const needsCompact = overflows || pillsOverflow
+
+  if (!hideToolbarLabels.value) {
+    if (needsCompact) hideToolbarLabels.value = true
+    return
+  }
+
+  if (needsCompact) return
+
+  const spareSpace = toolbar.clientWidth - toolbar.scrollWidth
+  if (spareSpace < TOOLBAR_LABEL_RECOVERY_SPACE) return
+
+  hideToolbarLabels.value = false
+
+  nextTick(() => {
+    const currentToolbar = executionToolbarRef.value
+    if (!currentToolbar) return
+    if (currentToolbar.scrollWidth > currentToolbar.clientWidth + 1) {
+      hideToolbarLabels.value = true
+    }
+  })
+}
+
+function setupToolbarResizeObserver() {
+  const toolbar = executionToolbarRef.value
+  if (!toolbar || typeof ResizeObserver === 'undefined') return
+
+  executionToolbarResizeObserver = new ResizeObserver(() => {
+    updateToolbarLabelVisibility()
+  })
+  executionToolbarResizeObserver.observe(toolbar)
+}
+
+function cleanupToolbarResizeObserver() {
+  executionToolbarResizeObserver?.disconnect()
+  executionToolbarResizeObserver = null
+}
 
 // ========== Console Key Computation ==========
 const legacyConsoleKey = computed(() => {
@@ -221,14 +299,12 @@ const {
   consoleKey
 })
 
-const attachedSourcesLabel = computed(() => {
-  if (selectedConnections.value.length === 0) return 'none'
-
-  const previewLimit = 2
-  const aliases = selectedConnections.value.slice(0, previewLimit).map((m) => m.alias || 'db')
-  const overflow = Math.max(0, selectedConnections.value.length - previewLimit)
-  return overflow > 0 ? `${aliases.join(', ')} +${overflow}` : aliases.join(', ')
-})
+const sourcePills = computed(() =>
+  selectedConnections.value.map((mapping) => ({
+    connectionId: mapping.connectionId,
+    alias: mapping.alias || 'db'
+  }))
+)
 
 const federatedScopeConnectionId = ref('')
 
@@ -236,6 +312,19 @@ function isDatabaseMapping(mapping: { connectionId: string }): boolean {
   const conn = connectionsStore.connectionByID(mapping.connectionId)
   const kind = getConnectionKindFromSpec(conn?.spec)
   return isDatabaseKind(kind)
+}
+
+function getDatabaseTypeDisplay(connectionId: string): string | null {
+  const conn = connectionsStore.connectionByID(connectionId)
+  const typeLabel = getConnectionTypeLabel(conn?.spec, conn?.type)
+  if (!typeLabel) return conn?.type || null
+
+  const lowered = typeLabel.toLowerCase()
+  if (lowered.includes('postgres')) return 'PostgreSQL'
+  if (lowered.includes('mysql') || lowered.includes('mariadb')) return 'MySQL'
+  if (lowered === 'snowflake') return 'Snowflake'
+
+  return conn?.type || typeLabel
 }
 
 const effectiveSelectedConnections = computed(() => {
@@ -256,12 +345,12 @@ const effectiveSelectedConnections = computed(() => {
 
 const directExecutionOptions = computed(() =>
   databaseSourceMappings.value.map((mapping) => {
-    const conn = connectionsStore.connectionByID(mapping.connectionId)
     const alias = mapping.alias || 'db'
-    const connName = conn?.name || mapping.connectionId
+    const databaseType = getDatabaseTypeDisplay(mapping.connectionId)
+    const typePart = databaseType ? ` (${databaseType})` : ''
     return {
       value: `direct:${mapping.connectionId}`,
-      label: `Direct: ${alias} · ${connName}`
+      label: `Database: ${alias}${typePart}`
     }
   })
 )
@@ -270,12 +359,10 @@ const scopedExecutionOptions = computed(() =>
   selectedConnections.value
     .filter((mapping) => !isDatabaseMapping(mapping))
     .map((mapping) => {
-      const conn = connectionsStore.connectionByID(mapping.connectionId)
-      const alias = mapping.alias || 'src'
-      const connName = conn?.name || mapping.connectionId
+      const alias = mapping.alias || 'files'
       return {
         value: `scoped:${mapping.connectionId}`,
-        label: `Scoped: ${alias} · ${connName}`
+        label: `Files: ${alias}`
       }
     })
 )
@@ -286,9 +373,9 @@ const showUnifiedExecutionSelector = computed(() => {
 
 const executionContextOptions = computed(() => {
   return [
+    { value: 'federated', label: 'Multi-source' },
     ...directExecutionOptions.value,
-    ...scopedExecutionOptions.value,
-    { value: 'federated', label: 'Multi source' }
+    ...scopedExecutionOptions.value
   ]
 })
 
@@ -343,17 +430,19 @@ const singleExecutionLabel = computed(() => {
       )
       const conn = mapping ? connectionsStore.connectionByID(mapping.connectionId) : null
       if (mapping) {
-        return `Executing: Scoped · ${mapping.alias || 'src'} · ${conn?.name || mapping.connectionId}`
+        return `Executing: Files: ${mapping.alias || 'files'} · ${conn?.name || mapping.connectionId}`
       }
     }
-    return 'Executing: Multi source'
+    return 'Executing: Multi-source'
   }
 
   const mapping = singleSourceMapping.value || databaseSourceMappings.value[0]
   if (!mapping) return 'Executing: Single source'
 
-  const conn = connectionsStore.connectionByID(mapping.connectionId)
-  return `Executing: ${mapping.alias || 'db'} · ${conn?.name || mapping.connectionId}`
+  const alias = mapping.alias || 'db'
+  const databaseType = getDatabaseTypeDisplay(mapping.connectionId)
+  const typePart = databaseType ? ` (${databaseType})` : ''
+  return `Executing: Database: ${alias}${typePart}`
 })
 
 // ========== SQL Dialect ==========
@@ -470,8 +559,9 @@ async function loadTableSuggestionsWithRefresh(forceRefresh: boolean) {
   if (props.mode !== 'database') return
   if (useFederatedEngine.value) return
 
-  const targetConnectionId = singleSourceMapping.value?.connectionId || props.connectionId
-  const db = singleSourceMapping.value?.database?.trim() || props.database?.trim()
+  const selected = singleSourceMapping.value
+  const targetConnectionId = selected?.connectionId || props.connectionId
+  const db = selected?.database?.trim()
   if (!db) {
     tablesList.value = []
     columnsMap.value = {}
@@ -574,7 +664,7 @@ const paneTabDefaultName = computed(() => {
     ? connectionsStore.connectionByID(mapping.connectionId)
     : connection.value
   const connName = mappedConnection?.name || connection.value?.name || 'SQL'
-  const targetDatabase = mapping?.database?.trim() || props.database?.trim()
+  const targetDatabase = mapping?.database?.trim()
 
   if (targetDatabase) {
     return `${connName} → ${targetDatabase}`
@@ -592,14 +682,14 @@ const paneTabFederatedName = computed(() => {
       const connName = conn?.name || mapping.connectionId
       const db = mapping.database?.trim()
       const target = db ? `${connName} → ${db}` : connName
-      return `Scoped • ${mapping.alias || 'src'} • ${target}`
+      return `Files • ${mapping.alias || 'files'} • ${target}`
     }
   }
 
   const sourceCount = effectiveSelectedConnections.value.length
   const sourcePart = `${sourceCount} source${sourceCount === 1 ? '' : 's'}`
   if (props.mode === 'database') {
-    return `Multi source • ${sourcePart}`
+    return `Multi-source • ${sourcePart}`
   }
   return `Multi • ${scopeLabel.value} • ${sourcePart}`
 })
@@ -629,9 +719,14 @@ onMounted(async () => {
   restoreSingleSourceConnection()
 
   if (props.mode === 'database') await loadTableSuggestions()
+
+  setupToolbarResizeObserver()
+  await nextTick()
+  updateToolbarLabelVisibility()
 })
 
 onUnmounted(() => {
+  cleanupToolbarResizeObserver()
   cleanup()
 })
 
@@ -677,6 +772,11 @@ watch([runMode, singleSourceMapping], async () => {
   await loadTableSuggestions()
 })
 
+watch([selectedConnections, executionContextValue, showUnifiedExecutionSelector], async () => {
+  await nextTick()
+  updateToolbarLabelVisibility()
+})
+
 // ========== Public API ==========
 function insertIntoEditor(text: string) {
   sqlQuery.value = text
@@ -693,11 +793,49 @@ defineExpose({
 }
 
 .execution-context-select {
-  width: 100%;
+  width: 280px;
 }
 
 .execution-context-wrap {
-  width: 280px;
+  width: auto;
+}
+
+.sources-pills {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.25rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.sources-pills::-webkit-scrollbar {
+  display: none;
+}
+
+.execution-context-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.execution-context-group--compact {
+  gap: 0;
+}
+
+.execution-context-label {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+:global(.dark) .execution-context-label {
+  color: #9ca3af;
 }
 
 .execution-context-select :deep(button) {

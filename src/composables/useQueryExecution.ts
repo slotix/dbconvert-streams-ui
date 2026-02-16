@@ -79,7 +79,6 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
   const {
     mode,
     connectionId,
-    database,
     selectedConnections,
     singleSourceMapping,
     useFederatedEngine,
@@ -98,7 +97,6 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
   // Unwrap refs to computed values
   const modeValue = computed(() => mode.value)
   const connectionIdValue = computed(() => connectionId.value)
-  const databaseValue = computed(() => database?.value)
   const singleSourceMappingValue = computed(() => singleSourceMapping?.value || null)
 
   const isExecuting = ref(false)
@@ -312,8 +310,7 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
         aliases: aliases.length > 0 ? aliases : undefined
       })
     } catch (error: unknown) {
-      const errorMsg =
-        error instanceof Error ? error.message : 'Failed to execute federated query'
+      const errorMsg = error instanceof Error ? error.message : 'Failed to execute federated query'
       const duration = Date.now() - startTime
 
       setExecutionError(errorMsg)
@@ -396,9 +393,10 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
     alias?: string
   } {
     const selectedSingle = singleSourceMappingValue.value
+
     return {
       connectionId: selectedSingle?.connectionId || connectionIdValue.value,
-      database: selectedSingle?.database?.trim() || databaseValue.value?.trim() || undefined,
+      database: selectedSingle?.database?.trim() || undefined,
       alias: selectedSingle?.alias?.trim() || undefined
     }
   }
@@ -464,10 +462,7 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
         id: `sql-console-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
         connectionId: executionContext?.connectionId || connectionIdValue.value,
         tabId: activeQueryTabId.value || undefined,
-        database:
-          modeValue.value === 'file'
-            ? ''
-            : (executionContext?.database ?? databaseValue.value ?? ''),
+        database: modeValue.value === 'file' ? '' : (executionContext?.database ?? ''),
         query: query,
         purpose: detectQueryPurpose(query),
         startedAt: new Date(startTime).toISOString(),
@@ -495,10 +490,7 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
         id: `sql-console-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
         connectionId: executionContext?.connectionId || connectionIdValue.value,
         tabId: activeQueryTabId.value || undefined,
-        database:
-          modeValue.value === 'file'
-            ? ''
-            : (executionContext?.database ?? databaseValue.value ?? ''),
+        database: modeValue.value === 'file' ? '' : (executionContext?.database ?? ''),
         query: query,
         purpose: detectQueryPurpose(query),
         startedAt: new Date(startTime).toISOString(),
@@ -518,7 +510,7 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
       navigationStore.selection?.connectionId === targetConnectionId
         ? navigationStore.selection?.database
         : undefined
-    const db = targetDatabase?.trim() || databaseValue.value?.trim() || selectionDb?.trim()
+    const db = targetDatabase?.trim() || selectionDb?.trim()
     const hasDatabaseChange = affectedObjects.includes('database')
     const hasSchemaChange = affectedObjects.includes('schema')
     const hasTableChange = affectedObjects.includes('table')

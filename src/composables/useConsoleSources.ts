@@ -385,8 +385,33 @@ export function useConsoleSources(options: UseConsoleSourcesOptions): UseConsole
     })
   }
 
+  function normalizePrimaryDatabaseMapping() {
+    if (modeValue.value !== 'database') return
+
+    const primaryDatabase = primaryDefaultDatabase.value.trim()
+    if (!primaryDatabase) return
+
+    const primaryIndex = selectedConnections.value.findIndex(
+      (mapping) => mapping.connectionId === connectionIdValue.value
+    )
+    if (primaryIndex < 0) return
+
+    const mapping = selectedConnections.value[primaryIndex]
+    if (mapping.database?.trim()) return
+
+    selectedConnections.value.splice(primaryIndex, 1, {
+      ...mapping,
+      database: primaryDatabase
+    })
+  }
+
   // ========== Watchers ==========
   watch([primaryMapping, connectionIdValue], syncPrimarySource, { immediate: true })
+  watch(
+    [selectedConnections, modeValue, connectionIdValue, primaryDefaultDatabase],
+    normalizePrimaryDatabaseMapping,
+    { deep: true, immediate: true }
+  )
   watch([selectedConnections, connectionIdValue], syncSingleSourceConnection, { deep: true })
   watch(selectedConnections, persistSelectedConnections, { deep: true })
   watch([selectedConnections, connectionIdValue], () => {

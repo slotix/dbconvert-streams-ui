@@ -45,6 +45,7 @@ interface Props {
   modelValue?: string | number | null
   label?: string
   helperText?: string
+  dropdownFooter?: string
   error?: string
   placeholder?: string
   disabled?: boolean
@@ -158,6 +159,13 @@ const handleChange = (option: SelectOption | null) => {
               </span>
             </li>
           </ListboxOption>
+          <li
+            v-if="dropdownFooter"
+            aria-hidden="true"
+            class="px-3 py-1.5 text-[11px] text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-gray-700 mt-1"
+          >
+            {{ dropdownFooter }}
+          </li>
         </ListboxOptions>
       </transition>
     </div>
