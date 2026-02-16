@@ -160,6 +160,7 @@
               v-model="activeQuery.query"
               :dialect="connectionDialect"
               :schema-context="schemaContext"
+              :show-copy="false"
               height="100%"
               :enable-sql-providers="true"
               :enable-execute="true"

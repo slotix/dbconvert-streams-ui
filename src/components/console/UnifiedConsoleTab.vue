@@ -148,7 +148,7 @@ import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue'
 import { ChevronRight } from 'lucide-vue-next'
 import type { SchemaContext } from '@/composables/useMonacoSqlProviders'
 import { useConnectionsStore } from '@/stores/connections'
-import { usePaneTabsStore } from '@/stores/paneTabs'
+import { usePaneTabsStore, createConsoleSessionId } from '@/stores/paneTabs'
 import connections from '@/api/connections'
 import { SqlQueryTabs, SqlEditorPane, SqlResultsPane } from '@/components/database/sql-console'
 import FormSelect, {
@@ -163,9 +163,10 @@ import { useQueryExecution } from '@/composables/useQueryExecution'
 import {
   getConnectionKindFromSpec,
   getConnectionTypeLabel,
-  getSqlDialectFromConnection,
-  isDatabaseKind
+  isDatabaseKind,
+  getSqlDialectFromConnection
 } from '@/types/specs'
+import { getConnectionDatabase } from '@/utils/specBuilder'
 import {
   getFederatedTemplates,
   getFileTemplates,
@@ -254,14 +255,8 @@ function cleanupToolbarResizeObserver() {
 }
 
 // ========== Console Key Computation ==========
-const legacyConsoleKey = computed(() => {
-  if (props.mode === 'file') {
-    return `file:${props.connectionId}`
-  }
-  return props.database ? `${props.connectionId}:${props.database}` : props.connectionId
-})
-
-const consoleKey = computed(() => props.consoleSessionId?.trim() || legacyConsoleKey.value)
+const generatedConsoleSessionId = createConsoleSessionId()
+const consoleKey = computed(() => props.consoleSessionId?.trim() || generatedConsoleSessionId)
 
 const historyKey = computed(() => {
   if (props.mode === 'file') {
@@ -344,6 +339,23 @@ const effectiveSelectedConnections = computed(() => {
       mapping.connectionId === federatedScopeConnectionId.value && !isDatabaseMapping(mapping)
   )
   return scoped ? [scoped] : selectedConnections.value
+})
+
+const autocompleteDatabaseMappings = computed(() => {
+  if (props.mode !== 'database') return []
+
+  if (runMode.value === 'federated') {
+    return selectedConnections.value.filter((mapping) => {
+      const conn = connectionsStore.connectionByID(mapping.connectionId)
+      return isDatabaseKind(getConnectionKindFromSpec(conn?.spec))
+    })
+  }
+
+  const direct = singleSourceMapping.value
+  if (!direct) return []
+
+  const conn = connectionsStore.connectionByID(direct.connectionId)
+  return isDatabaseKind(getConnectionKindFromSpec(conn?.spec)) ? [direct] : []
 })
 
 const directExecutionOptions = computed<SelectValueOption[]>(() =>
@@ -556,13 +568,21 @@ const { isExecuting, executeQuery } = useQueryExecution({
 // ========== Schema Context (database mode) ==========
 const tablesList = ref<Array<{ name: string; schema?: string }>>([])
 const columnsMap = ref<Record<string, Array<{ name: string; type: string; nullable: boolean }>>>({})
+const federatedTablesList = ref<Array<{ name: string; schema?: string }>>([])
+const federatedColumnsMap = ref<
+  Record<string, Array<{ name: string; type: string; nullable: boolean }>>
+>({})
 
 const schemaContext = computed<SchemaContext>(() => {
-  if (useFederatedEngine.value) {
-    return { tables: [], columns: {}, dialect: 'sql' }
-  }
   if (props.mode === 'file') {
     return { tables: [], columns: {}, dialect: 'sql' }
+  }
+  if (useFederatedEngine.value) {
+    return {
+      tables: federatedTablesList.value,
+      columns: federatedColumnsMap.value,
+      dialect: 'sql'
+    }
   }
   return {
     tables: tablesList.value,
@@ -577,16 +597,72 @@ async function loadTableSuggestions() {
 
 async function loadTableSuggestionsWithRefresh(forceRefresh: boolean) {
   if (props.mode !== 'database') return
-  if (useFederatedEngine.value) return
 
-  const selected = singleSourceMapping.value
-  const targetConnectionId = selected?.connectionId || props.connectionId
-  const db = selected?.database?.trim()
-  if (!db) {
+  const dbMappings = autocompleteDatabaseMappings.value
+  if (dbMappings.length === 0) {
     tablesList.value = []
     columnsMap.value = {}
+    federatedTablesList.value = []
+    federatedColumnsMap.value = {}
     return
   }
+
+  if (runMode.value === 'federated') {
+    tablesList.value = []
+    columnsMap.value = {}
+
+    const nextTables: Array<{ name: string; schema?: string }> = []
+    const nextColumns: Record<string, Array<{ name: string; type: string; nullable: boolean }>> = {}
+
+    await Promise.all(
+      dbMappings.map(async (mapping) => {
+        const conn = connectionsStore.connectionByID(mapping.connectionId)
+        const alias = mapping.alias?.trim()
+        const database = mapping.database?.trim() || getConnectionDatabase(conn || undefined)
+
+        if (!alias || !database) return
+
+        try {
+          const metadata = await connections.getMetadata(
+            mapping.connectionId,
+            database,
+            forceRefresh
+          )
+
+          for (const [tableName, table] of Object.entries(metadata.tables)) {
+            const qualifiedTable = `${alias}.${tableName}`
+            nextTables.push({ name: qualifiedTable })
+
+            nextColumns[qualifiedTable] = (
+              table as { columns: Array<{ name: string; dataType?: string; isNullable?: boolean }> }
+            ).columns.map((column) => ({
+              name: column.name,
+              type: column.dataType || 'unknown',
+              nullable: column.isNullable ?? true
+            }))
+          }
+        } catch (error) {
+          console.error('Failed to load federated table suggestions:', {
+            connectionId: mapping.connectionId,
+            alias,
+            database,
+            error
+          })
+        }
+      })
+    )
+
+    federatedTablesList.value = nextTables
+    federatedColumnsMap.value = nextColumns
+    return
+  }
+
+  federatedTablesList.value = []
+  federatedColumnsMap.value = {}
+
+  const selected = dbMappings[0]
+  const targetConnectionId = selected.connectionId
+  const db = selected.database?.trim() || ''
 
   try {
     const metadata = await connections.getMetadata(targetConnectionId, db, forceRefresh)
@@ -793,6 +869,9 @@ watch([runMode, singleSourceMapping], async () => {
 })
 
 watch([selectedConnections, executionContextValue, showUnifiedExecutionSelector], async () => {
+  if (props.mode === 'database' && !useFederatedEngine.value) {
+    await loadTableSuggestions()
+  }
   await nextTick()
   updateToolbarLabelVisibility()
 })

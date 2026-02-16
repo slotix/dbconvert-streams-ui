@@ -21,6 +21,16 @@
         <Code class="h-3.5 w-3.5" />
       </button>
 
+      <button
+        :disabled="!hasQueryToCopy"
+        class="inline-flex items-center px-2 py-1.5 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded shadow-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed"
+        :title="isCopyFeedbackVisible ? 'Copied' : 'Copy SQL'"
+        @click="copyCurrentQuery"
+      >
+        <Check v-if="isCopyFeedbackVisible" class="h-3.5 w-3.5 text-teal-600 dark:text-teal-400" />
+        <Copy v-else class="h-3.5 w-3.5" />
+      </button>
+
       <!-- Divider -->
       <div class="w-px h-5 bg-gray-300 dark:bg-gray-600 mx-1"></div>
 
@@ -437,6 +447,7 @@
         :model-value="modelValue"
         :dialect="dialect"
         :schema-context="schemaContext"
+        :show-copy="false"
         :enable-sql-providers="true"
         :enable-execute="true"
         :enable-format-action="true"
@@ -456,6 +467,7 @@ import type { SchemaContext } from '@/composables/useMonacoSqlProviders'
 import type { QueryTemplate } from '@/components/console/queryTemplates'
 import type { QueryHistoryItem } from '@/composables/useConsoleTab'
 import {
+  Check,
   Copy,
   ChevronDown,
   ChevronRight,
@@ -531,6 +543,9 @@ const shortcutHint = computed(() => (isMacPlatform.value ? '⌘K' : 'Ctrl+K'))
 const historyButtonTitle = computed(() =>
   history.value.length > 0 ? `History (${history.value.length})` : 'History'
 )
+const hasQueryToCopy = computed(() => props.modelValue.trim().length > 0)
+const isCopyFeedbackVisible = ref(false)
+let copyFeedbackTimer: ReturnType<typeof setTimeout> | null = null
 
 const hasFederatedTemplateSections = computed(() =>
   templates.value.some((template) =>
@@ -1012,6 +1027,24 @@ function openHistoryNewTab(item: HistoryItem) {
   showHistory.value = false
 }
 
+async function copyCurrentQuery() {
+  const query = props.modelValue?.trim()
+  if (!query) return
+  try {
+    await navigator.clipboard.writeText(props.modelValue)
+    isCopyFeedbackVisible.value = true
+    if (copyFeedbackTimer) {
+      clearTimeout(copyFeedbackTimer)
+    }
+    copyFeedbackTimer = setTimeout(() => {
+      isCopyFeedbackVisible.value = false
+      copyFeedbackTimer = null
+    }, 1400)
+  } catch {
+    // Clipboard can fail in some browser/permission contexts; keep UI silent.
+  }
+}
+
 async function copyHistoryQuery(item: HistoryItem) {
   if (!item.query) return
   try {
@@ -1153,6 +1186,10 @@ onUnmounted(() => {
   document.removeEventListener('keydown', handleGlobalShortcut)
   window.removeEventListener('resize', handleViewportChange)
   window.removeEventListener('scroll', handleViewportChange, true)
+  if (copyFeedbackTimer) {
+    clearTimeout(copyFeedbackTimer)
+    copyFeedbackTimer = null
+  }
 })
 
 // Expose editor ref for parent to access if needed

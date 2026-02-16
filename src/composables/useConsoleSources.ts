@@ -6,6 +6,7 @@ import { ref, computed, watch, type Ref, type ComputedRef } from 'vue'
 import { useConnectionsStore } from '@/stores/connections'
 import type { ConnectionMapping } from '@/api/federated'
 import type { Connection } from '@/types/connections'
+import { getConnectionDatabase } from '@/utils/specBuilder'
 import { getConnectionKindFromSpec, getConnectionTypeLabel, isDatabaseKind } from '@/types/specs'
 
 export type ConsoleMode = 'database' | 'file'
@@ -192,7 +193,7 @@ export function useConsoleSources(options: UseConsoleSourcesOptions): UseConsole
 
   const primaryDefaultDatabase = computed(() => {
     if (modeValue.value !== 'database') return ''
-    return databaseValue.value || ''
+    return databaseValue.value || getConnectionDefaultDatabase(connectionIdValue.value)
   })
 
   const primaryMapping = computed<ConnectionMapping>(() => {
@@ -256,7 +257,41 @@ export function useConsoleSources(options: UseConsoleSourcesOptions): UseConsole
 
   function handleUpdateSelectedConnections(value: ConnectionMapping[]) {
     userModifiedSources.value = true
-    selectedConnections.value = value
+    selectedConnections.value = sanitizeMappings(value)
+  }
+
+  function getConnectionDefaultDatabase(connectionId: string): string {
+    const conn = connectionsStore.connectionByID(connectionId)
+    return getConnectionDatabase(conn || undefined)
+  }
+
+  function ensureExplicitDatabaseMappings() {
+    if (modeValue.value !== 'database') return
+
+    const primaryDatabase = primaryDefaultDatabase.value.trim()
+    let changed = false
+
+    const next = selectedConnections.value.map((mapping) => {
+      const currentDatabase = mapping.database?.trim() || ''
+      if (currentDatabase) return mapping
+
+      const explicitDatabase =
+        mapping.connectionId === connectionIdValue.value
+          ? primaryDatabase || getConnectionDefaultDatabase(mapping.connectionId)
+          : getConnectionDefaultDatabase(mapping.connectionId)
+
+      if (!explicitDatabase) return mapping
+
+      changed = true
+      return {
+        ...mapping,
+        database: explicitDatabase
+      }
+    })
+
+    if (changed) {
+      selectedConnections.value = next
+    }
   }
 
   function deriveRunModeFromSources(): SqlRunMode {
@@ -410,6 +445,11 @@ export function useConsoleSources(options: UseConsoleSourcesOptions): UseConsole
   watch(
     [selectedConnections, modeValue, connectionIdValue, primaryDefaultDatabase],
     normalizePrimaryDatabaseMapping,
+    { deep: true, immediate: true }
+  )
+  watch(
+    [selectedConnections, modeValue, connectionIdValue, primaryDefaultDatabase],
+    ensureExplicitDatabaseMappings,
     { deep: true, immediate: true }
   )
   watch([selectedConnections, connectionIdValue], syncSingleSourceConnection, { deep: true })

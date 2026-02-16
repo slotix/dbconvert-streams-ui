@@ -119,11 +119,13 @@ export function useSqlConsoleActions() {
           tab.connectionId === connectionId &&
           (tab.database || '') === (database || '')
       )
-      const legacyConsoleKey = database ? `${connectionId}:${database}` : connectionId
-      const consoleSessionKey = existingConsoleTab
-        ? existingConsoleTab.consoleSessionId || legacyConsoleKey
+      const hasSessionId = Boolean(existingConsoleTab?.consoleSessionId?.trim())
+      const consoleSessionKey = hasSessionId
+        ? (existingConsoleTab?.consoleSessionId as string)
         : createConsoleSessionId()
-      const tabId = existingConsoleTab?.id || `sql-console:${consoleSessionKey}`
+      const tabId = hasSessionId
+        ? (existingConsoleTab?.id as string)
+        : `sql-console:${consoleSessionKey}`
 
       const tableContext = { tableName, schema }
       const existingActiveTab = sqlConsoleStore.getActiveTab(consoleSessionKey, database)
@@ -182,10 +184,13 @@ export function useSqlConsoleActions() {
       const existingConsoleTab = paneState.tabs.find(
         (tab) => tab.tabType === 'file-console' && tab.connectionId === connectionId
       )
-      const consoleSessionKey = existingConsoleTab
-        ? existingConsoleTab.consoleSessionId || `file:${connectionId}`
+      const hasSessionId = Boolean(existingConsoleTab?.consoleSessionId?.trim())
+      const consoleSessionKey = hasSessionId
+        ? (existingConsoleTab?.consoleSessionId as string)
         : createConsoleSessionId()
-      const tabId = existingConsoleTab?.id || `file-console:${consoleSessionKey}`
+      const tabId = hasSessionId
+        ? (existingConsoleTab?.id as string)
+        : `file-console:${consoleSessionKey}`
 
       const query = generateDuckDBReadQuery(filePath, fileName, Boolean(isDir), format)
       const fileContext = { path: filePath, format, isS3 }

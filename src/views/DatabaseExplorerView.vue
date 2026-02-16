@@ -205,13 +205,13 @@ function handleOpenSqlConsole(payload: {
         tab.connectionId === payload.connectionId &&
         (tab.database || '') === (payload.database || '')
     )
-  const legacyConsoleKey = payload.database
-    ? `${payload.connectionId}:${payload.database}`
-    : payload.connectionId
-  const consoleSessionId = existingConsoleTab
-    ? existingConsoleTab.consoleSessionId || legacyConsoleKey
+  const hasSessionId = Boolean(existingConsoleTab?.consoleSessionId?.trim())
+  const consoleSessionId = hasSessionId
+    ? (existingConsoleTab?.consoleSessionId as string)
     : createConsoleSessionId()
-  const tabId = existingConsoleTab?.id || `sql-console:${consoleSessionId}`
+  const tabId = hasSessionId
+    ? (existingConsoleTab?.id as string)
+    : `sql-console:${consoleSessionId}`
 
   // Opening SQL console from a database item should start on a neutral default query.
   if (payload.sqlScope === 'database' && payload.database) {

@@ -28,6 +28,289 @@ export interface SchemaContext {
   dialect: 'mysql' | 'pgsql' | 'sql'
 }
 
+interface CompletionContext {
+  isTableContext: boolean
+  hasTypedPrefix: boolean
+  hasAggregateFunction: boolean
+  isSelectListContext: boolean
+  isSelectHeadContext: boolean
+  isAfterSelectStarContext: boolean
+  isAfterSelectListContext: boolean
+  isAfterFromTableContext: boolean
+  isAfterJoinTableContext: boolean
+  isWhereHeadContext: boolean
+  isAfterWhereClauseContext: boolean
+  isOnHeadContext: boolean
+  isAfterOnClauseContext: boolean
+  isAfterGroupByClauseContext: boolean
+  isOrderByHeadContext: boolean
+  isAfterOrderByClauseContext: boolean
+  isAfterLimitClauseContext: boolean
+  suppressBroadSuggestions: boolean
+}
+
+interface TopKeywordRule {
+  condition: (ctx: CompletionContext) => boolean
+  label: string
+  insertText: string
+  detail: string
+  sortText: string
+}
+
+function isSqlCompletionDebugEnabled(): boolean {
+  if (typeof window === 'undefined') return false
+  return window.localStorage.getItem('sqlCompletionDebug') === '1'
+}
+
+function logSqlCompletionDebug(message: string, payload: unknown) {
+  if (!isSqlCompletionDebugEnabled()) return
+  console.log(message, payload)
+}
+
+function buildCompletionContext(textUntilPosition: string, currentWord: string): CompletionContext {
+  const isTableContext = /\b(FROM|JOIN|INTO|UPDATE|TABLE)\s+$/i.test(textUntilPosition)
+  const hasTypedPrefix = currentWord.trim().length > 0
+
+  const currentStatement = textUntilPosition.split(';').pop() ?? textUntilPosition
+  const upperStatement = currentStatement.toUpperCase()
+  const lastSelectIndex = upperStatement.lastIndexOf('SELECT')
+  const lastFromIndex = upperStatement.lastIndexOf('FROM')
+  const lastWhereIndex = upperStatement.lastIndexOf('WHERE')
+  const lastOnIndex = upperStatement.lastIndexOf('ON')
+  const lastGroupByIndex = upperStatement.lastIndexOf('GROUP BY')
+  const lastOrderByIndex = upperStatement.lastIndexOf('ORDER BY')
+  const lastLimitIndex = upperStatement.lastIndexOf('LIMIT')
+  const hasAggregateFunction = /\b(COUNT|SUM|AVG|MIN|MAX)\s*\(/i.test(currentStatement)
+
+  const isSelectListContext = lastSelectIndex !== -1 && lastSelectIndex > lastFromIndex
+  const isSelectHeadContext = /\bSELECT\s+(DISTINCT\s+)?$/i.test(textUntilPosition)
+  const isAfterSelectStarContext = /\bSELECT\s+(DISTINCT\s+)?\*\s+$/i.test(textUntilPosition)
+  const isAfterSelectListContext =
+    isSelectListContext &&
+    /\s$/.test(textUntilPosition) &&
+    !isSelectHeadContext &&
+    !isAfterSelectStarContext &&
+    !/,\s*$/.test(textUntilPosition)
+  const isAfterFromTableContext = /\bFROM\s+[^\s,;()]+\s+$/i.test(textUntilPosition)
+  const isAfterJoinTableContext = /\bJOIN\s+[^\s,;()]+\s+$/i.test(textUntilPosition)
+  const isWhereHeadContext = /\bWHERE\s+$/i.test(textUntilPosition)
+  const isAfterWhereClauseContext =
+    lastWhereIndex !== -1 &&
+    lastWhereIndex > lastGroupByIndex &&
+    lastWhereIndex > lastOrderByIndex &&
+    /\s$/.test(textUntilPosition) &&
+    !/\bWHERE\s*$/i.test(textUntilPosition) &&
+    !/,\s*$/.test(textUntilPosition)
+  const isOnHeadContext = /\bON\s+$/i.test(textUntilPosition)
+  const isAfterOnClauseContext =
+    lastOnIndex !== -1 &&
+    lastOnIndex > lastWhereIndex &&
+    /\s$/.test(textUntilPosition) &&
+    !/\bON\s*$/i.test(textUntilPosition) &&
+    !/,\s*$/.test(textUntilPosition)
+  const isAfterGroupByClauseContext =
+    lastGroupByIndex !== -1 &&
+    lastGroupByIndex > lastOrderByIndex &&
+    /\s$/.test(textUntilPosition) &&
+    !/\bGROUP\s+BY\s*$/i.test(textUntilPosition) &&
+    !/,\s*$/.test(textUntilPosition)
+  const isOrderByHeadContext = /\bORDER\s+BY\s+$/i.test(textUntilPosition)
+  const isAfterOrderByClauseContext =
+    lastOrderByIndex !== -1 &&
+    /\s$/.test(textUntilPosition) &&
+    !/\bORDER\s+BY\s*$/i.test(textUntilPosition) &&
+    !/,\s*$/.test(textUntilPosition)
+  const isAfterLimitClauseContext =
+    lastLimitIndex !== -1 &&
+    /\s$/.test(textUntilPosition) &&
+    !/\bLIMIT\s*$/i.test(textUntilPosition) &&
+    !/,\s*$/.test(textUntilPosition)
+
+  return {
+    isTableContext,
+    hasTypedPrefix,
+    hasAggregateFunction,
+    isSelectListContext,
+    isSelectHeadContext,
+    isAfterSelectStarContext,
+    isAfterSelectListContext,
+    isAfterFromTableContext,
+    isAfterJoinTableContext,
+    isWhereHeadContext,
+    isAfterWhereClauseContext,
+    isOnHeadContext,
+    isAfterOnClauseContext,
+    isAfterGroupByClauseContext,
+    isOrderByHeadContext,
+    isAfterOrderByClauseContext,
+    isAfterLimitClauseContext,
+    suppressBroadSuggestions: isSelectListContext && !hasTypedPrefix
+  }
+}
+
+function addTopKeywordSuggestions(
+  monaco: MonacoApi,
+  suggestions: MonacoTypes.languages.CompletionItem[],
+  range: MonacoTypes.IRange,
+  ctx: CompletionContext,
+  dialect: 'mysql' | 'pgsql' | 'sql'
+) {
+  const rules: TopKeywordRule[] = [
+    {
+      condition: (c) => c.isSelectHeadContext,
+      label: '*',
+      insertText: '*',
+      detail: 'All columns',
+      sortText: '00_*'
+    },
+    {
+      condition: (c) => c.isAfterSelectStarContext || c.isAfterSelectListContext,
+      label: 'FROM',
+      insertText: 'FROM ',
+      detail: 'SQL Keyword',
+      sortText: '00_FROM'
+    },
+    {
+      condition: (c) => c.isAfterFromTableContext,
+      label: 'JOIN',
+      insertText: 'JOIN ',
+      detail: 'SQL Keyword',
+      sortText: '00_JOIN'
+    },
+    {
+      condition: (c) => c.isAfterFromTableContext,
+      label: 'WHERE',
+      insertText: 'WHERE ',
+      detail: 'SQL Keyword',
+      sortText: '00_WHERE'
+    },
+    {
+      condition: (c) => c.isAfterFromTableContext && c.hasAggregateFunction,
+      label: 'GROUP BY',
+      insertText: 'GROUP BY ',
+      detail: 'SQL Keyword',
+      sortText: '00_GROUP_BY_FROM'
+    },
+    {
+      condition: (c) => c.isAfterFromTableContext,
+      label: 'ORDER BY',
+      insertText: 'ORDER BY ',
+      detail: 'SQL Keyword',
+      sortText: '00_ORDER_BY_FROM'
+    },
+    {
+      condition: (c) => c.isAfterJoinTableContext,
+      label: 'ON',
+      insertText: 'ON ',
+      detail: 'SQL Keyword',
+      sortText: '00_ON'
+    },
+    {
+      condition: (c) => c.isAfterWhereClauseContext,
+      label: 'AND',
+      insertText: 'AND ',
+      detail: 'SQL Keyword',
+      sortText: '00_AND'
+    },
+    {
+      condition: (c) => c.isAfterWhereClauseContext,
+      label: 'OR',
+      insertText: 'OR ',
+      detail: 'SQL Keyword',
+      sortText: '00_OR'
+    },
+    {
+      condition: (c) => c.isAfterWhereClauseContext,
+      label: 'LIMIT',
+      insertText: 'LIMIT ',
+      detail: 'SQL Keyword',
+      sortText: '00_LIMIT_WHERE'
+    },
+    {
+      condition: (c) => c.isAfterWhereClauseContext,
+      label: 'ORDER BY',
+      insertText: 'ORDER BY ',
+      detail: 'SQL Keyword',
+      sortText: '00_ORDER_BY_WHERE'
+    },
+    {
+      condition: (c) => c.isAfterWhereClauseContext,
+      label: 'GROUP BY',
+      insertText: 'GROUP BY ',
+      detail: 'SQL Keyword',
+      sortText: '00_GROUP_BY'
+    },
+    {
+      condition: (c) => c.isAfterWhereClauseContext && dialect === 'pgsql',
+      label: 'ILIKE',
+      insertText: 'ILIKE ',
+      detail: 'PostgreSQL Keyword',
+      sortText: '00_ILIKE'
+    },
+    {
+      condition: (c) => c.isAfterWhereClauseContext && dialect === 'mysql',
+      label: 'REGEXP',
+      insertText: 'REGEXP ',
+      detail: 'MySQL Keyword',
+      sortText: '00_REGEXP'
+    },
+    {
+      condition: (c) => c.isAfterOnClauseContext,
+      label: 'AND',
+      insertText: 'AND ',
+      detail: 'SQL Keyword',
+      sortText: '00_AND_ON'
+    },
+    {
+      condition: (c) => c.isAfterOnClauseContext,
+      label: 'OR',
+      insertText: 'OR ',
+      detail: 'SQL Keyword',
+      sortText: '00_OR_ON'
+    },
+    {
+      condition: (c) => c.isAfterGroupByClauseContext,
+      label: 'ORDER BY',
+      insertText: 'ORDER BY ',
+      detail: 'SQL Keyword',
+      sortText: '00_ORDER_BY'
+    },
+    {
+      condition: (c) => c.isAfterGroupByClauseContext,
+      label: 'HAVING',
+      insertText: 'HAVING ',
+      detail: 'SQL Keyword',
+      sortText: '00_HAVING'
+    },
+    {
+      condition: (c) => c.isAfterOrderByClauseContext,
+      label: 'LIMIT',
+      insertText: 'LIMIT ',
+      detail: 'SQL Keyword',
+      sortText: '00_LIMIT'
+    },
+    {
+      condition: (c) => c.isAfterLimitClauseContext,
+      label: 'OFFSET',
+      insertText: 'OFFSET ',
+      detail: 'SQL Keyword',
+      sortText: '00_OFFSET'
+    }
+  ]
+
+  rules.forEach((rule) => {
+    if (!rule.condition(ctx)) return
+    suggestions.push({
+      label: rule.label,
+      kind: monaco.languages.CompletionItemKind.Keyword,
+      insertText: rule.insertText,
+      range,
+      detail: rule.detail,
+      sortText: rule.sortText
+    })
+  })
+}
+
 // Store disposables globally to allow disposal on re-registration
 let disposables: Array<{ dispose: () => void }> = []
 
@@ -109,28 +392,38 @@ function registerCompletionProvider(
         endColumn: wordInfo.endColumn
       }
 
-      // Check if we're after FROM, JOIN, etc. (table context)
-      const isTableContext = /\b(FROM|JOIN|INTO|UPDATE|TABLE)\s+$/i.test(textUntilPosition)
+      const completionContext = buildCompletionContext(textUntilPosition, wordInfo.word)
+      const isPredicateContext =
+        completionContext.isWhereHeadContext ||
+        completionContext.isAfterWhereClauseContext ||
+        completionContext.isOnHeadContext ||
+        completionContext.isAfterOnClauseContext
+      const isOrderByContext =
+        completionContext.isOrderByHeadContext || completionContext.isAfterOrderByClauseContext
 
-      console.log('Completion provider triggered:', {
+      logSqlCompletionDebug('Completion provider triggered:', {
         text: textUntilPosition,
-        isTableContext,
+        isTableContext: completionContext.isTableContext,
         word: wordInfo.word,
         hasSchema: !!schemaContext
       })
 
+      addTopKeywordSuggestions(monaco, suggestions, range, completionContext, dialect)
+
       // 1. Add SQL Keywords
-      const keywords = getAllKeywords(dialect)
-      keywords.forEach((keyword) => {
-        suggestions.push({
-          label: keyword,
-          kind: monaco.languages.CompletionItemKind.Keyword,
-          insertText: keyword,
-          range,
-          detail: 'SQL Keyword',
-          sortText: isTableContext ? `9_${keyword}` : `1_${keyword}` // Deprioritize in table context
+      if (!completionContext.suppressBroadSuggestions) {
+        const keywords = getAllKeywords(dialect)
+        keywords.forEach((keyword) => {
+          suggestions.push({
+            label: keyword,
+            kind: monaco.languages.CompletionItemKind.Keyword,
+            insertText: keyword,
+            range,
+            detail: 'SQL Keyword',
+            sortText: completionContext.isTableContext ? `9_${keyword}` : `1_${keyword}` // Deprioritize in table context
+          })
         })
-      })
+      }
 
       // 2. Add SQL Functions
       const functions = getAllFunctions(dialect)
@@ -142,7 +435,10 @@ function registerCompletionProvider(
           insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
           range,
           detail: 'SQL Function',
-          sortText: `2_${func}`
+          sortText:
+            completionContext.isSelectListContext || isPredicateContext || isOrderByContext
+              ? `8_${func}`
+              : `2_${func}`
         })
       })
 
@@ -150,14 +446,21 @@ function registerCompletionProvider(
       if (schemaContext?.tables) {
         schemaContext.tables.forEach((table) => {
           const displayName = table.schema ? `${table.schema}.${table.name}` : table.name
+          const tableInsertText = displayName.includes('.')
+            ? displayName
+            : quoteIdentifier(table.name)
           suggestions.push({
             label: displayName,
             kind: monaco.languages.CompletionItemKind.Class,
-            insertText: quoteIdentifier(table.name),
+            insertText: tableInsertText,
             range,
             detail: table.schema ? `Table (${table.schema})` : 'Table',
             documentation: `Table: ${displayName}`,
-            sortText: isTableContext ? `0_${table.name}` : `3_${table.name}` // Prioritize in table context
+            sortText: completionContext.isTableContext
+              ? `0_${table.name}`
+              : completionContext.isSelectListContext
+                ? `2_${table.name}`
+                : `3_${table.name}` // Prioritize in table context
           })
         })
       }
@@ -167,34 +470,42 @@ function registerCompletionProvider(
         Object.entries(schemaContext.columns).forEach(([tableName, columns]) => {
           columns.forEach((column) => {
             const nullableStr = column.nullable ? 'NULL' : 'NOT NULL'
+            const columnInsertText = tableName.includes('.')
+              ? `${tableName}.${column.name}`
+              : quoteIdentifier(column.name)
             suggestions.push({
               label: `${tableName}.${column.name}`,
               kind: monaco.languages.CompletionItemKind.Field,
-              insertText: quoteIdentifier(column.name),
+              insertText: columnInsertText,
               range,
               detail: `${column.type} ${nullableStr}`,
               documentation: `Column from table ${tableName}\nType: ${column.type} ${nullableStr}`,
-              sortText: `4_${column.name}`
+              sortText:
+                completionContext.isSelectListContext || isPredicateContext || isOrderByContext
+                  ? `0_${tableName}_${column.name}`
+                  : `4_${column.name}`
             })
           })
         })
       }
 
       // 5. Add SQL Snippets
-      SQL_SNIPPETS.forEach((snippet: SqlSnippet) => {
-        suggestions.push({
-          label: snippet.label,
-          kind: monaco.languages.CompletionItemKind.Snippet,
-          insertText: snippet.insertText,
-          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-          range,
-          detail: 'Snippet',
-          documentation: snippet.description,
-          sortText: `5_${snippet.label}`
+      if (!completionContext.suppressBroadSuggestions) {
+        SQL_SNIPPETS.forEach((snippet: SqlSnippet) => {
+          suggestions.push({
+            label: snippet.label,
+            kind: monaco.languages.CompletionItemKind.Snippet,
+            insertText: snippet.insertText,
+            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            range,
+            detail: 'Snippet',
+            documentation: snippet.description,
+            sortText: `5_${snippet.label}`
+          })
         })
-      })
+      }
 
-      console.log('Generated suggestions:', {
+      logSqlCompletionDebug('Generated suggestions:', {
         total: suggestions.length,
         tables: suggestions.filter((s) => s.kind === monaco.languages.CompletionItemKind.Class)
           .length,

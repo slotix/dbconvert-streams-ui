@@ -169,6 +169,7 @@ const editorOptions = computed<MonacoTypes.editor.IEditorOptions>(() => {
     suggestOnTriggerCharacters: true,
     acceptSuggestionOnEnter: 'on',
     tabCompletion: 'on',
+    snippetSuggestions: 'bottom',
     formatOnPaste: true,
     formatOnType: true,
     suggest: {
