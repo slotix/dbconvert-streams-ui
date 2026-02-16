@@ -1,29 +1,5 @@
 <template>
   <div class="console-tab h-full flex flex-col bg-gray-50 dark:bg-gray-900 pb-2">
-    <!-- Header -->
-    <div
-      v-if="showConsoleHeader"
-      class="flex items-center justify-between px-4 py-3 bg-white dark:bg-gray-850 border-b border-gray-200 dark:border-gray-700"
-    >
-      <div class="flex items-center space-x-2">
-        <component :is="headerIcon" class="h-5 w-5 text-teal-600 dark:text-teal-400" />
-        <span class="text-sm font-medium text-gray-900 dark:text-gray-100">
-          {{ consoleTitle }}
-        </span>
-        <span
-          v-if="hasExecutedQuery && resultSetCount > 0"
-          class="text-xs px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300"
-        >
-          {{ resultSetCount }} result{{ resultSetCount === 1 ? '' : 's' }}
-        </span>
-        <span v-if="mode === 'file'" class="text-xs text-gray-500 dark:text-gray-400">
-          {{ scopeLabel }}
-        </span>
-      </div>
-
-      <div class="flex items-center space-x-2"></div>
-    </div>
-
     <!-- Execution Context Toolbar -->
     <div class="px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex items-center gap-3">
       <button
@@ -149,8 +125,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick, onMounted, onUnmounted, watch, type Component } from 'vue'
-import { ChevronRight, Database, Terminal } from 'lucide-vue-next'
+import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue'
+import { ChevronRight } from 'lucide-vue-next'
 import type { SchemaContext } from '@/composables/useMonacoSqlProviders'
 import { useConnectionsStore } from '@/stores/connections'
 import { usePaneTabsStore } from '@/stores/paneTabs'
@@ -182,6 +158,8 @@ export type FileConnectionType = 'files' | 's3'
 const props = defineProps<{
   connectionId: string
   mode: ConsoleMode
+  paneTabId?: string
+  consoleSessionId?: string
   // Database mode props
   database?: string
   sqlScope?: DatabaseScope
@@ -194,21 +172,21 @@ const connectionsStore = useConnectionsStore()
 const paneTabsStore = usePaneTabsStore()
 const isSourceDrawerOpen = ref(false)
 
-const showConsoleHeader = computed(() => props.mode === 'file')
-
 // ========== Console Key Computation ==========
-const consoleKey = computed(() => {
+const legacyConsoleKey = computed(() => {
   if (props.mode === 'file') {
     return `file:${props.connectionId}`
   }
   return props.database ? `${props.connectionId}:${props.database}` : props.connectionId
 })
 
+const consoleKey = computed(() => props.consoleSessionId?.trim() || legacyConsoleKey.value)
+
 const historyKey = computed(() => {
   if (props.mode === 'file') {
-    return `file-console-history:${props.connectionId}`
+    return `file-console-history:${consoleKey.value}`
   }
-  return `db-console-history:${props.connectionId}`
+  return `db-console-history:${consoleKey.value}`
 })
 
 // ========== Base Connection ==========
@@ -220,7 +198,7 @@ const modeRef = computed(() => props.mode)
 const connectionIdRef = computed(() => props.connectionId)
 const databaseRef = computed(() => props.database)
 
-const sqlConsoleStoreConnectionKey = computed(() => props.connectionId)
+const sqlConsoleStoreConnectionKey = computed(() => consoleKey.value)
 
 const {
   selectedConnections,
@@ -559,12 +537,6 @@ const queryTemplates = computed(() => {
 })
 
 // ========== UI Computed ==========
-const headerIcon = computed<Component>(() => {
-  return props.mode === 'file' ? Terminal : Database
-})
-
-const consoleTitle = 'SQL Console'
-
 const scopeLabel = computed(() => {
   const connName = connection.value?.name || 'Connection'
   if (props.mode === 'file') {
@@ -579,22 +551,55 @@ const scopeLabel = computed(() => {
   return connName
 })
 
+const singleExecutionMapping = computed(() => {
+  return singleSourceMapping.value || databaseSourceMappings.value[0] || null
+})
+
 const paneTabDefaultName = computed(() => {
-  const connName = connection.value?.name || (props.mode === 'file' ? 'Files' : 'SQL')
   if (props.mode === 'file') {
-    return `${connName} (DuckDB)`
+    const mapping = singleExecutionMapping.value
+    const mappedConnection = mapping
+      ? connectionsStore.connectionByID(mapping.connectionId)
+      : connection.value
+    const connName = mappedConnection?.name || connection.value?.name || 'Files'
+    const targetDatabase = mapping?.database?.trim()
+    if (targetDatabase) {
+      return `${connName} → ${targetDatabase}`
+    }
+    return mapping ? connName : `${connName} (DuckDB)`
   }
-  if (props.database) {
-    return `${connName} → ${props.database}`
+
+  const mapping = singleExecutionMapping.value
+  const mappedConnection = mapping
+    ? connectionsStore.connectionByID(mapping.connectionId)
+    : connection.value
+  const connName = mappedConnection?.name || connection.value?.name || 'SQL'
+  const targetDatabase = mapping?.database?.trim() || props.database?.trim()
+
+  if (targetDatabase) {
+    return `${connName} → ${targetDatabase}`
   }
   return `${connName} (Admin)`
 })
 
 const paneTabFederatedName = computed(() => {
+  if (federatedScopeConnectionId.value) {
+    const mapping = selectedConnections.value.find(
+      (m) => m.connectionId === federatedScopeConnectionId.value
+    )
+    if (mapping) {
+      const conn = connectionsStore.connectionByID(mapping.connectionId)
+      const connName = conn?.name || mapping.connectionId
+      const db = mapping.database?.trim()
+      const target = db ? `${connName} → ${db}` : connName
+      return `Scoped • ${mapping.alias || 'src'} • ${target}`
+    }
+  }
+
   const sourceCount = effectiveSelectedConnections.value.length
   const sourcePart = `${sourceCount} source${sourceCount === 1 ? '' : 's'}`
-  if (props.mode === 'database' && props.database) {
-    return `Multi • DB: ${props.database} • ${sourcePart}`
+  if (props.mode === 'database') {
+    return `Multi source • ${sourcePart}`
   }
   return `Multi • ${scopeLabel.value} • ${sourcePart}`
 })
@@ -602,14 +607,6 @@ const paneTabFederatedName = computed(() => {
 const paneTabName = computed(() =>
   runMode.value === 'federated' ? paneTabFederatedName.value : paneTabDefaultName.value
 )
-
-const resultSetCount = computed(() => {
-  if (!hasExecutedQuery.value) return 0
-  if (Array.isArray(resultSets.value) && resultSets.value.length > 0) {
-    return resultSets.value.length
-  }
-  return resultColumns.value.length > 0 || queryResults.value.length > 0 ? 1 : 0
-})
 
 async function rerunHistoryQuery(item: QueryHistoryItem) {
   insertHistoryQuery(item)
@@ -641,7 +638,9 @@ onUnmounted(() => {
 watch(
   paneTabName,
   (name) => {
-    paneTabsStore.renameSqlConsoleTabs(props.connectionId, props.database, name)
+    const paneTabId = props.paneTabId?.trim()
+    if (!paneTabId) return
+    paneTabsStore.renameConsoleTab(paneTabId, name)
   },
   { immediate: true }
 )

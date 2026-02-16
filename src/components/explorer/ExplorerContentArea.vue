@@ -109,7 +109,7 @@
 import { computed, onMounted, onBeforeUnmount } from 'vue'
 import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
-import { usePaneTabsStore, type PaneId } from '@/stores/paneTabs'
+import { usePaneTabsStore, type PaneId, createConsoleSessionId } from '@/stores/paneTabs'
 import { useExplorerViewStateStore } from '@/stores/explorerViewState'
 import { useUnsavedChangesGuard } from '@/composables/useUnsavedChangesGuard'
 import ExplorerSplitPane from './ExplorerSplitPane.vue'
@@ -250,7 +250,8 @@ function handleOpenSqlConsole(payload: { connectionId: string; database: string 
     const ok = await confirmLeavePaneIfDirty('left')
     if (!ok) return
 
-    const tabId = `sql::${payload.connectionId}::${payload.database}`
+    const consoleSessionId = createConsoleSessionId()
+    const tabId = `sql-console:${consoleSessionId}`
 
     paneTabsStore.addTab(
       'left',
@@ -259,6 +260,7 @@ function handleOpenSqlConsole(payload: { connectionId: string; database: string 
         connectionId: payload.connectionId,
         database: payload.database,
         name: `SQL: ${payload.database}`,
+        consoleSessionId,
         tabType: 'sql-console',
         sqlScope: 'database',
         objectKey: tabId
@@ -285,7 +287,8 @@ function handleOpenConnectionSqlConsole(connectionId: string) {
     // Switch view state to show tabs instead of connection details
     viewStateStore.setViewType('table-data')
 
-    const tabId = `sql-console:${connectionId}:*`
+    const consoleSessionId = createConsoleSessionId()
+    const tabId = `sql-console:${consoleSessionId}`
 
     paneTabsStore.addTab(
       'left',
@@ -294,6 +297,7 @@ function handleOpenConnectionSqlConsole(connectionId: string) {
         connectionId: connectionId,
         database: '',
         name: `${connectionsStore.connectionByID(connectionId)?.name || 'SQL'} (Admin)`,
+        consoleSessionId,
         tabType: 'sql-console',
         sqlScope: 'connection',
         objectKey: tabId
@@ -323,7 +327,8 @@ function handleOpenFileConsole(connectionId: string) {
     const isS3 = kind === 's3'
     const basePath = isS3 ? conn?.spec?.s3?.scope?.bucket : conn?.spec?.files?.basePath
 
-    const tabId = `file-console:${connectionId}`
+    const consoleSessionId = createConsoleSessionId()
+    const tabId = `file-console:${consoleSessionId}`
 
     paneTabsStore.addTab(
       'left',
@@ -331,6 +336,7 @@ function handleOpenFileConsole(connectionId: string) {
         id: tabId,
         connectionId: connectionId,
         name: `${conn?.name || 'Files'} (DuckDB)`,
+        consoleSessionId,
         tabType: 'file-console',
         fileConnectionType: isS3 ? 's3' : 'files',
         basePath: basePath,

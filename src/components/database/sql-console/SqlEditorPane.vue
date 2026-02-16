@@ -824,6 +824,40 @@ async function openTemplates() {
   await focusTemplateSearch()
 }
 
+function getHorizontalMenuBounds(trigger: HTMLElement, viewportPadding: number) {
+  const viewportMinLeft = viewportPadding
+  const viewportMaxRight = window.innerWidth - viewportPadding
+  const viewportAvailableWidth = Math.max(0, viewportMaxRight - viewportMinLeft)
+
+  const consoleSurface = trigger.closest('.console-tab') as HTMLElement | null
+  if (!consoleSurface) {
+    return {
+      minLeft: viewportMinLeft,
+      maxRight: viewportMaxRight,
+      availableWidth: viewportAvailableWidth
+    }
+  }
+
+  const surfaceRect = consoleSurface.getBoundingClientRect()
+  const minLeft = Math.max(viewportMinLeft, surfaceRect.left + viewportPadding)
+  const maxRight = Math.min(viewportMaxRight, surfaceRect.right - viewportPadding)
+  const availableWidth = Math.max(0, maxRight - minLeft)
+
+  if (availableWidth < 220) {
+    return {
+      minLeft: viewportMinLeft,
+      maxRight: viewportMaxRight,
+      availableWidth: viewportAvailableWidth
+    }
+  }
+
+  return {
+    minLeft,
+    maxRight,
+    availableWidth
+  }
+}
+
 function updateTemplateMenuPosition() {
   if (!showTemplates.value) return
   const trigger = templatesDropdownRef.value
@@ -839,13 +873,15 @@ function updateTemplateMenuPosition() {
   const viewportWidth = window.innerWidth
   const viewportHeight = window.innerHeight
   const maxHeight = Math.min(680, Math.max(440, Math.floor(viewportHeight * 0.78)))
+  const horizontalBounds = getHorizontalMenuBounds(trigger, viewportPadding)
 
-  const width = Math.max(minWidth, Math.min(maxWidth, viewportWidth - viewportPadding * 2))
+  const preferredWidth = Math.max(minWidth, Math.min(maxWidth, viewportWidth - viewportPadding * 2))
+  const width = Math.min(preferredWidth, horizontalBounds.availableWidth)
   let left = triggerRect.left
-  if (left + width > viewportWidth - viewportPadding) {
-    left = viewportWidth - viewportPadding - width
+  if (left + width > horizontalBounds.maxRight) {
+    left = horizontalBounds.maxRight - width
   }
-  if (left < viewportPadding) left = viewportPadding
+  if (left < horizontalBounds.minLeft) left = horizontalBounds.minLeft
 
   const spaceBelow = viewportHeight - triggerRect.bottom - gap - viewportPadding
   const spaceAbove = triggerRect.top - gap - viewportPadding
@@ -910,15 +946,16 @@ function updateHistoryMenuPosition() {
   const viewportWidth = window.innerWidth
   const viewportHeight = window.innerHeight
   const maxHeight = Math.min(620, Math.max(320, Math.floor(viewportHeight * 0.72)))
+  const horizontalBounds = getHorizontalMenuBounds(trigger, viewportPadding)
 
   const availableWidth = Math.max(280, viewportWidth - viewportPadding * 2)
   const preferredWidth = Math.max(420, Math.floor(viewportWidth * 0.56))
-  const width = Math.min(maxWidth, preferredWidth, availableWidth)
+  const width = Math.min(maxWidth, preferredWidth, availableWidth, horizontalBounds.availableWidth)
   let left = triggerRect.left
-  if (left + width > viewportWidth - viewportPadding) {
-    left = viewportWidth - viewportPadding - width
+  if (left + width > horizontalBounds.maxRight) {
+    left = horizontalBounds.maxRight - width
   }
-  if (left < viewportPadding) left = viewportPadding
+  if (left < horizontalBounds.minLeft) left = horizontalBounds.minLeft
 
   const spaceBelow = viewportHeight - triggerRect.bottom - gap - viewportBottomPadding
   const spaceAbove = triggerRect.top - gap - viewportPadding

@@ -225,8 +225,7 @@ export function useConsoleSources(options: UseConsoleSourcesOptions): UseConsole
     const selected = dbMappings.find((m) => m.connectionId === singleSourceConnectionId.value)
     if (selected) return selected
 
-    const primaryCandidate = dbMappings.find((m) => m.connectionId === connectionIdValue.value)
-    return primaryCandidate || dbMappings[0]
+    return dbMappings[0]
   })
 
   // ========== Methods ==========
@@ -318,8 +317,7 @@ export function useConsoleSources(options: UseConsoleSourcesOptions): UseConsole
       return
     }
 
-    const primaryCandidate = dbMappings.find((m) => m.connectionId === connectionIdValue.value)
-    singleSourceConnectionId.value = (primaryCandidate || dbMappings[0]).connectionId
+    singleSourceConnectionId.value = dbMappings[0].connectionId
   }
 
   function restoreSingleSourceConnection() {

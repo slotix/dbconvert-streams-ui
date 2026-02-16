@@ -18,6 +18,11 @@ export type PaneTab = {
   id: string
   connectionId: string
   name: string
+  /**
+   * Stable identity for a SQL console session.
+   * Decouples console state persistence from the opener connection/database scope.
+   */
+  consoleSessionId?: string
   tabType:
     | 'database'
     | 'file'
@@ -82,6 +87,10 @@ function createEmptyPaneState(): PaneState {
     activeIndex: null,
     previewIndex: null
   }
+}
+
+export function createConsoleSessionId(): string {
+  return `console-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
 }
 
 const STORAGE_KEY = 'explorer.paneTabs'
@@ -312,6 +321,9 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
   function generateTabKey(tab: PaneTab): string {
     if (tab.tabType === 'file') {
       return `file:${tab.filePath}`
+    }
+    if (tab.tabType === 'file-console') {
+      return `file-console:${tab.connectionId}`
     }
     if (tab.tabType === 'sql-console') {
       const dbPart = tab.database || '*'
@@ -811,6 +823,35 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
   }
 
   /**
+   * Rename a console tab by tab id across panes.
+   */
+  function renameConsoleTab(tabId: string, name: string) {
+    const nextName = name.trim()
+    if (!nextName) return
+
+    let changed = false
+
+    for (const paneId of ['left', 'right'] as const) {
+      const state = getPaneState(paneId)
+      state.tabs = state.tabs.map((tab) => {
+        if (tab.id !== tabId) return tab
+        if (tab.tabType !== 'sql-console' && tab.tabType !== 'file-console') return tab
+        if (tab.name === nextName) return tab
+
+        changed = true
+        return {
+          ...tab,
+          name: nextName
+        }
+      })
+    }
+
+    if (changed) {
+      persistState()
+    }
+  }
+
+  /**
    * Rename SQL console tabs that match a connection/database scope across panes.
    */
   function renameSqlConsoleTabs(connectionId: string, database: string | undefined, name: string) {
@@ -923,6 +964,7 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
     activateTab,
     activatePreviewTab,
     updateTabFileMetadata,
+    renameConsoleTab,
     renameSqlConsoleTabs,
     clearPane,
     clearAllPanes,

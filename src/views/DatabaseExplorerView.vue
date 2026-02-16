@@ -5,7 +5,7 @@ import { useLucideIcons } from '@/composables/useLucideIcons'
 import { ChevronsLeft, ChevronsRight, Database, Menu, Plus } from 'lucide-vue-next'
 import { useCommonStore } from '@/stores/common'
 import { useConnectionsStore } from '@/stores/connections'
-import { usePaneTabsStore } from '@/stores/paneTabs'
+import { usePaneTabsStore, createConsoleSessionId } from '@/stores/paneTabs'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useExplorerViewStateStore } from '@/stores/explorerViewState'
 import { useSqlConsoleStore } from '@/stores/sqlConsole'
@@ -196,21 +196,37 @@ function handleOpenSqlConsole(payload: {
 }) {
   const connection = connectionsStore.connectionByID(payload.connectionId)
   const dialect = getSqlDialectFromConnection(connection?.spec, connection?.type)
+  const targetPane = paneTabsStore.activePane || 'left'
+  const existingConsoleTab = paneTabsStore
+    .getPaneState(targetPane)
+    .tabs.find(
+      (tab) =>
+        tab.tabType === 'sql-console' &&
+        tab.connectionId === payload.connectionId &&
+        (tab.database || '') === (payload.database || '')
+    )
+  const legacyConsoleKey = payload.database
+    ? `${payload.connectionId}:${payload.database}`
+    : payload.connectionId
+  const consoleSessionId = existingConsoleTab
+    ? existingConsoleTab.consoleSessionId || legacyConsoleKey
+    : createConsoleSessionId()
+  const tabId = existingConsoleTab?.id || `sql-console:${consoleSessionId}`
 
   // Opening SQL console from a database item should start on a neutral default query.
   if (payload.sqlScope === 'database' && payload.database) {
-    const active = sqlConsoleStore.getActiveTab(payload.connectionId, payload.database)
+    const active = sqlConsoleStore.getActiveTab(consoleSessionId, payload.database)
     let targetTab = active
 
     if (active && active.query.trim()) {
       const blankTab = sqlConsoleStore
-        .getTabs(payload.connectionId, payload.database)
+        .getTabs(consoleSessionId, payload.database)
         .find((tab) => !tab.query.trim())
       if (blankTab) {
-        sqlConsoleStore.setActiveTab(payload.connectionId, payload.database, blankTab.id)
+        sqlConsoleStore.setActiveTab(consoleSessionId, payload.database, blankTab.id)
         targetTab = blankTab
       } else {
-        targetTab = sqlConsoleStore.addTab(payload.connectionId, payload.database, 'List tables')
+        targetTab = sqlConsoleStore.addTab(consoleSessionId, payload.database, 'List tables')
       }
     }
 
@@ -221,35 +237,30 @@ function handleOpenSqlConsole(payload: {
 
     if (targetTab && !targetTab.query.trim()) {
       sqlConsoleStore.updateTabQuery(
-        payload.connectionId,
+        consoleSessionId,
         payload.database,
         targetTab.id,
         listTablesQuery
       )
-      sqlConsoleStore.renameTab(payload.connectionId, payload.database, targetTab.id, 'List tables')
+      sqlConsoleStore.renameTab(consoleSessionId, payload.database, targetTab.id, 'List tables')
     }
   }
 
   // Opening SQL console from a connection item should start on a neutral admin query.
   if (payload.sqlScope === 'connection') {
-    const active = sqlConsoleStore.getActiveTab(payload.connectionId, undefined)
+    const active = sqlConsoleStore.getActiveTab(consoleSessionId, undefined)
     const targetTab =
       active && !active.query.trim()
         ? active
-        : sqlConsoleStore.addTab(payload.connectionId, undefined, 'List databases')
+        : sqlConsoleStore.addTab(consoleSessionId, undefined, 'List databases')
 
     const listDatabasesQuery =
       dialect === 'pgsql'
         ? 'SELECT datname FROM pg_database WHERE datistemplate = false;'
         : 'SHOW DATABASES;'
 
-    sqlConsoleStore.updateTabQuery(
-      payload.connectionId,
-      undefined,
-      targetTab.id,
-      listDatabasesQuery
-    )
-    sqlConsoleStore.renameTab(payload.connectionId, undefined, targetTab.id, 'List databases')
+    sqlConsoleStore.updateTabQuery(consoleSessionId, undefined, targetTab.id, listDatabasesQuery)
+    sqlConsoleStore.renameTab(consoleSessionId, undefined, targetTab.id, 'List databases')
   }
 
   const connName = connection?.name || 'SQL'
@@ -259,14 +270,16 @@ function handleOpenSqlConsole(payload: {
   viewStateStore.setViewType('table-data')
 
   paneTabsStore.addTab(
-    paneTabsStore.activePane || 'left',
+    targetPane,
     {
-      id: `sql-console:${payload.connectionId}:${payload.database || '*'}`,
+      id: tabId,
       connectionId: payload.connectionId,
       database: payload.database,
       name: tabName,
+      consoleSessionId,
       tabType: 'sql-console',
-      sqlScope: payload.sqlScope
+      sqlScope: payload.sqlScope,
+      objectKey: tabId
     },
     'pinned'
   )
@@ -281,6 +294,8 @@ function handleOpenFileConsole(payload: {
   const connection = connectionsStore.connectionByID(payload.connectionId)
   const connName = connection?.name || 'Files'
   const tabName = `${connName} (DuckDB)`
+  const consoleSessionId = createConsoleSessionId()
+  const tabId = `file-console:${consoleSessionId}`
 
   // Switch view to show pane tabs instead of connection details
   viewStateStore.setViewType('table-data')
@@ -288,12 +303,14 @@ function handleOpenFileConsole(payload: {
   paneTabsStore.addTab(
     paneTabsStore.activePane || 'left',
     {
-      id: `file-console:${payload.connectionId}`,
+      id: tabId,
       connectionId: payload.connectionId,
       name: tabName,
+      consoleSessionId,
       tabType: 'file-console',
       fileConnectionType: payload.connectionType,
-      basePath: payload.basePath
+      basePath: payload.basePath,
+      objectKey: tabId
     },
     'pinned'
   )

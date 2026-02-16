@@ -1,6 +1,6 @@
 import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerViewStateStore } from '@/stores/explorerViewState'
-import { usePaneTabsStore } from '@/stores/paneTabs'
+import { usePaneTabsStore, createConsoleSessionId } from '@/stores/paneTabs'
 import { useSqlConsoleStore } from '@/stores/sqlConsole'
 import { useUnsavedChangesGuard } from '@/composables/useUnsavedChangesGuard'
 import { getConnectionKindFromSpec, getSqlDialectFromConnection } from '@/types/specs'
@@ -112,27 +112,38 @@ export function useSqlConsoleActions() {
       const conn = connectionsStore.connectionByID(connectionId)
       const dialect = getSqlDialectFromConnection(conn?.spec, conn?.type)
       const query = generateSelectQuery(tableName, schema, dialect)
+      const paneState = paneTabsStore.getPaneState(targetPane)
+      const existingConsoleTab = paneState.tabs.find(
+        (tab) =>
+          tab.tabType === 'sql-console' &&
+          tab.connectionId === connectionId &&
+          (tab.database || '') === (database || '')
+      )
+      const legacyConsoleKey = database ? `${connectionId}:${database}` : connectionId
+      const consoleSessionKey = existingConsoleTab
+        ? existingConsoleTab.consoleSessionId || legacyConsoleKey
+        : createConsoleSessionId()
+      const tabId = existingConsoleTab?.id || `sql-console:${consoleSessionKey}`
 
       const tableContext = { tableName, schema }
-      const existingActiveTab = sqlConsoleStore.getActiveTab(connectionId, database)
+      const existingActiveTab = sqlConsoleStore.getActiveTab(consoleSessionKey, database)
       const shouldReuseActiveBlankTab = Boolean(
         existingActiveTab && !existingActiveTab.query.trim()
       )
 
       if (existingActiveTab && shouldReuseActiveBlankTab) {
-        sqlConsoleStore.updateTabQuery(connectionId, database, existingActiveTab.id, query)
-        sqlConsoleStore.renameTab(connectionId, database, existingActiveTab.id, tableName)
+        sqlConsoleStore.updateTabQuery(consoleSessionKey, database, existingActiveTab.id, query)
+        sqlConsoleStore.renameTab(consoleSessionKey, database, existingActiveTab.id, tableName)
         existingActiveTab.tableContext = tableContext
         delete existingActiveTab.fileContext
         sqlConsoleStore.saveState()
       } else {
-        sqlConsoleStore.addTabWithQuery(connectionId, database, query, tableName, tableContext)
+        sqlConsoleStore.addTabWithQuery(consoleSessionKey, database, query, tableName, tableContext)
       }
 
       const connection = connectionsStore.connectionByID(connectionId)
       const connName = connection?.name || 'SQL'
       const tabName = `${connName} → ${database}`
-      const tabId = `sql-console:${connectionId}:${database}`
 
       paneTabsStore.addTab(
         targetPane,
@@ -141,6 +152,7 @@ export function useSqlConsoleActions() {
           connectionId,
           database,
           name: tabName,
+          consoleSessionId: consoleSessionKey,
           tabType: 'sql-console',
           sqlScope: 'database',
           objectKey: tabId
@@ -166,23 +178,31 @@ export function useSqlConsoleActions() {
         return
       }
       const isS3 = kind === 's3'
+      const paneState = paneTabsStore.getPaneState(targetPane)
+      const existingConsoleTab = paneState.tabs.find(
+        (tab) => tab.tabType === 'file-console' && tab.connectionId === connectionId
+      )
+      const consoleSessionKey = existingConsoleTab
+        ? existingConsoleTab.consoleSessionId || `file:${connectionId}`
+        : createConsoleSessionId()
+      const tabId = existingConsoleTab?.id || `file-console:${consoleSessionKey}`
 
       const query = generateDuckDBReadQuery(filePath, fileName, Boolean(isDir), format)
       const fileContext = { path: filePath, format, isS3 }
-      const existingActiveTab = sqlConsoleStore.getActiveTab(connectionId, undefined)
+      const existingActiveTab = sqlConsoleStore.getActiveTab(consoleSessionKey, undefined)
       const shouldReuseActiveBlankTab = Boolean(
         existingActiveTab && !existingActiveTab.query.trim()
       )
 
       if (existingActiveTab && shouldReuseActiveBlankTab) {
-        sqlConsoleStore.updateTabQuery(connectionId, undefined, existingActiveTab.id, query)
-        sqlConsoleStore.renameTab(connectionId, undefined, existingActiveTab.id, fileName)
+        sqlConsoleStore.updateTabQuery(consoleSessionKey, undefined, existingActiveTab.id, query)
+        sqlConsoleStore.renameTab(consoleSessionKey, undefined, existingActiveTab.id, fileName)
         existingActiveTab.fileContext = fileContext
         delete existingActiveTab.tableContext
         sqlConsoleStore.saveState()
       } else {
         sqlConsoleStore.addTabWithQuery(
-          connectionId,
+          consoleSessionKey,
           undefined,
           query,
           fileName,
@@ -192,7 +212,6 @@ export function useSqlConsoleActions() {
       }
 
       const basePath = isS3 ? conn?.spec?.s3?.scope?.bucket : conn?.spec?.files?.basePath
-      const tabId = `file-console:${connectionId}`
 
       paneTabsStore.addTab(
         targetPane,
@@ -200,6 +219,7 @@ export function useSqlConsoleActions() {
           id: tabId,
           connectionId,
           name: conn?.name || 'Files',
+          consoleSessionId: consoleSessionKey,
           tabType: 'file-console',
           fileConnectionType: isS3 ? 's3' : 'files',
           basePath,

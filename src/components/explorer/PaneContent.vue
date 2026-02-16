@@ -73,19 +73,23 @@
     />
     <UnifiedConsoleTab
       v-else-if="activeTab.tabType === 'sql-console'"
-      :key="`${paneId}-sql-${activeTab.connectionId}-${activeTab.database || '*'}`"
+      :key="`${paneId}-sql-${activeTab.id}`"
       mode="database"
       :connection-id="activeTab.connectionId"
       :database="activeTab.database"
       :sql-scope="activeTab.sqlScope || 'database'"
+      :pane-tab-id="activeTab.id"
+      :console-session-id="activeTab.consoleSessionId"
     />
     <UnifiedConsoleTab
       v-else-if="activeTab.tabType === 'file-console'"
-      :key="`${paneId}-file-console-${activeTab.connectionId}`"
+      :key="`${paneId}-file-console-${activeTab.id}`"
       mode="file"
       :connection-id="activeTab.connectionId"
       :connection-type="activeTab.fileConnectionType || 'files'"
       :base-path="activeTab.basePath"
+      :pane-tab-id="activeTab.id"
+      :console-session-id="activeTab.consoleSessionId"
     />
     <DiagramTab
       v-else-if="activeTab.tabType === 'diagram'"

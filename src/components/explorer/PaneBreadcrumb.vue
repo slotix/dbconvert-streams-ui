@@ -14,7 +14,7 @@
 
     <!-- File breadcrumb (using unified component) -->
     <ExplorerBreadcrumb
-      v-else-if="breadcrumbData.pathSegments.length > 0"
+      v-else-if="breadcrumbData.isFileBreadcrumb"
       :connection-label="breadcrumbData.connectionLabel"
       :path-segments="breadcrumbData.pathSegments"
       :name="breadcrumbData.fileName"
@@ -148,6 +148,7 @@ const breadcrumbData = computed(() => {
       fileName: null,
       siblingFiles: [] as Array<{ name: string; path: string; format?: string }>,
       isSqlConsole: false,
+      isFileBreadcrumb: false,
       consoleName: null
     }
   }
@@ -179,7 +180,43 @@ const breadcrumbData = computed(() => {
       fileName: activeTab.name || null,
       siblingFiles,
       isSqlConsole: false,
+      isFileBreadcrumb: true,
       consoleName: null
+    }
+  }
+
+  if (activeTab.tabType === 'file-console') {
+    const basePath = activeTab.basePath?.trim() || ''
+    const pathSegments = basePath ? parsePathToSegments(basePath) : []
+
+    return {
+      connectionLabel: activeTab.name || formatConnectionLabel(activeTab.connectionId),
+      database: null,
+      schema: null,
+      name: null,
+      objects: [],
+      pathSegments,
+      fileName: null,
+      siblingFiles: [] as Array<{ name: string; path: string; format?: string }>,
+      isSqlConsole: false,
+      isFileBreadcrumb: true,
+      consoleName: null
+    }
+  }
+
+  if (isSqlConsole) {
+    return {
+      connectionLabel: null,
+      database: null,
+      schema: null,
+      name: null,
+      objects: [],
+      pathSegments: [] as PathSegment[],
+      fileName: null,
+      siblingFiles: [] as Array<{ name: string; path: string; format?: string }>,
+      isSqlConsole: true,
+      isFileBreadcrumb: false,
+      consoleName: activeTab.name || null
     }
   }
 
@@ -249,23 +286,18 @@ const breadcrumbData = computed(() => {
     }
   }
 
-  // For SQL console without database, use tab name as console identifier
-  const consoleName = isSqlConsole && !activeTab.database ? activeTab.name : null
-
-  // For SQL console tabs, don't show name since it's redundant (it just repeats connection → database)
-  const showName = !isSqlConsole
-
   return {
     connectionLabel: formatConnectionLabel(activeTab.connectionId),
     database: activeTab.database || null,
     schema: activeTab.schema || null,
-    name: showName ? activeTab.name || null : null,
+    name: activeTab.name || null,
     objects,
     pathSegments: [] as PathSegment[],
     fileName: null,
     siblingFiles: [] as Array<{ name: string; path: string; format?: string }>,
-    isSqlConsole,
-    consoleName
+    isSqlConsole: false,
+    isFileBreadcrumb: false,
+    consoleName: null
   }
 })
 </script>
