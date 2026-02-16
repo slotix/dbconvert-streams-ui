@@ -155,7 +155,9 @@ describe('StreamConfigValidator', () => {
       expect(result.valid).toBe(false)
       expect(
         result.errors.some(
-          (e) => e.message === 'At least one connection must have tables, queries, or S3 selections'
+          (e) =>
+            e.message ===
+            'At least one connection must have tables, queries, S3 selections, or file selections'
         )
       ).toBe(true)
     })

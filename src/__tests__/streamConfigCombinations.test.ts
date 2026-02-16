@@ -87,10 +87,14 @@ describe('buildStreamPayload combinations', () => {
 
     const payload = buildStreamPayload(stream)
 
-    expect(payload.source?.connections?.[0].tables).toEqual([
-      { name: 'orders' },
-      { name: 'events' }
-    ])
+    expect(payload.source?.connections?.[0]).toMatchObject({
+      alias: 'files1',
+      connectionId: 'conn-files',
+      files: {
+        basePath: '/data/files',
+        paths: ['orders.csv', 'events.jsonl']
+      }
+    })
   })
 
   it('builds payload for a single S3 source using prefixes and objects', () => {

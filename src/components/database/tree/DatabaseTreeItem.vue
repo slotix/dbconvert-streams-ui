@@ -228,6 +228,10 @@ function handleFlatObjectContextMenu(payload: {
       data-tree-depth="1"
       :data-connection-id="connectionId"
       :data-database="database.name"
+      role="treeitem"
+      aria-level="2"
+      :aria-expanded="isExpanded ? 'true' : 'false'"
+      :aria-selected="isSelected ? 'true' : 'false'"
       tabindex="-1"
       @click="handleDatabaseClick"
       @dblclick.stop="handleDatabaseDoubleClick"
@@ -243,6 +247,7 @@ function handleFlatObjectContextMenu(payload: {
 
     <div
       v-if="isExpanded"
+      role="group"
       class="ml-4 border-l border-gray-200 dark:border-gray-700 pl-2 space-y-1"
     >
       <div v-if="metadataLoaded">

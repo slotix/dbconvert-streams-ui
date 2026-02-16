@@ -19,6 +19,7 @@ import type { SQLRoutineMeta, SQLSequenceMeta, SQLTableMeta, SQLViewMeta } from 
 import type { FileSystemEntry } from '@/api/fileSystem'
 import { getConnectionKindFromSpec, getConnectionTypeLabel, isDatabaseKind } from '@/types/specs'
 import { parseRoutineName } from '@/utils/routineUtils'
+import { getTreeKeyboardIntent, type TreeKeyboardNodeState } from '@/utils/treeKeyboardNavigation'
 import ExplorerContextMenu from './ExplorerContextMenu.vue'
 import ConnectionTreeItem from './tree/ConnectionTreeItem.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
@@ -338,13 +339,17 @@ function expandFirstLevel() {
 }
 
 const TREE_NAV_KEYS = new Set([
+  'Home',
+  'End',
   'ArrowUp',
   'ArrowDown',
   'ArrowLeft',
   'ArrowRight',
   'Enter',
   'Escape',
-  'Esc'
+  'Esc',
+  '*',
+  'Multiply'
 ])
 
 function isTypingTarget(target: EventTarget | null): boolean {
@@ -368,6 +373,40 @@ function selectorEscape(value: string): string {
 function getVisibleTreeNodes(): HTMLElement[] {
   if (!sidebarCardRef.value) return []
   return Array.from(sidebarCardRef.value.querySelectorAll<HTMLElement>('[data-tree-node="true"]'))
+}
+
+function syncTreeTabStop(preferredNode?: HTMLElement | null) {
+  const nodes = getVisibleTreeNodes()
+  if (!nodes.length) {
+    if (focusedTreeNode.value) {
+      delete focusedTreeNode.value.dataset.treeFocused
+      focusedTreeNode.value = null
+    }
+    return
+  }
+
+  const fallback = nodes[0]
+  const focusCandidate =
+    (preferredNode && nodes.includes(preferredNode) ? preferredNode : null) ||
+    (focusedTreeNode.value && nodes.includes(focusedTreeNode.value)
+      ? focusedTreeNode.value
+      : null) ||
+    findSelectedNodeElement() ||
+    fallback
+
+  for (const node of nodes) {
+    node.tabIndex = node === focusCandidate ? 0 : -1
+  }
+}
+
+function handleTreeContainerFocus(event: FocusEvent) {
+  if (event.target !== treeScrollRef.value) return
+
+  const nodes = getVisibleTreeNodes()
+  if (!nodes.length) return
+
+  const currentTabStop = nodes.find((node) => node.tabIndex === 0)
+  focusTreeNode(currentTabStop || findSelectedNodeElement() || nodes[0])
 }
 
 function findSelectedNodeElement(): HTMLElement | null {
@@ -438,6 +477,7 @@ function focusTreeNode(node: HTMLElement | null) {
   }
   focusedTreeNode.value = node
   focusedTreeNode.value.dataset.treeFocused = 'true'
+  syncTreeTabStop(node)
 
   node.focus({ preventScroll: true })
 
@@ -504,26 +544,64 @@ function isTreeNodeExpanded(node: HTMLElement): boolean {
   return false
 }
 
-function toggleTreeNode(node: HTMLElement) {
-  node.click()
-}
-
-function getTreeNodeDepth(node: HTMLElement): number {
+function buildTreeNodeState(node: HTMLElement): TreeKeyboardNodeState {
   const rawDepth = Number(node.dataset.treeDepth ?? 0)
-  return Number.isFinite(rawDepth) ? rawDepth : 0
+  return {
+    depth: Number.isFinite(rawDepth) ? rawDepth : 0,
+    expandable: isTreeNodeExpandable(node),
+    expanded: isTreeNodeExpanded(node)
+  }
 }
 
-function findParentTreeNodeIndex(nodes: HTMLElement[], childIndex: number): number {
-  if (childIndex <= 0) return -1
+function expandTreeNode(node: HTMLElement): boolean {
+  const kind = node.dataset.nodeKind
+  const connectionId = node.dataset.connectionId || ''
 
-  const childDepth = getTreeNodeDepth(nodes[childIndex])
-  for (let i = childIndex - 1; i >= 0; i -= 1) {
-    if (getTreeNodeDepth(nodes[i]) < childDepth) {
-      return i
+  if (kind === 'connection' && connectionId) {
+    if (navigationStore.isConnectionExpanded(connectionId)) return false
+    navigationStore.expandConnection(connectionId)
+    if (treeLogic.isFileConnection(connectionId)) {
+      emit('request-file-entries', { connectionId })
+    } else {
+      navigationStore.ensureDatabases(connectionId).catch(() => {})
     }
+    return true
   }
 
-  return -1
+  if (kind === 'database' && connectionId) {
+    const database = node.dataset.database || ''
+    if (!database) return false
+    const dbKey = `${connectionId}:${database}`
+    if (navigationStore.isDatabaseExpanded(dbKey)) return false
+    navigationStore.expandDatabase(dbKey)
+
+    const isLoading = navigationStore.isMetadataLoading(connectionId, database)
+    const hasMetadata = navigationStore.getMetadata(connectionId, database) !== null
+    if (!isLoading && !hasMetadata) {
+      navigationStore.ensureMetadata(connectionId, database).catch(() => {})
+    }
+    return true
+  }
+
+  if (kind === 'schema' && connectionId) {
+    const database = node.dataset.database || ''
+    const schema = node.dataset.schema || ''
+    if (!database || !schema) return false
+    const schemaKey = `${connectionId}:${database}:${schema}`
+    if (navigationStore.isSchemaExpanded(schemaKey)) return false
+    navigationStore.expandSchema(schemaKey)
+    return true
+  }
+
+  if (kind === 'file-folder' && connectionId) {
+    const folderPath = node.dataset.filePath || ''
+    if (!folderPath) return false
+    if (fileExplorerStore.isFolderExpanded(connectionId, folderPath)) return false
+    fileExplorerStore.expandFolder(connectionId, folderPath)
+    return true
+  }
+
+  return false
 }
 
 function collapseTreeNode(node: HTMLElement): boolean {
@@ -583,66 +661,39 @@ function handleTreeKeyboardNavigation(e: KeyboardEvent) {
 
   const currentIndex = nodes.indexOf(current)
   if (currentIndex < 0) return
+  const nodeState = nodes.map(buildTreeNodeState)
+  const intent = getTreeKeyboardIntent(e.key, currentIndex, nodeState)
 
-  switch (e.key) {
-    case 'ArrowDown': {
+  switch (intent.type) {
+    case 'focus':
       e.preventDefault()
-      focusTreeNode(nodes[Math.min(currentIndex + 1, nodes.length - 1)])
+      focusTreeNode(nodes[intent.index])
       break
-    }
-    case 'ArrowUp': {
+    case 'expand':
       e.preventDefault()
-      focusTreeNode(nodes[Math.max(currentIndex - 1, 0)])
-      break
-    }
-    case 'ArrowRight': {
-      e.preventDefault()
-      if (isTreeNodeExpandable(current) && !isTreeNodeExpanded(current)) {
-        toggleTreeNode(current)
-      } else {
-        focusTreeNode(nodes[Math.min(currentIndex + 1, nodes.length - 1)])
+      if (expandTreeNode(nodes[intent.index])) {
+        focusTreeNode(nodes[intent.index])
       }
       break
-    }
-    case 'ArrowLeft': {
+    case 'expand-many':
       e.preventDefault()
-      if (collapseTreeNode(current)) {
-        focusTreeNode(current)
-      } else {
-        const parentIndex = findParentTreeNodeIndex(nodes, currentIndex)
-        if (parentIndex >= 0) {
-          focusTreeNode(nodes[parentIndex])
-        } else {
-          focusTreeNode(nodes[Math.max(currentIndex - 1, 0)])
-        }
+      for (const index of intent.indexes) {
+        expandTreeNode(nodes[index])
       }
+      focusTreeNode(nodes[currentIndex])
       break
-    }
-    case 'Enter': {
+    case 'collapse':
       e.preventDefault()
-      current.click()
-      break
-    }
-    case 'Escape':
-    case 'Esc': {
-      let collapseIndex = currentIndex
-      let collapsedNode: HTMLElement | null = null
-
-      while (collapseIndex >= 0) {
-        const node = nodes[collapseIndex]
-        if (collapseTreeNode(node)) {
-          collapsedNode = node
-          break
-        }
-        collapseIndex = findParentTreeNodeIndex(nodes, collapseIndex)
-      }
-
-      if (collapsedNode) {
-        e.preventDefault()
-        focusTreeNode(collapsedNode)
+      if (collapseTreeNode(nodes[intent.index])) {
+        focusTreeNode(nodes[intent.index])
       }
       break
-    }
+    case 'activate':
+      e.preventDefault()
+      nodes[intent.index].click()
+      break
+    case 'none':
+      break
   }
 }
 
@@ -768,6 +819,31 @@ function onOpen(
   })
 }
 
+async function expandContextSubtree(target: ContextTarget) {
+  if (target.kind === 'connection') {
+    if (treeLogic.isFileConnection(target.connectionId)) {
+      await fileExplorerStore.expandConnectionSubtree(target.connectionId)
+    } else {
+      await navigationStore.expandConnectionSubtree(target.connectionId)
+    }
+    return
+  }
+
+  if (target.kind === 'database') {
+    await navigationStore.expandDatabaseSubtree(target.connectionId, target.database)
+    return
+  }
+
+  if (target.kind === 'schema') {
+    await navigationStore.expandSchemaSubtree(target.connectionId, target.database, target.schema)
+    return
+  }
+
+  if (target.kind === 'file' && target.isDir) {
+    await fileExplorerStore.expandFolderSubtree(target.connectionId, target.path)
+  }
+}
+
 // Simplified menu action handler using composables
 function onMenuAction(payload: {
   action: string
@@ -872,6 +948,9 @@ function onMenuAction(payload: {
     case 'refresh-metadata':
       if (t.kind === 'database' || t.kind === 'schema')
         actions.refreshDatabase(t.connectionId, t.database)
+      break
+    case 'expand-subtree':
+      void expandContextSubtree(t)
       break
     case 'collapse-subtree':
       if (t.kind === 'connection') {
@@ -1120,6 +1199,8 @@ onMounted(async () => {
   // Restored expansion state is persisted, but tree payloads are lazy-loaded.
   // Hydrate all currently expanded connections so they don't render as empty after app restart.
   await hydrateExpandedConnections()
+  await nextTick()
+  syncTreeTabStop(findSelectedNodeElement())
 })
 
 onUnmounted(() => {
@@ -1188,6 +1269,7 @@ watch(
       const dbKey = `${connId}:${sel.database}`
       focusSelector(`[data-explorer-db="${dbKey}"]`)
     }
+    syncTreeTabStop(findSelectedNodeElement())
   },
   { immediate: false }
 )
@@ -1369,6 +1451,14 @@ watch(
     }
   }
 )
+
+watch(
+  () => filteredConnections.value.map((conn) => conn.id).join('|'),
+  async () => {
+    await nextTick()
+    syncTreeTabStop(findSelectedNodeElement())
+  }
+)
 </script>
 
 <template>
@@ -1401,6 +1491,11 @@ watch(
     <div
       ref="treeScrollRef"
       class="flex-1 overflow-y-auto overscroll-contain p-3 scrollbar-thin"
+      role="tree"
+      aria-label="Connections explorer"
+      :aria-busy="isLoadingConnections ? 'true' : 'false'"
+      tabindex="0"
+      @focus="handleTreeContainerFocus"
       @click.capture="focusTreeNodeFromEvent"
     >
       <!-- Loading state with centered spinner and blue-green gradient -->

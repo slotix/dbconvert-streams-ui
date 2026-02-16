@@ -278,6 +278,10 @@ const connectionPort = computed(() => getConnectionPort(props.connection))
       data-node-kind="connection"
       data-tree-depth="0"
       :data-connection-id="connection.id"
+      role="treeitem"
+      aria-level="1"
+      :aria-expanded="isExpanded ? 'true' : 'false'"
+      :aria-selected="isSelected ? 'true' : 'false'"
       tabindex="-1"
       :class="[
         'group flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 rounded-lg cursor-pointer select-none',
@@ -335,6 +339,7 @@ const connectionPort = computed(() => getConnectionPort(props.connection))
     <!-- Databases or Files under connection -->
     <div
       v-if="isExpanded"
+      role="group"
       class="ml-5 border-l-2 border-slate-200 dark:border-gray-800 pl-3 space-y-1 mt-1"
     >
       <div v-if="isFileConnection">

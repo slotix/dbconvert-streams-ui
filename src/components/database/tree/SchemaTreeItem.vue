@@ -149,6 +149,10 @@ function handleObjectContextMenu(payload: {
       :data-connection-id="connectionId"
       :data-database="database"
       :data-schema="schema.name || ''"
+      role="treeitem"
+      aria-level="3"
+      :aria-expanded="isExpanded ? 'true' : 'false'"
+      :aria-selected="isSelected ? 'true' : 'false'"
       tabindex="-1"
       @click="$emit('toggle')"
       @contextmenu.stop.prevent="handleSchemaContextMenu"
@@ -157,7 +161,11 @@ function handleObjectContextMenu(payload: {
       <Grid2X2 class="w-4 h-4 mr-1.5 text-purple-500 dark:text-purple-400 shrink-0" />
       <HighlightedText class="font-medium" :text="schema.name || 'default'" :query="searchQuery" />
     </div>
-    <div v-if="isExpanded" class="ml-4 border-l border-gray-200 dark:border-gray-700 pl-2">
+    <div
+      v-if="isExpanded"
+      role="group"
+      class="ml-4 border-l border-gray-200 dark:border-gray-700 pl-2"
+    >
       <button
         type="button"
         class="w-full text-left text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-1 flex items-center justify-between hover:text-gray-500 dark:hover:text-gray-400"

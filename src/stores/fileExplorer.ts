@@ -548,6 +548,54 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     saveExpandedFolders()
   }
 
+  function findEntryByPath(entries: FileSystemEntry[], targetPath: string): FileSystemEntry | null {
+    for (const entry of entries) {
+      if (entry.path === targetPath) return entry
+      if (entry.children && entry.children.length > 0) {
+        const found = findEntryByPath(entry.children, targetPath)
+        if (found) return found
+      }
+    }
+    return null
+  }
+
+  async function expandFolderSubtree(connectionId: string, folderPath: string) {
+    const expandRecursive = async (path: string) => {
+      expandFolder(connectionId, path)
+
+      let folderEntry = findEntryByPath(entriesByConnection.value[connectionId] || [], path)
+      if (!folderEntry || folderEntry.type !== 'dir') return
+
+      if (!folderEntry.isLoaded) {
+        await loadFolderContents(connectionId, path)
+        folderEntry = findEntryByPath(entriesByConnection.value[connectionId] || [], path)
+        if (!folderEntry || folderEntry.type !== 'dir') return
+      }
+
+      const children = folderEntry.children || []
+      for (const child of children) {
+        if (child.type === 'dir') {
+          await expandRecursive(child.path)
+        }
+      }
+    }
+
+    await expandRecursive(folderPath)
+  }
+
+  async function expandConnectionSubtree(connectionId: string) {
+    if (!entriesByConnection.value[connectionId]?.length) {
+      await loadEntries(connectionId)
+    }
+
+    const roots = entriesByConnection.value[connectionId] || []
+    for (const entry of roots) {
+      if (entry.type === 'dir') {
+        await expandFolderSubtree(connectionId, entry.path)
+      }
+    }
+  }
+
   function cleanupStaleConnections(validConnectionIds: string[]) {
     const validIdSet = new Set(validConnectionIds)
     const keepValid = <T>(record: Record<string, T>): Record<string, T> => {
@@ -873,6 +921,8 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     expandFolder,
     collapseAllFolders,
     collapseFolderSubtree,
+    expandFolderSubtree,
+    expandConnectionSubtree,
     cleanupStaleConnections,
     loadFolderContents
   }

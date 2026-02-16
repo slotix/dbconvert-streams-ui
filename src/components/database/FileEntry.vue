@@ -157,6 +157,10 @@ const handleChildExpandFolder = (payload: { entry: FileSystemEntry }) => {
       :data-connection-id="connectionId"
       :data-file-path="entry.path"
       :data-is-dir="isFolder ? 'true' : 'false'"
+      role="treeitem"
+      :aria-level="depth + 2"
+      :aria-expanded="isFolder ? (isExpanded ? 'true' : 'false') : undefined"
+      :aria-selected="isSelected && isSelectableFile ? 'true' : 'false'"
       tabindex="-1"
       :style="indentStyle"
       :title="unsupportedTooltip"
@@ -201,7 +205,7 @@ const handleChildExpandFolder = (payload: { entry: FileSystemEntry }) => {
     </div>
 
     <!-- Recursively render children if expanded -->
-    <div v-if="isFolder && isExpanded && hasChildren" class="folder-children">
+    <div v-if="isFolder && isExpanded && hasChildren" role="group" class="folder-children">
       <FileEntry
         v-for="child in entry.children"
         :key="child.path"

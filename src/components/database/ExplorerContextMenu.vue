@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import {
   Beaker,
+  ChevronsDown,
   ChevronsUp,
   Copy,
   Eye,
@@ -200,6 +201,14 @@ function click(action: string, openInRightSplit?: boolean) {
           <button
             v-if="canCollapseSubtree"
             class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
+            @click="click('expand-subtree')"
+          >
+            <ChevronsDown class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
+            <span>Expand subtree</span>
+          </button>
+          <button
+            v-if="canCollapseSubtree"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
             @click="click('collapse-subtree')"
           >
             <ChevronsUp class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
@@ -287,6 +296,14 @@ function click(action: string, openInRightSplit?: boolean) {
           <button
             v-if="canCollapseSubtree"
             class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
+            @click="click('expand-subtree')"
+          >
+            <ChevronsDown class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
+            <span>Expand subtree</span>
+          </button>
+          <button
+            v-if="canCollapseSubtree"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
             @click="click('collapse-subtree')"
           >
             <ChevronsUp class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
@@ -341,6 +358,14 @@ function click(action: string, openInRightSplit?: boolean) {
           >
             <RefreshCw class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
             <span>Refresh metadata</span>
+          </button>
+          <button
+            v-if="canCollapseSubtree"
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
+            @click="click('expand-subtree')"
+          >
+            <ChevronsDown class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
+            <span>Expand subtree</span>
           </button>
           <button
             v-if="canCollapseSubtree"
@@ -418,6 +443,14 @@ function click(action: string, openInRightSplit?: boolean) {
             <button
               v-if="target.kind === 'file' && target.isDir"
               class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
+              @click="click('expand-subtree')"
+            >
+              <ChevronsDown class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
+              <span>Expand subtree</span>
+            </button>
+            <button
+              v-if="target.kind === 'file' && target.isDir"
+              class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
               @click="click('collapse-subtree')"
             >
               <ChevronsUp class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
@@ -456,6 +489,13 @@ function click(action: string, openInRightSplit?: boolean) {
 
         <!-- Navigation folder menu (local file folders that are not table folders) -->
         <template v-else-if="isLocalNavigationFolder">
+          <button
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
+            @click="click('expand-subtree')"
+          >
+            <ChevronsDown class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
+            <span>Expand subtree</span>
+          </button>
           <button
             class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
             @click="click('collapse-subtree')"

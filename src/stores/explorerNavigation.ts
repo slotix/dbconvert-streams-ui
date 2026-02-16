@@ -384,6 +384,29 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
       this.saveExpansionState()
     },
 
+    async expandConnectionSubtree(connectionId: string) {
+      this.expandedConnections.add(connectionId)
+      await this.ensureDatabases(connectionId)
+
+      const databases = this.getDatabases(connectionId) || []
+      for (const database of databases) {
+        const dbName = database.name
+        if (!dbName) continue
+
+        const dbKey = `${connectionId}:${dbName}`
+        this.expandedDatabases.add(dbKey)
+        await this.ensureMetadata(connectionId, dbName)
+
+        const schemas = this.getFilteredSchemas(connectionId, dbName) || []
+        for (const schema of schemas) {
+          const schemaKey = `${connectionId}:${dbName}:${schema.name || ''}`
+          this.expandedSchemas.add(schemaKey)
+        }
+      }
+
+      this.saveExpansionState()
+    },
+
     toggleDatabase(key: string) {
       if (this.expandedDatabases.has(key)) {
         this.expandedDatabases.delete(key)
@@ -417,6 +440,22 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
       this.saveExpansionState()
     },
 
+    async expandDatabaseSubtree(connectionId: string, database: string) {
+      this.expandedConnections.add(connectionId)
+
+      const dbKey = `${connectionId}:${database}`
+      this.expandedDatabases.add(dbKey)
+      await this.ensureMetadata(connectionId, database)
+
+      const schemas = this.getFilteredSchemas(connectionId, database) || []
+      for (const schema of schemas) {
+        const schemaKey = `${connectionId}:${database}:${schema.name || ''}`
+        this.expandedSchemas.add(schemaKey)
+      }
+
+      this.saveExpansionState()
+    },
+
     toggleSchema(key: string) {
       if (this.expandedSchemas.has(key)) {
         this.expandedSchemas.delete(key)
@@ -438,6 +477,14 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
 
     collapseSchemaSubtree(connectionId: string, database: string, schema: string) {
       this.expandedSchemas.delete(`${connectionId}:${database}:${schema}`)
+      this.saveExpansionState()
+    },
+
+    async expandSchemaSubtree(connectionId: string, database: string, schema: string) {
+      this.expandedConnections.add(connectionId)
+      this.expandedDatabases.add(`${connectionId}:${database}`)
+      await this.ensureMetadata(connectionId, database)
+      this.expandedSchemas.add(`${connectionId}:${database}:${schema}`)
       this.saveExpansionState()
     },
 
