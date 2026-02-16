@@ -43,6 +43,30 @@ export function getFederatedTemplates(aliases: string[]): QueryTemplate[] {
 
   return [
     {
+      name: 'List attached sources',
+      query: `-- Multi-source mode: list attached aliases in this query session
+SHOW DATABASES;`
+    },
+    {
+      name: 'List source namespaces',
+      query: `-- Multi-source mode: inspect schemas/databases exposed per alias
+SELECT DISTINCT
+  database_name AS source_alias,
+  schema_name
+FROM duckdb_tables()
+ORDER BY source_alias, schema_name;`
+    },
+    {
+      name: 'List tables for alias',
+      query: `-- Multi-source mode: replace '${pg1}' with any alias chip above
+SELECT
+  schema_name,
+  table_name
+FROM duckdb_tables()
+WHERE database_name = '${pg1}'
+ORDER BY schema_name, table_name;`
+    },
+    {
       name: 'Cross-database JOIN',
       query: `-- Join tables from different databases
 SELECT a.*, b.*
@@ -108,9 +132,11 @@ LIMIT 100;`
     },
     {
       name: 'List attached schemas',
-      query: `-- Show all schemas in an attached database
-SELECT schema_name
-FROM ${pg1}.information_schema.schemata;`
+      query: `-- Backward-compatible alias-scoped schema list
+SELECT DISTINCT schema_name
+FROM duckdb_tables()
+WHERE database_name = '${pg1}'
+ORDER BY schema_name;`
     },
     {
       name: 'Query Parquet file',

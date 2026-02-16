@@ -122,6 +122,49 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
     return part.replace(/^[`"'[]+|[`"'\]]+$/g, '').toLowerCase()
   }
 
+  function extractReferencedAliases(query: string): Set<string> {
+    const aliases = new Set<string>()
+    const cleaned = stripSqlComments(query)
+    const cteNames = extractCteNames(cleaned)
+    const refRegex = /\b(from|join|update|into|delete\s+from)\s+([^\s,;]+)/gi
+    let match: RegExpExecArray | null
+
+    while ((match = refRegex.exec(cleaned)) !== null) {
+      let token = (match[2] || '').trim()
+      if (!token) continue
+
+      token = token.replace(/[);]+$/g, '')
+      const lowered = token.toLowerCase()
+
+      if (!token || token.startsWith('(')) continue
+      if (lowered === 'only' || lowered === 'lateral') continue
+      if (
+        lowered.startsWith('read_') ||
+        lowered.startsWith('parquet_') ||
+        lowered.startsWith('csv_') ||
+        lowered.startsWith('json_')
+      ) {
+        continue
+      }
+      if (token.includes('(')) continue
+
+      const parts = token
+        .split('.')
+        .map((p) => p.trim())
+        .filter(Boolean)
+
+      if (parts.length < 2) {
+        const maybeCte = normalizeIdentifierPart(token)
+        if (cteNames.has(maybeCte)) continue
+        continue
+      }
+
+      aliases.add(normalizeIdentifierPart(parts[0]))
+    }
+
+    return aliases
+  }
+
   function validateFederatedTableReferences(query: string, aliases: string[]): string | null {
     if (aliases.length === 0) return null
 
@@ -180,6 +223,27 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
   async function executeQuery() {
     const query = sqlQuery.value.trim()
     if (!query) return
+
+    if (!useFederatedEngine.value) {
+      const availableAliases = new Set(
+        selectedConnections.value
+          .map((c) => c.alias?.trim().toLowerCase())
+          .filter((a): a is string => Boolean(a))
+      )
+      availableAliases.add('memory')
+
+      const referencedAliases = extractReferencedAliases(query)
+      const conflictingAliases = Array.from(referencedAliases).filter((a) =>
+        availableAliases.has(a)
+      )
+
+      if (conflictingAliases.length > 0) {
+        setExecutionError(
+          `This query references source aliases (${conflictingAliases.join(', ')}). Switch to Multi-source mode to run federated queries.`
+        )
+        return
+      }
+    }
 
     if (useFederatedEngine.value) {
       await executeFederated(query)
