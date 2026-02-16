@@ -10,7 +10,7 @@ function readCssVar(varName: string, fallback: string): string {
  * Brand colors for the diagram (matches the main component colors)
  */
 export const BRAND_COLORS = {
-  primary: '#00B2D6', // Teal/Cyan blue (from logo)
+  primary: '#14B8A6', // Teal-500 for calmer, consistent accents
   secondary: '#F26627', // Orange (from logo)
   gray: '#9ca3af', // Neutral gray for elements
   grayLight: '#e5e7eb', // Light neutral gray for backgrounds
@@ -68,9 +68,9 @@ export function getDiagramColors(isDark: boolean) {
     tooltipBg: isDark ? gray950 : gray900,
     noDataText: isDark ? gray400 : gray500,
     // Selection highlight colors
-    selectedHeaderBg: isDark ? '#164e63' : '#dbeafe', // Cyan-900 / Blue-100
-    selectedBodyBg: isDark ? '#0e4a5c' : '#eff6ff', // Darker cyan / Blue-50
-    selectedBorder: isDark ? '#06b6d4' : '#3b82f6', // Cyan-500 / Blue-500
+    selectedHeaderBg: isDark ? '#115e59' : '#ccfbf1', // Teal-800 / Teal-100
+    selectedBodyBg: isDark ? '#134e4a' : '#f0fdfa', // Teal-900 / Teal-50
+    selectedBorder: isDark ? '#14b8a6' : '#0d9488', // Teal-500 / Teal-600
     relatedHeaderBg: isDark ? '#7c2d12' : '#FFEDD5', // Orange-900 / Orange-100
     relatedBodyBg: isDark ? '#5c2410' : '#fff7ed', // Darker orange / Orange-50
     relatedBorder: isDark ? '#f97316' : '#f97316' // Orange-500

@@ -147,7 +147,7 @@ const handleChildExpandFolder = (payload: { entry: FileSystemEntry }) => {
     <div
       class="flex items-center py-1.5 text-sm text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer select-none"
       :class="{
-        'bg-gray-100 dark:bg-gray-800 ring-1 ring-gray-300 dark:ring-gray-600':
+        'bg-teal-50/70 dark:bg-teal-900/20 border border-teal-300/80 dark:border-teal-500/50 ring-1 ring-teal-300/60 dark:ring-teal-500/30':
           isSelected && isSelectableFile,
         'opacity-60': !isSupported && entry.type !== 'dir'
       }"

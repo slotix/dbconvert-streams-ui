@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, nextTick, provide } from 'vue'
 import { useDebounceFn, useResizeObserver } from '@vueuse/core'
-import { Boxes, Loader2 } from 'lucide-vue-next'
+import { Boxes, ChevronsDown, ChevronsUp, Loader2 } from 'lucide-vue-next'
 import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore, type ObjectType } from '@/stores/explorerNavigation'
 import { useFileExplorerStore } from '@/stores/fileExplorer'
@@ -97,6 +97,8 @@ const emit = defineEmits<{
 }>()
 
 const MIN_SEARCH_LENGTH = 2
+const MAX_FILE_SUBTREE_EXPAND_FOLDERS = 250
+const FILE_SUBTREE_PROGRESS_STEP = 100
 
 const connectionsStore = useConnectionsStore()
 const navigationStore = useExplorerNavigationStore()
@@ -820,9 +822,52 @@ function onOpen(
 }
 
 async function expandContextSubtree(target: ContextTarget) {
+  async function expandFileSubtreeWithGuard(
+    run: (options: {
+      maxFolders: number
+      progressEvery: number
+      onProgress: (expandedFolders: number, maxFolders: number) => void
+    }) => Promise<{ expandedFolders: number; truncated: boolean; maxFolders: number }>,
+    label: string
+  ) {
+    let lastProgressToast = 0
+    toast.info(`Expanding ${label}...`)
+
+    try {
+      const result = await run({
+        maxFolders: MAX_FILE_SUBTREE_EXPAND_FOLDERS,
+        progressEvery: FILE_SUBTREE_PROGRESS_STEP,
+        onProgress: (expandedFolders, maxFolders) => {
+          if (
+            expandedFolders >= FILE_SUBTREE_PROGRESS_STEP &&
+            expandedFolders - lastProgressToast >= FILE_SUBTREE_PROGRESS_STEP &&
+            expandedFolders < maxFolders
+          ) {
+            lastProgressToast = expandedFolders
+            toast.info(`Expanding... ${expandedFolders}/${maxFolders} folders`)
+          }
+        }
+      })
+
+      if (result.truncated) {
+        toast.warning(
+          `Stopped after ${result.expandedFolders} folders (limit ${result.maxFolders}). Expand a deeper branch to continue.`
+        )
+      } else {
+        toast.success(`Expanded ${result.expandedFolders} folders`)
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to expand subtree'
+      toast.error(message)
+    }
+  }
+
   if (target.kind === 'connection') {
     if (treeLogic.isFileConnection(target.connectionId)) {
-      await fileExplorerStore.expandConnectionSubtree(target.connectionId)
+      await expandFileSubtreeWithGuard(
+        (options) => fileExplorerStore.expandConnectionSubtree(target.connectionId, options),
+        'connection subtree'
+      )
     } else {
       await navigationStore.expandConnectionSubtree(target.connectionId)
     }
@@ -840,7 +885,10 @@ async function expandContextSubtree(target: ContextTarget) {
   }
 
   if (target.kind === 'file' && target.isDir) {
-    await fileExplorerStore.expandFolderSubtree(target.connectionId, target.path)
+    await expandFileSubtreeWithGuard(
+      (options) => fileExplorerStore.expandFolderSubtree(target.connectionId, target.path, options),
+      `folder "${target.name}"`
+    )
   }
 }
 
@@ -1472,19 +1520,23 @@ watch(
     >
       <button
         type="button"
-        class="inline-flex items-center justify-center rounded-md border border-slate-300 dark:border-gray-600 bg-white/90 dark:bg-gray-800/90 px-2.5 py-1.5 text-xs font-medium text-slate-700 dark:text-gray-200 transition-colors hover:bg-slate-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-300 dark:border-gray-600 bg-white/90 dark:bg-gray-800/90 text-slate-700 dark:text-gray-200 transition-colors hover:bg-slate-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        title="Expand first level"
+        aria-label="Expand first level"
         :disabled="!canExpandFirstLevel"
         @click="expandFirstLevel"
       >
-        Expand first level
+        <ChevronsDown class="h-4 w-4" />
       </button>
       <button
         type="button"
-        class="inline-flex items-center justify-center rounded-md border border-slate-300 dark:border-gray-600 bg-white/90 dark:bg-gray-800/90 px-2.5 py-1.5 text-xs font-medium text-slate-700 dark:text-gray-200 transition-colors hover:bg-slate-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-300 dark:border-gray-600 bg-white/90 dark:bg-gray-800/90 text-slate-700 dark:text-gray-200 transition-colors hover:bg-slate-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        title="Collapse all"
+        aria-label="Collapse all"
         :disabled="!hasExpandedTreeState"
         @click="collapseAllTreeNodes"
       >
-        Collapse all
+        <ChevronsUp class="h-4 w-4" />
       </button>
     </div>
     <!-- Scrollable tree content area with smooth scrolling and custom scrollbar -->

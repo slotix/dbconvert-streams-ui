@@ -291,7 +291,7 @@ const connectionPort = computed(() => getConnectionPort(props.connection))
         'active:scale-[0.98]',
         // Highlight when connection is selected (but no database/table selected)
         isSelected
-          ? 'bg-linear-to-r from-gray-200 to-gray-300 dark:from-gray-800 dark:to-gray-700 shadow-md ring-2 ring-gray-300/50 dark:ring-gray-700/50'
+          ? 'bg-teal-50/70 dark:bg-teal-900/20 border border-teal-300/80 dark:border-teal-500/50 shadow-md ring-1 ring-teal-300/60 dark:ring-teal-500/30'
           : ''
       ]"
       :title="connectionTooltip"

@@ -62,6 +62,21 @@ function persistExpandedFolders(state: Record<string, Set<string>>) {
 }
 
 export const useFileExplorerStore = defineStore('fileExplorer', () => {
+  interface ExpandSubtreeOptions {
+    maxFolders?: number
+    progressEvery?: number
+    onProgress?: (expandedFolders: number, maxFolders: number) => void
+  }
+
+  interface ExpandSubtreeResult {
+    expandedFolders: number
+    truncated: boolean
+    maxFolders: number
+  }
+
+  const DEFAULT_MAX_EXPAND_SUBTREE_FOLDERS = 250
+  const DEFAULT_EXPAND_SUBTREE_PROGRESS_EVERY = 25
+
   // State - organized by connection ID
   const entriesByConnection = ref<Record<string, FileSystemEntry[]>>({})
   const directoryPathsByConnection = ref<Record<string, string>>({})
@@ -559,8 +574,34 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     return null
   }
 
-  async function expandFolderSubtree(connectionId: string, folderPath: string) {
+  async function expandFolderSubtree(
+    connectionId: string,
+    folderPath: string,
+    options: ExpandSubtreeOptions = {}
+  ): Promise<ExpandSubtreeResult> {
+    const maxFolders = Math.max(1, options.maxFolders ?? DEFAULT_MAX_EXPAND_SUBTREE_FOLDERS)
+    const progressEvery = Math.max(
+      1,
+      options.progressEvery ?? DEFAULT_EXPAND_SUBTREE_PROGRESS_EVERY
+    )
+    let expandedFolders = 0
+    let truncated = false
+
+    const reportProgress = () => {
+      if (!options.onProgress) return
+      if (expandedFolders === 1 || expandedFolders % progressEvery === 0 || truncated) {
+        options.onProgress(expandedFolders, maxFolders)
+      }
+    }
+
     const expandRecursive = async (path: string) => {
+      if (expandedFolders >= maxFolders) {
+        truncated = true
+        return
+      }
+
+      expandedFolders += 1
+      reportProgress()
       expandFolder(connectionId, path)
 
       let folderEntry = findEntryByPath(entriesByConnection.value[connectionId] || [], path)
@@ -574,6 +615,10 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
 
       const children = folderEntry.children || []
       for (const child of children) {
+        if (expandedFolders >= maxFolders) {
+          truncated = true
+          break
+        }
         if (child.type === 'dir') {
           await expandRecursive(child.path)
         }
@@ -581,18 +626,70 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     }
 
     await expandRecursive(folderPath)
+
+    if (truncated) {
+      reportProgress()
+    }
+
+    return {
+      expandedFolders,
+      truncated,
+      maxFolders
+    }
   }
 
-  async function expandConnectionSubtree(connectionId: string) {
+  async function expandConnectionSubtree(
+    connectionId: string,
+    options: ExpandSubtreeOptions = {}
+  ): Promise<ExpandSubtreeResult> {
+    const maxFolders = Math.max(1, options.maxFolders ?? DEFAULT_MAX_EXPAND_SUBTREE_FOLDERS)
+    let expandedFolders = 0
+    let truncated = false
+
+    const reportProgress = () => {
+      options.onProgress?.(expandedFolders, maxFolders)
+    }
+
     if (!entriesByConnection.value[connectionId]?.length) {
       await loadEntries(connectionId)
     }
 
     const roots = entriesByConnection.value[connectionId] || []
     for (const entry of roots) {
-      if (entry.type === 'dir') {
-        await expandFolderSubtree(connectionId, entry.path)
+      if (expandedFolders >= maxFolders) {
+        truncated = true
+        break
       }
+      if (entry.type === 'dir') {
+        let branchReported = 0
+        const result = await expandFolderSubtree(connectionId, entry.path, {
+          ...options,
+          maxFolders: maxFolders - expandedFolders,
+          onProgress: (folderProgress) => {
+            const delta = Math.max(0, folderProgress - branchReported)
+            if (!delta) return
+            branchReported = folderProgress
+            expandedFolders += delta
+            reportProgress()
+          }
+        })
+        // Ensure totals are correct even if progress callback didn't fire at the final count.
+        const remainingDelta = Math.max(0, result.expandedFolders - branchReported)
+        if (remainingDelta > 0) {
+          expandedFolders += remainingDelta
+          reportProgress()
+        }
+        if (result.truncated) {
+          truncated = true
+          break
+        }
+      }
+    }
+
+    return {
+      expandedFolders,
+      truncated,
+      maxFolders
     }
   }
 

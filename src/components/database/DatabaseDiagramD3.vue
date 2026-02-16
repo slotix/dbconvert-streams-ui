@@ -1356,7 +1356,7 @@ function handleUpdateCollisionRadius(value: number) {
 
 .table-node:hover .table-header rect,
 .view-node:hover .table-header rect {
-  stroke: var(--brand-primary-color, #00b2d6);
+  stroke: var(--brand-primary-color, #14b8a6);
   stroke-width: 2px;
 }
 
@@ -1408,7 +1408,7 @@ text {
 }
 
 :root {
-  --brand-primary-color: #00b2d6;
+  --brand-primary-color: #14b8a6;
   --brand-secondary-color: #f26627;
 }
 </style>

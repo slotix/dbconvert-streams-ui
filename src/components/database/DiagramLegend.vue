@@ -181,7 +181,7 @@ onBeforeUnmount(() => {
       <div
         class="flex items-center gap-2 rounded-md border border-slate-200/70 dark:border-slate-700/60 bg-slate-50/80 dark:bg-slate-800/50 px-2 py-1"
       >
-        <div class="w-4 h-0.5 bg-cyan-500 rounded-full"></div>
+        <div class="w-4 h-0.5 bg-teal-500 rounded-full"></div>
         <span class="font-medium text-slate-700 dark:text-slate-200">Foreign Key</span>
       </div>
       <div

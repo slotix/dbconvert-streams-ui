@@ -12,7 +12,7 @@ import TriggerDefinitionView from './TriggerDefinitionView.vue'
 
 // Define brand colors as constants for consistency (matching DatabaseDiagramD3.vue)
 const BRAND_COLORS = {
-  primary: '#00B2D6', // Teal/Cyan blue (from logo)
+  primary: '#14B8A6', // Teal-500 for calmer, consistent accents
   secondary: '#F26627', // Orange (from logo)
   highlight: {
     blue: '#DBEAFE', // Light blue highlight
