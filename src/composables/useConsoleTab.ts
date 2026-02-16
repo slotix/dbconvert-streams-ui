@@ -155,7 +155,6 @@ export function useConsoleTab(options: ConsoleTabOptions) {
   const lastQueryStats = ref<QueryStats | null>(null)
   const currentPage = ref(1)
   const pageSize = ref(100)
-  const showHelp = ref(false)
 
   // ========== Query History ==========
   const queryHistory = ref<QueryHistoryItem[]>([])
@@ -578,7 +577,6 @@ export function useConsoleTab(options: ConsoleTabOptions) {
     lastQueryStats,
     currentPage,
     pageSize,
-    showHelp,
     queryHistory,
 
     // Split pane

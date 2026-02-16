@@ -21,83 +21,7 @@
         </span>
       </div>
 
-      <div class="flex items-center space-x-2">
-        <!-- Help button (file mode only) -->
-        <button
-          v-if="mode === 'file'"
-          class="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded transition-colors"
-          title="Query Help"
-          @click="showHelp = !showHelp"
-        >
-          <CircleHelp class="h-5 w-5" />
-        </button>
-      </div>
-    </div>
-
-    <!-- Help Panel (file mode only) -->
-    <div
-      v-if="mode === 'file' && showHelp"
-      class="px-4 py-3 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800 text-xs max-h-64 overflow-y-auto"
-    >
-      <div class="flex items-start space-x-2">
-        <Info class="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
-        <div class="text-blue-700 dark:text-blue-300 space-y-2">
-          <p class="font-medium">SQL Console - Query Files with SQL</p>
-
-          <div>
-            <p class="font-medium mb-1">File Reading Functions:</p>
-            <ul class="list-disc list-inside space-y-0.5 ml-2">
-              <li>
-                <code class="bg-blue-100 dark:bg-blue-800 px-1 rounded"
-                  >read_csv_auto('/path/file.csv')</code
-                >
-                - CSV files
-              </li>
-              <li>
-                <code class="bg-blue-100 dark:bg-blue-800 px-1 rounded"
-                  >read_parquet('/path/file.parquet')</code
-                >
-                - Parquet files
-              </li>
-              <li>
-                <code class="bg-blue-100 dark:bg-blue-800 px-1 rounded"
-                  >read_json_auto('/path/file.json')</code
-                >
-                - JSON/JSONL files
-              </li>
-              <li>
-                <code class="bg-blue-100 dark:bg-blue-800 px-1 rounded"
-                  >read_parquet('s3://bucket/path/*.parquet')</code
-                >
-                - S3 files with glob
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <p class="font-medium mb-1">Multi-File Join Examples:</p>
-            <ul class="list-disc list-inside space-y-0.5 ml-2">
-              <li>
-                <code class="bg-blue-100 dark:bg-blue-800 px-1 rounded text-[10px]"
-                  >SELECT * FROM read_csv_auto('orders.csv') o JOIN read_csv_auto('customers.csv') c
-                  ON o.customer_id = c.id</code
-                >
-              </li>
-              <li>
-                <code class="bg-blue-100 dark:bg-blue-800 px-1 rounded text-[10px]"
-                  >SELECT * FROM read_parquet('*.parquet')</code
-                >
-                - Query all parquet files
-              </li>
-            </ul>
-          </div>
-
-          <p>
-            Press <kbd class="px-1 py-0.5 bg-blue-100 dark:bg-blue-800 rounded">Ctrl+Enter</kbd> to
-            execute.
-          </p>
-        </div>
-      </div>
+      <div class="flex items-center space-x-2"></div>
     </div>
 
     <!-- Execution Context Toolbar -->
@@ -226,7 +150,7 @@
 
 <script setup lang="ts">
 import { ref, computed, nextTick, onMounted, onUnmounted, watch, type Component } from 'vue'
-import { ChevronRight, CircleHelp, Database, Info, Terminal } from 'lucide-vue-next'
+import { ChevronRight, Database, Terminal } from 'lucide-vue-next'
 import type { SchemaContext } from '@/composables/useMonacoSqlProviders'
 import { useConnectionsStore } from '@/stores/connections'
 import { usePaneTabsStore } from '@/stores/paneTabs'
@@ -379,7 +303,6 @@ const scopedExecutionOptions = computed(() =>
 )
 
 const showUnifiedExecutionSelector = computed(() => {
-  if (props.mode !== 'database') return false
   return databaseSourceMappings.value.length > 1 || scopedExecutionOptions.value.length > 0
 })
 
@@ -482,7 +405,6 @@ const {
   lastQueryStats,
   currentPage,
   pageSize,
-  showHelp,
   queryHistory,
 
   // Split pane
