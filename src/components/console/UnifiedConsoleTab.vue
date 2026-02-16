@@ -173,6 +173,10 @@
           @format="formatQuery"
           @select-template="insertTemplate"
           @select-history="insertHistoryQuery"
+          @rerun-history="rerunHistoryQuery"
+          @delete-history="removeHistoryItem"
+          @toggle-history-pin="toggleHistoryPinned"
+          @open-history-new-tab="openHistoryQueryInNewTab"
         />
       </div>
 
@@ -221,7 +225,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch, type Component } from 'vue'
+import { ref, computed, nextTick, onMounted, onUnmounted, watch, type Component } from 'vue'
 import { ChevronRight, CircleHelp, Database, Info, Terminal } from 'lucide-vue-next'
 import type { SchemaContext } from '@/composables/useMonacoSqlProviders'
 import { useConnectionsStore } from '@/stores/connections'
@@ -231,7 +235,7 @@ import { SqlQueryTabs, SqlEditorPane, SqlResultsPane } from '@/components/databa
 import FormSelect from '@/components/base/FormSelect.vue'
 import SlideOverPanel from '@/components/common/SlideOverPanel.vue'
 import ConnectionAliasPanel from './ConnectionAliasPanel.vue'
-import { useConsoleTab } from '@/composables/useConsoleTab'
+import { useConsoleTab, type QueryHistoryItem } from '@/composables/useConsoleTab'
 import { useConsoleSources, type ConsoleMode } from '@/composables/useConsoleSources'
 import { useQueryExecution } from '@/composables/useQueryExecution'
 import {
@@ -506,6 +510,9 @@ const {
   insertTemplate,
   insertHistoryQuery,
   saveToHistory,
+  removeHistoryItem,
+  toggleHistoryPinned,
+  openHistoryQueryInNewTab,
   setExecutionResult,
   setExecutionError,
 
@@ -681,6 +688,12 @@ const resultSetCount = computed(() => {
   }
   return resultColumns.value.length > 0 || queryResults.value.length > 0 ? 1 : 0
 })
+
+async function rerunHistoryQuery(item: QueryHistoryItem) {
+  insertHistoryQuery(item)
+  await nextTick()
+  await executeQuery()
+}
 
 // ========== Lifecycle ==========
 onMounted(async () => {

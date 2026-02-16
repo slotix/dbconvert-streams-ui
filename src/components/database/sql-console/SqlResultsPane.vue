@@ -1,15 +1,35 @@
 <template>
-  <div class="flex flex-col bg-white dark:bg-gray-850 min-h-0 h-full">
+  <div ref="resultsPaneRef" class="flex flex-col bg-white dark:bg-gray-850 min-h-0 h-full">
     <!-- Results Toolbar -->
     <div
+      ref="resultsToolbarRef"
       class="bg-gray-100 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-3 py-1.5 flex items-center gap-2"
     >
       <span class="text-xs font-medium text-gray-600 dark:text-gray-400">Results</span>
 
       <div class="flex-1"></div>
 
+      <span
+        v-if="exportFeedback"
+        class="hidden lg:inline-flex max-w-[340px] truncate text-[11px]"
+        :class="
+          exportFeedback.tone === 'error'
+            ? 'text-red-600 dark:text-red-300'
+            : exportFeedback.tone === 'success'
+              ? 'text-teal-600 dark:text-teal-300'
+              : 'text-gray-500 dark:text-gray-400'
+        "
+        :title="exportFeedback.message"
+      >
+        {{ exportFeedback.message }}
+      </span>
+
       <!-- Export Buttons (single-result legacy only) -->
-      <ExportToolbar v-if="!useResultSetsView && rows.length > 0" @export="exportSingle" />
+      <ExportToolbar
+        v-if="!useResultSetsView && rows.length > 0"
+        :primary-count="exportPrimaryCount"
+        @export="exportSingle"
+      />
     </div>
 
     <!-- Results Display -->
@@ -70,7 +90,11 @@
 
             <div class="flex-1"></div>
 
-            <ExportToolbar v-if="set.rows.length > 0" @export="(f) => exportSet(f, setIndex)" />
+            <ExportToolbar
+              v-if="set.rows.length > 0"
+              :primary-count="exportPrimaryCount"
+              @export="(f) => exportSet(f, setIndex)"
+            />
           </div>
 
           <!-- Table or command-only result -->
@@ -225,9 +249,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { CheckCircle, Terminal, XCircle } from 'lucide-vue-next'
-import { useDataExport, type ExportFormat } from '@/composables/useDataExport'
+import { useToast } from 'vue-toastification'
+import { useDesktopMode } from '@/composables/useDesktopMode'
+import { allExportFormats, useDataExport, type ExportFormat } from '@/composables/useDataExport'
 import ExportToolbar from '@/components/common/ExportToolbar.vue'
 
 const props = defineProps<{
@@ -251,6 +277,12 @@ defineEmits<{
 
 // Use the export composable
 const { exportData } = useDataExport()
+const toast = useToast()
+const { isDesktop } = useDesktopMode()
+const resultsPaneRef = ref<HTMLElement | null>(null)
+const resultsToolbarRef = ref<HTMLElement | null>(null)
+const exportPrimaryCount = ref(3)
+const exportFeedback = ref<{ message: string; tone: 'info' | 'success' | 'error' } | null>(null)
 
 const useResultSetsView = computed(() => {
   if (!props.resultSets || props.resultSets.length === 0) return false
@@ -317,22 +349,149 @@ function formatCellValue(value: unknown): string {
   return String(value)
 }
 
+let exportFeedbackTimeout: ReturnType<typeof setTimeout> | null = null
+
+function formatLabel(format: ExportFormat): string {
+  return allExportFormats.find((item) => item.id === format)?.label || format.toUpperCase()
+}
+
+function setExportFeedback(message: string, tone: 'info' | 'success' | 'error') {
+  exportFeedback.value = { message, tone }
+  if (exportFeedbackTimeout) {
+    clearTimeout(exportFeedbackTimeout)
+  }
+  exportFeedbackTimeout = setTimeout(() => {
+    exportFeedback.value = null
+  }, 6000)
+}
+
+function handleExportFeedback(
+  format: ExportFormat,
+  filenameBase: string,
+  rows: Record<string, unknown>[]
+) {
+  const label = formatLabel(format)
+
+  const result = exportData(format, {
+    columns: props.columns,
+    rows,
+    filename: filenameBase
+  })
+
+  if (!result) {
+    const msg = `Failed to export ${label}. No data available.`
+    setExportFeedback(msg, 'error')
+    toast.error(msg)
+    return
+  }
+
+  const locationHint = isDesktop.value
+    ? 'Check your system Downloads folder.'
+    : 'Check your browser downloads.'
+  const successMsg = `${label} export completed: ${result.filename}`
+  setExportFeedback(successMsg, 'success')
+  toast.success(`${successMsg} ${locationHint}`)
+}
+
 function exportSingle(format: ExportFormat) {
   if (props.rows.length === 0) return
-  exportData(format, {
-    columns: props.columns,
-    rows: props.rows,
-    filename: 'query-results'
-  })
+  handleExportFeedback(format, 'query-results', props.rows)
 }
 
 function exportSet(format: ExportFormat, setIndex: number) {
   const set = displayResultSets.value[setIndex]
   if (!set || set.rows.length === 0) return
-  exportData(format, {
+
+  const label = formatLabel(format)
+
+  const result = exportData(format, {
     columns: set.columns,
     rows: set.rows,
     filename: `query-results-${setIndex + 1}`
   })
+
+  if (!result) {
+    const msg = `Failed to export ${label}. No data available.`
+    setExportFeedback(msg, 'error')
+    toast.error(msg)
+    return
+  }
+
+  const locationHint = isDesktop.value
+    ? 'Check your system Downloads folder.'
+    : 'Check your browser downloads.'
+  const successMsg = `${label} export completed: ${result.filename}`
+  setExportFeedback(successMsg, 'success')
+  toast.success(`${successMsg} ${locationHint}`)
 }
+
+let isMeasuringToolbar = false
+
+async function updateToolbarDensity() {
+  if (isMeasuringToolbar) return
+  isMeasuringToolbar = true
+  try {
+    const toolbar = resultsToolbarRef.value
+    if (!toolbar) return
+
+    exportPrimaryCount.value = 3
+    await nextTick()
+
+    while (toolbar.scrollWidth > toolbar.clientWidth + 1 && exportPrimaryCount.value > 0) {
+      exportPrimaryCount.value -= 1
+      await nextTick()
+    }
+  } finally {
+    isMeasuringToolbar = false
+  }
+}
+
+function handleWindowResize() {
+  void updateToolbarDensity()
+}
+
+let resizeObserver: ResizeObserver | null = null
+
+onMounted(() => {
+  void updateToolbarDensity()
+  if (typeof ResizeObserver !== 'undefined') {
+    resizeObserver = new ResizeObserver(() => {
+      void updateToolbarDensity()
+    })
+    if (resultsPaneRef.value) {
+      resizeObserver.observe(resultsPaneRef.value)
+    }
+    if (resultsToolbarRef.value) {
+      resizeObserver.observe(resultsToolbarRef.value)
+    }
+  } else {
+    window.addEventListener('resize', handleWindowResize)
+  }
+})
+
+watch(
+  () => [
+    props.rows.length,
+    props.columns.length,
+    props.resultSets?.length || 0,
+    exportFeedback.value?.message || ''
+  ],
+  () => {
+    void updateToolbarDensity()
+  },
+  { flush: 'post' }
+)
+
+onUnmounted(() => {
+  if (exportFeedbackTimeout) {
+    clearTimeout(exportFeedbackTimeout)
+    exportFeedbackTimeout = null
+  }
+  if (resizeObserver) {
+    resizeObserver.disconnect()
+    resizeObserver = null
+  } else {
+    window.removeEventListener('resize', handleWindowResize)
+  }
+})
 </script>

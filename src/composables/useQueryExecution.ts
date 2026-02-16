@@ -10,7 +10,7 @@ import { sseLogsService } from '@/api/sseLogsServiceStructured'
 import connections from '@/api/connections'
 import { executeFileQuery } from '@/api/files'
 import { executeFederatedQuery, type ConnectionMapping } from '@/api/federated'
-import { detectQueryPurpose } from '@/composables/useConsoleTab'
+import { detectQueryPurpose, type QueryHistoryContext } from '@/composables/useConsoleTab'
 import { isDuckDbFileQuery } from '@/composables/useConsoleSources'
 
 export type ConsoleMode = 'database' | 'file'
@@ -65,7 +65,7 @@ export interface UseQueryExecutionOptions {
   /** Callback to set execution error */
   setExecutionError: (error: string) => void
   /** Callback to save query to history */
-  saveToHistory: (query: string) => void
+  saveToHistory: (query: string, context?: QueryHistoryContext) => void
   /** Callback to refresh table suggestions (for DDL changes) */
   loadTableSuggestionsWithRefresh?: (forceRefresh: boolean) => Promise<void>
 }
@@ -320,7 +320,15 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
         })
       }
 
-      saveToHistory(query)
+      const aliases = selectedConnections.value
+        .map((connection) => connection.alias?.trim())
+        .filter((alias): alias is string => Boolean(alias))
+
+      saveToHistory(query, {
+        mode: 'federated',
+        alias: aliases.length === 1 ? aliases[0] : undefined,
+        aliases: aliases.length > 0 ? aliases : undefined
+      })
     } catch (error: unknown) {
       const err = error as Error
       const errorMsg = err.message || 'Failed to execute federated query'
@@ -353,7 +361,15 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
 
     try {
       const result = await executeFileQuery(query, connectionIdValue.value)
-      handleSuccessResult(result, query, startTime)
+      handleSuccessResult(result, query, startTime, {
+        connectionId: connectionIdValue.value,
+        database: '',
+        historyContext: {
+          mode: 'file',
+          alias: 'files',
+          sourceType: 'files'
+        }
+      })
     } catch (error: unknown) {
       handleErrorResult(error, query, startTime)
     } finally {
@@ -370,7 +386,12 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
       const result = await connections.executeQuery(target.connectionId, query, target.database)
       handleSuccessResult(result, query, startTime, {
         connectionId: target.connectionId,
-        database: target.database || ''
+        database: target.database || '',
+        historyContext: {
+          mode: 'single',
+          alias: target.alias || undefined,
+          sourceType: 'database'
+        }
       })
 
       // Refresh sidebar/overview if backend reports a schema change
@@ -387,11 +408,16 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
     }
   }
 
-  function resolveSingleSourceTarget(): { connectionId: string; database?: string } {
+  function resolveSingleSourceTarget(): {
+    connectionId: string
+    database?: string
+    alias?: string
+  } {
     const selectedSingle = singleSourceMappingValue.value
     return {
       connectionId: selectedSingle?.connectionId || connectionIdValue.value,
-      database: selectedSingle?.database?.trim() || databaseValue.value?.trim() || undefined
+      database: selectedSingle?.database?.trim() || databaseValue.value?.trim() || undefined,
+      alias: selectedSingle?.alias?.trim() || undefined
     }
   }
 
@@ -399,7 +425,11 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
     result: ExecuteQueryApiResult,
     query: string,
     startTime: number,
-    executionContext?: { connectionId: string; database: string }
+    executionContext?: {
+      connectionId: string
+      database: string
+      historyContext?: QueryHistoryContext
+    }
   ) {
     const normalizedSets: NormalizedResultSet[] = []
 
@@ -464,7 +494,7 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
       })
     }
 
-    saveToHistory(query)
+    saveToHistory(query, executionContext?.historyContext)
   }
 
   function handleErrorResult(

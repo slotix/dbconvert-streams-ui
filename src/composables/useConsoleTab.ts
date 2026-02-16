@@ -4,9 +4,21 @@ import type { QueryPurpose } from '@/stores/logs'
 import { format as formatSQL, type SqlLanguage } from 'sql-formatter'
 import { useSplitPaneResize } from './useSplitPaneResize'
 
+export type QueryHistoryMode = 'single' | 'federated' | 'file'
+
+export interface QueryHistoryContext {
+  mode: QueryHistoryMode
+  alias?: string
+  aliases?: string[]
+  sourceType?: 'database' | 'files' | 's3'
+}
+
 export interface QueryHistoryItem {
+  id: string
   query: string
   timestamp: number
+  pinned?: boolean
+  context?: QueryHistoryContext
 }
 
 export interface QueryStats {
@@ -308,36 +320,58 @@ export function useConsoleTab(options: ConsoleTabOptions) {
   }
 
   // ========== History Management ==========
-  function loadHistory() {
-    try {
-      const stored = localStorage.getItem(historyKey.value)
-      if (stored) {
-        queryHistory.value = JSON.parse(stored)
-      }
-    } catch (e) {
-      console.warn('Failed to load query history:', e)
+  function normalizeHistoryContext(raw: unknown): QueryHistoryContext | undefined {
+    if (!raw || typeof raw !== 'object') return undefined
+
+    const value = raw as Partial<QueryHistoryContext>
+    const mode = value.mode
+    if (mode !== 'single' && mode !== 'federated' && mode !== 'file') {
+      return undefined
+    }
+
+    const alias = typeof value.alias === 'string' ? value.alias.trim() : ''
+    const aliases = Array.isArray(value.aliases)
+      ? value.aliases
+          .filter((entry): entry is string => typeof entry === 'string')
+          .map((entry) => entry.trim())
+          .filter(Boolean)
+      : []
+    const sourceType =
+      value.sourceType === 'database' || value.sourceType === 'files' || value.sourceType === 's3'
+        ? value.sourceType
+        : undefined
+
+    return {
+      mode,
+      alias: alias || undefined,
+      aliases: aliases.length > 0 ? aliases : undefined,
+      sourceType
     }
   }
 
-  function saveToHistory(query: string) {
-    const trimmed = query.trim()
-    if (!trimmed) return
-
-    // Remove duplicate if exists
-    queryHistory.value = queryHistory.value.filter((h) => h.query !== trimmed)
-
-    // Add to beginning
-    queryHistory.value.unshift({
-      query: trimmed,
-      timestamp: Date.now()
-    })
-
-    // Trim to max items
-    if (queryHistory.value.length > maxHistoryItems) {
-      queryHistory.value = queryHistory.value.slice(0, maxHistoryItems)
+  function createHistoryId(query: string, timestamp: number): string {
+    let hash = 0
+    for (let i = 0; i < query.length; i += 1) {
+      hash = (hash << 5) - hash + query.charCodeAt(i)
+      hash |= 0
     }
+    return `hist_${timestamp.toString(36)}_${Math.abs(hash).toString(36)}_${Math.random().toString(36).slice(2, 7)}`
+  }
 
-    // Persist
+  function historyFingerprint(query: string, context?: QueryHistoryContext): string {
+    const aliases = context?.aliases?.join(',') || ''
+    return `${query}|${context?.mode || ''}|${context?.alias || ''}|${aliases}|${context?.sourceType || ''}`
+  }
+
+  function sortHistoryItems(items: QueryHistoryItem[]): QueryHistoryItem[] {
+    return [...items].sort((a, b) => {
+      const pinDiff = Number(Boolean(b.pinned)) - Number(Boolean(a.pinned))
+      if (pinDiff !== 0) return pinDiff
+      return b.timestamp - a.timestamp
+    })
+  }
+
+  function persistHistory() {
     try {
       localStorage.setItem(historyKey.value, JSON.stringify(queryHistory.value))
     } catch (e) {
@@ -345,8 +379,106 @@ export function useConsoleTab(options: ConsoleTabOptions) {
     }
   }
 
+  function normalizeHistoryItem(raw: unknown, index: number): QueryHistoryItem | null {
+    if (!raw || typeof raw !== 'object') return null
+
+    const value = raw as Partial<QueryHistoryItem>
+    const query = typeof value.query === 'string' ? value.query.trim() : ''
+    if (!query) return null
+
+    const timestamp =
+      typeof value.timestamp === 'number' && Number.isFinite(value.timestamp)
+        ? value.timestamp
+        : Date.now() - index
+    const context = normalizeHistoryContext(value.context)
+    const id =
+      typeof value.id === 'string' && value.id.trim()
+        ? value.id.trim()
+        : createHistoryId(query, timestamp)
+
+    return {
+      id,
+      query,
+      timestamp,
+      pinned: Boolean(value.pinned),
+      context
+    }
+  }
+
+  function loadHistory() {
+    try {
+      const stored = localStorage.getItem(historyKey.value)
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        if (Array.isArray(parsed)) {
+          queryHistory.value = sortHistoryItems(
+            parsed
+              .map((item, index) => normalizeHistoryItem(item, index))
+              .filter((item): item is QueryHistoryItem => Boolean(item))
+          ).slice(0, maxHistoryItems)
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to load query history:', e)
+    }
+  }
+
+  function saveToHistory(query: string, context?: QueryHistoryContext) {
+    const trimmed = query.trim()
+    if (!trimmed) return
+
+    const normalizedContext = normalizeHistoryContext(context)
+    const fingerprint = historyFingerprint(trimmed, normalizedContext)
+    const existing = queryHistory.value.find(
+      (item) => historyFingerprint(item.query, item.context) === fingerprint
+    )
+
+    // Remove duplicate if exists, preserving pinned state on re-run.
+    queryHistory.value = queryHistory.value.filter(
+      (item) => historyFingerprint(item.query, item.context) !== fingerprint
+    )
+
+    const timestamp = Date.now()
+    queryHistory.value.unshift({
+      id: createHistoryId(trimmed, timestamp),
+      query: trimmed,
+      timestamp,
+      pinned: Boolean(existing?.pinned),
+      context: normalizedContext
+    })
+
+    queryHistory.value = sortHistoryItems(queryHistory.value).slice(0, maxHistoryItems)
+    persistHistory()
+  }
+
   function insertHistoryQuery(historyItem: QueryHistoryItem) {
     sqlQuery.value = historyItem.query
+  }
+
+  function removeHistoryItem(historyItem: QueryHistoryItem) {
+    const before = queryHistory.value.length
+    queryHistory.value = queryHistory.value.filter((item) => item.id !== historyItem.id)
+    if (queryHistory.value.length !== before) {
+      persistHistory()
+    }
+  }
+
+  function toggleHistoryPinned(historyItem: QueryHistoryItem) {
+    let changed = false
+    queryHistory.value = sortHistoryItems(
+      queryHistory.value.map((item) => {
+        if (item.id !== historyItem.id) return item
+        changed = true
+        return { ...item, pinned: !item.pinned }
+      })
+    )
+    if (changed) {
+      persistHistory()
+    }
+  }
+
+  function openHistoryQueryInNewTab(historyItem: QueryHistoryItem) {
+    sqlConsoleStore.addTabWithQuery(consoleKey.value, database.value, historyItem.query)
   }
 
   // ========== Template Insertion ==========
@@ -474,6 +606,9 @@ export function useConsoleTab(options: ConsoleTabOptions) {
     insertTemplate,
     insertHistoryQuery,
     saveToHistory,
+    removeHistoryItem,
+    toggleHistoryPinned,
+    openHistoryQueryInNewTab,
     setExecutionResult,
     setExecutionError,
 

@@ -71,6 +71,12 @@ export interface ExportOptions {
   tableName?: string
 }
 
+export interface ExportResult {
+  format: ExportFormat
+  filename: string
+  extension: string
+}
+
 /**
  * Export data to Excel format using xlsx library
  */
@@ -183,23 +189,33 @@ function downloadTextFile(content: string, filename: string, mimeType: string): 
 /**
  * Export data to the specified format
  */
-export function exportData(format: ExportFormat, options: ExportOptions): void {
+export function exportData(format: ExportFormat, options: ExportOptions): ExportResult | null {
   const { columns, rows, filename = 'export' } = options
 
   if (rows.length === 0 || columns.length === 0) {
     console.warn('No data to export')
-    return
+    return null
   }
 
   // Handle Excel separately (binary format)
   if (format === 'excel') {
     exportToExcel(options)
-    return
+    return {
+      format,
+      filename: `${filename}.xlsx`,
+      extension: 'xlsx'
+    }
   }
 
   // Generate content for text-based formats
   const { content, mimeType, extension } = generateExportContent(format, options)
-  downloadTextFile(content, `${filename}.${extension}`, mimeType)
+  const fullFilename = `${filename}.${extension}`
+  downloadTextFile(content, fullFilename, mimeType)
+  return {
+    format,
+    filename: fullFilename,
+    extension
+  }
 }
 
 /**

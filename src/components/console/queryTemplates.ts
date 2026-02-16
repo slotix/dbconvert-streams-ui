@@ -6,7 +6,11 @@
 export interface QueryTemplate {
   name: string
   query: string
-  group?: string
+  description?: string
+  section?: string
+  icon?: 'session' | 'database' | 'file' | 's3' | 'join'
+  sourceAlias?: string
+  sourceLabel?: string
 }
 
 export interface FileTemplateOptions {
@@ -47,11 +51,21 @@ export function getFederatedTemplates(sources: FederatedTemplateSource[]): Query
   const makeTemplate = (
     name: string,
     query: string,
-    group: 'General' | 'Database' | 'S3' | 'Files' | 'Cross-source'
+    options: {
+      description: string
+      section: 'Session' | 'Databases' | 'S3' | 'Files' | 'Joins'
+      icon: 'session' | 'database' | 'file' | 's3' | 'join'
+      sourceAlias?: string
+      sourceLabel?: string
+    }
   ): QueryTemplate => ({
     name,
     query,
-    group
+    description: options.description,
+    section: options.section,
+    icon: options.icon,
+    sourceAlias: options.sourceAlias,
+    sourceLabel: options.sourceLabel
   })
 
   const dedupedSources = Array.from(
@@ -83,6 +97,14 @@ export function getFederatedTemplates(sources: FederatedTemplateSource[]): Query
 
   const q = (value: string) => value.replace(/'/g, "''")
 
+  const dbAliasLabel = (alias: string) => {
+    const lowered = alias.toLowerCase()
+    if (lowered.startsWith('pg')) return `${alias} (PostgreSQL)`
+    if (lowered.startsWith('my')) return `${alias} (MySQL)`
+    if (lowered.startsWith('sf')) return `${alias} (Snowflake)`
+    return `${alias} (Database)`
+  }
+
   const dbMetadataTemplates: QueryTemplate[] = dbAliases.flatMap((alias) => [
     makeTemplate(
       `List namespaces (${alias})`,
@@ -91,7 +113,13 @@ SELECT DISTINCT schema_name
 FROM duckdb_tables()
 WHERE database_name = '${q(alias)}'
 ORDER BY schema_name;`,
-      'Database'
+      {
+        description: `Namespaces visible under alias ${alias}`,
+        section: 'Databases',
+        icon: 'database',
+        sourceAlias: alias,
+        sourceLabel: dbAliasLabel(alias)
+      }
     ),
     makeTemplate(
       `List tables (${alias})`,
@@ -100,7 +128,13 @@ SELECT schema_name, table_name
 FROM duckdb_tables()
 WHERE database_name = '${q(alias)}'
 ORDER BY schema_name, table_name;`,
-      'Database'
+      {
+        description: `Tables visible under alias ${alias}`,
+        section: 'Databases',
+        icon: 'database',
+        sourceAlias: alias,
+        sourceLabel: dbAliasLabel(alias)
+      }
     )
   ])
 
@@ -109,7 +143,11 @@ ORDER BY schema_name, table_name;`,
       'List attached sources',
       `-- Multi-source mode: list attached aliases in this query session
 SHOW DATABASES;`,
-      'General'
+      {
+        description: 'Shows aliases attached in this session',
+        section: 'Session',
+        icon: 'session'
+      }
     )
   ]
 
@@ -123,7 +161,11 @@ SELECT DISTINCT
   schema_name
 FROM duckdb_tables()
 ORDER BY source_alias, schema_name;`,
-        'Database'
+        {
+          description: 'Namespaces exposed for each attached database alias',
+          section: 'Databases',
+          icon: 'database'
+        }
       ),
       makeTemplate(
         'List tables for alias',
@@ -134,20 +176,32 @@ SELECT
 FROM duckdb_tables()
 WHERE database_name = '${q(pg1)}'
 ORDER BY schema_name, table_name;`,
-        'Database'
+        {
+          description: `Lists tables for alias ${pg1}`,
+          section: 'Databases',
+          icon: 'database'
+        }
       ),
       ...dbMetadataTemplates,
       makeTemplate(
         'PostgreSQL query',
         `-- Query PostgreSQL connection
 SELECT * FROM ${pg1}.public.table_name LIMIT 100;`,
-        'Database'
+        {
+          description: 'Basic query against a PostgreSQL alias',
+          section: 'Databases',
+          icon: 'database'
+        }
       ),
       makeTemplate(
         'MySQL query',
         `-- Query MySQL connection
 SELECT * FROM ${my1}.database.table_name LIMIT 100;`,
-        'Database'
+        {
+          description: 'Basic query against a MySQL alias',
+          section: 'Databases',
+          icon: 'database'
+        }
       ),
       makeTemplate(
         'List attached schemas',
@@ -156,7 +210,11 @@ SELECT DISTINCT schema_name
 FROM duckdb_tables()
 WHERE database_name = '${q(pg1)}'
 ORDER BY schema_name;`,
-        'Database'
+        {
+          description: `Lists schemas for alias ${pg1}`,
+          section: 'Databases',
+          icon: 'database'
+        }
       )
     )
   }
@@ -170,7 +228,11 @@ SELECT a.*, b.*
 FROM ${pg1}.public.table1 a
 JOIN ${my1}.database.table2 b ON a.id = b.id
 LIMIT 100;`,
-        'Cross-source'
+        {
+          description: 'Joins tables across two database aliases',
+          section: 'Joins',
+          icon: 'join'
+        }
       ),
       makeTemplate(
         'Aggregate across databases',
@@ -183,7 +245,11 @@ FROM ${pg1}.public.categories a
 JOIN ${my1}.database.orders b ON a.id = b.category_id
 GROUP BY a.category
 ORDER BY total DESC;`,
-        'Cross-source'
+        {
+          description: 'Aggregation query that spans two database aliases',
+          section: 'Joins',
+          icon: 'join'
+        }
       ),
       makeTemplate(
         'UNION from multiple sources',
@@ -195,7 +261,11 @@ SELECT 'mysql' as source, name, created_at
 FROM ${my1}.database.users
 ORDER BY created_at DESC
 LIMIT 100;`,
-        'Cross-source'
+        {
+          description: 'UNION ALL pattern across two database aliases',
+          section: 'Joins',
+          icon: 'join'
+        }
       )
     )
   }
@@ -207,7 +277,11 @@ LIMIT 100;`,
         `-- Query S3 using connection alias (select an S3 connection first)
 -- Alias becomes the URL scheme: aws://bucket/path
 SELECT * FROM read_parquet('${aws}://bucket-name/path/*.parquet') LIMIT 100;`,
-        'S3'
+        {
+          description: `Reads parquet files via S3 alias ${aws}`,
+          section: 'S3',
+          icon: 's3'
+        }
       )
     )
   }
@@ -221,7 +295,11 @@ SELECT a.*, b.*
 FROM read_parquet('${aws}://bucket/data_a.parquet') a
 JOIN read_parquet('${doAlias}://bucket/data_b.parquet') b ON a.id = b.id
 LIMIT 100;`,
-        'Cross-source'
+        {
+          description: 'Joins files from two S3 aliases/providers',
+          section: 'Joins',
+          icon: 'join'
+        }
       )
     )
   }
@@ -236,7 +314,11 @@ FROM ${pg1}.public.customers db
 JOIN read_parquet('${aws}://bucket/orders/*.parquet') s3
 ON db.id = s3.customer_id
 LIMIT 100;`,
-        'Cross-source'
+        {
+          description: 'Joins a database table with S3-backed files',
+          section: 'Joins',
+          icon: 'join'
+        }
       )
     )
   }
@@ -247,19 +329,31 @@ LIMIT 100;`,
         'Query Parquet file',
         `-- Query local Parquet files
 SELECT * FROM read_parquet('/path/to/files/*.parquet') LIMIT 100;`,
-        'Files'
+        {
+          description: 'Reads local parquet files with glob patterns',
+          section: 'Files',
+          icon: 'file'
+        }
       ),
       makeTemplate(
         'Query CSV file',
         `-- Query local CSV files
 SELECT * FROM read_csv_auto('/path/to/files/*.csv') LIMIT 100;`,
-        'Files'
+        {
+          description: 'Reads local CSV files with auto-detected schema',
+          section: 'Files',
+          icon: 'file'
+        }
       ),
       makeTemplate(
         'Query JSON/JSONL file',
         `-- Query local JSON/JSONL files
 SELECT * FROM read_json_auto('/path/to/files/*.json*') LIMIT 100;`,
-        'Files'
+        {
+          description: 'Reads local JSON and JSONL files',
+          section: 'Files',
+          icon: 'file'
+        }
       )
     )
   }
@@ -273,7 +367,11 @@ SELECT db.*, f.*
 FROM ${pg1}.public.table_name db
 JOIN read_parquet('/path/to/file.parquet') f ON db.id = f.id
 LIMIT 100;`,
-        'Cross-source'
+        {
+          description: 'Joins a database table with a local parquet file',
+          section: 'Joins',
+          icon: 'join'
+        }
       )
     )
   }
