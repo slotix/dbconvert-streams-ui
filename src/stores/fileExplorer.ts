@@ -8,6 +8,59 @@ import { getConnectionKindFromSpec, isFileBasedKind } from '@/types/specs'
 import type { FileMetadata } from '@/types/files'
 import type { Connection } from '@/types/connections'
 
+const EXPANDED_FOLDERS_STORAGE_KEY_BASE = 'explorer.fileExplorer.expandedFolders.v1'
+
+function hasBrowserStorage(): boolean {
+  return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
+}
+
+function getExpandedFoldersStorageKey(): string {
+  const apiUrl = window.ENV?.VITE_API_URL || import.meta.env.VITE_API_URL || '/api'
+  return `${EXPANDED_FOLDERS_STORAGE_KEY_BASE}:${apiUrl}`
+}
+
+function loadPersistedExpandedFolders(): Record<string, Set<string>> {
+  if (!hasBrowserStorage()) {
+    return {}
+  }
+
+  try {
+    const raw = window.localStorage.getItem(getExpandedFoldersStorageKey())
+    if (!raw) return {}
+
+    const parsed = JSON.parse(raw) as Record<string, unknown>
+    const restored: Record<string, Set<string>> = {}
+
+    for (const [connectionId, paths] of Object.entries(parsed)) {
+      if (!Array.isArray(paths)) continue
+      restored[connectionId] = new Set(
+        paths.filter((path): path is string => typeof path === 'string')
+      )
+    }
+
+    return restored
+  } catch (error) {
+    console.warn('Failed to load file explorer expanded folders from localStorage:', error)
+    return {}
+  }
+}
+
+function persistExpandedFolders(state: Record<string, Set<string>>) {
+  if (!hasBrowserStorage()) {
+    return
+  }
+
+  try {
+    const serialized: Record<string, string[]> = {}
+    for (const [connectionId, paths] of Object.entries(state)) {
+      serialized[connectionId] = Array.from(paths)
+    }
+    window.localStorage.setItem(getExpandedFoldersStorageKey(), JSON.stringify(serialized))
+  } catch (error) {
+    console.warn('Failed to persist file explorer expanded folders to localStorage:', error)
+  }
+}
+
 export const useFileExplorerStore = defineStore('fileExplorer', () => {
   // State - organized by connection ID
   const entriesByConnection = ref<Record<string, FileSystemEntry[]>>({})
@@ -15,7 +68,9 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
   const errorsByConnection = ref<Record<string, string>>({})
   const selectedPathsByConnection = ref<Record<string, string | null>>({})
   const loadingByConnection = ref<Record<string, boolean>>({})
-  const expandedFoldersByConnection = ref<Record<string, Set<string>>>({})
+  const expandedFoldersByConnection = ref<Record<string, Set<string>>>(
+    loadPersistedExpandedFolders()
+  )
   const pendingMetadataRequests = new Map<string, Promise<FileMetadata | null>>()
 
   // S3 operations can be sensitive to shared backend/session state.
@@ -29,6 +84,10 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
       () => undefined
     )
     return next
+  }
+
+  function saveExpandedFolders() {
+    persistExpandedFolders(expandedFoldersByConnection.value)
   }
 
   // Getters
@@ -384,19 +443,23 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     const newErrors = { ...errorsByConnection.value }
     const newSelected = { ...selectedPathsByConnection.value }
     const newLoading = { ...loadingByConnection.value }
+    const newExpandedFolders = { ...expandedFoldersByConnection.value }
 
     delete newEntries[connectionId]
     delete newPaths[connectionId]
     delete newErrors[connectionId]
     delete newSelected[connectionId]
     delete newLoading[connectionId]
+    delete newExpandedFolders[connectionId]
 
     entriesByConnection.value = newEntries
     directoryPathsByConnection.value = newPaths
     errorsByConnection.value = newErrors
     selectedPathsByConnection.value = newSelected
     loadingByConnection.value = newLoading
+    expandedFoldersByConnection.value = newExpandedFolders
     pendingMetadataRequests.clear()
+    saveExpandedFolders()
   }
 
   async function loadS3Files(bucket: string, prefix?: string, connectionId?: string) {
@@ -430,10 +493,12 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     } else {
       expandedSet.add(folderPath)
     }
+    saveExpandedFolders()
   }
 
   function collapseFolder(connectionId: string, folderPath: string) {
     expandedFoldersByConnection.value[connectionId]?.delete(folderPath)
+    saveExpandedFolders()
   }
 
   function expandFolder(connectionId: string, folderPath: string) {
@@ -441,6 +506,7 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
       expandedFoldersByConnection.value[connectionId] = new Set()
     }
     expandedFoldersByConnection.value[connectionId].add(folderPath)
+    saveExpandedFolders()
   }
 
   function collapseAllFolders(connectionId?: string) {
@@ -450,6 +516,7 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
         ...expandedFoldersByConnection.value,
         [connectionId]: new Set()
       }
+      saveExpandedFolders()
       return
     }
 
@@ -458,6 +525,7 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
       next[id] = new Set()
     }
     expandedFoldersByConnection.value = next
+    saveExpandedFolders()
   }
 
   // Immutable helper to update a folder's children in the tree

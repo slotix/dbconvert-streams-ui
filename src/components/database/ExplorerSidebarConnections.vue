@@ -334,6 +334,38 @@ function expandFirstLevel() {
   }
 }
 
+async function hydrateExpandedDatabasesForConnection(connectionId: string) {
+  await navigationStore.ensureDatabases(connectionId)
+
+  const dbPrefix = `${connectionId}:`
+  for (const dbKey of navigationStore.expandedDatabases) {
+    if (!dbKey.startsWith(dbPrefix)) continue
+    const dbName = dbKey.slice(dbPrefix.length)
+    if (!dbName) continue
+
+    const isLoading = navigationStore.isMetadataLoading(connectionId, dbName)
+    const hasMetadata = navigationStore.getMetadata(connectionId, dbName) !== null
+    if (!isLoading && !hasMetadata) {
+      await navigationStore.ensureMetadata(connectionId, dbName)
+    }
+  }
+}
+
+async function hydrateExpandedConnections() {
+  const expandedConnectionIds = new Set(navigationStore.expandedConnections)
+
+  for (const connection of connectionsStore.connections) {
+    if (!expandedConnectionIds.has(connection.id)) continue
+
+    if (treeLogic.isFileConnection(connection.id)) {
+      emit('request-file-entries', { connectionId: connection.id })
+      continue
+    }
+
+    await hydrateExpandedDatabasesForConnection(connection.id)
+  }
+}
+
 async function loadConnections() {
   isLoadingConnections.value = true
   loadError.value = null
@@ -352,13 +384,11 @@ function toggleConnection(connId: string) {
   navigationStore.toggleConnection(connId)
   const isExpanded = navigationStore.isConnectionExpanded(connId)
 
-  if (isExpanded && !wasExpanded && !treeLogic.isFileConnection(connId)) {
-    void navigationStore.ensureDatabases(connId)
-  }
-
   if (isExpanded) {
     if (treeLogic.isFileConnection(connId)) {
       emit('request-file-entries', { connectionId: connId })
+    } else if (!wasExpanded) {
+      void hydrateExpandedDatabasesForConnection(connId)
     }
     emit('expanded-connection', { connectionId: connId })
   }
@@ -755,16 +785,14 @@ function handleContextMenuFile(payload: {
 
 onMounted(async () => {
   await loadConnections()
-  // Only auto-expand and load databases when an initial connection is provided (focus restore).
+  // Ensure explicitly restored focus is expanded.
   if (props.initialExpandedConnectionId) {
     navigationStore.expandConnection(props.initialExpandedConnectionId)
-    if (treeLogic.isFileConnection(props.initialExpandedConnectionId)) {
-      emit('request-file-entries', { connectionId: props.initialExpandedConnectionId })
-    } else {
-      // Load databases for database connections when explicitly navigating to them
-      navigationStore.ensureDatabases(props.initialExpandedConnectionId).catch(() => {})
-    }
   }
+
+  // Restored expansion state is persisted, but tree payloads are lazy-loaded.
+  // Hydrate all currently expanded connections so they don't render as empty after app restart.
+  await hydrateExpandedConnections()
 })
 
 // Auto-expand selection path

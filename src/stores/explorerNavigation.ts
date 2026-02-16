@@ -10,6 +10,62 @@ import type { FileSystemEntry } from '@/api/fileSystem'
 import type { DatabaseInfo } from '@/types/connections'
 import connectionsApi from '@/api/connections'
 
+const EXPANSION_STORAGE_KEY_BASE = 'explorer.navigation.expansions.v1'
+
+interface PersistedExpansionState {
+  expandedConnections: string[]
+  expandedDatabases: string[]
+  expandedSchemas: string[]
+}
+
+function hasBrowserStorage(): boolean {
+  return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
+}
+
+function getExpansionStorageKey(): string {
+  const apiUrl = window.ENV?.VITE_API_URL || import.meta.env.VITE_API_URL || '/api'
+  return `${EXPANSION_STORAGE_KEY_BASE}:${apiUrl}`
+}
+
+function toStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return []
+  return value.filter((item): item is string => typeof item === 'string')
+}
+
+function loadPersistedExpansionState(): PersistedExpansionState | null {
+  if (!hasBrowserStorage()) {
+    return null
+  }
+
+  try {
+    const raw = window.localStorage.getItem(getExpansionStorageKey())
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as Partial<PersistedExpansionState>
+    return {
+      expandedConnections: toStringArray(parsed.expandedConnections),
+      expandedDatabases: toStringArray(parsed.expandedDatabases),
+      expandedSchemas: toStringArray(parsed.expandedSchemas)
+    }
+  } catch (error) {
+    console.warn('Failed to load explorer navigation expansion state from localStorage:', error)
+    return null
+  }
+}
+
+function persistExpansionState(state: PersistedExpansionState) {
+  if (!hasBrowserStorage()) {
+    return
+  }
+
+  try {
+    window.localStorage.setItem(getExpansionStorageKey(), JSON.stringify(state))
+  } catch (error) {
+    console.warn('Failed to persist explorer navigation expansion state to localStorage:', error)
+  }
+}
+
+const persistedExpansionState = loadPersistedExpansionState()
+
 export type ObjectType = 'table' | 'view' | 'function' | 'procedure' | 'sequence'
 export type DefaultTab = 'structure' | 'data'
 
@@ -57,9 +113,9 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
     showSystemObjectsByDatabase: {} as Record<string, boolean>,
 
     // Expansion state
-    expandedConnections: new Set<string>(),
-    expandedDatabases: new Set<string>(),
-    expandedSchemas: new Set<string>(),
+    expandedConnections: new Set<string>(persistedExpansionState?.expandedConnections || []),
+    expandedDatabases: new Set<string>(persistedExpansionState?.expandedDatabases || []),
+    expandedSchemas: new Set<string>(persistedExpansionState?.expandedSchemas || []),
 
     // Metadata state - stores fetched data for UI reactivity only (NOT HTTP caching)
     // Backend handles HTTP caching with 30s TTL
@@ -169,6 +225,14 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
   },
 
   actions: {
+    saveExpansionState() {
+      persistExpansionState({
+        expandedConnections: Array.from(this.expandedConnections),
+        expandedDatabases: Array.from(this.expandedDatabases),
+        expandedSchemas: Array.from(this.expandedSchemas)
+      })
+    },
+
     // Toggle showSystemObjects setting
     toggleShowSystemObjects() {
       this.showSystemObjects = !this.showSystemObjects
@@ -272,6 +336,8 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
       if (this.selection && !validIdSet.has(this.selection.connectionId)) {
         this.selection = null
       }
+
+      this.saveExpansionState()
     },
 
     // Active connection management
@@ -286,14 +352,17 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
       } else {
         this.expandedConnections.add(connectionId)
       }
+      this.saveExpansionState()
     },
 
     expandConnection(connectionId: string) {
       this.expandedConnections.add(connectionId)
+      this.saveExpansionState()
     },
 
     collapseConnection(connectionId: string) {
       this.expandedConnections.delete(connectionId)
+      this.saveExpansionState()
     },
 
     toggleDatabase(key: string) {
@@ -302,14 +371,17 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
       } else {
         this.expandedDatabases.add(key)
       }
+      this.saveExpansionState()
     },
 
     expandDatabase(key: string) {
       this.expandedDatabases.add(key)
+      this.saveExpansionState()
     },
 
     collapseDatabase(key: string) {
       this.expandedDatabases.delete(key)
+      this.saveExpansionState()
     },
 
     toggleSchema(key: string) {
@@ -318,26 +390,31 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
       } else {
         this.expandedSchemas.add(key)
       }
+      this.saveExpansionState()
     },
 
     expandSchema(key: string) {
       this.expandedSchemas.add(key)
+      this.saveExpansionState()
     },
 
     collapseSchema(key: string) {
       this.expandedSchemas.delete(key)
+      this.saveExpansionState()
     },
 
     collapseAllExpansions() {
       this.expandedConnections = new Set<string>()
       this.expandedDatabases = new Set<string>()
       this.expandedSchemas = new Set<string>()
+      this.saveExpansionState()
     },
 
     expandConnectionsOnly(connectionIds: string[]) {
       this.expandedConnections = new Set(connectionIds)
       this.expandedDatabases = new Set<string>()
       this.expandedSchemas = new Set<string>()
+      this.saveExpansionState()
     },
 
     // Selection actions
