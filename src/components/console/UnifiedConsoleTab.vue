@@ -3,27 +3,30 @@
     <!-- Execution Context Toolbar -->
     <div
       ref="executionToolbarRef"
-      class="px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex items-center gap-3"
+      class="px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex items-start gap-3"
     >
       <div class="shrink-0 w-auto">
-        <div
-          v-if="showUnifiedExecutionSelector"
-          class="inline-flex items-center"
-          :class="hideToolbarLabels ? 'gap-0' : 'gap-2'"
-        >
+        <div v-if="showUnifiedExecutionSelector" class="inline-flex flex-col items-start">
+          <div class="inline-flex items-center" :class="hideToolbarLabels ? 'gap-0' : 'gap-2'">
+            <span
+              v-show="!hideToolbarLabels"
+              class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap"
+            >
+              Run on:
+            </span>
+            <FormSelect
+              v-model="executionContextValue"
+              :options="executionContextOptions"
+              class="execution-context-select w-[280px] min-w-[280px] max-w-[280px]"
+              placeholder="Select execution mode"
+            />
+          </div>
           <span
             v-show="!hideToolbarLabels"
-            class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap"
+            class="execution-context-hint mt-1 text-[11px] leading-4 text-gray-500 dark:text-gray-400"
           >
-            Run on:
+            Templates &amp; autocomplete follow selected source
           </span>
-          <FormSelect
-            v-model="executionContextValue"
-            :options="executionContextOptions"
-            dropdown-footer="Templates are scoped to selected context"
-            class="execution-context-select w-[280px] min-w-[280px] max-w-[280px]"
-            placeholder="Select execution mode"
-          />
         </div>
 
         <div
@@ -36,7 +39,7 @@
 
       <button
         type="button"
-        class="sources-inline-trigger group min-w-0 flex-1 inline-flex items-center gap-2 text-sm text-left px-0 py-1"
+        class="sources-inline-trigger group self-start mt-0.5 min-w-0 flex-1 inline-flex items-center gap-2 text-sm text-left px-0 py-1"
         title="Edit sources"
         aria-label="Edit sources"
         @click="isSourceDrawerOpen = true"
@@ -967,5 +970,9 @@ defineExpose({
 .execution-context-select :deep(li span) {
   overflow: visible;
   text-overflow: clip;
+}
+
+.execution-context-hint {
+  margin-left: 3.25rem;
 }
 </style>
