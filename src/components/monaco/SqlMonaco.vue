@@ -64,6 +64,7 @@ const editorInstance = ref<MonacoTypes.editor.IStandaloneCodeEditor>()
 const monacoInstance = ref<MonacoApi>()
 let cachedSelectionRange: MonacoTypes.IRange | null = null
 let selectionEmitRafId: number | null = null
+let lastSelectionState: boolean | null = null
 
 watch(
   () => props.height,
@@ -80,6 +81,7 @@ watch(
     if (newValue !== localValue.value) {
       localValue.value = newValue || ''
       cachedSelectionRange = null
+      lastSelectionState = null
     }
   }
 )
@@ -257,6 +259,8 @@ const getCachedSelectionRange = () => cachedSelectionRange
 
 const emitSelectionState = () => {
   const selected = hasSelection()
+  if (lastSelectionState === selected) return
+  lastSelectionState = selected
   emit('selection-change', selected)
 }
 

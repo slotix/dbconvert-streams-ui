@@ -115,7 +115,7 @@
                 class="bg-white dark:bg-gray-850 divide-y divide-gray-200 dark:divide-gray-700"
               >
                 <tr
-                  v-for="(row, rowIndex) in paginatedRowsForSet(setIndex)"
+                  v-for="(row, rowIndex) in paginatedRowsBySet[setIndex] || []"
                   :key="rowIndex"
                   class="hover:bg-gray-50 dark:hover:bg-gray-800"
                 >
@@ -141,17 +141,14 @@
 
           <!-- Pagination (per-set, only when needed) -->
           <div
-            v-if="totalPagesForSet(setIndex) > 1"
+            v-if="totalPagesBySet[setIndex] > 1"
             class="bg-gray-50 dark:bg-gray-900 px-3 py-2 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between"
           >
             <div class="text-xs text-gray-600 dark:text-gray-400">
               {{ (currentPageForSet(setIndex) - 1) * pageSize + 1 }}-{{
-                Math.min(
-                  currentPageForSet(setIndex) * pageSize,
-                  displayResultSets[setIndex]?.rows.length || 0
-                )
+                Math.min(currentPageForSet(setIndex) * pageSize, totalRowsBySet[setIndex] || 0)
               }}
-              of {{ displayResultSets[setIndex]?.rows.length || 0 }}
+              of {{ totalRowsBySet[setIndex] || 0 }}
             </div>
             <div class="flex gap-1">
               <button
@@ -162,7 +159,7 @@
                 Prev
               </button>
               <button
-                :disabled="currentPageForSet(setIndex) === totalPagesForSet(setIndex)"
+                :disabled="currentPageForSet(setIndex) === (totalPagesBySet[setIndex] || 1)"
                 class="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-xs disabled:opacity-50"
                 @click="setPageForSet(setIndex, currentPageForSet(setIndex) + 1)"
               >
@@ -297,6 +294,12 @@ const displayResultSets = computed(() => {
   return props.resultSets || []
 })
 
+const totalRowsBySet = computed(() => displayResultSets.value.map((set) => set?.rows?.length || 0))
+
+const totalPagesBySet = computed(() =>
+  totalRowsBySet.value.map((count) => Math.max(1, Math.ceil(count / props.pageSize)))
+)
+
 const paginatedRows = computed(() => {
   const start = (props.currentPage - 1) * props.pageSize
   const end = start + props.pageSize
@@ -325,19 +328,15 @@ function setPageForSet(setIndex: number, page: number) {
   setPages.value = { ...setPages.value, [setIndex]: Math.max(1, page) }
 }
 
-function totalPagesForSet(setIndex: number): number {
-  const set = displayResultSets.value[setIndex]
-  const rowCount = set?.rows?.length || 0
-  return Math.ceil(rowCount / props.pageSize)
-}
-
-function paginatedRowsForSet(setIndex: number): Array<Record<string, unknown>> {
-  const set = displayResultSets.value[setIndex]
-  const page = currentPageForSet(setIndex)
-  const start = (page - 1) * props.pageSize
-  const end = start + props.pageSize
-  return (set?.rows || []).slice(start, end)
-}
+const paginatedRowsBySet = computed(() =>
+  displayResultSets.value.map((set, setIndex) => {
+    const page = currentPageForSet(setIndex)
+    const rows = set?.rows || []
+    const start = (page - 1) * props.pageSize
+    const end = start + props.pageSize
+    return rows.slice(start, end)
+  })
+)
 
 function formatCellValue(value: unknown): string {
   if (value === null || value === undefined) {

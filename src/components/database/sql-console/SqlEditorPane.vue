@@ -560,6 +560,7 @@ const isFormatClickDebounced = ref(false)
 const isCopyFeedbackVisible = ref(false)
 let formatDebounceTimer: ReturnType<typeof setTimeout> | null = null
 let copyFeedbackTimer: ReturnType<typeof setTimeout> | null = null
+let viewportUpdateRafId: number | null = null
 
 const hasFederatedTemplateSections = computed(() =>
   templates.value.some((template) =>
@@ -1240,6 +1241,22 @@ function handleClickOutside(e: MouseEvent) {
 }
 
 function handleViewportChange() {
+  if (typeof window !== 'undefined') {
+    if (viewportUpdateRafId !== null) {
+      window.cancelAnimationFrame(viewportUpdateRafId)
+    }
+    viewportUpdateRafId = window.requestAnimationFrame(() => {
+      viewportUpdateRafId = null
+      if (showTemplates.value) {
+        updateTemplateMenuPosition()
+      }
+      if (showHistory.value) {
+        updateHistoryMenuPosition()
+      }
+    })
+    return
+  }
+
   if (showTemplates.value) {
     updateTemplateMenuPosition()
   }
@@ -1291,6 +1308,10 @@ onUnmounted(() => {
   document.removeEventListener('keydown', handleGlobalShortcut)
   window.removeEventListener('resize', handleViewportChange)
   window.removeEventListener('scroll', handleViewportChange, true)
+  if (viewportUpdateRafId !== null && typeof window !== 'undefined') {
+    window.cancelAnimationFrame(viewportUpdateRafId)
+    viewportUpdateRafId = null
+  }
   if (formatDebounceTimer) {
     clearTimeout(formatDebounceTimer)
     formatDebounceTimer = null

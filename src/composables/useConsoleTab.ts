@@ -154,6 +154,7 @@ export function useConsoleTab(options: ConsoleTabOptions) {
   >([])
   const nextFormatMode = ref<'format' | 'compact'>('format')
   const formatState = ref<'formatted' | 'compacted'>('formatted')
+  let formatTaskTimer: ReturnType<typeof setTimeout> | null = null
   const lastQueryStats = ref<QueryStats | null>(null)
   const currentPage = ref(1)
   const pageSize = ref(100)
@@ -313,37 +314,80 @@ export function useConsoleTab(options: ConsoleTabOptions) {
   }
 
   function compactSql(sql: string): string {
-    const compacted = sql
-      .split('\n')
-      .map((line) => line.trim())
-      .filter((line) => line.length > 0)
-      .join(' ')
-      .replace(/\s+/g, ' ')
-      .trim()
+    const lines = sql.split('\n')
+    const segments: Array<{ type: 'comment' | 'statement'; text: string }> = []
+    const pushStatement = (value: string) => {
+      const normalized = value.replace(/\s+/g, ' ').trim()
+      if (!normalized) return
 
-    if (!compacted) return compacted
+      const splitByTerminator = normalized
+        .replace(/;\s*(?=\S)/g, ';\n\n')
+        .split('\n\n')
+        .map((part) => part.trim())
+        .filter(Boolean)
 
-    return compacted.replace(/;\s*(?=\S)/g, ';\n\n')
+      for (const part of splitByTerminator) {
+        segments.push({ type: 'statement', text: part })
+      }
+    }
+
+    let statementBuffer = ''
+    for (const rawLine of lines) {
+      const line = rawLine.trim()
+      if (!line) continue
+
+      if (line.startsWith('--') || line.startsWith('#')) {
+        pushStatement(statementBuffer)
+        statementBuffer = ''
+        segments.push({ type: 'comment', text: line })
+        continue
+      }
+
+      statementBuffer = statementBuffer ? `${statementBuffer} ${line}` : line
+    }
+
+    pushStatement(statementBuffer)
+    if (segments.length === 0) return ''
+
+    let output = ''
+    for (let i = 0; i < segments.length; i += 1) {
+      const current = segments[i]
+      const next = segments[i + 1]
+      output += current.text
+      if (!next) continue
+      output += current.type === 'statement' && next.type === 'statement' ? '\n\n' : '\n'
+    }
+
+    return output
   }
 
   function formatQuery() {
-    try {
-      const lang = getFormatterLanguage(dialect.value)
-      const appliedMode = nextFormatMode.value
-      const nextQuery =
-        appliedMode === 'format'
-          ? formatSQL(sqlQuery.value, { language: lang })
-          : compactSql(sqlQuery.value)
+    const lang = getFormatterLanguage(dialect.value)
+    const appliedMode = nextFormatMode.value
+    const sourceQuery = sqlQuery.value
 
-      if (nextQuery !== sqlQuery.value) {
-        sqlQuery.value = nextQuery
-      }
-
-      formatState.value = appliedMode === 'format' ? 'formatted' : 'compacted'
-      nextFormatMode.value = nextFormatMode.value === 'format' ? 'compact' : 'format'
-    } catch (e) {
-      console.error('SQL formatting failed:', e)
+    if (formatTaskTimer) {
+      clearTimeout(formatTaskTimer)
     }
+
+    formatTaskTimer = setTimeout(() => {
+      formatTaskTimer = null
+      try {
+        const nextQuery =
+          appliedMode === 'format'
+            ? formatSQL(sourceQuery, { language: lang })
+            : compactSql(sourceQuery)
+
+        if (nextQuery !== sqlQuery.value) {
+          sqlQuery.value = nextQuery
+        }
+
+        formatState.value = appliedMode === 'format' ? 'formatted' : 'compacted'
+        nextFormatMode.value = appliedMode === 'format' ? 'compact' : 'format'
+      } catch (e) {
+        console.error('SQL formatting failed:', e)
+      }
+    }, 0)
   }
 
   // ========== History Management ==========
@@ -560,6 +604,10 @@ export function useConsoleTab(options: ConsoleTabOptions) {
 
   // ========== Cleanup ==========
   function cleanup() {
+    if (formatTaskTimer) {
+      clearTimeout(formatTaskTimer)
+      formatTaskTimer = null
+    }
     if (saveTimeout) {
       clearTimeout(saveTimeout)
       saveTimeout = null
