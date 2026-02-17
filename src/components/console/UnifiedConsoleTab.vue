@@ -355,17 +355,12 @@ const autocompleteDatabaseMappings = computed(() => {
   if (props.mode !== 'database') return []
 
   if (runMode.value === 'federated') {
-    return selectedConnections.value.filter((mapping) => {
-      const conn = connectionsStore.connectionByID(mapping.connectionId)
-      return isDatabaseKind(getConnectionKindFromSpec(conn?.spec))
-    })
+    return selectedConnections.value.filter((mapping) => Boolean(mapping.database?.trim()))
   }
 
   const direct = singleSourceMapping.value
-  if (!direct) return []
-
-  const conn = connectionsStore.connectionByID(direct.connectionId)
-  return isDatabaseKind(getConnectionKindFromSpec(conn?.spec)) ? [direct] : []
+  if (!direct || !direct.database?.trim()) return []
+  return [direct]
 })
 
 const directExecutionOptions = computed<SelectValueOption[]>(() =>

@@ -316,8 +316,8 @@ function buildCompletionContext(textUntilPosition: string, currentWord: string):
     /\bTHEN\s+[^;\n]+\s+$/i.test(textUntilPosition) &&
     !/\bEND\s*$/i.test(textUntilPosition)
   const isElseHeadContext = /\bELSE\s+$/i.test(textUntilPosition)
-  const isDescribeHeadContext = /\bDESCRIBE\s+$/i.test(textUntilPosition)
-  const isDescribeTargetContext = /\bDESCRIBE\s+[^\s,;()]+\s+$/i.test(textUntilPosition)
+  const isDescribeHeadContext = /\b(?:DESCRIBE|DESC)\s+$/i.test(textUntilPosition)
+  const isDescribeTargetContext = /\b(?:DESCRIBE|DESC)\s+[^\s,;()]+\s+$/i.test(textUntilPosition)
 
   return {
     isTableContext,
@@ -513,6 +513,8 @@ function registerCompletionProvider(
       }
 
       const completionContext = buildCompletionContext(textUntilPosition, wordInfo.word)
+      const describeTableMatch = /\b(?:DESCRIBE|DESC)\s+([^\s,;()]+)\s+$/i.exec(textUntilPosition)
+      const describeTableToken = describeTableMatch?.[1] || ''
       const isDuckDbCsvArgsContext =
         dialect === 'sql' && /\bread_csv(_auto)?\s*\([^)]*$/i.test(textUntilPosition)
       const isDuckDbParquetArgsContext =
@@ -572,9 +574,11 @@ function registerCompletionProvider(
             documentation: `Table: ${displayName}`,
             sortText: completionContext.isTableContext
               ? `0_${table.name}`
-              : completionContext.isSelectListContext
-                ? `2_${table.name}`
-                : `3_${table.name}` // Prioritize in table context
+              : completionContext.isDescribeHeadContext || completionContext.isDescribeTargetContext
+                ? `0_${table.name}`
+                : completionContext.isSelectListContext
+                  ? `2_${table.name}`
+                  : `3_${table.name}` // Prioritize in table context
           })
         })
       }
@@ -620,13 +624,21 @@ function registerCompletionProvider(
       if (dialect === 'sql' && completionContext.isDescribeHeadContext) {
         suggestions.push(
           {
+            label: 'SELECT',
+            kind: monaco.languages.CompletionItemKind.Keyword,
+            insertText: 'SELECT ',
+            range,
+            detail: 'SQL Keyword',
+            sortText: '00_DESCRIBE_SELECT'
+          },
+          {
             label: 'read_parquet(...)',
             kind: monaco.languages.CompletionItemKind.Function,
             insertText: "read_parquet('${1:/path/to/files/*.parquet}')",
             insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
             range,
             detail: 'DuckDB table function',
-            sortText: '00_DESCRIBE_READ_PARQUET'
+            sortText: '01_DESCRIBE_READ_PARQUET'
           },
           {
             label: 'read_csv_auto(...)',
@@ -635,7 +647,7 @@ function registerCompletionProvider(
             insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
             range,
             detail: 'DuckDB table function',
-            sortText: '00_DESCRIBE_READ_CSV'
+            sortText: '01_DESCRIBE_READ_CSV'
           },
           {
             label: 'read_json_auto(...)',
@@ -644,7 +656,7 @@ function registerCompletionProvider(
             insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
             range,
             detail: 'DuckDB table function',
-            sortText: '00_DESCRIBE_READ_JSON'
+            sortText: '01_DESCRIBE_READ_JSON'
           }
         )
       }
@@ -787,6 +799,36 @@ function registerCompletionProvider(
 
       // 3. Add Column Names (if schema available)
       if (schemaContext?.columns) {
+        const normalizeIdentifier = (value: string) => value.replace(/[`"']/g, '').toLowerCase()
+
+        if (
+          dialect === 'mysql' &&
+          completionContext.isDescribeTargetContext &&
+          describeTableToken.length > 0
+        ) {
+          const normalizedDescribeTableToken = normalizeIdentifier(describeTableToken)
+          const matchedColumnsByTable = Object.entries(schemaContext.columns).find(([tableKey]) => {
+            const normalizedTableKey = normalizeIdentifier(tableKey)
+            if (normalizedTableKey === normalizedDescribeTableToken) return true
+            return normalizedTableKey.endsWith(`.${normalizedDescribeTableToken}`)
+          })
+
+          if (matchedColumnsByTable) {
+            const [, columns] = matchedColumnsByTable
+            columns.forEach((column) => {
+              suggestions.push({
+                label: column.name,
+                kind: monaco.languages.CompletionItemKind.Field,
+                insertText: column.name,
+                range,
+                detail: `${column.type} ${column.nullable ? 'NULL' : 'NOT NULL'}`,
+                documentation: `Column for DESCRIBE target: ${column.name}`,
+                sortText: `00_DESCRIBE_COLUMN_${column.name}`
+              })
+            })
+          }
+        }
+
         Object.entries(schemaContext.columns).forEach(([tableName, columns]) => {
           columns.forEach((column) => {
             const nullableStr = column.nullable ? 'NULL' : 'NOT NULL'

@@ -210,9 +210,97 @@ describe('useMonacoSqlProviders dialect-specific keyword suggestions', () => {
     })
 
     const labels = result.suggestions.map((s) => s.label)
+    expect(labels).toContain('SELECT')
     expect(labels).toContain('read_parquet(...)')
     expect(labels).toContain('read_csv_auto(...)')
     expect(labels).toContain('read_json_auto(...)')
+
+    const selectIndex = labels.indexOf('SELECT')
+    const readParquetIndex = labels.indexOf('read_parquet(...)')
+    expect(selectIndex).toBeGreaterThanOrEqual(0)
+    expect(readParquetIndex).toBeGreaterThanOrEqual(0)
+    expect(selectIndex).toBeLessThan(readParquetIndex)
+  })
+
+  it('supports DESC alias in mysql and prioritizes table targets', () => {
+    const { monaco, providers } = createMockMonaco()
+
+    useMonacoSqlProviders(monaco, 'sql', 'mysql', {
+      dialect: 'mysql',
+      tables: [{ name: 'actor' }],
+      columns: {
+        actor: [{ name: 'actor_id', type: 'int', nullable: false }]
+      }
+    })
+
+    const sql = 'DESC '
+    const provider = providers[0]
+    const result = provider.provideCompletionItems(createModel(sql), {
+      lineNumber: 1,
+      column: sql.length + 1
+    })
+
+    const labels = result.suggestions.map((s) => s.label)
+    expect(labels).toContain('actor')
+    expect(labels).toContain('COUNT()')
+
+    const actorSuggestion = result.suggestions.find((s) => s.label === 'actor')
+    const countFnSuggestion = result.suggestions.find((s) => s.label === 'COUNT()')
+
+    expect(actorSuggestion?.sortText).toBeDefined()
+    expect(countFnSuggestion?.sortText).toBeDefined()
+    expect((actorSuggestion?.sortText || '').localeCompare(countFnSuggestion?.sortText || '')).toBe(
+      -1
+    )
+  })
+
+  it('suggests DESCRIBE and DESC for mysql when typing des prefix', () => {
+    const { monaco, providers } = createMockMonaco()
+
+    useMonacoSqlProviders(monaco, 'sql', 'mysql')
+
+    const sql = 'des'
+    const provider = providers[0]
+    const result = provider.provideCompletionItems(createModel(sql), {
+      lineNumber: 1,
+      column: sql.length + 1
+    })
+
+    const labels = result.suggestions.map((s) => s.label)
+    expect(labels).toContain('DESCRIBE')
+    expect(labels).toContain('DESC')
+  })
+
+  it('suggests table columns after DESCRIBE table_name in mysql', () => {
+    const { monaco, providers } = createMockMonaco()
+
+    useMonacoSqlProviders(monaco, 'sql', 'mysql', {
+      dialect: 'mysql',
+      tables: [{ name: 'actor' }],
+      columns: {
+        actor: [
+          { name: 'actor_id', type: 'int', nullable: false },
+          { name: 'first_name', type: 'varchar', nullable: false }
+        ]
+      }
+    })
+
+    const sql = 'DESCRIBE actor '
+    const provider = providers[0]
+    const result = provider.provideCompletionItems(createModel(sql), {
+      lineNumber: 1,
+      column: sql.length + 1
+    })
+
+    const labels = result.suggestions.map((s) => s.label)
+    expect(labels).toContain('actor_id')
+    expect(labels).toContain('first_name')
+
+    const actorIdIndex = labels.indexOf('actor_id')
+    const countFnIndex = labels.indexOf('COUNT()')
+    expect(actorIdIndex).toBeGreaterThanOrEqual(0)
+    expect(countFnIndex).toBeGreaterThanOrEqual(0)
+    expect(actorIdIndex).toBeLessThan(countFnIndex)
   })
 
   it('suggests named args and close paren after comma in read_* contexts', () => {

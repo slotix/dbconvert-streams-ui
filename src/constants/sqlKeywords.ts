@@ -113,7 +113,7 @@ export const SQL_FUNCTIONS = [
 
 // MySQL-specific keywords and functions
 export const MYSQL_SPECIFIC = {
-  keywords: ['REGEXP', 'RLIKE', 'FORCE INDEX', 'USE INDEX', 'IGNORE INDEX'],
+  keywords: ['DESCRIBE', 'DESC', 'REGEXP', 'RLIKE', 'FORCE INDEX', 'USE INDEX', 'IGNORE INDEX'],
   functions: [
     'GROUP_CONCAT',
     'CONCAT_WS',
