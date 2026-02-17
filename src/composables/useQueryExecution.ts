@@ -68,11 +68,66 @@ export interface UseQueryExecutionOptions {
   saveToHistory: (query: string, context?: QueryHistoryContext) => void
   /** Callback to refresh table suggestions (for DDL changes) */
   loadTableSuggestionsWithRefresh?: (forceRefresh: boolean) => Promise<void>
+  /** Optional confirmation callback for potentially destructive SQL */
+  confirmDestructiveQuery?: (query: string) => Promise<boolean>
 }
 
 export interface UseQueryExecutionReturn {
   isExecuting: Ref<boolean>
-  executeQuery: () => Promise<void>
+  executeQuery: (queryOverride?: string) => Promise<void>
+}
+
+function mapRowsToObjects(columns: string[], rowTuples: unknown[][]): Record<string, unknown>[] {
+  return (rowTuples || []).map((tuple) => {
+    const obj: Record<string, unknown> = {}
+    columns.forEach((col, idx) => {
+      obj[col] = (tuple || [])[idx]
+    })
+    return obj
+  })
+}
+
+function splitSqlStatements(query: string): string[] {
+  return query
+    .split(';')
+    .map((statement) => statement.trim())
+    .filter(Boolean)
+}
+
+function removeSqlComments(sql: string): string {
+  return sql
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .replace(/--.*$/gm, ' ')
+    .replace(/#.*$/gm, ' ')
+}
+
+function startsWithKeyword(statement: string, keyword: string): boolean {
+  return new RegExp(`^\\s*${keyword}\\b`, 'i').test(statement)
+}
+
+function hasWhereClause(statement: string): boolean {
+  return /\bWHERE\b/i.test(statement)
+}
+
+export function isPotentiallyDestructiveQuery(query: string): boolean {
+  const statements = splitSqlStatements(removeSqlComments(query))
+  if (statements.length === 0) return false
+
+  return statements.some((statement) => {
+    if (startsWithKeyword(statement, 'DROP') || startsWithKeyword(statement, 'TRUNCATE')) {
+      return true
+    }
+
+    if (startsWithKeyword(statement, 'DELETE')) {
+      return !hasWhereClause(statement)
+    }
+
+    if (startsWithKeyword(statement, 'UPDATE')) {
+      return !hasWhereClause(statement)
+    }
+
+    return false
+  })
 }
 
 export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryExecutionReturn {
@@ -87,7 +142,8 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
     setExecutionResult,
     setExecutionError,
     saveToHistory,
-    loadTableSuggestionsWithRefresh
+    loadTableSuggestionsWithRefresh,
+    confirmDestructiveQuery
   } = options
 
   const navigationStore = useExplorerNavigationStore()
@@ -204,9 +260,20 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
     return `Federated mode requires alias-qualified tables (e.g. pg1.public.table, my1.db.table). Invalid references: ${offending}`
   }
 
-  async function executeQuery() {
-    const query = sqlQuery.value.trim()
-    if (!query) return
+  async function executeQuery(queryOverride?: string) {
+    if (isExecuting.value) {
+      return
+    }
+
+    const query = (queryOverride ?? sqlQuery.value).trim()
+    if (!query) {
+      return
+    }
+
+    if (confirmDestructiveQuery && isPotentiallyDestructiveQuery(query)) {
+      const confirmed = await confirmDestructiveQuery(query)
+      if (!confirmed) return
+    }
 
     if (!useFederatedEngine.value) {
       const availableAliases = new Set(
@@ -270,13 +337,7 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
       })
 
       const columns = result.columns || []
-      const rows = (result.rows || []).map((row) => {
-        const obj: Record<string, unknown> = {}
-        columns.forEach((col, idx) => {
-          obj[col] = row[idx]
-        })
-        return obj
-      })
+      const rows = mapRowsToObjects(columns, result.rows || [])
 
       const duration = result.duration || Date.now() - startTime
 
@@ -340,7 +401,7 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
 
     try {
       const result = await executeFileQuery(query, connectionIdValue.value)
-      handleSuccessResult(result, query, startTime, {
+      await handleSuccessResult(result, query, startTime, {
         connectionId: connectionIdValue.value,
         database: '',
         historyContext: {
@@ -363,7 +424,7 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
 
     try {
       const result = await connections.executeQuery(target.connectionId, query, target.database)
-      handleSuccessResult(result, query, startTime, {
+      await handleSuccessResult(result, query, startTime, {
         connectionId: target.connectionId,
         database: target.database || '',
         historyContext: {
@@ -401,7 +462,7 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
     }
   }
 
-  function handleSuccessResult(
+  async function handleSuccessResult(
     result: ExecuteQueryApiResult,
     query: string,
     startTime: number,
@@ -416,13 +477,7 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
     if (Array.isArray(result.results) && result.results.length > 0) {
       for (const set of result.results) {
         const cols = set.columns || []
-        const rows = (set.rows || []).map((row) => {
-          const obj: Record<string, unknown> = {}
-          cols.forEach((col, idx) => {
-            obj[col] = row[idx]
-          })
-          return obj
-        })
+        const rows = mapRowsToObjects(cols, set.rows || [])
         normalizedSets.push({
           columns: cols,
           rows,
@@ -432,13 +487,7 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
       }
     } else {
       const cols = result.columns || []
-      const rows = (result.rows || []).map((row) => {
-        const obj: Record<string, unknown> = {}
-        cols.forEach((col, idx) => {
-          obj[col] = row[idx]
-        })
-        return obj
-      })
+      const rows = mapRowsToObjects(cols, result.rows || [])
       normalizedSets.push({ columns: cols, rows })
     }
 
@@ -448,7 +497,6 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
 
     const totalRowCount = normalizedSets.reduce((acc, s) => acc + s.rows.length, 0)
     const duration = Date.now() - startTime
-
     setExecutionResult({
       columns: primary.columns,
       rows: primary.rows,

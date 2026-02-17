@@ -7,18 +7,21 @@
       <button
         :disabled="isExecuting"
         class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed"
-        @click="$emit('execute')"
+        @click="handleRunClick"
       >
         <Play class="h-3.5 w-3.5 mr-1.5" />
-        {{ isExecuting ? 'Running...' : 'Run' }}
+        {{ isExecuting ? 'Running...' : hasSelectedSql ? 'Run selected' : 'Run' }}
       </button>
 
       <button
+        :disabled="isFormatClickDebounced"
         class="inline-flex items-center px-2 py-1.5 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded shadow-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500"
-        title="Format SQL (Shift+Alt+F)"
-        @click="$emit('format')"
+        :title="formatButtonTitle"
+        @click="handleFormatClick"
       >
-        <Code class="h-3.5 w-3.5" />
+        <AlignLeft v-if="formatState !== 'compacted'" class="h-3.5 w-3.5" />
+        <AlignJustify v-else class="h-3.5 w-3.5" />
+        <span class="ml-1 hidden @[620px]/toolbar:inline">{{ formatButtonCaption }}</span>
       </button>
 
       <button
@@ -453,7 +456,8 @@
         :enable-format-action="true"
         fill-parent
         @update:model-value="$emit('update:modelValue', $event)"
-        @execute="$emit('execute')"
+        @execute="emitExecute"
+        @selection-change="hasSelectedSql = $event"
         @format="$emit('format')"
       />
     </div>
@@ -467,6 +471,8 @@ import type { SchemaContext } from '@/composables/useMonacoSqlProviders'
 import type { QueryTemplate } from '@/components/console/queryTemplates'
 import type { QueryHistoryItem } from '@/composables/useConsoleTab'
 import {
+  AlignJustify,
+  AlignLeft,
   Check,
   Copy,
   ChevronDown,
@@ -498,6 +504,7 @@ const props = defineProps<{
   dialect: string
   schemaContext: SchemaContext
   isExecuting: boolean
+  formatState?: 'formatted' | 'compacted'
   stats: { rowCount: number; duration: number } | null
   templates?: Template[]
   history?: HistoryItem[]
@@ -505,7 +512,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:modelValue': [value: string]
-  execute: []
+  execute: [selectedSql?: string]
   format: []
   'select-template': [query: string]
   'select-history': [item: HistoryItem]
@@ -520,6 +527,7 @@ const templates = computed(() => props.templates || [])
 const history = computed(() => props.history || [])
 
 const sqlEditorRef = ref()
+const hasSelectedSql = ref(false)
 const templatesDropdownRef = ref<HTMLElement | null>(null)
 const templateMenuRef = ref<HTMLElement | null>(null)
 const historyDropdownRef = ref<HTMLElement | null>(null)
@@ -544,7 +552,13 @@ const historyButtonTitle = computed(() =>
   history.value.length > 0 ? `History (${history.value.length})` : 'History'
 )
 const hasQueryToCopy = computed(() => props.modelValue.trim().length > 0)
+const formatButtonCaption = computed(() =>
+  props.formatState === 'compacted' ? 'Format' : 'Compact'
+)
+const formatButtonTitle = computed(() => `${formatButtonCaption.value} SQL (Shift+Alt+F)`)
+const isFormatClickDebounced = ref(false)
 const isCopyFeedbackVisible = ref(false)
+let formatDebounceTimer: ReturnType<typeof setTimeout> | null = null
 let copyFeedbackTimer: ReturnType<typeof setTimeout> | null = null
 
 const hasFederatedTemplateSections = computed(() =>
@@ -1027,6 +1041,97 @@ function openHistoryNewTab(item: HistoryItem) {
   showHistory.value = false
 }
 
+function emitExecute(selectedSql?: string) {
+  if (selectedSql !== undefined) {
+    emit('execute', selectedSql || undefined)
+    return
+  }
+
+  const hasLiveSelection = sqlEditorRef.value?.hasSelection?.() ?? hasSelectedSql.value
+
+  if (!hasLiveSelection) {
+    emit('execute', undefined)
+    return
+  }
+
+  const selected = sqlEditorRef.value?.getSelectedSql?.() || ''
+  emit('execute', selected || undefined)
+}
+
+function extractSqlFromRange(
+  text: string,
+  range?: {
+    startLineNumber: number
+    startColumn: number
+    endLineNumber: number
+    endColumn: number
+  } | null
+): string {
+  if (!range) return ''
+
+  const lines = text.split('\n')
+  const startLineIndex = Math.max(0, range.startLineNumber - 1)
+  const endLineIndex = Math.min(lines.length - 1, Math.max(0, range.endLineNumber - 1))
+  if (startLineIndex > endLineIndex || startLineIndex >= lines.length) return ''
+
+  if (startLineIndex === endLineIndex) {
+    const line = lines[startLineIndex] || ''
+    const start = Math.max(0, range.startColumn - 1)
+    const end = Math.max(start, range.endColumn - 1)
+    return line.slice(start, end).trim()
+  }
+
+  const selectedLines: string[] = []
+  for (let i = startLineIndex; i <= endLineIndex; i += 1) {
+    const line = lines[i] || ''
+    if (i === startLineIndex) {
+      selectedLines.push(line.slice(Math.max(0, range.startColumn - 1)))
+      continue
+    }
+    if (i === endLineIndex) {
+      selectedLines.push(line.slice(0, Math.max(0, range.endColumn - 1)))
+      continue
+    }
+    selectedLines.push(line)
+  }
+
+  return selectedLines.join('\n').trim()
+}
+
+function handleRunClick() {
+  const cachedSelectionRange =
+    hasSelectedSql.value && typeof sqlEditorRef.value?.getCachedSelectionRange === 'function'
+      ? (sqlEditorRef.value.getCachedSelectionRange() as {
+          startLineNumber: number
+          startColumn: number
+          endLineNumber: number
+          endColumn: number
+        } | null)
+      : null
+
+  const cachedSelection = extractSqlFromRange(props.modelValue, cachedSelectionRange)
+
+  const selectedSql = cachedSelection.trim() || undefined
+
+  emit('execute', selectedSql)
+}
+
+function handleFormatClick() {
+  if (isFormatClickDebounced.value) return
+
+  emit('format')
+  isFormatClickDebounced.value = true
+
+  if (formatDebounceTimer) {
+    clearTimeout(formatDebounceTimer)
+  }
+
+  formatDebounceTimer = setTimeout(() => {
+    isFormatClickDebounced.value = false
+    formatDebounceTimer = null
+  }, 180)
+}
+
 async function copyCurrentQuery() {
   const query = props.modelValue?.trim()
   if (!query) return
@@ -1186,6 +1291,10 @@ onUnmounted(() => {
   document.removeEventListener('keydown', handleGlobalShortcut)
   window.removeEventListener('resize', handleViewportChange)
   window.removeEventListener('scroll', handleViewportChange, true)
+  if (formatDebounceTimer) {
+    clearTimeout(formatDebounceTimer)
+    formatDebounceTimer = null
+  }
   if (copyFeedbackTimer) {
     clearTimeout(copyFeedbackTimer)
     copyFeedbackTimer = null
@@ -1194,6 +1303,9 @@ onUnmounted(() => {
 
 // Expose editor ref for parent to access if needed
 defineExpose({
-  editorRef: sqlEditorRef
+  editorRef: sqlEditorRef,
+  getSelectedSql() {
+    return sqlEditorRef.value?.getSelectedSql?.() || ''
+  }
 })
 </script>

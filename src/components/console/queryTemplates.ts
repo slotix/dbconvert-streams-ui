@@ -346,6 +346,16 @@ SELECT * FROM read_csv_auto('/path/to/files/*.csv') LIMIT 100;`,
         }
       ),
       makeTemplate(
+        'Inspect CSV schema',
+        `-- Inspect inferred CSV columns and types
+SELECT * FROM sniff_csv('/path/to/files/*.csv');`,
+        {
+          description: 'Inspects inferred schema/options for CSV files',
+          section: 'Files',
+          icon: 'file'
+        }
+      ),
+      makeTemplate(
         'Query JSON/JSONL file',
         `-- Query local JSON/JSONL files
 SELECT * FROM read_json_auto('/path/to/files/*.json*') LIMIT 100;`,
@@ -401,6 +411,10 @@ export function getFileTemplates(options: FileTemplateOptions): QueryTemplate[] 
     {
       name: 'Select from CSV',
       query: `SELECT * FROM read_csv_auto('${joinPath(prefix, '*.csv')}') LIMIT 100;`
+    },
+    {
+      name: 'Inspect CSV schema',
+      query: `SELECT * FROM sniff_csv('${joinPath(prefix, '*.csv')}');`
     },
     {
       name: 'Select from Parquet',

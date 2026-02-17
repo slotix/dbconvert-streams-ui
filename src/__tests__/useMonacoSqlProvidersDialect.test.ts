@@ -197,6 +197,42 @@ describe('useMonacoSqlProviders dialect-specific keyword suggestions', () => {
     expect(labels).toContain('compression = ...')
   })
 
+  it('suggests DuckDB table functions after DESCRIBE', () => {
+    const { monaco, providers } = createMockMonaco()
+
+    useMonacoSqlProviders(monaco, 'sql', 'sql')
+
+    const sql = 'DESCRIBE '
+    const provider = providers[0]
+    const result = provider.provideCompletionItems(createModel(sql), {
+      lineNumber: 1,
+      column: sql.length + 1
+    })
+
+    const labels = result.suggestions.map((s) => s.label)
+    expect(labels).toContain('read_parquet(...)')
+    expect(labels).toContain('read_csv_auto(...)')
+    expect(labels).toContain('read_json_auto(...)')
+  })
+
+  it('suggests named args and close paren after comma in read_* contexts', () => {
+    const { monaco, providers } = createMockMonaco()
+
+    useMonacoSqlProviders(monaco, 'sql', 'sql')
+
+    const sql = "SELECT * FROM read_csv_auto('/tmp/data.csv',"
+    const provider = providers[0]
+    const result = provider.provideCompletionItems(createModel(sql), {
+      lineNumber: 1,
+      column: sql.length + 1
+    })
+
+    const labels = result.suggestions.map((s) => s.label)
+    expect(labels).toContain('union_by_name = ...')
+    expect(labels).toContain('compression = ...')
+    expect(labels).toContain(')')
+  })
+
   it('prioritizes WHERE continuation keywords (AND/OR/ORDER BY/LIMIT)', () => {
     const { monaco, providers } = createMockMonaco()
 

@@ -1,6 +1,6 @@
 <!-- Shared SQL Monaco editor for read-only and editable modes -->
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import MonacoEditor from './MonacoEditor.vue'
 import CopyButton from '@/components/common/CopyButton.vue'
 import { useMonacoSqlProviders, type SchemaContext } from '@/composables/useMonacoSqlProviders'
@@ -51,7 +51,8 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string): void
-  (e: 'execute'): void
+  (e: 'execute', selectedSql?: string): void
+  (e: 'selection-change', hasSelection: boolean): void
   (e: 'format'): void
   (e: 'mount', editor: MonacoTypes.editor.IStandaloneCodeEditor, monaco: MonacoApi): void
 }>()
@@ -61,6 +62,8 @@ const editorHeight = ref(props.height)
 const localValue = ref(props.modelValue || '')
 const editorInstance = ref<MonacoTypes.editor.IStandaloneCodeEditor>()
 const monacoInstance = ref<MonacoApi>()
+let cachedSelectionRange: MonacoTypes.IRange | null = null
+let selectionEmitRafId: number | null = null
 
 watch(
   () => props.height,
@@ -76,6 +79,7 @@ watch(
   (newValue) => {
     if (newValue !== localValue.value) {
       localValue.value = newValue || ''
+      cachedSelectionRange = null
     }
   }
 )
@@ -216,6 +220,103 @@ const formatQuery = () => {
   }
 }
 
+const getSelectedSql = () => {
+  const editor = editorInstance.value
+  if (!editor) return ''
+
+  const selection = editor.getSelection()
+  if (!selection || selection.isEmpty()) return ''
+
+  return editor.getModel()?.getValueInRange(selection)?.trim() || ''
+}
+
+const setCachedSelectionRange = (selection?: MonacoTypes.Selection | null) => {
+  if (!selection) {
+    cachedSelectionRange = null
+    return false
+  }
+
+  cachedSelectionRange = {
+    startLineNumber: selection.startLineNumber,
+    startColumn: selection.startColumn,
+    endLineNumber: selection.endLineNumber,
+    endColumn: selection.endColumn
+  }
+  return !selection.isEmpty()
+}
+
+const hasSelection = () => {
+  const editor = editorInstance.value
+  if (!editor) return false
+
+  const selection = editor.getSelection()
+  return Boolean(selection && !selection.isEmpty())
+}
+
+const getCachedSelectionRange = () => cachedSelectionRange
+
+const emitSelectionState = () => {
+  const selected = hasSelection()
+  emit('selection-change', selected)
+}
+
+const scheduleSelectionStateEmit = () => {
+  if (typeof window === 'undefined') {
+    emitSelectionState()
+    return
+  }
+
+  if (selectionEmitRafId !== null) {
+    window.cancelAnimationFrame(selectionEmitRafId)
+  }
+
+  selectionEmitRafId = window.requestAnimationFrame(() => {
+    selectionEmitRafId = null
+    emitSelectionState()
+  })
+}
+
+const insertTextAtCursor = (text: string) => {
+  const editor = editorInstance.value
+  if (!editor || props.readOnly) return
+
+  const liveSelection = editor.getSelection()
+  const model = editor.getModel()
+  const fallbackRange =
+    cachedSelectionRange ||
+    (model
+      ? {
+          startLineNumber: model.getLineCount(),
+          startColumn: model.getLineMaxColumn(model.getLineCount()),
+          endLineNumber: model.getLineCount(),
+          endColumn: model.getLineMaxColumn(model.getLineCount())
+        }
+      : null)
+  const selection = liveSelection || fallbackRange
+  if (!selection) return
+
+  editor.executeEdits('sql-monaco-insert', [
+    {
+      range: selection,
+      text,
+      forceMoveMarkers: true
+    }
+  ])
+
+  if (typeof window !== 'undefined') {
+    window.requestAnimationFrame(() => editor.focus())
+  } else {
+    editor.focus()
+  }
+}
+
+const getSelectedSqlIfAny = () => {
+  if (!hasSelection()) return undefined
+
+  const selectedSql = getSelectedSql()
+  return selectedSql || undefined
+}
+
 const handleEditorMount = (editor: MonacoTypes.editor.IStandaloneCodeEditor, monaco: MonacoApi) => {
   editorInstance.value = editor
   monacoInstance.value = monaco
@@ -226,9 +327,18 @@ const handleEditorMount = (editor: MonacoTypes.editor.IStandaloneCodeEditor, mon
 
   if (props.enableExecute) {
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
-      emit('execute')
+      emit('execute', getSelectedSqlIfAny())
+    })
+    editor.addCommand(monaco.KeyMod.Shift | monaco.KeyCode.Enter, () => {
+      emit('execute', getSelectedSqlIfAny())
     })
   }
+
+  editor.onDidChangeCursorSelection((event) => {
+    setCachedSelectionRange(event.selection)
+    scheduleSelectionStateEmit()
+  })
+  emitSelectionState()
 
   if (props.enableFormatAction) {
     editor.addAction({
@@ -282,10 +392,21 @@ watch(sqlDialect, () => {
   }
 })
 
+onUnmounted(() => {
+  if (selectionEmitRafId !== null && typeof window !== 'undefined') {
+    window.cancelAnimationFrame(selectionEmitRafId)
+    selectionEmitRafId = null
+  }
+})
+
 defineExpose({
   editor: editorInstance,
   monaco: monacoInstance,
-  formatQuery
+  formatQuery,
+  getSelectedSql,
+  getCachedSelectionRange,
+  hasSelection,
+  insertTextAtCursor
 })
 </script>
 

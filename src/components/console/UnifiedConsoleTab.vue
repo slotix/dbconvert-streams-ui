@@ -93,10 +93,11 @@
           :dialect="currentDialect"
           :schema-context="schemaContext"
           :is-executing="isExecuting"
+          :format-state="formatState"
           :stats="lastQueryStats"
           :templates="queryTemplates"
           :history="queryHistory"
-          @execute="executeQuery"
+          @execute="handleExecute"
           @format="formatQuery"
           @select-template="insertTemplate"
           @select-history="insertHistoryQuery"
@@ -156,6 +157,7 @@ import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue'
 import { ChevronRight } from 'lucide-vue-next'
 import type { SchemaContext } from '@/composables/useMonacoSqlProviders'
 import { useConnectionsStore } from '@/stores/connections'
+import { useConfirmDialogStore } from '@/stores/confirmDialog'
 import { usePaneTabsStore, createConsoleSessionId } from '@/stores/paneTabs'
 import connections from '@/api/connections'
 import { SqlQueryTabs, SqlEditorPane, SqlResultsPane } from '@/components/database/sql-console'
@@ -200,6 +202,7 @@ const props = defineProps<{
 }>()
 
 const connectionsStore = useConnectionsStore()
+const confirmDialogStore = useConfirmDialogStore()
 const paneTabsStore = usePaneTabsStore()
 const isSourceDrawerOpen = ref(false)
 const executionToolbarRef = ref<HTMLElement | null>(null)
@@ -508,6 +511,7 @@ const {
   queryResults,
   resultColumns,
   resultSets,
+  formatState,
   lastQueryStats,
   currentPage,
   pageSize,
@@ -569,7 +573,17 @@ const { isExecuting, executeQuery } = useQueryExecution({
   setExecutionResult,
   setExecutionError,
   saveToHistory,
-  loadTableSuggestionsWithRefresh
+  loadTableSuggestionsWithRefresh,
+  confirmDestructiveQuery: async () => {
+    return await confirmDialogStore.confirm({
+      title: 'Run destructive query?',
+      description:
+        'This SQL appears destructive (DROP/TRUNCATE or UPDATE/DELETE without WHERE). Continue?',
+      confirmLabel: 'Run query',
+      cancelLabel: 'Cancel',
+      danger: true
+    })
+  }
 })
 
 // ========== Schema Context (database mode) ==========
@@ -821,6 +835,10 @@ async function rerunHistoryQuery(item: QueryHistoryItem) {
   insertHistoryQuery(item)
   await nextTick()
   await executeQuery()
+}
+
+async function handleExecute(selectedSql?: string) {
+  await executeQuery(selectedSql)
 }
 
 // ========== Lifecycle ==========

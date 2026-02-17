@@ -113,6 +113,8 @@ export interface CompletionContext {
   isCaseHeadContext: boolean
   isAfterCaseThenClauseContext: boolean
   isElseHeadContext: boolean
+  isDescribeHeadContext: boolean
+  isDescribeTargetContext: boolean
   suppressBroadSuggestions: boolean
 }
 
@@ -314,6 +316,8 @@ function buildCompletionContext(textUntilPosition: string, currentWord: string):
     /\bTHEN\s+[^;\n]+\s+$/i.test(textUntilPosition) &&
     !/\bEND\s*$/i.test(textUntilPosition)
   const isElseHeadContext = /\bELSE\s+$/i.test(textUntilPosition)
+  const isDescribeHeadContext = /\bDESCRIBE\s+$/i.test(textUntilPosition)
+  const isDescribeTargetContext = /\bDESCRIBE\s+[^\s,;()]+\s+$/i.test(textUntilPosition)
 
   return {
     isTableContext,
@@ -399,6 +403,8 @@ function buildCompletionContext(textUntilPosition: string, currentWord: string):
     isCaseHeadContext,
     isAfterCaseThenClauseContext,
     isElseHeadContext,
+    isDescribeHeadContext,
+    isDescribeTargetContext,
     suppressBroadSuggestions: isSelectListContext && !hasTypedPrefix
   }
 }
@@ -482,7 +488,7 @@ function registerCompletionProvider(
   const quoteIdentifier = (name: string) => `${quoteChar}${name}${quoteChar}`
 
   return monaco.languages.registerCompletionItemProvider(language, {
-    triggerCharacters: [' ', '.', '('],
+    triggerCharacters: [' ', '.', '(', ','],
     provideCompletionItems: (
       model: MonacoTypes.editor.ITextModel,
       position: MonacoTypes.Position
@@ -513,6 +519,9 @@ function registerCompletionProvider(
         dialect === 'sql' && /\bread_parquet\s*\([^)]*$/i.test(textUntilPosition)
       const isDuckDbJsonArgsContext =
         dialect === 'sql' && /\bread_json(_auto)?\s*\([^)]*$/i.test(textUntilPosition)
+      const isDuckDbArgsAfterCommaContext =
+        (isDuckDbCsvArgsContext || isDuckDbParquetArgsContext || isDuckDbJsonArgsContext) &&
+        /,\s*$/.test(textUntilPosition)
       const isPredicateContext =
         completionContext.isWhereHeadContext ||
         completionContext.isAfterWhereClauseContext ||
@@ -608,47 +617,145 @@ function registerCompletionProvider(
         })
       }
 
+      if (dialect === 'sql' && completionContext.isDescribeHeadContext) {
+        suggestions.push(
+          {
+            label: 'read_parquet(...)',
+            kind: monaco.languages.CompletionItemKind.Function,
+            insertText: "read_parquet('${1:/path/to/files/*.parquet}')",
+            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            range,
+            detail: 'DuckDB table function',
+            sortText: '00_DESCRIBE_READ_PARQUET'
+          },
+          {
+            label: 'read_csv_auto(...)',
+            kind: monaco.languages.CompletionItemKind.Function,
+            insertText: "read_csv_auto('${1:/path/to/files/*.csv}')",
+            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            range,
+            detail: 'DuckDB table function',
+            sortText: '00_DESCRIBE_READ_CSV'
+          },
+          {
+            label: 'read_json_auto(...)',
+            kind: monaco.languages.CompletionItemKind.Function,
+            insertText: "read_json_auto('${1:/path/to/files/*.json*}')",
+            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            range,
+            detail: 'DuckDB table function',
+            sortText: '00_DESCRIBE_READ_JSON'
+          }
+        )
+      }
+
+      if (dialect === 'sql' && completionContext.isDescribeTargetContext) {
+        suggestions.push(
+          {
+            label: 'AS',
+            kind: monaco.languages.CompletionItemKind.Keyword,
+            insertText: 'AS ',
+            range,
+            detail: 'Alias',
+            sortText: '00_DESCRIBE_AS'
+          },
+          {
+            label: 'SELECT',
+            kind: monaco.languages.CompletionItemKind.Keyword,
+            insertText: 'SELECT ',
+            range,
+            detail: 'SQL Keyword',
+            sortText: '01_DESCRIBE_SELECT'
+          }
+        )
+      }
+
       // 2.2 Add DuckDB named parameters inside read_* argument contexts
       if (isDuckDbCsvArgsContext || isDuckDbParquetArgsContext || isDuckDbJsonArgsContext) {
-        const duckdbNamedArgs: Array<{ label: string; insertText: string }> = []
+        const duckdbNamedArgs: Array<{ label: string; insertText: string; documentation: string }> =
+          []
 
         if (isDuckDbCsvArgsContext) {
           duckdbNamedArgs.push(
-            { label: 'union_by_name = ...', insertText: 'union_by_name = ${1:true}' },
-            { label: 'filename = ...', insertText: 'filename = ${1:true}' },
-            { label: 'header = ...', insertText: 'header = ${1:true}' },
-            { label: 'auto_detect = ...', insertText: 'auto_detect = ${1:true}' },
-            { label: 'sample_size = ...', insertText: 'sample_size = ${1:20480}' },
+            {
+              label: 'union_by_name = ...',
+              insertText: 'union_by_name = ${1:true}',
+              documentation: 'Match columns by name when reading multiple files.'
+            },
+            {
+              label: 'filename = ...',
+              insertText: 'filename = ${1:true}',
+              documentation: 'Include source filename as an output column.'
+            },
+            {
+              label: 'header = ...',
+              insertText: 'header = ${1:true}',
+              documentation: 'Treat first row as header row.'
+            },
+            {
+              label: 'auto_detect = ...',
+              insertText: 'auto_detect = ${1:true}',
+              documentation: 'Automatically infer delimiter/types.'
+            },
+            {
+              label: 'sample_size = ...',
+              insertText: 'sample_size = ${1:20480}',
+              documentation: 'Rows sampled for auto detection.'
+            },
             {
               label: 'compression = ...',
-              insertText: "compression = ${1|'auto','gzip','zstd','none'|}"
+              insertText: "compression = ${1|'auto','gzip','zstd','none'|}",
+              documentation: 'Compression codec for input files.'
             }
           )
         }
 
         if (isDuckDbParquetArgsContext) {
           duckdbNamedArgs.push(
-            { label: 'filename = ...', insertText: 'filename = ${1:true}' },
-            { label: 'union_by_name = ...', insertText: 'union_by_name = ${1:true}' },
-            { label: 'hive_partitioning = ...', insertText: 'hive_partitioning = ${1:true}' },
+            {
+              label: 'filename = ...',
+              insertText: 'filename = ${1:true}',
+              documentation: 'Include source filename as an output column.'
+            },
+            {
+              label: 'union_by_name = ...',
+              insertText: 'union_by_name = ${1:true}',
+              documentation: 'Match columns by name when reading multiple files.'
+            },
+            {
+              label: 'hive_partitioning = ...',
+              insertText: 'hive_partitioning = ${1:true}',
+              documentation: 'Read partition columns from Hive-style folder names.'
+            },
             {
               label: 'compression = ...',
-              insertText: "compression = ${1|'auto','gzip','zstd','none'|}"
+              insertText: "compression = ${1|'auto','gzip','zstd','none'|}",
+              documentation: 'Compression codec for input files.'
             }
           )
         }
 
         if (isDuckDbJsonArgsContext) {
           duckdbNamedArgs.push(
-            { label: 'filename = ...', insertText: 'filename = ${1:true}' },
-            { label: 'union_by_name = ...', insertText: 'union_by_name = ${1:true}' },
+            {
+              label: 'filename = ...',
+              insertText: 'filename = ${1:true}',
+              documentation: 'Include source filename as an output column.'
+            },
+            {
+              label: 'union_by_name = ...',
+              insertText: 'union_by_name = ${1:true}',
+              documentation: 'Match columns by name when reading multiple files.'
+            },
             {
               label: 'maximum_object_size = ...',
-              insertText: 'maximum_object_size = ${1:16777216}'
+              insertText: 'maximum_object_size = ${1:16777216}',
+              documentation: 'Maximum JSON object size in bytes.'
             },
             {
               label: 'compression = ...',
-              insertText: "compression = ${1|'auto','gzip','zstd','none'|}"
+              insertText: "compression = ${1|'auto','gzip','zstd','none'|}",
+              documentation: 'Compression codec for input files.'
             }
           )
         }
@@ -661,9 +768,21 @@ function registerCompletionProvider(
             insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
             range,
             detail: 'DuckDB named parameter',
+            documentation: arg.documentation,
             sortText: `00_ARG_${arg.label}`
           })
         })
+
+        if (isDuckDbArgsAfterCommaContext) {
+          suggestions.push({
+            label: ')',
+            kind: monaco.languages.CompletionItemKind.Keyword,
+            insertText: ')',
+            range,
+            detail: 'Close function call',
+            sortText: '00_ARG_CLOSE_PAREN'
+          })
+        }
       }
 
       // 3. Add Column Names (if schema available)
@@ -740,6 +859,20 @@ function registerCompletionProvider(
  * Hover Provider - Shows information when hovering over text
  */
 function registerHoverProvider(monaco: MonacoApi, language: string, schemaContext?: SchemaContext) {
+  const duckdbArgDocs: Record<string, string> = {
+    union_by_name:
+      '**union_by_name**\n\nMatch columns by name when scanning multiple files in `read_*` functions.',
+    filename: '**filename**\n\nInclude source filename as an output column.',
+    header: '**header**\n\nTreat first row as a header row for CSV input.',
+    auto_detect: '**auto_detect**\n\nAutomatically infer delimiter and types for CSV input.',
+    sample_size: '**sample_size**\n\nNumber of rows sampled for type inference.',
+    compression: '**compression**\n\nCompression codec, e.g. `auto`, `gzip`, `zstd`, `none`.',
+    hive_partitioning:
+      '**hive_partitioning**\n\nExtract partition columns from Hive-style folder names.',
+    maximum_object_size:
+      '**maximum_object_size**\n\nMaximum JSON object size in bytes for JSON readers.'
+  }
+
   return monaco.languages.registerHoverProvider(language, {
     provideHover: (
       model: MonacoTypes.editor.ITextModel,
@@ -749,6 +882,12 @@ function registerHoverProvider(monaco: MonacoApi, language: string, schemaContex
       if (!word) return null
 
       const hoveredWord = word.word.toLowerCase()
+
+      if (schemaContext?.dialect === 'sql' && duckdbArgDocs[hoveredWord]) {
+        return {
+          contents: [{ value: duckdbArgDocs[hoveredWord] }]
+        }
+      }
 
       // Check if hovering over a column name
       if (schemaContext?.columns) {
