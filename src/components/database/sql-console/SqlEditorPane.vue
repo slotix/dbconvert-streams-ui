@@ -50,7 +50,7 @@
         <div
           v-if="showTemplates"
           ref="templateMenuRef"
-          class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-[200] overflow-hidden"
+          class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-[200] overflow-hidden flex flex-col"
           :style="templateMenuStyle"
         >
           <div class="px-3 pt-3 pb-2 border-b border-gray-200 dark:border-gray-700/80">
@@ -82,7 +82,7 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-[1fr_320px] h-full">
+          <div class="grid grid-cols-1 md:grid-cols-[1fr_320px] min-h-0 flex-1">
             <div class="overflow-y-auto p-2 pb-10">
               <template v-if="groupedTemplateSections.length > 0">
                 <template v-for="section in groupedTemplateSections" :key="section.name">

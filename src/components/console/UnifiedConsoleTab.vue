@@ -5,18 +5,23 @@
       ref="executionToolbarRef"
       class="px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex items-center gap-3"
     >
-      <div class="shrink-0 execution-context-wrap">
+      <div class="shrink-0 w-auto">
         <div
           v-if="showUnifiedExecutionSelector"
-          class="execution-context-group"
-          :class="{ 'execution-context-group--compact': hideToolbarLabels }"
+          class="inline-flex items-center"
+          :class="hideToolbarLabels ? 'gap-0' : 'gap-2'"
         >
-          <span v-show="!hideToolbarLabels" class="execution-context-label">Run on:</span>
+          <span
+            v-show="!hideToolbarLabels"
+            class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap"
+          >
+            Run on:
+          </span>
           <FormSelect
             v-model="executionContextValue"
             :options="executionContextOptions"
             dropdown-footer="Templates are scoped to selected context"
-            class="execution-context-select"
+            class="execution-context-select w-[280px] min-w-[280px] max-w-[280px]"
             placeholder="Select execution mode"
           />
         </div>
@@ -906,14 +911,6 @@ defineExpose({
   min-height: 400px;
 }
 
-.execution-context-select {
-  width: 280px;
-}
-
-.execution-context-wrap {
-  width: auto;
-}
-
 .sources-pills {
   display: flex;
   flex: 1;
@@ -942,27 +939,6 @@ defineExpose({
   border-radius: 0.375rem;
 }
 
-.execution-context-group {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.execution-context-group--compact {
-  gap: 0;
-}
-
-.execution-context-label {
-  font-size: 0.75rem;
-  line-height: 1rem;
-  color: #6b7280;
-  white-space: nowrap;
-}
-
-:global(.dark) .execution-context-label {
-  color: #9ca3af;
-}
-
 .execution-context-select :deep(button) {
   height: 2rem;
   padding-top: 0.25rem;
@@ -971,6 +947,7 @@ defineExpose({
   padding-right: 2rem;
   font-size: 0.75rem;
   line-height: 1rem;
+  overflow: hidden;
 }
 
 .execution-context-select :deep(ul) {
