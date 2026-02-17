@@ -98,6 +98,105 @@ describe('useMonacoSqlProviders dialect-specific keyword suggestions', () => {
     expect(labels).not.toContain('ILIKE')
   })
 
+  it('suggests DuckDB file table functions after FROM in sql dialect', () => {
+    const { monaco, providers } = createMockMonaco()
+
+    useMonacoSqlProviders(monaco, 'sql', 'sql')
+
+    const sql = 'SELECT * FROM '
+    const provider = providers[0]
+    const result = provider.provideCompletionItems(createModel(sql), {
+      lineNumber: 1,
+      column: sql.length + 1
+    })
+
+    const labels = result.suggestions.map((s) => s.label)
+    expect(labels).toContain('read_parquet(...)')
+    expect(labels).toContain('read_csv_auto(...)')
+    expect(labels).toContain('read_json_auto(...)')
+    expect(labels).toContain('glob(...)')
+
+    const readParquetIndex = labels.indexOf('read_parquet(...)')
+    const countFnIndex = labels.indexOf('COUNT()')
+    expect(readParquetIndex).toBeGreaterThanOrEqual(0)
+    expect(countFnIndex).toBeGreaterThanOrEqual(0)
+    expect(readParquetIndex).toBeLessThan(countFnIndex)
+  })
+
+  it('includes DuckDB-specific metadata functions in sql dialect', () => {
+    const { monaco, providers } = createMockMonaco()
+
+    useMonacoSqlProviders(monaco, 'sql', 'sql')
+
+    const provider = providers[0]
+    const result = provider.provideCompletionItems(createModel('SELECT '), {
+      lineNumber: 1,
+      column: 'SELECT '.length + 1
+    })
+
+    const labels = result.suggestions.map((s) => s.label)
+    expect(labels).toContain('PARQUET_METADATA()')
+    expect(labels).toContain('PARQUET_SCHEMA()')
+    expect(labels).toContain('SNIFF_CSV()')
+  })
+
+  it('suggests DuckDB read_csv_auto named parameters inside function args', () => {
+    const { monaco, providers } = createMockMonaco()
+
+    useMonacoSqlProviders(monaco, 'sql', 'sql')
+
+    const sql = "SELECT * FROM read_csv_auto('/tmp/data.csv', "
+    const provider = providers[0]
+    const result = provider.provideCompletionItems(createModel(sql), {
+      lineNumber: 1,
+      column: sql.length + 1
+    })
+
+    const labels = result.suggestions.map((s) => s.label)
+    expect(labels).toContain('union_by_name = ...')
+    expect(labels).toContain('filename = ...')
+    expect(labels).toContain('header = ...')
+    expect(labels).toContain('auto_detect = ...')
+    expect(labels).toContain('sample_size = ...')
+  })
+
+  it('suggests DuckDB read_parquet named parameters inside function args', () => {
+    const { monaco, providers } = createMockMonaco()
+
+    useMonacoSqlProviders(monaco, 'sql', 'sql')
+
+    const sql = "SELECT * FROM read_parquet('/tmp/data.parquet', "
+    const provider = providers[0]
+    const result = provider.provideCompletionItems(createModel(sql), {
+      lineNumber: 1,
+      column: sql.length + 1
+    })
+
+    const labels = result.suggestions.map((s) => s.label)
+    expect(labels).toContain('filename = ...')
+    expect(labels).toContain('union_by_name = ...')
+    expect(labels).toContain('hive_partitioning = ...')
+  })
+
+  it('suggests DuckDB read_json_auto named parameters inside function args', () => {
+    const { monaco, providers } = createMockMonaco()
+
+    useMonacoSqlProviders(monaco, 'sql', 'sql')
+
+    const sql = "SELECT * FROM read_json_auto('/tmp/data.json', "
+    const provider = providers[0]
+    const result = provider.provideCompletionItems(createModel(sql), {
+      lineNumber: 1,
+      column: sql.length + 1
+    })
+
+    const labels = result.suggestions.map((s) => s.label)
+    expect(labels).toContain('filename = ...')
+    expect(labels).toContain('union_by_name = ...')
+    expect(labels).toContain('maximum_object_size = ...')
+    expect(labels).toContain('compression = ...')
+  })
+
   it('prioritizes WHERE continuation keywords (AND/OR/ORDER BY/LIMIT)', () => {
     const { monaco, providers } = createMockMonaco()
 

@@ -507,6 +507,12 @@ function registerCompletionProvider(
       }
 
       const completionContext = buildCompletionContext(textUntilPosition, wordInfo.word)
+      const isDuckDbCsvArgsContext =
+        dialect === 'sql' && /\bread_csv(_auto)?\s*\([^)]*$/i.test(textUntilPosition)
+      const isDuckDbParquetArgsContext =
+        dialect === 'sql' && /\bread_parquet\s*\([^)]*$/i.test(textUntilPosition)
+      const isDuckDbJsonArgsContext =
+        dialect === 'sql' && /\bread_json(_auto)?\s*\([^)]*$/i.test(textUntilPosition)
       const isPredicateContext =
         completionContext.isWhereHeadContext ||
         completionContext.isAfterWhereClauseContext ||
@@ -560,6 +566,102 @@ function registerCompletionProvider(
               : completionContext.isSelectListContext
                 ? `2_${table.name}`
                 : `3_${table.name}` // Prioritize in table context
+          })
+        })
+      }
+
+      // 2.1 Add DuckDB file table functions in FROM/JOIN contexts
+      if (dialect === 'sql' && completionContext.isTableContext) {
+        const duckdbTableFunctions = [
+          {
+            label: 'read_parquet(...)',
+            insertText: "read_parquet('${1:/path/to/files/*.parquet}')",
+            detail: 'DuckDB table function'
+          },
+          {
+            label: 'read_csv_auto(...)',
+            insertText: "read_csv_auto('${1:/path/to/files/*.csv}')",
+            detail: 'DuckDB table function'
+          },
+          {
+            label: 'read_json_auto(...)',
+            insertText: "read_json_auto('${1:/path/to/files/*.json*}')",
+            detail: 'DuckDB table function'
+          },
+          {
+            label: 'glob(...)',
+            insertText: "glob('${1:/path/to/files/*}')",
+            detail: 'DuckDB table function'
+          }
+        ]
+
+        duckdbTableFunctions.forEach((item) => {
+          suggestions.push({
+            label: item.label,
+            kind: monaco.languages.CompletionItemKind.Function,
+            insertText: item.insertText,
+            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            range,
+            detail: item.detail,
+            sortText: `00_${item.label}`
+          })
+        })
+      }
+
+      // 2.2 Add DuckDB named parameters inside read_* argument contexts
+      if (isDuckDbCsvArgsContext || isDuckDbParquetArgsContext || isDuckDbJsonArgsContext) {
+        const duckdbNamedArgs: Array<{ label: string; insertText: string }> = []
+
+        if (isDuckDbCsvArgsContext) {
+          duckdbNamedArgs.push(
+            { label: 'union_by_name = ...', insertText: 'union_by_name = ${1:true}' },
+            { label: 'filename = ...', insertText: 'filename = ${1:true}' },
+            { label: 'header = ...', insertText: 'header = ${1:true}' },
+            { label: 'auto_detect = ...', insertText: 'auto_detect = ${1:true}' },
+            { label: 'sample_size = ...', insertText: 'sample_size = ${1:20480}' },
+            {
+              label: 'compression = ...',
+              insertText: "compression = ${1|'auto','gzip','zstd','none'|}"
+            }
+          )
+        }
+
+        if (isDuckDbParquetArgsContext) {
+          duckdbNamedArgs.push(
+            { label: 'filename = ...', insertText: 'filename = ${1:true}' },
+            { label: 'union_by_name = ...', insertText: 'union_by_name = ${1:true}' },
+            { label: 'hive_partitioning = ...', insertText: 'hive_partitioning = ${1:true}' },
+            {
+              label: 'compression = ...',
+              insertText: "compression = ${1|'auto','gzip','zstd','none'|}"
+            }
+          )
+        }
+
+        if (isDuckDbJsonArgsContext) {
+          duckdbNamedArgs.push(
+            { label: 'filename = ...', insertText: 'filename = ${1:true}' },
+            { label: 'union_by_name = ...', insertText: 'union_by_name = ${1:true}' },
+            {
+              label: 'maximum_object_size = ...',
+              insertText: 'maximum_object_size = ${1:16777216}'
+            },
+            {
+              label: 'compression = ...',
+              insertText: "compression = ${1|'auto','gzip','zstd','none'|}"
+            }
+          )
+        }
+
+        duckdbNamedArgs.forEach((arg) => {
+          suggestions.push({
+            label: arg.label,
+            kind: monaco.languages.CompletionItemKind.Field,
+            insertText: arg.insertText,
+            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            range,
+            detail: 'DuckDB named parameter',
+            sortText: `00_ARG_${arg.label}`
           })
         })
       }

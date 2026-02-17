@@ -145,21 +145,21 @@ export const POSTGRESQL_SPECIFIC = {
   ]
 }
 
-// SQL Server-specific keywords and functions
-export const SQLSERVER_SPECIFIC = {
-  keywords: ['TOP', 'WITH', 'NOLOCK', 'ROWLOCK', 'OUTPUT'],
+// DuckDB-specific keywords and functions (used in file/federated SQL consoles)
+export const DUCKDB_SPECIFIC = {
+  keywords: ['DESCRIBE', 'SUMMARIZE', 'QUALIFY', 'PIVOT', 'UNPIVOT', 'USING SAMPLE'],
   functions: [
-    'STRING_AGG',
-    'CONCAT_WS',
-    'ISNULL',
-    'FORMAT',
-    'DATEDIFF',
-    'DATEADD',
-    'DATENAME',
-    'DATEPART',
-    'EOMONTH',
-    'GETDATE',
-    'SYSDATETIME'
+    'READ_PARQUET',
+    'READ_CSV_AUTO',
+    'READ_CSV',
+    'READ_JSON_AUTO',
+    'READ_JSON',
+    'PARQUET_METADATA',
+    'PARQUET_SCHEMA',
+    'PARQUET_FILE_METADATA',
+    'GLOB',
+    'SNIFF_CSV',
+    'CURRENT_SETTING'
   ]
 }
 
@@ -257,8 +257,8 @@ export function getDialectSpecifics(dialect: 'mysql' | 'pgsql' | 'sql') {
       return MYSQL_SPECIFIC
     case 'pgsql':
       return POSTGRESQL_SPECIFIC
-    case 'sql': // SQL Server
-      return SQLSERVER_SPECIFIC
+    case 'sql': // DuckDB / generic SQL in app file & federated consoles
+      return DUCKDB_SPECIFIC
     default:
       return { keywords: [], functions: [] }
   }
