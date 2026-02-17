@@ -37,16 +37,16 @@
             role="group"
           >
             <BaseButton
-              class="rounded-none rounded-l-md"
               v-tooltip="'Edit using step-by-step wizard'"
+              class="rounded-none rounded-l-md"
               variant="secondary"
               @click="navigateToEdit"
             >
               Edit
             </BaseButton>
             <BaseButton
-              class="rounded-none rounded-r-md -ml-px"
               v-tooltip="'Edit raw JSON configuration'"
+              class="rounded-none rounded-r-md -ml-px"
               variant="secondary"
               @click="navigateToEditJson"
             >

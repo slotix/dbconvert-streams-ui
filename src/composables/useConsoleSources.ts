@@ -212,11 +212,31 @@ export function useConsoleSources(options: UseConsoleSourcesOptions): UseConsole
   const useFederatedEngine = computed(() => runMode.value === 'federated')
 
   const databaseSourceMappings = computed(() =>
-    selectedConnections.value.filter((mapping) => {
-      const conn = connectionsStore.connectionByID(mapping.connectionId)
-      const kind = getConnectionKindFromSpec(conn?.spec)
-      return isDatabaseKind(kind)
-    })
+    selectedConnections.value
+      .filter((mapping) => {
+        const conn = connectionsStore.connectionByID(mapping.connectionId)
+        const kind = getConnectionKindFromSpec(conn?.spec)
+        return isDatabaseKind(kind)
+      })
+      .map((mapping) => {
+        if (modeValue.value !== 'database') return mapping
+
+        const currentDatabase = mapping.database?.trim() || ''
+        if (currentDatabase) return mapping
+
+        const explicitDatabase =
+          mapping.connectionId === connectionIdValue.value
+            ? primaryDefaultDatabase.value.trim() ||
+              getConnectionDefaultDatabase(mapping.connectionId)
+            : getConnectionDefaultDatabase(mapping.connectionId)
+
+        if (!explicitDatabase) return mapping
+
+        return {
+          ...mapping,
+          database: explicitDatabase
+        }
+      })
   )
 
   const singleSourceMapping = computed<ConnectionMapping | null>(() => {

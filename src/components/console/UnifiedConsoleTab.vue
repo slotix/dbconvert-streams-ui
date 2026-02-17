@@ -166,7 +166,6 @@ import {
   isDatabaseKind,
   getSqlDialectFromConnection
 } from '@/types/specs'
-import { getConnectionDatabase } from '@/utils/specBuilder'
 import {
   getFederatedTemplates,
   getFileTemplates,
@@ -572,6 +571,7 @@ const federatedTablesList = ref<Array<{ name: string; schema?: string }>>([])
 const federatedColumnsMap = ref<
   Record<string, Array<{ name: string; type: string; nullable: boolean }>>
 >({})
+let schemaLoadRequestId = 0
 
 const schemaContext = computed<SchemaContext>(() => {
   if (props.mode === 'file') {
@@ -596,10 +596,12 @@ async function loadTableSuggestions() {
 }
 
 async function loadTableSuggestionsWithRefresh(forceRefresh: boolean) {
+  const requestId = ++schemaLoadRequestId
   if (props.mode !== 'database') return
 
   const dbMappings = autocompleteDatabaseMappings.value
   if (dbMappings.length === 0) {
+    if (requestId !== schemaLoadRequestId) return
     tablesList.value = []
     columnsMap.value = {}
     federatedTablesList.value = []
@@ -616,9 +618,8 @@ async function loadTableSuggestionsWithRefresh(forceRefresh: boolean) {
 
     await Promise.all(
       dbMappings.map(async (mapping) => {
-        const conn = connectionsStore.connectionByID(mapping.connectionId)
         const alias = mapping.alias?.trim()
-        const database = mapping.database?.trim() || getConnectionDatabase(conn || undefined)
+        const database = mapping.database?.trim() || ''
 
         if (!alias || !database) return
 
@@ -652,20 +653,31 @@ async function loadTableSuggestionsWithRefresh(forceRefresh: boolean) {
       })
     )
 
+    if (requestId !== schemaLoadRequestId) return
     federatedTablesList.value = nextTables
     federatedColumnsMap.value = nextColumns
     return
   }
 
+  if (requestId !== schemaLoadRequestId) return
   federatedTablesList.value = []
   federatedColumnsMap.value = {}
+  tablesList.value = []
+  columnsMap.value = {}
 
   const selected = dbMappings[0]
   const targetConnectionId = selected.connectionId
   const db = selected.database?.trim() || ''
 
+  if (!db) {
+    tablesList.value = []
+    columnsMap.value = {}
+    return
+  }
+
   try {
     const metadata = await connections.getMetadata(targetConnectionId, db, forceRefresh)
+    if (requestId !== schemaLoadRequestId) return
     tablesList.value = Object.keys(metadata.tables).map((name) => ({ name }))
 
     const colMap: Record<string, Array<{ name: string; type: string; nullable: boolean }>> = {}
@@ -680,6 +692,9 @@ async function loadTableSuggestionsWithRefresh(forceRefresh: boolean) {
     }
     columnsMap.value = colMap
   } catch (error) {
+    if (requestId !== schemaLoadRequestId) return
+    tablesList.value = []
+    columnsMap.value = {}
     console.error('Failed to load table suggestions:', error)
   }
 }

@@ -14,6 +14,7 @@ import {
   SQL_SNIPPETS,
   type SqlSnippet
 } from '@/constants/sqlKeywords'
+import { buildTopKeywordRules } from './sqlCompletionTopRules'
 
 import type * as MonacoTypes from 'monaco-editor'
 
@@ -28,7 +29,7 @@ export interface SchemaContext {
   dialect: 'mysql' | 'pgsql' | 'sql'
 }
 
-interface CompletionContext {
+export interface CompletionContext {
   isTableContext: boolean
   hasTypedPrefix: boolean
   hasAggregateFunction: boolean
@@ -43,13 +44,79 @@ interface CompletionContext {
   isOnHeadContext: boolean
   isAfterOnClauseContext: boolean
   isAfterGroupByClauseContext: boolean
+  isGroupByHeadContext: boolean
+  isHavingHeadContext: boolean
+  isAfterHavingClauseContext: boolean
   isOrderByHeadContext: boolean
   isAfterOrderByClauseContext: boolean
   isAfterLimitClauseContext: boolean
+  isInsertHeadContext: boolean
+  isInsertIntoHeadContext: boolean
+  isAfterInsertIntoTableContext: boolean
+  isAfterInsertColumnsContext: boolean
+  isValuesHeadContext: boolean
+  isUpdateHeadContext: boolean
+  isAfterUpdateTableContext: boolean
+  isSetHeadContext: boolean
+  isAfterSetClauseContext: boolean
+  isDeleteHeadContext: boolean
+  isDeleteFromHeadContext: boolean
+  isAfterDeleteFromTableContext: boolean
+  isDropHeadContext: boolean
+  isDropTableHeadContext: boolean
+  isAfterDropTableNameContext: boolean
+  isCreateHeadContext: boolean
+  isAlterHeadContext: boolean
+  isAlterTableHeadContext: boolean
+  isAfterAlterTableNameContext: boolean
+  isTruncateHeadContext: boolean
+  isTruncateTableHeadContext: boolean
+  isWithHeadContext: boolean
+  isAfterWithCteNameContext: boolean
+  isAfterWithCteAsContext: boolean
+  isAfterWithCteBodyContext: boolean
+  isAfterWithCteBodyCommaContext: boolean
+  isAfterWithCteChainNameContext: boolean
+  isAfterWithCteChainAsContext: boolean
+  isAfterSelectTailContext: boolean
+  isAfterUnionHeadContext: boolean
+  isAfterUnionAllHeadContext: boolean
+  isAfterInsertValuesTupleContext: boolean
+  isOnConflictHeadContext: boolean
+  isAfterOnConflictTargetContext: boolean
+  isDoUpdateHeadContext: boolean
+  isOnDuplicateKeyHeadContext: boolean
+  isMergeHeadContext: boolean
+  isMergeIntoHeadContext: boolean
+  isAfterMergeIntoTableContext: boolean
+  isMergeUsingHeadContext: boolean
+  isAfterMergeUsingTableContext: boolean
+  isAfterMergeOnClauseContext: boolean
+  isMergeWhenMatchedThenContext: boolean
+  isMergeUpdateHeadContext: boolean
+  isMergeWhenNotMatchedThenContext: boolean
+  isMergeInsertHeadContext: boolean
+  isAfterMergeInsertColumnsContext: boolean
+  isMergeInsertValuesHeadContext: boolean
+  isOverHeadContext: boolean
+  isOverOpenParenContext: boolean
+  isWindowOrderByInOverContext: boolean
+  isRowsHeadContext: boolean
+  isRangeHeadContext: boolean
+  isRowsBetweenHeadContext: boolean
+  isRangeBetweenHeadContext: boolean
+  isGroupsHeadContext: boolean
+  isGroupsBetweenHeadContext: boolean
+  isWindowFrameAndHeadContext: boolean
+  isWindowFrameEndContext: boolean
+  isExcludeHeadContext: boolean
+  isCaseHeadContext: boolean
+  isAfterCaseThenClauseContext: boolean
+  isElseHeadContext: boolean
   suppressBroadSuggestions: boolean
 }
 
-interface TopKeywordRule {
+export interface TopKeywordRule {
   condition: (ctx: CompletionContext) => boolean
   label: string
   insertText: string
@@ -78,6 +145,7 @@ function buildCompletionContext(textUntilPosition: string, currentWord: string):
   const lastWhereIndex = upperStatement.lastIndexOf('WHERE')
   const lastOnIndex = upperStatement.lastIndexOf('ON')
   const lastGroupByIndex = upperStatement.lastIndexOf('GROUP BY')
+  const lastHavingIndex = upperStatement.lastIndexOf('HAVING')
   const lastOrderByIndex = upperStatement.lastIndexOf('ORDER BY')
   const lastLimitIndex = upperStatement.lastIndexOf('LIMIT')
   const hasAggregateFunction = /\b(COUNT|SUM|AVG|MIN|MAX)\s*\(/i.test(currentStatement)
@@ -114,6 +182,13 @@ function buildCompletionContext(textUntilPosition: string, currentWord: string):
     /\s$/.test(textUntilPosition) &&
     !/\bGROUP\s+BY\s*$/i.test(textUntilPosition) &&
     !/,\s*$/.test(textUntilPosition)
+  const isGroupByHeadContext = /\bGROUP\s+BY\s+$/i.test(textUntilPosition)
+  const isHavingHeadContext = /\bHAVING\s+$/i.test(textUntilPosition)
+  const isAfterHavingClauseContext =
+    lastHavingIndex !== -1 &&
+    /\s$/.test(textUntilPosition) &&
+    !/\bHAVING\s*$/i.test(textUntilPosition) &&
+    !/,\s*$/.test(textUntilPosition)
   const isOrderByHeadContext = /\bORDER\s+BY\s+$/i.test(textUntilPosition)
   const isAfterOrderByClauseContext =
     lastOrderByIndex !== -1 &&
@@ -125,6 +200,120 @@ function buildCompletionContext(textUntilPosition: string, currentWord: string):
     /\s$/.test(textUntilPosition) &&
     !/\bLIMIT\s*$/i.test(textUntilPosition) &&
     !/,\s*$/.test(textUntilPosition)
+  const isInsertHeadContext = /\bINSERT\s+$/i.test(textUntilPosition)
+  const isInsertIntoHeadContext = /\bINSERT\s+INTO\s+$/i.test(textUntilPosition)
+  const isAfterInsertIntoTableContext = /\bINSERT\s+INTO\s+[^\s,;()]+\s+$/i.test(textUntilPosition)
+  const isAfterInsertColumnsContext =
+    /\bINSERT\s+INTO\s+[^\s,;()]+\s*\([^)]*\)\s+$/i.test(textUntilPosition) &&
+    !/\bVALUES\s+$/i.test(textUntilPosition)
+  const isValuesHeadContext = /\bVALUES\s+$/i.test(textUntilPosition)
+  const isUpdateHeadContext = /\bUPDATE\s+$/i.test(textUntilPosition)
+  const isAfterUpdateTableContext = /\bUPDATE\s+[^\s,;()]+\s+$/i.test(textUntilPosition)
+  const isSetHeadContext = /\bSET\s+$/i.test(textUntilPosition)
+  const isAfterSetClauseContext =
+    /\bUPDATE\b/i.test(currentStatement) &&
+    /\bSET\b/i.test(currentStatement) &&
+    /\s$/.test(textUntilPosition) &&
+    !/\bSET\s*$/i.test(textUntilPosition) &&
+    !/,\s*$/.test(textUntilPosition)
+  const isDeleteHeadContext = /\bDELETE\s+$/i.test(textUntilPosition)
+  const isDeleteFromHeadContext = /\bDELETE\s+FROM\s+$/i.test(textUntilPosition)
+  const isAfterDeleteFromTableContext = /\bDELETE\s+FROM\s+[^\s,;()]+\s+$/i.test(textUntilPosition)
+  const isDropHeadContext = /\bDROP\s+$/i.test(textUntilPosition)
+  const isDropTableHeadContext = /\bDROP\s+TABLE\s+$/i.test(textUntilPosition)
+  const isAfterDropTableNameContext = /\bDROP\s+TABLE\s+[^\s,;()]+\s+$/i.test(textUntilPosition)
+  const isCreateHeadContext = /\bCREATE\s+$/i.test(textUntilPosition)
+  const isAlterHeadContext = /\bALTER\s+$/i.test(textUntilPosition)
+  const isAlterTableHeadContext = /\bALTER\s+TABLE\s+$/i.test(textUntilPosition)
+  const isAfterAlterTableNameContext = /\bALTER\s+TABLE\s+[^\s,;()]+\s+$/i.test(textUntilPosition)
+  const isTruncateHeadContext = /\bTRUNCATE\s+$/i.test(textUntilPosition)
+  const isTruncateTableHeadContext = /\bTRUNCATE\s+TABLE\s+$/i.test(textUntilPosition)
+  const isWithHeadContext = /\bWITH\s+$/i.test(textUntilPosition)
+  const isAfterWithCteNameContext = /\bWITH\s+[A-Za-z_][\w$]*\s+$/i.test(textUntilPosition)
+  const isAfterWithCteAsContext = /\bWITH\s+[A-Za-z_][\w$]*\s+AS\s*$/i.test(textUntilPosition)
+  const isAfterWithCteBodyContext = /\bWITH\b[\s\S]*\)\s+$/i.test(textUntilPosition)
+  const isAfterWithCteBodyCommaContext = /\bWITH\b[\s\S]*\)\s*,\s*$/i.test(textUntilPosition)
+  const isAfterWithCteChainNameContext = /\bWITH\b[\s\S]*\)\s*,\s*[A-Za-z_][\w$]*\s+$/i.test(
+    textUntilPosition
+  )
+  const isAfterWithCteChainAsContext = /\bWITH\b[\s\S]*\)\s*,\s*[A-Za-z_][\w$]*\s+AS\s*$/i.test(
+    textUntilPosition
+  )
+  const isAfterSelectTailContext =
+    /\bSELECT\b/i.test(currentStatement) &&
+    /\s$/.test(textUntilPosition) &&
+    !isSelectHeadContext &&
+    !isAfterSelectStarContext &&
+    !isAfterSelectListContext &&
+    !isTableContext &&
+    !isWhereHeadContext &&
+    !isOnHeadContext &&
+    !isOrderByHeadContext &&
+    !isAfterOrderByClauseContext &&
+    !isAfterLimitClauseContext
+  const isAfterUnionHeadContext = /\bUNION\s+$/i.test(textUntilPosition)
+  const isAfterUnionAllHeadContext = /\bUNION\s+ALL\s+$/i.test(textUntilPosition)
+  const isAfterInsertValuesTupleContext =
+    /\bINSERT\s+INTO\s+[^\s,;()]+\s*(\([^)]*\)\s*)?VALUES\s*\([^)]*\)\s+$/i.test(textUntilPosition)
+  const isOnConflictHeadContext = /\bON\s+CONFLICT\s+$/i.test(textUntilPosition)
+  const isAfterOnConflictTargetContext = /\bON\s+CONFLICT\s*\([^)]*\)\s+$/i.test(textUntilPosition)
+  const isDoUpdateHeadContext = /\bDO\s+UPDATE\s+$/i.test(textUntilPosition)
+  const isOnDuplicateKeyHeadContext = /\bON\s+DUPLICATE\s+KEY\s+$/i.test(textUntilPosition)
+  const isMergeHeadContext = /\bMERGE\s+$/i.test(textUntilPosition)
+  const isMergeIntoHeadContext = /\bMERGE\s+INTO\s+$/i.test(textUntilPosition)
+  const isAfterMergeIntoTableContext = /\bMERGE\s+INTO\s+[^\s,;()]+\s+$/i.test(textUntilPosition)
+  const isMergeUsingHeadContext = /\bMERGE\s+INTO\s+[^\s,;()]+\s+USING\s+$/i.test(textUntilPosition)
+  const isAfterMergeUsingTableContext =
+    /\bMERGE\s+INTO\s+[^\s,;()]+\s+USING\s+[^\s,;()]+\s+$/i.test(textUntilPosition)
+  const isAfterMergeOnClauseContext =
+    /\bMERGE\s+INTO\b/i.test(currentStatement) &&
+    /\bUSING\b/i.test(currentStatement) &&
+    /\bON\b/i.test(currentStatement) &&
+    /\s$/.test(textUntilPosition) &&
+    !/\bON\s*$/i.test(textUntilPosition)
+  const isMergeWhenMatchedThenContext =
+    /\bMERGE\s+INTO\b/i.test(currentStatement) &&
+    /\bWHEN\s+MATCHED\s+THEN\s+$/i.test(textUntilPosition)
+  const isMergeUpdateHeadContext =
+    /\bMERGE\s+INTO\b/i.test(currentStatement) &&
+    /\bWHEN\s+MATCHED\s+THEN\s+UPDATE\s+$/i.test(textUntilPosition)
+  const isMergeWhenNotMatchedThenContext =
+    /\bMERGE\s+INTO\b/i.test(currentStatement) &&
+    /\bWHEN\s+NOT\s+MATCHED\s+THEN\s+$/i.test(textUntilPosition)
+  const isMergeInsertHeadContext =
+    /\bMERGE\s+INTO\b/i.test(currentStatement) &&
+    /\bWHEN\s+NOT\s+MATCHED\s+THEN\s+INSERT\s+$/i.test(textUntilPosition)
+  const isAfterMergeInsertColumnsContext =
+    /\bMERGE\s+INTO\b/i.test(currentStatement) &&
+    /\bWHEN\s+NOT\s+MATCHED\s+THEN\s+INSERT\s*\([^)]*\)\s+$/i.test(textUntilPosition)
+  const isMergeInsertValuesHeadContext =
+    /\bMERGE\s+INTO\b/i.test(currentStatement) &&
+    /\bWHEN\s+NOT\s+MATCHED\s+THEN\s+INSERT\s*(\([^)]*\)\s*)?VALUES\s+$/i.test(textUntilPosition)
+  const isOverHeadContext = /\bOVER\s+$/i.test(textUntilPosition)
+  const isOverOpenParenContext = /\bOVER\s*\(\s*$/i.test(textUntilPosition)
+  const isWindowOrderByInOverContext = /\bOVER\s*\([^)]*\bORDER\s+BY\s+[^)]*\s+$/i.test(
+    textUntilPosition
+  )
+  const isRowsHeadContext = /\bROWS\s+$/i.test(textUntilPosition)
+  const isRangeHeadContext = /\bRANGE\s+$/i.test(textUntilPosition)
+  const isRowsBetweenHeadContext = /\bROWS\s+BETWEEN\s+$/i.test(textUntilPosition)
+  const isRangeBetweenHeadContext = /\bRANGE\s+BETWEEN\s+$/i.test(textUntilPosition)
+  const isGroupsHeadContext = /\bGROUPS\s+$/i.test(textUntilPosition)
+  const isGroupsBetweenHeadContext = /\bGROUPS\s+BETWEEN\s+$/i.test(textUntilPosition)
+  const isWindowFrameAndHeadContext = /\b(ROWS|RANGE)\s+BETWEEN\s+[^)\n]+\s+AND\s+$/i.test(
+    textUntilPosition
+  )
+  const isWindowFrameEndContext =
+    /\b(ROWS|RANGE|GROUPS)\s+BETWEEN\s+[^)\n]+\s+AND\s+(CURRENT\s+ROW|UNBOUNDED\s+FOLLOWING)\s+$/i.test(
+      textUntilPosition
+    )
+  const isExcludeHeadContext = /\bEXCLUDE\s+$/i.test(textUntilPosition)
+  const isCaseHeadContext = /\bCASE\s+$/i.test(textUntilPosition)
+  const isAfterCaseThenClauseContext =
+    /\bCASE\b/i.test(currentStatement) &&
+    /\bTHEN\s+[^;\n]+\s+$/i.test(textUntilPosition) &&
+    !/\bEND\s*$/i.test(textUntilPosition)
+  const isElseHeadContext = /\bELSE\s+$/i.test(textUntilPosition)
 
   return {
     isTableContext,
@@ -141,9 +330,75 @@ function buildCompletionContext(textUntilPosition: string, currentWord: string):
     isOnHeadContext,
     isAfterOnClauseContext,
     isAfterGroupByClauseContext,
+    isGroupByHeadContext,
+    isHavingHeadContext,
+    isAfterHavingClauseContext,
     isOrderByHeadContext,
     isAfterOrderByClauseContext,
     isAfterLimitClauseContext,
+    isInsertHeadContext,
+    isInsertIntoHeadContext,
+    isAfterInsertIntoTableContext,
+    isAfterInsertColumnsContext,
+    isValuesHeadContext,
+    isUpdateHeadContext,
+    isAfterUpdateTableContext,
+    isSetHeadContext,
+    isAfterSetClauseContext,
+    isDeleteHeadContext,
+    isDeleteFromHeadContext,
+    isAfterDeleteFromTableContext,
+    isDropHeadContext,
+    isDropTableHeadContext,
+    isAfterDropTableNameContext,
+    isCreateHeadContext,
+    isAlterHeadContext,
+    isAlterTableHeadContext,
+    isAfterAlterTableNameContext,
+    isTruncateHeadContext,
+    isTruncateTableHeadContext,
+    isWithHeadContext,
+    isAfterWithCteNameContext,
+    isAfterWithCteAsContext,
+    isAfterWithCteBodyContext,
+    isAfterWithCteBodyCommaContext,
+    isAfterWithCteChainNameContext,
+    isAfterWithCteChainAsContext,
+    isAfterSelectTailContext,
+    isAfterUnionHeadContext,
+    isAfterUnionAllHeadContext,
+    isAfterInsertValuesTupleContext,
+    isOnConflictHeadContext,
+    isAfterOnConflictTargetContext,
+    isDoUpdateHeadContext,
+    isOnDuplicateKeyHeadContext,
+    isMergeHeadContext,
+    isMergeIntoHeadContext,
+    isAfterMergeIntoTableContext,
+    isMergeUsingHeadContext,
+    isAfterMergeUsingTableContext,
+    isAfterMergeOnClauseContext,
+    isMergeWhenMatchedThenContext,
+    isMergeUpdateHeadContext,
+    isMergeWhenNotMatchedThenContext,
+    isMergeInsertHeadContext,
+    isAfterMergeInsertColumnsContext,
+    isMergeInsertValuesHeadContext,
+    isOverHeadContext,
+    isOverOpenParenContext,
+    isWindowOrderByInOverContext,
+    isRowsHeadContext,
+    isRangeHeadContext,
+    isRowsBetweenHeadContext,
+    isRangeBetweenHeadContext,
+    isGroupsHeadContext,
+    isGroupsBetweenHeadContext,
+    isWindowFrameAndHeadContext,
+    isWindowFrameEndContext,
+    isExcludeHeadContext,
+    isCaseHeadContext,
+    isAfterCaseThenClauseContext,
+    isElseHeadContext,
     suppressBroadSuggestions: isSelectListContext && !hasTypedPrefix
   }
 }
@@ -155,148 +410,7 @@ function addTopKeywordSuggestions(
   ctx: CompletionContext,
   dialect: 'mysql' | 'pgsql' | 'sql'
 ) {
-  const rules: TopKeywordRule[] = [
-    {
-      condition: (c) => c.isSelectHeadContext,
-      label: '*',
-      insertText: '*',
-      detail: 'All columns',
-      sortText: '00_*'
-    },
-    {
-      condition: (c) => c.isAfterSelectStarContext || c.isAfterSelectListContext,
-      label: 'FROM',
-      insertText: 'FROM ',
-      detail: 'SQL Keyword',
-      sortText: '00_FROM'
-    },
-    {
-      condition: (c) => c.isAfterFromTableContext,
-      label: 'JOIN',
-      insertText: 'JOIN ',
-      detail: 'SQL Keyword',
-      sortText: '00_JOIN'
-    },
-    {
-      condition: (c) => c.isAfterFromTableContext,
-      label: 'WHERE',
-      insertText: 'WHERE ',
-      detail: 'SQL Keyword',
-      sortText: '00_WHERE'
-    },
-    {
-      condition: (c) => c.isAfterFromTableContext && c.hasAggregateFunction,
-      label: 'GROUP BY',
-      insertText: 'GROUP BY ',
-      detail: 'SQL Keyword',
-      sortText: '00_GROUP_BY_FROM'
-    },
-    {
-      condition: (c) => c.isAfterFromTableContext,
-      label: 'ORDER BY',
-      insertText: 'ORDER BY ',
-      detail: 'SQL Keyword',
-      sortText: '00_ORDER_BY_FROM'
-    },
-    {
-      condition: (c) => c.isAfterJoinTableContext,
-      label: 'ON',
-      insertText: 'ON ',
-      detail: 'SQL Keyword',
-      sortText: '00_ON'
-    },
-    {
-      condition: (c) => c.isAfterWhereClauseContext,
-      label: 'AND',
-      insertText: 'AND ',
-      detail: 'SQL Keyword',
-      sortText: '00_AND'
-    },
-    {
-      condition: (c) => c.isAfterWhereClauseContext,
-      label: 'OR',
-      insertText: 'OR ',
-      detail: 'SQL Keyword',
-      sortText: '00_OR'
-    },
-    {
-      condition: (c) => c.isAfterWhereClauseContext,
-      label: 'LIMIT',
-      insertText: 'LIMIT ',
-      detail: 'SQL Keyword',
-      sortText: '00_LIMIT_WHERE'
-    },
-    {
-      condition: (c) => c.isAfterWhereClauseContext,
-      label: 'ORDER BY',
-      insertText: 'ORDER BY ',
-      detail: 'SQL Keyword',
-      sortText: '00_ORDER_BY_WHERE'
-    },
-    {
-      condition: (c) => c.isAfterWhereClauseContext,
-      label: 'GROUP BY',
-      insertText: 'GROUP BY ',
-      detail: 'SQL Keyword',
-      sortText: '00_GROUP_BY'
-    },
-    {
-      condition: (c) => c.isAfterWhereClauseContext && dialect === 'pgsql',
-      label: 'ILIKE',
-      insertText: 'ILIKE ',
-      detail: 'PostgreSQL Keyword',
-      sortText: '00_ILIKE'
-    },
-    {
-      condition: (c) => c.isAfterWhereClauseContext && dialect === 'mysql',
-      label: 'REGEXP',
-      insertText: 'REGEXP ',
-      detail: 'MySQL Keyword',
-      sortText: '00_REGEXP'
-    },
-    {
-      condition: (c) => c.isAfterOnClauseContext,
-      label: 'AND',
-      insertText: 'AND ',
-      detail: 'SQL Keyword',
-      sortText: '00_AND_ON'
-    },
-    {
-      condition: (c) => c.isAfterOnClauseContext,
-      label: 'OR',
-      insertText: 'OR ',
-      detail: 'SQL Keyword',
-      sortText: '00_OR_ON'
-    },
-    {
-      condition: (c) => c.isAfterGroupByClauseContext,
-      label: 'ORDER BY',
-      insertText: 'ORDER BY ',
-      detail: 'SQL Keyword',
-      sortText: '00_ORDER_BY'
-    },
-    {
-      condition: (c) => c.isAfterGroupByClauseContext,
-      label: 'HAVING',
-      insertText: 'HAVING ',
-      detail: 'SQL Keyword',
-      sortText: '00_HAVING'
-    },
-    {
-      condition: (c) => c.isAfterOrderByClauseContext,
-      label: 'LIMIT',
-      insertText: 'LIMIT ',
-      detail: 'SQL Keyword',
-      sortText: '00_LIMIT'
-    },
-    {
-      condition: (c) => c.isAfterLimitClauseContext,
-      label: 'OFFSET',
-      insertText: 'OFFSET ',
-      detail: 'SQL Keyword',
-      sortText: '00_OFFSET'
-    }
-  ]
+  const rules = buildTopKeywordRules(dialect)
 
   rules.forEach((rule) => {
     if (!rule.condition(ctx)) return
@@ -396,6 +510,8 @@ function registerCompletionProvider(
       const isPredicateContext =
         completionContext.isWhereHeadContext ||
         completionContext.isAfterWhereClauseContext ||
+        completionContext.isHavingHeadContext ||
+        completionContext.isAfterHavingClauseContext ||
         completionContext.isOnHeadContext ||
         completionContext.isAfterOnClauseContext
       const isOrderByContext =
@@ -425,24 +541,7 @@ function registerCompletionProvider(
         })
       }
 
-      // 2. Add SQL Functions
-      const functions = getAllFunctions(dialect)
-      functions.forEach((func) => {
-        suggestions.push({
-          label: `${func}()`,
-          kind: monaco.languages.CompletionItemKind.Function,
-          insertText: `${func}($0)`,
-          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-          range,
-          detail: 'SQL Function',
-          sortText:
-            completionContext.isSelectListContext || isPredicateContext || isOrderByContext
-              ? `8_${func}`
-              : `2_${func}`
-        })
-      })
-
-      // 3. Add Table Names (if schema available) - prioritize in table context
+      // 2. Add Table Names (if schema available) - prioritize in table context
       if (schemaContext?.tables) {
         schemaContext.tables.forEach((table) => {
           const displayName = table.schema ? `${table.schema}.${table.name}` : table.name
@@ -465,7 +564,7 @@ function registerCompletionProvider(
         })
       }
 
-      // 4. Add Column Names (if schema available)
+      // 3. Add Column Names (if schema available)
       if (schemaContext?.columns) {
         Object.entries(schemaContext.columns).forEach(([tableName, columns]) => {
           columns.forEach((column) => {
@@ -488,6 +587,23 @@ function registerCompletionProvider(
           })
         })
       }
+
+      // 4. Add SQL Functions
+      const functions = getAllFunctions(dialect)
+      functions.forEach((func) => {
+        suggestions.push({
+          label: `${func}()`,
+          kind: monaco.languages.CompletionItemKind.Function,
+          insertText: `${func}($0)`,
+          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+          range,
+          detail: 'SQL Function',
+          sortText:
+            completionContext.isSelectListContext || isPredicateContext || isOrderByContext
+              ? `8_${func}`
+              : `2_${func}`
+        })
+      })
 
       // 5. Add SQL Snippets
       if (!completionContext.suppressBroadSuggestions) {
