@@ -1,4 +1,4 @@
-import { computed, nextTick, ref } from 'vue'
+import { nextTick } from 'vue'
 import { shallowMount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import UnifiedConsoleTab from '@/components/console/UnifiedConsoleTab.vue'
@@ -10,6 +10,12 @@ vi.mock('@/stores/paneTabs', () => ({
     renameConsoleTab: vi.fn()
   }),
   createConsoleSessionId: () => 'test-console-session'
+}))
+
+vi.mock('@/stores/confirmDialog', () => ({
+  useConfirmDialogStore: () => ({
+    confirm: vi.fn().mockResolvedValue(true)
+  })
 }))
 
 vi.mock('@/composables/useConsoleTab', async () => {
@@ -84,6 +90,12 @@ vi.mock('@/stores/connections', async () => {
         name: 'MySQL',
         type: 'mysql',
         spec: { database: { host: 'localhost', port: 3306, username: 'u', database: 'my_db' } }
+      },
+      {
+        id: 'files-1',
+        name: 'Local Files',
+        type: 'files',
+        spec: { files: { basePath: '/tmp' } }
       }
     ]
   }
@@ -107,19 +119,34 @@ vi.mock('@/stores/connections', async () => {
 
 vi.mock('@/composables/useConsoleSources', async () => {
   const { computed, ref } = await import('vue')
+  const { useConnectionsStore } = await import('@/stores/connections')
+
+  const connectionsStore = useConnectionsStore()
 
   const selectedConnections = ref([{ connectionId: 'pg-1', alias: 'pg1', database: 'pg_db' }])
   const runMode = ref<'single' | 'federated'>('single')
   const singleSourceConnectionId = ref('pg-1')
 
   const databaseSourceMappings = computed(() =>
-    selectedConnections.value.filter(
-      (mapping) => mapping.connectionId === 'pg-1' || mapping.connectionId === 'my-1'
-    )
+    selectedConnections.value
+      .filter((mapping) => mapping.connectionId === 'pg-1' || mapping.connectionId === 'my-1')
+      .map((mapping) => {
+        const currentDatabase = mapping.database?.trim() || ''
+        if (currentDatabase) return mapping
+
+        const connection = connectionsStore.connectionByID(mapping.connectionId)
+        const fallbackDatabase = connection?.spec?.database?.database
+        if (typeof fallbackDatabase !== 'string' || !fallbackDatabase.trim()) return mapping
+
+        return {
+          ...mapping,
+          database: fallbackDatabase
+        }
+      })
   )
 
   const singleSourceMapping = computed(() => {
-    const selected = selectedConnections.value.find(
+    const selected = databaseSourceMappings.value.find(
       (mapping) => mapping.connectionId === singleSourceConnectionId.value
     )
     return selected || databaseSourceMappings.value[0] || null
@@ -128,7 +155,7 @@ vi.mock('@/composables/useConsoleSources', async () => {
   return {
     useConsoleSources: () => ({
       selectedConnections,
-      useFederatedEngine: computed(() => false),
+      useFederatedEngine: computed(() => runMode.value === 'federated'),
       runMode,
       databaseSourceMappings,
       singleSourceMapping,
@@ -212,6 +239,9 @@ describe('UnifiedConsoleTab schema context isolation in multisource switching', 
   beforeEach(() => {
     vi.useFakeTimers()
     vi.clearAllMocks()
+    if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.clear()
+    }
   })
 
   afterEach(() => {
@@ -289,7 +319,6 @@ describe('UnifiedConsoleTab schema context isolation in multisource switching', 
 
     wrapper.unmount()
   })
-
   it('keeps MySQL fields after quick mysql -> pg -> mysql switch when stale pg metadata resolves last', async () => {
     const __mockConsoleSourcesState = await getMockConsoleSourcesState()
 
@@ -358,6 +387,105 @@ describe('UnifiedConsoleTab schema context isolation in multisource switching', 
     expect(tableNames).toContain('mysql_final_table')
     expect(tableNames).not.toContain('pg_stale_table')
     expect(schemaContext.columns.mysql_final_table?.[0]?.name).toBe('mysql_final_col')
+
+    wrapper.unmount()
+  })
+
+  it('loads federated schema when restored mappings omit database values', async () => {
+    const __mockConsoleSourcesState = await getMockConsoleSourcesState()
+
+    __mockConsoleSourcesState.runMode.value = 'federated'
+    __mockConsoleSourcesState.selectedConnections.value = [
+      { connectionId: 'my-1', alias: 'my1', database: '' },
+      { connectionId: 'pg-1', alias: 'pg1', database: '' }
+    ]
+
+    vi.mocked(connections.getMetadata).mockImplementation((connectionId: string) => {
+      if (connectionId === 'my-1') {
+        return new Promise((resolve) =>
+          setTimeout(() => resolve(buildMetadata('actor', 'first_name')), 1)
+        )
+      }
+      return new Promise((resolve) => setTimeout(() => resolve(buildMetadata('film', 'title')), 1))
+    })
+
+    const wrapper = shallowMount(UnifiedConsoleTab, {
+      props: {
+        connectionId: 'my-1',
+        mode: 'database'
+      }
+    })
+
+    await nextTick()
+    await nextTick()
+    await vi.runAllTimersAsync()
+    await nextTick()
+
+    const sqlEditorPane = wrapper.findComponent({ name: 'SqlEditorPane' })
+    const schemaContext = sqlEditorPane.props('schemaContext') as {
+      tables: Array<{ name: string }>
+      columns: Record<string, Array<{ name: string }>>
+      dialect: string
+    }
+
+    const tableNames = schemaContext.tables.map((table) => table.name)
+
+    expect(schemaContext.dialect).toBe('sql')
+    expect(tableNames).toContain('my1.actor')
+    expect(tableNames).toContain('pg1.film')
+    expect(schemaContext.columns['my1.actor']?.[0]?.name).toBe('first_name')
+    expect(schemaContext.columns['pg1.film']?.[0]?.name).toBe('title')
+    expect(connections.getMetadata).toHaveBeenCalledWith('my-1', 'my_db', false)
+    expect(connections.getMetadata).toHaveBeenCalledWith('pg-1', 'pg_db', false)
+
+    wrapper.unmount()
+  })
+
+  it('does not show multi-source context for a single file source', async () => {
+    const __mockConsoleSourcesState = await getMockConsoleSourcesState()
+
+    __mockConsoleSourcesState.runMode.value = 'single'
+    __mockConsoleSourcesState.selectedConnections.value = [
+      { connectionId: 'files-1', alias: 'files1', database: '' }
+    ]
+    __mockConsoleSourcesState.singleSourceConnectionId.value = ''
+
+    const wrapper = shallowMount(UnifiedConsoleTab, {
+      props: {
+        connectionId: 'files-1',
+        mode: 'file'
+      }
+    })
+
+    await nextTick()
+
+    expect(wrapper.text()).toContain('Executing: Files: files1')
+    expect(wrapper.text()).not.toContain('Multi-source')
+
+    wrapper.unmount()
+  })
+
+  it('shows unified execution selector for mixed targets in file mode', async () => {
+    const __mockConsoleSourcesState = await getMockConsoleSourcesState()
+
+    __mockConsoleSourcesState.runMode.value = 'federated'
+    __mockConsoleSourcesState.selectedConnections.value = [
+      { connectionId: 'files-1', alias: 'files1', database: '' },
+      { connectionId: 'my-1', alias: 'my1', database: 'my_db' }
+    ]
+    __mockConsoleSourcesState.singleSourceConnectionId.value = 'my-1'
+
+    const wrapper = shallowMount(UnifiedConsoleTab, {
+      props: {
+        connectionId: 'files-1',
+        mode: 'file'
+      }
+    })
+
+    await nextTick()
+
+    expect(wrapper.text()).toContain('Run on:')
+    expect(wrapper.text()).not.toContain('Executing: Files: files1')
 
     wrapper.unmount()
   })

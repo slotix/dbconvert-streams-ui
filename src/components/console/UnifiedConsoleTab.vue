@@ -161,21 +161,16 @@ import { useConfirmDialogStore } from '@/stores/confirmDialog'
 import { usePaneTabsStore, createConsoleSessionId } from '@/stores/paneTabs'
 import connections from '@/api/connections'
 import { SqlQueryTabs, SqlEditorPane, SqlResultsPane } from '@/components/database/sql-console'
-import FormSelect, {
-  type SelectOption,
-  type SelectValueOption
-} from '@/components/base/FormSelect.vue'
+import FormSelect from '@/components/base/FormSelect.vue'
 import SlideOverPanel from '@/components/common/SlideOverPanel.vue'
 import ConnectionAliasPanel from './ConnectionAliasPanel.vue'
 import { useConsoleTab, type QueryHistoryItem } from '@/composables/useConsoleTab'
 import { useConsoleSources, type ConsoleMode } from '@/composables/useConsoleSources'
 import { useQueryExecution } from '@/composables/useQueryExecution'
-import {
-  getConnectionKindFromSpec,
-  getConnectionTypeLabel,
-  isDatabaseKind,
-  getSqlDialectFromConnection
-} from '@/types/specs'
+import { useSqlExecutionContextSelector } from '@/composables/useSqlExecutionContextSelector'
+import { useSqlConsoleTabName } from '@/composables/useSqlConsoleTabName'
+import { useSqlSourcePresentation } from '@/composables/useSqlSourcePresentation'
+import { getConnectionKindFromSpec, getSqlDialectFromConnection } from '@/types/specs'
 import {
   getFederatedTemplates,
   getFileTemplates,
@@ -266,7 +261,9 @@ function cleanupToolbarResizeObserver() {
 
 // ========== Console Key Computation ==========
 const generatedConsoleSessionId = createConsoleSessionId()
-const consoleKey = computed(() => props.consoleSessionId?.trim() || generatedConsoleSessionId)
+const consoleKey = computed(
+  () => props.paneTabId?.trim() || props.consoleSessionId?.trim() || generatedConsoleSessionId
+)
 
 const historyKey = computed(() => {
   if (props.mode === 'file') {
@@ -283,8 +280,6 @@ const connection = computed(() => connectionsStore.connectionByID(props.connecti
 const modeRef = computed(() => props.mode)
 const connectionIdRef = computed(() => props.connectionId)
 const databaseRef = computed(() => props.database)
-
-const sqlConsoleStoreConnectionKey = computed(() => consoleKey.value)
 
 const {
   selectedConnections,
@@ -307,33 +302,12 @@ const {
   consoleKey
 })
 
-const sourcePills = computed(() =>
-  selectedConnections.value.map((mapping) => ({
-    connectionId: mapping.connectionId,
-    alias: mapping.alias || 'db'
-  }))
-)
+const { sourcePills, isDatabaseMapping, getDatabaseTypeDisplay } = useSqlSourcePresentation({
+  selectedConnections,
+  getConnectionById: (connectionId) => connectionsStore.connectionByID(connectionId)
+})
 
 const federatedScopeConnectionId = ref('')
-
-function isDatabaseMapping(mapping: { connectionId: string }): boolean {
-  const conn = connectionsStore.connectionByID(mapping.connectionId)
-  const kind = getConnectionKindFromSpec(conn?.spec)
-  return isDatabaseKind(kind)
-}
-
-function getDatabaseTypeDisplay(connectionId: string): string | null {
-  const conn = connectionsStore.connectionByID(connectionId)
-  const typeLabel = getConnectionTypeLabel(conn?.spec, conn?.type)
-  if (!typeLabel) return conn?.type || null
-
-  const lowered = typeLabel.toLowerCase()
-  if (lowered.includes('postgres')) return 'PostgreSQL'
-  if (lowered.includes('mysql') || lowered.includes('mariadb')) return 'MySQL'
-  if (lowered === 'snowflake') return 'Snowflake'
-
-  return conn?.type || typeLabel
-}
 
 const effectiveSelectedConnections = computed(() => {
   if (runMode.value !== 'federated') {
@@ -355,7 +329,7 @@ const autocompleteDatabaseMappings = computed(() => {
   if (props.mode !== 'database') return []
 
   if (runMode.value === 'federated') {
-    return selectedConnections.value.filter((mapping) => Boolean(mapping.database?.trim()))
+    return databaseSourceMappings.value.filter((mapping) => Boolean(mapping.database?.trim()))
   }
 
   const direct = singleSourceMapping.value
@@ -363,123 +337,24 @@ const autocompleteDatabaseMappings = computed(() => {
   return [direct]
 })
 
-const directExecutionOptions = computed<SelectValueOption[]>(() =>
-  databaseSourceMappings.value.map((mapping) => {
-    const alias = mapping.alias || 'db'
-    const databaseType = getDatabaseTypeDisplay(mapping.connectionId)
-    const typePart = databaseType ? ` (${databaseType})` : ''
-    return {
-      value: `direct:${mapping.connectionId}`,
-      label: `${alias}${typePart}`,
-      selectedLabel: `Database: ${alias}${typePart}`,
-      indented: true
-    }
-  })
-)
-
-const scopedExecutionOptions = computed<SelectValueOption[]>(() =>
-  selectedConnections.value
-    .filter((mapping) => !isDatabaseMapping(mapping))
-    .map((mapping) => {
-      const alias = mapping.alias || 'files'
-      return {
-        value: `scoped:${mapping.connectionId}`,
-        label: alias,
-        selectedLabel: `Files: ${alias}`,
-        indented: true
-      }
-    })
-)
-
-const showUnifiedExecutionSelector = computed(() => {
-  return databaseSourceMappings.value.length > 1 || scopedExecutionOptions.value.length > 0
-})
-
-const executionContextOptions = computed<SelectOption[]>(() => {
-  const options: SelectOption[] = [
-    { type: 'header', label: 'Mode' },
-    { value: 'federated', label: 'Multi-source', selectedLabel: 'Multi-source', indented: true }
-  ]
-
-  if (directExecutionOptions.value.length > 0) {
-    options.push({ type: 'divider' })
-    options.push({ type: 'header', label: 'Databases' })
-    options.push(...directExecutionOptions.value)
-  }
-
-  if (scopedExecutionOptions.value.length > 0) {
-    options.push({ type: 'divider' })
-    options.push({ type: 'header', label: 'Files' })
-    options.push(...scopedExecutionOptions.value)
-  }
-
-  return options
-})
-
-const executionContextValue = computed<string>({
-  get() {
-    if (runMode.value === 'federated') {
-      if (
-        federatedScopeConnectionId.value &&
-        scopedExecutionOptions.value.some(
-          (option) => option.value === `scoped:${federatedScopeConnectionId.value}`
-        )
-      ) {
-        return `scoped:${federatedScopeConnectionId.value}`
-      }
-      return 'federated'
-    }
-
-    const directId =
-      singleSourceMapping.value?.connectionId || databaseSourceMappings.value[0]?.connectionId
-    return directId ? `direct:${directId}` : 'federated'
-  },
-  set(value) {
-    if (value === 'federated') {
-      federatedScopeConnectionId.value = ''
-      setRunMode('federated')
-      return
-    }
-    if (value.startsWith('scoped:')) {
-      const connectionId = value.slice('scoped:'.length)
-      if (connectionId) {
-        federatedScopeConnectionId.value = connectionId
-      }
-      setRunMode('federated')
-      return
-    }
-    if (value.startsWith('direct:')) {
-      federatedScopeConnectionId.value = ''
-      const connectionId = value.slice('direct:'.length)
-      if (connectionId) {
-        setSingleSourceConnectionId(connectionId)
-      }
-      setRunMode('single')
-    }
-  }
-})
-
-const singleExecutionLabel = computed(() => {
-  if (runMode.value === 'federated') {
-    if (federatedScopeConnectionId.value) {
-      const mapping = selectedConnections.value.find(
-        (m) => m.connectionId === federatedScopeConnectionId.value
-      )
-      const conn = mapping ? connectionsStore.connectionByID(mapping.connectionId) : null
-      if (mapping) {
-        return `Executing: Files: ${mapping.alias || 'files'} · ${conn?.name || mapping.connectionId}`
-      }
-    }
-    return 'Executing: Multi-source'
-  }
-
-  const mapping = singleSourceMapping.value || databaseSourceMappings.value[0]
-  if (!mapping) return 'Executing: Single source'
-
-  const alias = mapping.alias || 'db'
-  const databaseType = getDatabaseTypeDisplay(mapping.connectionId)
-  const typePart = databaseType ? ` (${databaseType})` : ''
-  return `Executing: Database: ${alias}${typePart}`
+const {
+  showUnifiedExecutionSelector,
+  executionContextOptions,
+  executionContextValue,
+  singleExecutionLabel
+} = useSqlExecutionContextSelector({
+  mode: modeRef,
+  contextKey: consoleKey,
+  runMode,
+  selectedConnections,
+  databaseSourceMappings,
+  singleSourceMapping,
+  federatedScopeConnectionId,
+  setRunMode,
+  setSingleSourceConnectionId,
+  isDatabaseMapping,
+  getDatabaseTypeDisplay,
+  getConnectionName: (connectionId) => connectionsStore.connectionByID(connectionId)?.name || null
 })
 
 // ========== SQL Dialect ==========
@@ -549,7 +424,7 @@ const {
 } = useConsoleTab({
   // SQL console tabs in Pinia are keyed by connectionId + optional database.
   // Keep this aligned with addTabWithQuery/open actions.
-  consoleKey: sqlConsoleStoreConnectionKey,
+  consoleKey,
   database: databaseRef,
   historyKey,
   dialect: currentDialect
@@ -755,76 +630,17 @@ const queryTemplates = computed(() => {
 })
 
 // ========== UI Computed ==========
-const scopeLabel = computed(() => {
-  const connName = connection.value?.name || 'Connection'
-  if (props.mode === 'file') {
-    if (props.basePath) {
-      return `${connName} → ${props.basePath}`
-    }
-    return connName
-  }
-  if (props.database) {
-    return `${connName} → ${props.database}`
-  }
-  return connName
+const { paneTabName } = useSqlConsoleTabName({
+  mode: modeRef,
+  runMode,
+  selectedConnections,
+  effectiveSelectedConnections,
+  singleSourceMapping,
+  databaseSourceMappings,
+  federatedScopeConnectionId,
+  getConnectionName: (connectionId) => connectionsStore.connectionByID(connectionId)?.name || null,
+  currentConnectionName: computed(() => connection.value?.name || null)
 })
-
-const singleExecutionMapping = computed(() => {
-  return singleSourceMapping.value || databaseSourceMappings.value[0] || null
-})
-
-const paneTabDefaultName = computed(() => {
-  if (props.mode === 'file') {
-    const mapping = singleExecutionMapping.value
-    const mappedConnection = mapping
-      ? connectionsStore.connectionByID(mapping.connectionId)
-      : connection.value
-    const connName = mappedConnection?.name || connection.value?.name || 'Files'
-    const targetDatabase = mapping?.database?.trim()
-    if (targetDatabase) {
-      return `${connName} → ${targetDatabase}`
-    }
-    return mapping ? connName : `${connName} (DuckDB)`
-  }
-
-  const mapping = singleExecutionMapping.value
-  const mappedConnection = mapping
-    ? connectionsStore.connectionByID(mapping.connectionId)
-    : connection.value
-  const connName = mappedConnection?.name || connection.value?.name || 'SQL'
-  const targetDatabase = mapping?.database?.trim()
-
-  if (targetDatabase) {
-    return `${connName} → ${targetDatabase}`
-  }
-  return `${connName} (Admin)`
-})
-
-const paneTabFederatedName = computed(() => {
-  if (federatedScopeConnectionId.value) {
-    const mapping = selectedConnections.value.find(
-      (m) => m.connectionId === federatedScopeConnectionId.value
-    )
-    if (mapping) {
-      const conn = connectionsStore.connectionByID(mapping.connectionId)
-      const connName = conn?.name || mapping.connectionId
-      const db = mapping.database?.trim()
-      const target = db ? `${connName} → ${db}` : connName
-      return `Files • ${mapping.alias || 'files'} • ${target}`
-    }
-  }
-
-  const sourceCount = effectiveSelectedConnections.value.length
-  const sourcePart = `${sourceCount} source${sourceCount === 1 ? '' : 's'}`
-  if (props.mode === 'database') {
-    return `Multi-source • ${sourcePart}`
-  }
-  return `Multi • ${scopeLabel.value} • ${sourcePart}`
-})
-
-const paneTabName = computed(() =>
-  runMode.value === 'federated' ? paneTabFederatedName.value : paneTabDefaultName.value
-)
 
 async function rerunHistoryQuery(item: QueryHistoryItem) {
   insertHistoryQuery(item)

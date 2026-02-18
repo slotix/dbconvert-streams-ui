@@ -36,6 +36,10 @@ import type { DatabaseMetadata } from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import { getConnectionKindFromSpec, isFileBasedKind } from '@/types/specs'
 import { parsePathToSegments, getParentPath, type PathSegment } from '@/utils/pathUtils'
+import {
+  buildSqlConsoleBreadcrumbData,
+  isSqlConsoleTabType
+} from '@/composables/useSqlConsoleBreadcrumb'
 
 const props = defineProps<{
   paneId: PaneId
@@ -153,8 +157,8 @@ const breadcrumbData = computed(() => {
     }
   }
 
-  // Check if this is a SQL console tab
-  const isSqlConsole = activeTab.tabType === 'sql-console'
+  // Check if this is a SQL console tab (database- or file-initiated)
+  const isSqlConsole = isSqlConsoleTabType(activeTab.tabType)
 
   if (activeTab.tabType === 'file') {
     const filePath = activeTab.filePath || ''
@@ -185,39 +189,8 @@ const breadcrumbData = computed(() => {
     }
   }
 
-  if (activeTab.tabType === 'file-console') {
-    const basePath = activeTab.basePath?.trim() || ''
-    const pathSegments = basePath ? parsePathToSegments(basePath) : []
-
-    return {
-      connectionLabel: activeTab.name || formatConnectionLabel(activeTab.connectionId),
-      database: null,
-      schema: null,
-      name: null,
-      objects: [],
-      pathSegments,
-      fileName: null,
-      siblingFiles: [] as Array<{ name: string; path: string; format?: string }>,
-      isSqlConsole: false,
-      isFileBreadcrumb: true,
-      consoleName: null
-    }
-  }
-
   if (isSqlConsole) {
-    return {
-      connectionLabel: null,
-      database: null,
-      schema: null,
-      name: null,
-      objects: [],
-      pathSegments: [] as PathSegment[],
-      fileName: null,
-      siblingFiles: [] as Array<{ name: string; path: string; format?: string }>,
-      isSqlConsole: true,
-      isFileBreadcrumb: false,
-      consoleName: activeTab.name || null
-    }
+    return buildSqlConsoleBreadcrumbData(activeTab.name)
   }
 
   // Database object - build objects list for picker
