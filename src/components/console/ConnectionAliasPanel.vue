@@ -177,102 +177,260 @@
               <div
                 v-for="conn in group.items"
                 :key="conn.id"
-                class="flex items-center gap-2 py-2 rounded-sm hover:bg-gray-100/40 dark:hover:bg-gray-800/20"
+                class="py-2 rounded-sm hover:bg-gray-100/40 dark:hover:bg-gray-800/20"
               >
-                <!-- Checkbox -->
-                <input
-                  :id="`conn-${conn.id}`"
-                  type="checkbox"
-                  :checked="isSelected(conn.id)"
-                  class="h-3 w-3 rounded-[3px] border-gray-400/70 dark:border-gray-600/70 text-teal-500 focus:ring-0 focus:ring-offset-0 bg-transparent"
-                  @change="toggleConnection(conn)"
-                />
+                <template v-if="isDatabaseConnection(conn)">
+                  <div class="flex items-center justify-between gap-2 px-1">
+                    <div class="flex items-center gap-2 min-w-0 flex-1">
+                      <input
+                        :id="`conn-${conn.id}`"
+                        type="checkbox"
+                        :checked="isSelected(conn.id)"
+                        class="h-3 w-3 rounded-[3px] border-gray-400/70 dark:border-gray-600/70 text-teal-500 focus:ring-0 focus:ring-offset-0 bg-transparent"
+                        @change="toggleConnection(conn)"
+                      />
 
-                <!-- Connection Icon -->
-                <div class="shrink-0 w-5 flex items-center justify-center">
-                  <img
-                    v-if="getPrimaryDatabaseLogoForConnection(conn)"
-                    :src="getPrimaryDatabaseLogoForConnection(conn)"
-                    :alt="`${getConnectionTypeLabelForUI(conn)} logo`"
-                    class="h-4 w-4 object-contain opacity-90 dark:opacity-100 dark:brightness-0 dark:invert"
-                  />
-                  <component
-                    :is="getConnectionIcon(getConnectionTypeLabelForUI(conn))"
-                    v-else
-                    class="h-4 w-4"
-                    :class="getConnectionIconColor(getConnectionTypeLabelForUI(conn))"
-                  />
-                </div>
+                      <div class="shrink-0 w-5 flex items-center justify-center">
+                        <img
+                          v-if="getPrimaryDatabaseLogoForConnection(conn)"
+                          :src="getPrimaryDatabaseLogoForConnection(conn)"
+                          :alt="`${getConnectionTypeLabelForUI(conn)} logo`"
+                          class="h-4 w-4 object-contain opacity-90 dark:opacity-100 dark:brightness-0 dark:invert"
+                        />
+                        <component
+                          :is="getConnectionIcon(getConnectionTypeLabelForUI(conn))"
+                          v-else
+                          class="h-4 w-4"
+                          :class="getConnectionIconColor(getConnectionTypeLabelForUI(conn))"
+                        />
+                      </div>
 
-                <!-- Connection Info -->
-                <div class="flex-1 min-w-0">
-                  <label
-                    :for="`conn-${conn.id}`"
-                    class="block font-semibold text-gray-950 dark:text-gray-100 truncate cursor-pointer text-sm"
-                  >
-                    {{ conn.name }}
-                  </label>
-                  <p
-                    class="truncate text-gray-500 dark:text-gray-400 text-[11px]"
-                    :title="getConnectionMeta(conn)"
-                  >
-                    {{ getConnectionMeta(conn) }}
-                  </p>
-                </div>
+                      <label
+                        :for="`conn-${conn.id}`"
+                        class="block text-sm font-semibold text-gray-900 dark:text-gray-100 truncate cursor-pointer"
+                        :title="getConnectionMeta(conn)"
+                      >
+                        {{ getConnectionMeta(conn) }}
+                      </label>
+                    </div>
 
-                <!-- Alias Input (shown when selected) - for database and S3 connections -->
-                <div
-                  v-if="isSelected(conn.id) && showAliasForConnection(conn)"
-                  class="flex items-center shrink-0 gap-1 self-start mt-0.5"
-                >
-                  <span v-if="!props.compact" class="text-xs text-gray-500 dark:text-gray-400"
-                    >as</span
-                  >
-                  <button
-                    v-if="editingAliasConnectionId !== conn.id"
-                    type="button"
-                    :title="`Edit alias for ${conn.name}`"
-                    class="alias-inline-display text-xs font-mono leading-none text-gray-600 dark:text-gray-300 focus:outline-none transition-colors"
-                    :class="[
-                      props.compact ? 'w-[4.25rem] truncate py-0.5' : 'w-[4.25rem] py-0.5',
-                      !getAlias(conn.id) && 'text-gray-400 dark:text-gray-500'
-                    ]"
-                    @click="startAliasEdit(conn.id)"
-                  >
-                    {{ getAlias(conn.id) || 'alias' }}
-                  </button>
-                  <input
-                    v-else
-                    :ref="(el) => setAliasInputRef(conn.id, el as HTMLInputElement | null)"
-                    type="text"
-                    :value="aliasDraftByConnectionId[conn.id] ?? getAlias(conn.id)"
-                    :title="`Alias for ${conn.name}`"
-                    placeholder="alias"
-                    class="alias-inline-input text-xs font-mono leading-none bg-transparent border-0 border-b border-gray-400 dark:border-gray-500 rounded-none text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-0 focus:border-teal-500 dark:focus:border-teal-400 caret-teal-500"
-                    :class="props.compact ? 'w-[4.25rem] py-0.5' : 'w-[4.25rem] py-0.5'"
-                    @input="setAliasDraft(conn.id, ($event.target as HTMLInputElement).value)"
-                    @blur="finishAliasEdit(conn.id)"
-                    @keydown.enter.prevent="finishAliasEdit(conn.id)"
-                    @keydown.escape.prevent="cancelAliasEdit(conn.id)"
-                  />
-
-                  <!-- Database Selector (for connections with multiple databases) -->
-                  <select
-                    v-if="conn.databasesInfo && conn.databasesInfo.length > 1"
-                    :value="getDatabase(conn.id)"
-                    class="text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
-                    :class="props.compact ? 'h-7 px-2 rounded-full' : 'px-2 py-1 rounded'"
-                    @change="updateDatabase(conn.id, ($event.target as HTMLSelectElement).value)"
-                  >
-                    <option
-                      v-for="db in conn.databasesInfo.filter((d) => !d.isSystem)"
-                      :key="db.name"
-                      :value="db.name"
+                    <button
+                      v-if="isSelected(conn.id) && canAddDatabaseMapping(conn)"
+                      type="button"
+                      class="shrink-0 text-[11px] font-medium text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 px-1"
+                      @click="addDatabaseMapping(conn)"
                     >
-                      {{ db.name }}
-                    </option>
-                  </select>
-                </div>
+                      + DB
+                    </button>
+                  </div>
+
+                  <div
+                    v-if="isSelected(conn.id)"
+                    class="ml-7 mt-1 w-full max-w-[34rem] rounded-md bg-gray-100/45 dark:bg-gray-800/20 px-2 py-1.5"
+                  >
+                    <div class="divide-y divide-gray-200/70 dark:divide-gray-700/50">
+                      <div
+                        v-for="mapping in getMappingsByConnection(conn.id)"
+                        :key="getMappingTargetId(mapping)"
+                        class="flex items-center gap-2 px-0.5 py-1.5"
+                      >
+                        <input
+                          type="text"
+                          :value="mapping.alias || ''"
+                          placeholder="alias"
+                          class="text-xs leading-none border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded px-2 h-7 w-[5rem] focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
+                          @input="
+                            updateAliasForMapping(
+                              mapping,
+                              ($event.target as HTMLInputElement).value
+                            )
+                          "
+                        />
+
+                        <div class="flex items-center gap-2 min-w-0 flex-1">
+                          <span class="text-xs text-gray-400 dark:text-gray-500 shrink-0">→</span>
+                          <div class="relative w-full">
+                            <select
+                              class="custom-dropdown text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 px-2 pr-9 h-7 rounded w-full"
+                              :value="mapping.database || ''"
+                              @change="
+                                updateDatabaseForMapping(
+                                  mapping,
+                                  ($event.target as HTMLSelectElement).value
+                                )
+                              "
+                            >
+                              <option
+                                v-for="db in getDatabaseOptionsForMapping(conn, mapping)"
+                                :key="db.name"
+                                :value="db.name"
+                              >
+                                {{ db.name }}
+                              </option>
+                            </select>
+                            <span
+                              class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2 text-gray-500 dark:text-gray-400"
+                            >
+                              <ChevronDown class="h-4 w-4" />
+                            </span>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          class="text-sm leading-none text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 px-1"
+                          title="Remove database mapping"
+                          @click="removeMapping(mapping)"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </template>
+
+                <template v-else>
+                  <div class="flex items-center gap-2">
+                    <!-- Checkbox -->
+                    <input
+                      :id="`conn-${conn.id}`"
+                      type="checkbox"
+                      :checked="isSelected(conn.id)"
+                      class="h-3 w-3 rounded-[3px] border-gray-400/70 dark:border-gray-600/70 text-teal-500 focus:ring-0 focus:ring-offset-0 bg-transparent"
+                      @change="toggleConnection(conn)"
+                    />
+
+                    <!-- Connection Icon -->
+                    <div class="shrink-0 w-5 flex items-center justify-center">
+                      <img
+                        v-if="getPrimaryDatabaseLogoForConnection(conn)"
+                        :src="getPrimaryDatabaseLogoForConnection(conn)"
+                        :alt="`${getConnectionTypeLabelForUI(conn)} logo`"
+                        class="h-4 w-4 object-contain opacity-90 dark:opacity-100 dark:brightness-0 dark:invert"
+                      />
+                      <component
+                        :is="getConnectionIcon(getConnectionTypeLabelForUI(conn))"
+                        v-else
+                        class="h-4 w-4"
+                        :class="getConnectionIconColor(getConnectionTypeLabelForUI(conn))"
+                      />
+                    </div>
+
+                    <!-- Connection Info -->
+                    <div class="flex-1 min-w-0">
+                      <label
+                        :for="`conn-${conn.id}`"
+                        class="block font-semibold text-gray-950 dark:text-gray-100 truncate cursor-pointer text-sm"
+                      >
+                        {{ conn.name }}
+                      </label>
+                      <p
+                        class="truncate text-gray-500 dark:text-gray-400 text-[11px]"
+                        :title="getConnectionMeta(conn)"
+                      >
+                        {{ getConnectionMeta(conn) }}
+                      </p>
+                    </div>
+
+                    <!-- Alias Input (non-database sources like S3) -->
+                    <div
+                      v-if="
+                        isSelected(conn.id) &&
+                        showAliasForConnection(conn) &&
+                        getPrimaryMapping(conn.id)
+                      "
+                      class="flex items-center shrink-0 gap-1 self-start mt-0.5"
+                    >
+                      <span v-if="!props.compact" class="text-xs text-gray-500 dark:text-gray-400"
+                        >as</span
+                      >
+                      <button
+                        v-if="
+                          editingAliasTargetId !== getMappingTargetId(getPrimaryMapping(conn.id)!)
+                        "
+                        type="button"
+                        :title="`Edit alias for ${conn.name}`"
+                        class="alias-inline-display text-xs font-mono leading-none text-gray-600 dark:text-gray-300 focus:outline-none transition-colors"
+                        :class="[
+                          props.compact ? 'w-[4.25rem] truncate py-0.5' : 'w-[4.25rem] py-0.5',
+                          !getAlias(conn.id) && 'text-gray-400 dark:text-gray-500'
+                        ]"
+                        @click="startAliasEdit(getPrimaryMapping(conn.id)!)"
+                      >
+                        {{ getAlias(conn.id) || 'alias' }}
+                      </button>
+                      <input
+                        v-else
+                        :ref="
+                          (el) =>
+                            setAliasInputRef(
+                              getMappingTargetId(getPrimaryMapping(conn.id)!),
+                              el as HTMLInputElement | null
+                            )
+                        "
+                        type="text"
+                        :value="
+                          aliasDraftByTargetId[getMappingTargetId(getPrimaryMapping(conn.id)!)] ??
+                          getAlias(conn.id)
+                        "
+                        :title="`Alias for ${conn.name}`"
+                        placeholder="alias"
+                        class="alias-inline-input text-xs font-mono leading-none bg-transparent border-0 border-b border-gray-400 dark:border-gray-500 rounded-none text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-0 focus:border-teal-500 dark:focus:border-teal-400 caret-teal-500"
+                        :class="props.compact ? 'w-[4.25rem] py-0.5' : 'w-[4.25rem] py-0.5'"
+                        @input="
+                          setAliasDraft(
+                            getMappingTargetId(getPrimaryMapping(conn.id)!),
+                            ($event.target as HTMLInputElement).value
+                          )
+                        "
+                        @blur="finishAliasEdit(getPrimaryMapping(conn.id)!)"
+                        @keydown.enter.prevent="finishAliasEdit(getPrimaryMapping(conn.id)!)"
+                        @keydown.escape.prevent="cancelAliasEdit(getPrimaryMapping(conn.id)!)"
+                      />
+                    </div>
+
+                    <!-- Optional Folder Scope (file connections) -->
+                    <div
+                      v-if="isSelected(conn.id) && shouldShowFolderScopeSelector(conn)"
+                      class="flex items-center shrink-0 gap-1 self-start mt-0.5"
+                    >
+                      <span v-if="!props.compact" class="text-xs text-gray-500 dark:text-gray-400"
+                        >folder</span
+                      >
+                      <div
+                        class="relative"
+                        :class="props.compact ? 'max-w-[12rem]' : 'max-w-[14rem]'"
+                      >
+                        <select
+                          :value="getDatabase(conn.id)"
+                          class="custom-dropdown text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 pr-9"
+                          :class="
+                            props.compact
+                              ? 'h-7 px-2 rounded-full w-full'
+                              : 'px-2 py-1 rounded w-full'
+                          "
+                          @change="
+                            updateDatabase(conn.id, ($event.target as HTMLSelectElement).value)
+                          "
+                        >
+                          <option value="">All folders</option>
+                          <option
+                            v-for="db in getSelectableDatabases(conn)"
+                            :key="db.name"
+                            :value="db.name"
+                          >
+                            {{ db.name }}
+                          </option>
+                        </select>
+                        <span
+                          class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2 text-gray-500 dark:text-gray-400"
+                        >
+                          <ChevronDown class="h-4 w-4" />
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </template>
               </div>
             </div>
           </div>
@@ -296,6 +454,7 @@ import { ref, computed, nextTick, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { ChevronDown, Cloud, Database, Folder, Plus } from 'lucide-vue-next'
 import { useConnectionsStore } from '@/stores/connections'
+import connectionsApi from '@/api/connections'
 import type { Connection } from '@/types/connections'
 import type { ConnectionMapping } from '@/api/federated'
 import { generateTypeBasedAlias } from '@/utils/federatedUtils'
@@ -347,9 +506,13 @@ const connectionsStore = useConnectionsStore()
 const isCollapsed = ref(props.showHeader ? props.defaultCollapsed : false)
 const isContentVisible = computed(() => (props.showHeader ? !isCollapsed.value : true))
 const isHintsExpanded = ref(false)
-const editingAliasConnectionId = ref<string | null>(null)
-const aliasDraftByConnectionId = ref<Record<string, string>>({})
-const aliasInputByConnectionId = ref<Record<string, HTMLInputElement | null>>({})
+const editingAliasTargetId = ref<string | null>(null)
+const aliasDraftByTargetId = ref<Record<string, string>>({})
+const aliasInputByTargetId = ref<Record<string, HTMLInputElement | null>>({})
+const fetchedDatabasesByConnectionId = ref<
+  Record<string, Array<{ name: string; isSystem?: boolean }>>
+>({})
+const databaseFetches = new Map<string, Promise<Array<{ name: string; isSystem?: boolean }>>>()
 
 function isDatabaseConnection(conn: Connection): boolean {
   const kind = getConnectionKindFromSpec(conn.spec)
@@ -454,52 +617,161 @@ function toggleCollapse() {
 }
 
 function isSelected(connectionId: string): boolean {
-  return props.modelValue.some((m) => m.connectionId === connectionId)
+  return getMappingsByConnection(connectionId).length > 0
 }
 
 function getAlias(connectionId: string): string {
-  const mapping = props.modelValue.find((m) => m.connectionId === connectionId)
+  const mapping = getPrimaryMapping(connectionId)
   return mapping?.alias || ''
 }
 
-function setAliasInputRef(connectionId: string, inputEl: HTMLInputElement | null) {
-  if (inputEl) {
-    aliasInputByConnectionId.value[connectionId] = inputEl
-    return
-  }
-  delete aliasInputByConnectionId.value[connectionId]
+function getPrimaryMapping(connectionId: string): ConnectionMapping | null {
+  const mapping = props.modelValue.find((m) => m.connectionId === connectionId)
+  return mapping || null
 }
 
-function startAliasEdit(connectionId: string) {
-  editingAliasConnectionId.value = connectionId
-  aliasDraftByConnectionId.value[connectionId] = getAlias(connectionId)
+function getMappingTargetId(mapping: {
+  connectionId: string
+  database?: string
+  alias?: string
+}): string {
+  return `${mapping.connectionId}::${mapping.database?.trim() || ''}::${mapping.alias?.trim() || ''}`
+}
+
+function setAliasInputRef(targetId: string, inputEl: HTMLInputElement | null) {
+  if (inputEl) {
+    aliasInputByTargetId.value[targetId] = inputEl
+    return
+  }
+  delete aliasInputByTargetId.value[targetId]
+}
+
+function startAliasEdit(mapping: ConnectionMapping) {
+  const targetId = getMappingTargetId(mapping)
+  editingAliasTargetId.value = targetId
+  aliasDraftByTargetId.value[targetId] = mapping.alias || ''
 
   nextTick(() => {
-    const aliasInput = aliasInputByConnectionId.value[connectionId]
+    const aliasInput = aliasInputByTargetId.value[targetId]
     aliasInput?.focus()
     aliasInput?.select()
   })
 }
 
-function setAliasDraft(connectionId: string, alias: string) {
-  aliasDraftByConnectionId.value[connectionId] = alias
+function setAliasDraft(targetId: string, alias: string) {
+  aliasDraftByTargetId.value[targetId] = alias
 }
 
-function finishAliasEdit(connectionId: string) {
-  const nextAlias = aliasDraftByConnectionId.value[connectionId] ?? getAlias(connectionId)
-  updateAlias(connectionId, nextAlias)
-  editingAliasConnectionId.value = null
-  delete aliasDraftByConnectionId.value[connectionId]
+function finishAliasEdit(mapping: ConnectionMapping) {
+  const targetId = getMappingTargetId(mapping)
+  const nextAlias = aliasDraftByTargetId.value[targetId] ?? (mapping.alias || '')
+  updateAliasForMapping(mapping, nextAlias)
+  editingAliasTargetId.value = null
+  delete aliasDraftByTargetId.value[targetId]
 }
 
-function cancelAliasEdit(connectionId: string) {
-  editingAliasConnectionId.value = null
-  delete aliasDraftByConnectionId.value[connectionId]
+function cancelAliasEdit(mapping: ConnectionMapping) {
+  const targetId = getMappingTargetId(mapping)
+  editingAliasTargetId.value = null
+  delete aliasDraftByTargetId.value[targetId]
 }
 
 function getDatabase(connectionId: string): string {
-  const mapping = props.modelValue.find((m) => m.connectionId === connectionId)
+  const mapping = getPrimaryMapping(connectionId)
   return mapping?.database || ''
+}
+
+function getMappingsByConnection(connectionId: string): ConnectionMapping[] {
+  return props.modelValue.filter((m) => m.connectionId === connectionId)
+}
+
+function isSameMapping(left: ConnectionMapping, right: ConnectionMapping): boolean {
+  return (
+    left.connectionId === right.connectionId &&
+    (left.database?.trim() || '') === (right.database?.trim() || '') &&
+    (left.alias?.trim() || '') === (right.alias?.trim() || '')
+  )
+}
+
+function getDatabaseOptionsForMapping(
+  conn: Connection,
+  mapping: ConnectionMapping
+): Array<{ name: string; isSystem?: boolean }> {
+  const options = getSelectableDatabases(conn)
+  if (options.length === 0) return []
+
+  const currentDatabase = mapping.database?.trim() || ''
+  const usedByOther = new Set(
+    getMappingsByConnection(conn.id)
+      .filter((current) => !isSameMapping(current, mapping))
+      .map((current) => current.database?.trim() || '')
+      .filter(Boolean)
+  )
+
+  return options.filter((db) => db.name === currentDatabase || !usedByOther.has(db.name))
+}
+
+function getSelectableDatabases(conn: Connection): Array<{ name: string; isSystem?: boolean }> {
+  const local = fetchedDatabasesByConnectionId.value[conn.id]
+  const source = local && local.length > 0 ? local : conn.databasesInfo || []
+  return source.filter((db) => !db.isSystem)
+}
+
+function canAddDatabaseMapping(conn: Connection): boolean {
+  if (!isDatabaseConnection(conn) || !isSelected(conn.id)) return false
+
+  const available = getSelectableDatabases(conn)
+  if (available.length === 0) return false
+
+  const used = new Set(
+    getMappingsByConnection(conn.id)
+      .map((mapping) => mapping.database?.trim() || '')
+      .filter(Boolean)
+  )
+
+  return available.some((db) => !used.has(db.name))
+}
+
+function shouldShowFolderScopeSelector(conn: Connection): boolean {
+  if (!isSelected(conn.id)) return false
+  if (!isFileConnectionKind(conn)) return false
+
+  const options = getSelectableDatabases(conn)
+  return options.length > 0
+}
+
+async function ensureDatabasesLoaded(
+  connectionId: string
+): Promise<Array<{ name: string; isSystem?: boolean }>> {
+  const existing = fetchedDatabasesByConnectionId.value[connectionId]
+  if (existing && existing.length > 0) {
+    return existing
+  }
+
+  const inFlight = databaseFetches.get(connectionId)
+  if (inFlight) {
+    return inFlight
+  }
+
+  const request = connectionsApi
+    .getDatabases(connectionId)
+    .then((databases) => {
+      const normalized = Array.isArray(databases) ? databases : []
+      fetchedDatabasesByConnectionId.value = {
+        ...fetchedDatabasesByConnectionId.value,
+        [connectionId]: normalized
+      }
+      return normalized
+    })
+    .catch(() => {
+      return []
+    })
+    .finally(() => {
+      databaseFetches.delete(connectionId)
+    })
+
+  databaseFetches.set(connectionId, request)
+  return request
 }
 
 function generateAlias(conn: Connection): string {
@@ -508,18 +780,24 @@ function generateAlias(conn: Connection): string {
   return generateTypeBasedAlias(typeLabel, existingAliases)
 }
 
-function toggleConnection(conn: Connection) {
+async function toggleConnection(conn: Connection) {
   const newMappings = [...props.modelValue]
   const existingIndex = newMappings.findIndex((m) => m.connectionId === conn.id)
 
   if (existingIndex >= 0) {
-    // Remove
-    newMappings.splice(existingIndex, 1)
+    // Remove all mappings for this connection
+    const filtered = newMappings.filter((m) => m.connectionId !== conn.id)
+    emit('update:modelValue', filtered)
+    return
   } else {
+    if (isDatabaseConnection(conn) || isFileConnectionKind(conn)) {
+      await ensureDatabasesLoaded(conn.id)
+    }
+
     // Add with auto-generated alias
     const alias = generateAlias(conn)
     // Get default database if available
-    const defaultDb = conn.databasesInfo?.find((d) => !d.isSystem)?.name || ''
+    const defaultDb = isDatabaseConnection(conn) ? getSelectableDatabases(conn)[0]?.name || '' : ''
 
     newMappings.push({
       alias,
@@ -531,12 +809,41 @@ function toggleConnection(conn: Connection) {
   emit('update:modelValue', newMappings)
 }
 
-function updateAlias(connectionId: string, alias: string) {
+async function addDatabaseMapping(conn: Connection) {
+  if (!isDatabaseConnection(conn)) return
+
+  await ensureDatabasesLoaded(conn.id)
+
+  const available = getSelectableDatabases(conn)
+  if (available.length === 0) return
+
+  const existingMappings = getMappingsByConnection(conn.id)
+  const used = new Set(
+    existingMappings.map((mapping) => mapping.database?.trim() || '').filter(Boolean)
+  )
+
+  const nextDatabase = available.find((db) => !used.has(db.name))
+  if (!nextDatabase) return
+
+  const alias = generateAlias(conn)
+  const nextMappings = [
+    ...props.modelValue,
+    {
+      alias,
+      connectionId: conn.id,
+      database: nextDatabase.name
+    }
+  ]
+
+  emit('update:modelValue', nextMappings)
+}
+
+function updateAliasForMapping(targetMapping: ConnectionMapping, alias: string) {
   // Sanitize alias: alphanumeric and underscore only
   const sanitized = alias.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase()
 
   const newMappings = props.modelValue.map((m) => {
-    if (m.connectionId === connectionId) {
+    if (isSameMapping(m, targetMapping)) {
       return { ...m, alias: sanitized }
     }
     return m
@@ -545,15 +852,37 @@ function updateAlias(connectionId: string, alias: string) {
   emit('update:modelValue', newMappings)
 }
 
-function updateDatabase(connectionId: string, database: string) {
+function updateDatabaseForMapping(targetMapping: ConnectionMapping, database: string) {
+  if (!database.trim()) return
+
+  const duplicateExists = props.modelValue.some(
+    (m) =>
+      m.connectionId === targetMapping.connectionId &&
+      (m.database?.trim() || '') === database.trim() &&
+      !isSameMapping(m, targetMapping)
+  )
+
+  if (duplicateExists) return
+
   const newMappings = props.modelValue.map((m) => {
-    if (m.connectionId === connectionId) {
+    if (isSameMapping(m, targetMapping)) {
       return { ...m, database }
     }
     return m
   })
 
   emit('update:modelValue', newMappings)
+}
+
+function updateDatabase(connectionId: string, database: string) {
+  const primary = getPrimaryMapping(connectionId)
+  if (!primary) return
+  updateDatabaseForMapping(primary, database)
+}
+
+function removeMapping(targetMapping: ConnectionMapping) {
+  const filtered = props.modelValue.filter((m) => !isSameMapping(m, targetMapping))
+  emit('update:modelValue', filtered)
 }
 
 function getConnectionHost(conn: Connection): string {
@@ -670,12 +999,37 @@ watch(
   () => {},
   { immediate: true }
 )
+
+watch(
+  () => props.modelValue,
+  async (mappings) => {
+    const targets = mappings
+      .map((mapping) => connectionsStore.connectionByID(mapping.connectionId))
+      .filter((conn): conn is Connection =>
+        Boolean(conn && (isDatabaseConnection(conn) || isFileConnectionKind(conn)))
+      )
+
+    await Promise.all(targets.map((conn) => ensureDatabasesLoaded(conn.id)))
+  },
+  { deep: true, immediate: true }
+)
 </script>
 
 <style scoped>
 .alias-inline-display,
 .alias-inline-input {
   min-height: 1.25rem;
+}
+
+.custom-dropdown {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: none !important;
+}
+
+.custom-dropdown::-ms-expand {
+  display: none;
 }
 
 .alias-inline-display {

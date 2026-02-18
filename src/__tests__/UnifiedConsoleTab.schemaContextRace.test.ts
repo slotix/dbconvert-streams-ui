@@ -83,13 +83,15 @@ vi.mock('@/stores/connections', async () => {
         id: 'pg-1',
         name: 'Postgres',
         type: 'postgresql',
-        spec: { database: { host: 'localhost', port: 5432, username: 'u', database: 'pg_db' } }
+        spec: { database: { host: 'localhost', port: 5432, username: 'u', database: 'pg_db' } },
+        databasesInfo: [{ name: 'pg_db', isSystem: false }]
       },
       {
         id: 'my-1',
         name: 'MySQL',
         type: 'mysql',
-        spec: { database: { host: 'localhost', port: 3306, username: 'u', database: 'my_db' } }
+        spec: { database: { host: 'localhost', port: 3306, username: 'u', database: 'my_db' } },
+        databasesInfo: [{ name: 'my_db', isSystem: false }]
       },
       {
         id: 'files-1',
@@ -486,6 +488,55 @@ describe('UnifiedConsoleTab schema context isolation in multisource switching', 
 
     expect(wrapper.text()).toContain('Run on:')
     expect(wrapper.text()).not.toContain('Executing: Files: files1')
+
+    const executionSelect = wrapper.findComponent({ name: 'FormSelect' })
+    const options = executionSelect.props('options') as Array<{
+      value?: string
+      label?: string
+      disabled?: boolean
+    }>
+
+    const fileOption = options.find((option) => option.value === 'scoped:files-1')
+    expect(fileOption).toBeDefined()
+    expect(fileOption?.disabled).not.toBe(true)
+    expect(fileOption?.label).toContain('no folder scope')
+
+    wrapper.unmount()
+  })
+
+  it('marks direct run option as needs setup when selected database no longer exists', async () => {
+    const __mockConsoleSourcesState = await getMockConsoleSourcesState()
+
+    __mockConsoleSourcesState.runMode.value = 'single'
+    __mockConsoleSourcesState.selectedConnections.value = [
+      { connectionId: 'pg-1', alias: 'pg1', database: 'pg_db' },
+      { connectionId: 'my-1', alias: 'my1', database: 'removed_db' }
+    ]
+    __mockConsoleSourcesState.singleSourceConnectionId.value = 'my-1'
+
+    const wrapper = shallowMount(UnifiedConsoleTab, {
+      props: {
+        connectionId: 'pg-1',
+        mode: 'database'
+      }
+    })
+
+    await nextTick()
+
+    const executionSelect = wrapper.findComponent({ name: 'FormSelect' })
+    const options = executionSelect.props('options') as Array<{
+      value?: string
+      label?: string
+      disabled?: boolean
+    }>
+
+    const mysqlOption = options.find(
+      (option) => option.label?.includes('my1') && option.label?.includes('removed_db')
+    )
+
+    expect(mysqlOption).toBeDefined()
+    expect(mysqlOption?.disabled).toBe(true)
+    expect(mysqlOption?.label).toContain('needs setup')
 
     wrapper.unmount()
   })

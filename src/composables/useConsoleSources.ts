@@ -52,6 +52,26 @@ export interface UseConsoleSourcesReturn {
   escapeRegExp: (value: string) => string
 }
 
+function buildMappingSelectionKey(mapping: {
+  connectionId: string
+  alias?: string
+  database?: string
+}): string {
+  return `${mapping.connectionId}::${mapping.database?.trim() || ''}::${mapping.alias?.trim() || ''}`
+}
+
+function mappingMatchesSelectionToken(
+  mapping: {
+    connectionId: string
+    alias?: string
+    database?: string
+  },
+  token: string
+): boolean {
+  if (!token) return false
+  return token === buildMappingSelectionKey(mapping) || token === mapping.connectionId
+}
+
 // ========== Persistence ==========
 interface PersistedConsoleSourcesEntry {
   touched: boolean
@@ -243,7 +263,8 @@ export function useConsoleSources(options: UseConsoleSourcesOptions): UseConsole
     const dbMappings = databaseSourceMappings.value
     if (dbMappings.length === 0) return null
 
-    const selected = dbMappings.find((m) => m.connectionId === singleSourceConnectionId.value)
+    const selectedToken = singleSourceConnectionId.value
+    const selected = dbMappings.find((m) => mappingMatchesSelectionToken(m, selectedToken))
     if (selected) return selected
 
     return dbMappings[0]
@@ -263,8 +284,10 @@ export function useConsoleSources(options: UseConsoleSourcesOptions): UseConsole
       if (!m || typeof m !== 'object') continue
       if (typeof m.connectionId !== 'string' || typeof m.alias !== 'string') continue
       if (existingIds && !existingIds.has(m.connectionId)) continue
-      if (seen.has(m.connectionId)) continue
-      seen.add(m.connectionId)
+      const normalizedDatabase = typeof m.database === 'string' ? m.database.trim() : ''
+      const dedupeKey = `${m.connectionId}::${normalizedDatabase}`
+      if (seen.has(dedupeKey)) continue
+      seen.add(dedupeKey)
       cleaned.push({
         connectionId: m.connectionId,
         alias: m.alias,
@@ -368,11 +391,11 @@ export function useConsoleSources(options: UseConsoleSourcesOptions): UseConsole
       return
     }
 
-    if (dbMappings.some((m) => m.connectionId === singleSourceConnectionId.value)) {
+    if (dbMappings.some((m) => mappingMatchesSelectionToken(m, singleSourceConnectionId.value))) {
       return
     }
 
-    singleSourceConnectionId.value = dbMappings[0].connectionId
+    singleSourceConnectionId.value = buildMappingSelectionKey(dbMappings[0])
   }
 
   function restoreSingleSourceConnection() {

@@ -27,6 +27,12 @@
           >
             Templates &amp; autocomplete follow selected source
           </span>
+          <span
+            v-if="fileScopeWarning && !hideToolbarLabels"
+            class="execution-context-hint mt-1 text-[11px] leading-4 text-amber-600 dark:text-amber-400"
+          >
+            {{ fileScopeWarning }}
+          </span>
         </div>
 
         <div
@@ -170,13 +176,27 @@ import { useQueryExecution } from '@/composables/useQueryExecution'
 import { useSqlExecutionContextSelector } from '@/composables/useSqlExecutionContextSelector'
 import { useSqlConsoleTabName } from '@/composables/useSqlConsoleTabName'
 import { useSqlSourcePresentation } from '@/composables/useSqlSourcePresentation'
-import { getConnectionKindFromSpec, getSqlDialectFromConnection } from '@/types/specs'
+import {
+  getConnectionKindFromSpec,
+  getSqlDialectFromConnection,
+  isFileBasedKind
+} from '@/types/specs'
 import {
   getFederatedTemplates,
   getFileTemplates,
   getDatabaseTemplates,
   computeFileTemplatePrefix
 } from './queryTemplates'
+
+type DirectSourceReadiness = {
+  ready: boolean
+  reason?: 'missing-database' | 'database-not-found'
+}
+
+type ScopedSourceReadiness = {
+  ready: boolean
+  reason?: 'missing-folder-scope'
+}
 
 // ========== Props ==========
 export type { ConsoleMode }
@@ -309,6 +329,71 @@ const { sourcePills, isDatabaseMapping, getDatabaseTypeDisplay } = useSqlSourceP
 
 const federatedScopeConnectionId = ref('')
 
+function getDirectSourceReadiness(mapping: {
+  connectionId: string
+  database?: string
+}): DirectSourceReadiness {
+  const selectedDatabase = mapping.database?.trim() || ''
+  if (!selectedDatabase) {
+    return { ready: false, reason: 'missing-database' }
+  }
+
+  const conn = connectionsStore.connectionByID(mapping.connectionId)
+  const availableDatabases =
+    conn?.databasesInfo
+      ?.filter((db) => !db.isSystem)
+      .map((db) => db.name)
+      .filter((name): name is string => Boolean(name?.trim())) || []
+
+  // If DB list is unavailable, avoid false negatives and treat current selection as usable.
+  if (availableDatabases.length === 0) {
+    return { ready: true }
+  }
+
+  const exists = availableDatabases.some((dbName) => dbName === selectedDatabase)
+  if (!exists) {
+    return { ready: false, reason: 'database-not-found' }
+  }
+
+  return { ready: true }
+}
+
+const readyDatabaseSourceMappings = computed(() =>
+  databaseSourceMappings.value.filter((mapping) => getDirectSourceReadiness(mapping).ready)
+)
+
+function getScopedSourceReadiness(mapping: {
+  connectionId: string
+  database?: string
+}): ScopedSourceReadiness {
+  const conn = connectionsStore.connectionByID(mapping.connectionId)
+  const kind = getConnectionKindFromSpec(conn?.spec)
+  if (!isFileBasedKind(kind)) {
+    return { ready: true }
+  }
+
+  const folderScope = mapping.database?.trim() || ''
+  if (!folderScope) {
+    return { ready: false, reason: 'missing-folder-scope' }
+  }
+
+  return { ready: true }
+}
+
+const hasUnscopedFileSources = computed(() => {
+  if (props.mode !== 'file') return false
+
+  return selectedConnections.value.some((mapping) => {
+    const readiness = getScopedSourceReadiness(mapping)
+    return readiness.reason === 'missing-folder-scope'
+  })
+})
+
+const fileScopeWarning = computed(() => {
+  if (!hasUnscopedFileSources.value) return ''
+  return 'Folder scope is optional, but selecting one improves autocomplete for file sources.'
+})
+
 const effectiveSelectedConnections = computed(() => {
   if (runMode.value !== 'federated') {
     return selectedConnections.value
@@ -329,11 +414,12 @@ const autocompleteDatabaseMappings = computed(() => {
   if (props.mode !== 'database') return []
 
   if (runMode.value === 'federated') {
-    return databaseSourceMappings.value.filter((mapping) => Boolean(mapping.database?.trim()))
+    return readyDatabaseSourceMappings.value
   }
 
   const direct = singleSourceMapping.value
-  if (!direct || !direct.database?.trim()) return []
+  if (!direct) return []
+  if (!getDirectSourceReadiness(direct).ready) return []
   return [direct]
 })
 
@@ -354,7 +440,9 @@ const {
   setSingleSourceConnectionId,
   isDatabaseMapping,
   getDatabaseTypeDisplay,
-  getConnectionName: (connectionId) => connectionsStore.connectionByID(connectionId)?.name || null
+  getConnectionName: (connectionId) => connectionsStore.connectionByID(connectionId)?.name || null,
+  getDirectSourceReadiness,
+  getScopedSourceReadiness
 })
 
 // ========== SQL Dialect ==========
@@ -453,6 +541,25 @@ const { isExecuting, executeQuery } = useQueryExecution({
       cancelLabel: 'Cancel',
       danger: true
     })
+  },
+  validateDatabaseTarget: (target) => {
+    const selected = selectedConnections.value.find(
+      (mapping) => mapping.connectionId === target.connectionId
+    )
+    const readiness = getDirectSourceReadiness({
+      connectionId: target.connectionId,
+      database: target.database || selected?.database
+    })
+
+    if (readiness.reason === 'missing-database') {
+      return 'Select database in Query Session before running direct database queries.'
+    }
+
+    if (readiness.reason === 'database-not-found') {
+      return 'Selected database is no longer available for this connection. Choose another database in Query Session.'
+    }
+
+    return null
   }
 })
 

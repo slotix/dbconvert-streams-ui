@@ -70,11 +70,26 @@ export interface UseQueryExecutionOptions {
   loadTableSuggestionsWithRefresh?: (forceRefresh: boolean) => Promise<void>
   /** Optional confirmation callback for potentially destructive SQL */
   confirmDestructiveQuery?: (query: string) => Promise<boolean>
+  /** Optional validation callback for single-source database execution target */
+  validateDatabaseTarget?: (target: {
+    connectionId: string
+    database?: string
+    alias?: string
+  }) => string | null
 }
 
 export interface UseQueryExecutionReturn {
   isExecuting: Ref<boolean>
   executeQuery: (queryOverride?: string) => Promise<void>
+}
+
+export function validateDatabaseExecutionTarget(target: { database?: string }): string | null {
+  const database = target.database?.trim()
+  if (!database) {
+    return 'Select database in Query Session before running direct database queries.'
+  }
+
+  return null
 }
 
 function mapRowsToObjects(columns: string[], rowTuples: unknown[][]): Record<string, unknown>[] {
@@ -143,7 +158,8 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
     setExecutionError,
     saveToHistory,
     loadTableSuggestionsWithRefresh,
-    confirmDestructiveQuery
+    confirmDestructiveQuery,
+    validateDatabaseTarget
   } = options
 
   const navigationStore = useExplorerNavigationStore()
@@ -421,6 +437,20 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
     isExecuting.value = true
     const startTime = Date.now()
     const target = resolveSingleSourceTarget()
+
+    const defaultValidationError = validateDatabaseExecutionTarget(target)
+    if (defaultValidationError) {
+      setExecutionError(defaultValidationError)
+      isExecuting.value = false
+      return
+    }
+
+    const customValidationError = validateDatabaseTarget?.(target)
+    if (customValidationError) {
+      setExecutionError(customValidationError)
+      isExecuting.value = false
+      return
+    }
 
     try {
       const result = await connections.executeQuery(target.connectionId, query, target.database)

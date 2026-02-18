@@ -44,6 +44,14 @@ export interface UseSqlExecutionContextSelectorOptions {
   isDatabaseMapping: (mapping: { connectionId: string }) => boolean
   getDatabaseTypeDisplay: (connectionId: string) => string | null
   getConnectionName: (connectionId: string) => string | null
+  getDirectSourceReadiness?: (mapping: ConnectionMapping) => {
+    ready: boolean
+    reason?: 'missing-database' | 'database-not-found'
+  }
+  getScopedSourceReadiness?: (mapping: ConnectionMapping) => {
+    ready: boolean
+    reason?: 'missing-folder-scope'
+  }
 }
 
 export interface UseSqlExecutionContextSelectorReturn {
@@ -68,18 +76,32 @@ export function useSqlExecutionContextSelector(
     setSingleSourceConnectionId,
     isDatabaseMapping,
     getDatabaseTypeDisplay,
-    getConnectionName
+    getConnectionName,
+    getDirectSourceReadiness,
+    getScopedSourceReadiness
   } = options
+
+  function buildDirectSelectionValue(mapping: ConnectionMapping): string {
+    const key = `${mapping.connectionId}::${mapping.database?.trim() || ''}::${mapping.alias?.trim() || ''}`
+    return `direct:${key}`
+  }
 
   const directExecutionOptions = computed<SelectValueOption[]>(() =>
     databaseSourceMappings.value.map((mapping) => {
       const alias = mapping.alias || 'db'
       const databaseType = getDatabaseTypeDisplay(mapping.connectionId)
       const typePart = databaseType ? ` (${databaseType})` : ''
+      const databasePart = mapping.database?.trim() ? ` · ${mapping.database?.trim()}` : ''
+      const readiness = getDirectSourceReadiness?.(mapping) || { ready: true }
+
+      const needsSetupSuffix = readiness.ready ? '' : ' • needs setup'
+      const selectedSetupSuffix = readiness.ready ? '' : ' (needs setup)'
+
       return {
-        value: `direct:${mapping.connectionId}`,
-        label: `${alias}${typePart}`,
-        selectedLabel: `Database: ${alias}${typePart}`,
+        value: buildDirectSelectionValue(mapping),
+        label: `${alias}${typePart}${databasePart}${needsSetupSuffix}`,
+        selectedLabel: `Database: ${alias}${typePart}${databasePart}${selectedSetupSuffix}`,
+        disabled: !readiness.ready,
         indented: true
       }
     })
@@ -90,10 +112,13 @@ export function useSqlExecutionContextSelector(
       .filter((mapping) => !isDatabaseMapping(mapping))
       .map((mapping) => {
         const alias = mapping.alias || 'files'
+        const readiness = getScopedSourceReadiness?.(mapping) || { ready: true }
+        const scopeSuffix = readiness.ready ? '' : ' • no folder scope'
+        const selectedScopeSuffix = readiness.ready ? '' : ' (no folder scope)'
         return {
           value: `scoped:${mapping.connectionId}`,
-          label: alias,
-          selectedLabel: `Files: ${alias}`,
+          label: `${alias}${scopeSuffix}`,
+          selectedLabel: `Files: ${alias}${selectedScopeSuffix}`,
           indented: true
         }
       })
@@ -132,8 +157,10 @@ export function useSqlExecutionContextSelector(
         return String(scopedExecutionOptions.value[0].value)
       }
 
-      if (!showUnifiedExecutionSelector.value && directExecutionOptions.value.length === 1) {
-        return String(directExecutionOptions.value[0].value)
+      const enabledDirectOptions = directExecutionOptions.value.filter((option) => !option.disabled)
+
+      if (!showUnifiedExecutionSelector.value && enabledDirectOptions.length === 1) {
+        return String(enabledDirectOptions[0].value)
       }
 
       if (runMode.value === 'federated') {
@@ -149,9 +176,15 @@ export function useSqlExecutionContextSelector(
         return 'federated'
       }
 
-      const directId =
-        singleSourceMapping.value?.connectionId || databaseSourceMappings.value[0]?.connectionId
-      return directId ? `direct:${directId}` : 'federated'
+      const directMapping = singleSourceMapping.value || databaseSourceMappings.value[0]
+      if (!directMapping) return 'federated'
+
+      const directValue = buildDirectSelectionValue(directMapping)
+      const hasEnabledDirectOption = enabledDirectOptions.some(
+        (executionOption) => executionOption.value === directValue
+      )
+
+      return hasEnabledDirectOption ? directValue : 'federated'
     },
     set(value) {
       if (value === 'federated') {
@@ -209,11 +242,11 @@ export function useSqlExecutionContextSelector(
     }
 
     if (saved.startsWith('direct:')) {
-      const directId = saved.slice('direct:'.length)
+      const directToken = saved.slice('direct:'.length)
       const hasOption = directExecutionOptions.value.some(
-        (executionOption) => executionOption.value === saved
+        (executionOption) => executionOption.value === saved && !executionOption.disabled
       )
-      if (!directId) {
+      if (!directToken) {
         markRestoredCurrentKey()
         return
       }
@@ -253,6 +286,19 @@ export function useSqlExecutionContextSelector(
     ],
     restoreExecutionContextForCurrentKey,
     { immediate: true }
+  )
+
+  watch(
+    [() => mode.value, () => runMode.value, () => directExecutionOptions.value],
+    ([currentMode, currentRunMode, directOptions]) => {
+      if (currentMode !== 'database') return
+      if (currentRunMode !== 'single') return
+      const hasEnabledDirect = directOptions.some((option) => !option.disabled)
+      if (!hasEnabledDirect) {
+        setRunMode('federated')
+      }
+    },
+    { deep: true, immediate: true }
   )
 
   watch(
