@@ -66,7 +66,7 @@ onMounted(async () => {
         class="flex items-center justify-between rounded-md px-2 py-1.5 text-xs text-gray-800 dark:text-gray-200 bg-gray-50/60 dark:bg-gray-900/50"
       >
         <div class="flex min-w-0 flex-col gap-0.5">
-          <span class="capitalize truncate">{{ row.name }}</span>
+          <span class="truncate">{{ row.label }}</span>
           <span
             v-if="row.meta"
             class="text-[10px] text-gray-500 dark:text-gray-400 truncate"

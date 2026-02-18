@@ -21,6 +21,7 @@ type DesktopStatus = {
 
 export type StatusRow = {
   name: string
+  label: string
   status: HealthStatus
   meta?: string
 }
@@ -60,29 +61,64 @@ export function useSystemStatus() {
     return parts.join(' • ')
   }
 
+  const formatServiceLabel = (name: string): string => {
+    const normalized = (name || '').trim().toLowerCase()
+    if (normalized === 'sql-lsp') {
+      return 'SQL-LSP'
+    }
+
+    return (name || '')
+      .split(/[-_\s]+/)
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join('-')
+  }
+
   const rows = computed<StatusRow[]>(() => {
     let list: StatusRow[] = []
 
     if (commonStore.isBackendConnected && commonStore.serviceStatuses.length > 0) {
       list = commonStore.serviceStatuses.map((service) => ({
         name: service.name,
+        label: formatServiceLabel(service.name),
         status: service.status as HealthStatus
       }))
     }
 
-    if (list.length === 0 && desktopStatus.value?.services?.length) {
-      list = desktopStatus.value.services.map((service) => ({
+    const desktopServices = desktopStatus.value?.services || []
+    if (list.length === 0 && desktopServices.length) {
+      list = desktopServices.map((service) => ({
         name: service.name,
+        label: formatServiceLabel(service.name),
         status: mapDesktopStateToHealthStatus(service.state),
         meta: formatServiceMeta(service)
       }))
     }
 
+    // In desktop mode, keep API service health rows from backend and append local-only services
+    // (e.g. sql-lsp) from DesktopStatus when they are not reported by /services/status.
+    if (isDesktop.value && list.length > 0 && desktopServices.length > 0) {
+      const existingNames = new Set(list.map((row) => row.name.toLowerCase()))
+      const desktopOnly = desktopServices.filter(
+        (service) => !existingNames.has((service.name || '').toLowerCase())
+      )
+      if (desktopOnly.length > 0) {
+        list = list.concat(
+          desktopOnly.map((service) => ({
+            name: service.name,
+            label: formatServiceLabel(service.name),
+            status: mapDesktopStateToHealthStatus(service.state),
+            meta: formatServiceMeta(service)
+          }))
+        )
+      }
+    }
+
     if (list.length === 0) {
       list = [
-        { name: 'stream-api', status: SERVICE_STATUS.UNKNOWN },
-        { name: 'stream-reader', status: SERVICE_STATUS.UNKNOWN },
-        { name: 'stream-writer', status: SERVICE_STATUS.UNKNOWN }
+        { name: 'stream-api', label: 'Stream-Api', status: SERVICE_STATUS.UNKNOWN },
+        { name: 'stream-reader', label: 'Stream-Reader', status: SERVICE_STATUS.UNKNOWN },
+        { name: 'stream-writer', label: 'Stream-Writer', status: SERVICE_STATUS.UNKNOWN }
       ]
     }
 
@@ -97,6 +133,7 @@ export function useSystemStatus() {
     const sentryIndex = list.findIndex((row) => row.name.toLowerCase() === 'sentry')
     const sentryRow: StatusRow = {
       name: 'sentry',
+      label: 'Sentry',
       status: sentryStatus,
       meta: sentryMeta
     }

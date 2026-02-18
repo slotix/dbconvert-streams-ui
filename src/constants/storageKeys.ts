@@ -49,6 +49,9 @@ export const STORAGE_KEYS = {
   /** UI zoom level for desktop app */
   DESKTOP_UI_ZOOM: 'desktop-ui-zoom',
 
+  /** SQL editor intelligence mode toggle (LSP vs legacy providers) */
+  SQL_EDITOR_LSP_ENABLED: 'sql-editor-lsp-enabled',
+
   /** Logs panel view mode preference */
   LOGS_VIEW_MODE: 'sqlLogViewMode',
 

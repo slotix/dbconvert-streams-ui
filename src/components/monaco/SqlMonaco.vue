@@ -3,7 +3,20 @@
 import { ref, computed, watch, onUnmounted } from 'vue'
 import MonacoEditor from './MonacoEditor.vue'
 import CopyButton from '@/components/common/CopyButton.vue'
-import { useMonacoSqlProviders, type SchemaContext } from '@/composables/useMonacoSqlProviders'
+import {
+  acquireMonacoSqlProviders,
+  releaseMonacoSqlProviders,
+  useMonacoSqlProviders,
+  type SchemaContext
+} from '@/composables/useMonacoSqlProviders'
+import {
+  createMonacoSqlLspSession,
+  type MonacoSqlLspSession,
+  type SqlLspConnectionContext
+} from '@/composables/useMonacoSqlLspProviders'
+import { useCommonStore } from '@/stores/common'
+import { useEditorPreferencesStore } from '@/stores/editorPreferences'
+import { getOrCreateInstallId } from '@/utils/installId'
 
 import type * as MonacoTypes from 'monaco-editor'
 
@@ -25,6 +38,7 @@ interface Props {
   formatOnMount?: boolean
   enableSqlProviders?: boolean
   schemaContext?: SchemaContext
+  lspContext?: SqlLspConnectionContext
   enableExecute?: boolean
   enableFormatAction?: boolean
   fillParent?: boolean
@@ -62,9 +76,91 @@ const editorHeight = ref(props.height)
 const localValue = ref(props.modelValue || '')
 const editorInstance = ref<MonacoTypes.editor.IStandaloneCodeEditor>()
 const monacoInstance = ref<MonacoApi>()
+const commonStore = useCommonStore()
+const editorPreferencesStore = useEditorPreferencesStore()
 let cachedSelectionRange: MonacoTypes.IRange | null = null
 let selectionEmitRafId: number | null = null
 let lastSelectionState: boolean | null = null
+let lspSession: MonacoSqlLspSession | null = null
+let usingLegacySqlProviders = false
+let lspFallbackWarningShown = false
+let sqlProviderInitToken = 0
+
+const disposeSqlProviders = () => {
+  sqlProviderInitToken += 1
+  lspSession?.dispose()
+  lspSession = null
+  if (usingLegacySqlProviders) {
+    releaseMonacoSqlProviders()
+    usingLegacySqlProviders = false
+  }
+}
+
+const registerLegacySqlProviders = (monaco: MonacoApi, schemaContext?: SchemaContext) => {
+  if (!usingLegacySqlProviders) {
+    acquireMonacoSqlProviders(monaco, 'sql', sqlDialect.value, schemaContext)
+    usingLegacySqlProviders = true
+    return
+  }
+
+  useMonacoSqlProviders(monaco, 'sql', sqlDialect.value, schemaContext)
+}
+
+const initializeSqlProviders = (
+  editor: MonacoTypes.editor.IStandaloneCodeEditor,
+  monaco: MonacoApi
+) => {
+  if (!props.enableSqlProviders) {
+    disposeSqlProviders()
+    usingLegacySqlProviders = false
+    return
+  }
+
+  disposeSqlProviders()
+
+  if (!editorPreferencesStore.sqlLspEnabled) {
+    registerLegacySqlProviders(monaco, props.schemaContext)
+    return
+  }
+
+  const apiKey = commonStore.apiKey || commonStore.userApiKey || ''
+  const installId = getOrCreateInstallId()
+  const initToken = ++sqlProviderInitToken
+  lspSession = createMonacoSqlLspSession({
+    monaco,
+    editor,
+    language: 'sql',
+    apiKey,
+    installId,
+    connectionContext: props.lspContext,
+    onError: (error) => {
+      if (initToken !== sqlProviderInitToken) {
+        return
+      }
+      if (!editorPreferencesStore.sqlLspEnabled) {
+        return
+      }
+      console.warn('SQL LSP unavailable, fallback to legacy SQL providers:', error)
+      if (!lspFallbackWarningShown) {
+        commonStore.showNotification(
+          'SQL LSP unavailable. Using legacy SQL providers. Check sqls installation or SQL_LSP_COMMAND.',
+          'warning'
+        )
+        lspFallbackWarningShown = true
+      }
+      if (!usingLegacySqlProviders) {
+        registerLegacySqlProviders(monaco, props.schemaContext)
+      }
+    }
+  })
+
+  if (!lspSession) {
+    registerLegacySqlProviders(monaco, props.schemaContext)
+    return
+  }
+
+  usingLegacySqlProviders = false
+}
 
 watch(
   () => props.height,
@@ -325,9 +421,7 @@ const handleEditorMount = (editor: MonacoTypes.editor.IStandaloneCodeEditor, mon
   editorInstance.value = editor
   monacoInstance.value = monaco
 
-  if (props.enableSqlProviders) {
-    useMonacoSqlProviders(monaco, 'sql', sqlDialect.value, props.schemaContext)
-  }
+  initializeSqlProviders(editor, monaco)
 
   if (props.enableExecute) {
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
@@ -383,20 +477,46 @@ const handleEditorMount = (editor: MonacoTypes.editor.IStandaloneCodeEditor, mon
 watch(
   () => props.schemaContext,
   (newSchemaContext) => {
-    if (monacoInstance.value && props.enableSqlProviders) {
-      useMonacoSqlProviders(monacoInstance.value, 'sql', sqlDialect.value, newSchemaContext)
+    if (monacoInstance.value && props.enableSqlProviders && usingLegacySqlProviders) {
+      registerLegacySqlProviders(monacoInstance.value, newSchemaContext)
     }
   },
   { deep: true }
 )
 
 watch(sqlDialect, () => {
-  if (monacoInstance.value && props.enableSqlProviders) {
-    useMonacoSqlProviders(monacoInstance.value, 'sql', sqlDialect.value, props.schemaContext)
+  if (monacoInstance.value && props.enableSqlProviders && usingLegacySqlProviders) {
+    registerLegacySqlProviders(monacoInstance.value, props.schemaContext)
   }
 })
 
+watch(
+  () => editorPreferencesStore.sqlLspEnabled,
+  () => {
+    const editor = editorInstance.value
+    const monaco = monacoInstance.value
+    if (!editor || !monaco || !props.enableSqlProviders) {
+      return
+    }
+    initializeSqlProviders(editor, monaco)
+  }
+)
+
+watch(
+  () => props.lspContext,
+  () => {
+    const editor = editorInstance.value
+    const monaco = monacoInstance.value
+    if (!editor || !monaco || !props.enableSqlProviders || !editorPreferencesStore.sqlLspEnabled) {
+      return
+    }
+    initializeSqlProviders(editor, monaco)
+  },
+  { deep: true }
+)
+
 onUnmounted(() => {
+  disposeSqlProviders()
   if (selectionEmitRafId !== null && typeof window !== 'undefined') {
     window.cancelAnimationFrame(selectionEmitRafId)
     selectionEmitRafId = null

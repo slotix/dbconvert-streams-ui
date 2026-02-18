@@ -159,6 +159,7 @@
               v-model="activeQuery.query"
               :dialect="connectionDialect"
               :schema-context="schemaContext"
+              :lsp-context="sqlLspContext"
               :show-copy="false"
               height="100%"
               :enable-sql-providers="true"
@@ -313,6 +314,7 @@ import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import type { QuerySource } from '@/types/streamConfig'
 import type { SchemaContext } from '@/composables/useMonacoSqlProviders'
+import type { SqlLspConnectionContext } from '@/composables/useMonacoSqlLspProviders'
 import type { ConnectionMapping } from '@/api/federated'
 import { executeFederatedQuery } from '@/api/federated'
 import connections from '@/api/connections'
@@ -476,6 +478,24 @@ const sourceDatabase = computed(
     streamsStore.currentStreamConfig?.source?.connections?.[0]?.database ||
     ''
 )
+
+const sqlLspContext = computed<SqlLspConnectionContext | undefined>(() => {
+  if (needsFederatedExecution.value) {
+    return undefined
+  }
+  if (!sourceConnectionId.value || !sourceDatabase.value) {
+    return undefined
+  }
+  if (isFileConnection(sourceConnectionId.value)) {
+    return undefined
+  }
+
+  return {
+    connectionId: sourceConnectionId.value,
+    database: sourceDatabase.value,
+    dialect: connectionDialect.value
+  }
+})
 
 // Load schema context for autocomplete
 watch(

@@ -173,6 +173,34 @@
                 <span>{{ themeStore.isDark ? 'Dark' : 'Light' }}</span>
               </button>
             </div>
+            <div class="mt-3 flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <span class="text-sm font-semibold text-gray-700 dark:text-gray-200"
+                  >SQL Intelligence</span
+                >
+                <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                  Switch between backend LSP and legacy Monaco providers.
+                </p>
+              </div>
+              <button
+                type="button"
+                class="inline-flex items-center gap-2 rounded-md px-2 py-1 text-xs font-semibold border border-gray-200 text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+                :title="
+                  editorPreferencesStore.sqlLspEnabled
+                    ? 'Using backend LSP'
+                    : 'Using legacy Monaco SQL providers'
+                "
+                @click="editorPreferencesStore.toggleSqlLspEnabled"
+              >
+                <span
+                  :class="[
+                    'inline-flex h-2.5 w-2.5 rounded-full',
+                    editorPreferencesStore.sqlLspEnabled ? 'bg-emerald-500' : 'bg-amber-500'
+                  ]"
+                ></span>
+                {{ editorPreferencesStore.sqlLspEnabled ? 'LSP' : 'Legacy' }}
+              </button>
+            </div>
             <div v-if="isDesktop" class="mt-3 flex items-center justify-between">
               <span class="text-sm font-semibold text-gray-700 dark:text-gray-200">Zoom</span>
               <div class="flex items-center gap-2">
@@ -325,6 +353,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { AlertCircle, BarChart3, FileText, Moon, Settings, Sun } from 'lucide-vue-next'
 import { useCommonStore } from '@/stores/common'
+import { useEditorPreferencesStore } from '@/stores/editorPreferences'
 import { useLogsStore } from '@/stores/logs'
 import { useThemeStore } from '@/stores/theme'
 import { useDesktopMode } from '@/composables/useDesktopMode'
@@ -343,6 +372,7 @@ const props = defineProps<{
 }>()
 
 const commonStore = useCommonStore()
+const editorPreferencesStore = useEditorPreferencesStore()
 const logsStore = useLogsStore()
 const themeStore = useThemeStore()
 const { isDesktop } = useDesktopMode()

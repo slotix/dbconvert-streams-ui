@@ -98,6 +98,7 @@
           v-model="sqlQuery"
           :dialect="currentDialect"
           :schema-context="schemaContext"
+          :lsp-context="sqlLspContext"
           :is-executing="isExecuting"
           :format-state="formatState"
           :stats="lastQueryStats"
@@ -162,6 +163,7 @@
 import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue'
 import { ChevronRight } from 'lucide-vue-next'
 import type { SchemaContext } from '@/composables/useMonacoSqlProviders'
+import type { SqlLspConnectionContext } from '@/composables/useMonacoSqlLspProviders'
 import { useConnectionsStore } from '@/stores/connections'
 import { useConfirmDialogStore } from '@/stores/confirmDialog'
 import { usePaneTabsStore, createConsoleSessionId } from '@/stores/paneTabs'
@@ -586,6 +588,32 @@ const schemaContext = computed<SchemaContext>(() => {
   return {
     tables: tablesList.value,
     columns: columnsMap.value,
+    dialect: currentDialect.value
+  }
+})
+
+const sqlLspContext = computed<SqlLspConnectionContext | undefined>(() => {
+  if (props.mode !== 'database') {
+    return undefined
+  }
+
+  if (runMode.value !== 'single') {
+    return undefined
+  }
+
+  const direct = singleSourceMapping.value
+  if (!direct || !getDirectSourceReadiness(direct).ready) {
+    return undefined
+  }
+
+  const database = direct.database?.trim() || ''
+  if (!database) {
+    return undefined
+  }
+
+  return {
+    connectionId: direct.connectionId,
+    database,
     dialect: currentDialect.value
   }
 })

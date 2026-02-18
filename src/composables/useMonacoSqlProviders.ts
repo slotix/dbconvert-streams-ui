@@ -433,6 +433,31 @@ function addTopKeywordSuggestions(
 
 // Store disposables globally to allow disposal on re-registration
 let disposables: Array<{ dispose: () => void }> = []
+let legacyProviderConsumerCount = 0
+
+export function disposeMonacoSqlProviders() {
+  disposables.forEach((d) => d.dispose())
+  disposables = []
+}
+
+export function acquireMonacoSqlProviders(
+  monaco: MonacoApi,
+  language: string,
+  dialect: 'mysql' | 'pgsql' | 'sql',
+  schemaContext?: SchemaContext
+) {
+  legacyProviderConsumerCount += 1
+  useMonacoSqlProviders(monaco, language, dialect, schemaContext)
+}
+
+export function releaseMonacoSqlProviders() {
+  if (legacyProviderConsumerCount > 0) {
+    legacyProviderConsumerCount -= 1
+  }
+  if (legacyProviderConsumerCount === 0) {
+    disposeMonacoSqlProviders()
+  }
+}
 
 /**
  * Register all SQL language providers for Monaco editor
@@ -454,8 +479,7 @@ export function useMonacoSqlProviders(
   }
 
   // Dispose previous providers before registering new ones
-  disposables.forEach((d) => d.dispose())
-  disposables = []
+  disposeMonacoSqlProviders()
 
   // console.log('Registering SQL providers:', {
   //   language,

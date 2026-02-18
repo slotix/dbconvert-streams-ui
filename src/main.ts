@@ -38,7 +38,8 @@ if (!window.ENV) {
     VITE_PORT: import.meta.env.VITE_PORT || '80',
     VITE_API_URL: import.meta.env.VITE_API_URL || '/api',
     VITE_BACKEND_URL: import.meta.env.VITE_BACKEND_URL || '/api',
-    VITE_SENTRY_DSN: import.meta.env.VITE_SENTRY_DSN || ''
+    VITE_SENTRY_DSN: import.meta.env.VITE_SENTRY_DSN || '',
+    VITE_SQL_LSP_ENABLED: import.meta.env.VITE_SQL_LSP_ENABLED || 'false'
   }
 }
 

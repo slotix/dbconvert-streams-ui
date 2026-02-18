@@ -450,6 +450,7 @@
         :model-value="modelValue"
         :dialect="dialect"
         :schema-context="schemaContext"
+        :lsp-context="lspContext"
         :show-copy="false"
         :enable-sql-providers="true"
         :enable-execute="true"
@@ -468,6 +469,7 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { SqlMonaco } from '@/components/monaco'
 import type { SchemaContext } from '@/composables/useMonacoSqlProviders'
+import type { SqlLspConnectionContext } from '@/composables/useMonacoSqlLspProviders'
 import type { QueryTemplate } from '@/components/console/queryTemplates'
 import type { QueryHistoryItem } from '@/composables/useConsoleTab'
 import {
@@ -503,6 +505,7 @@ const props = defineProps<{
   modelValue: string
   dialect: string
   schemaContext: SchemaContext
+  lspContext?: SqlLspConnectionContext
   isExecuting: boolean
   formatState?: 'formatted' | 'compacted'
   stats: { rowCount: number; duration: number } | null
