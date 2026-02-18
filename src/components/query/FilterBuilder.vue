@@ -88,11 +88,14 @@
     </div>
 
     <!-- WHERE Filters -->
-    <div v-if="filters.length > 0" class="space-y-1.5 pr-1">
+    <div
+      v-if="filters.length > 0"
+      class="space-y-1.5 pr-1 p-1.5 bg-white dark:bg-gray-800/70 rounded border border-gray-200 dark:border-gray-700"
+    >
       <div
         v-for="filter in filters"
         :key="filter.id"
-        class="grid items-center gap-1.5 min-w-0 p-1.5 bg-white dark:bg-gray-800/70 rounded border border-gray-200 dark:border-gray-700"
+        class="grid items-center gap-1.5 min-w-0"
         :class="
           isUnaryOperator(filter.operator)
             ? 'grid-cols-[3.5rem_minmax(0,1fr)_11rem_1.75rem]'
@@ -139,11 +142,14 @@
     </div>
 
     <!-- ORDER BY -->
-    <div v-if="sorts.length > 0" class="space-y-1.5 pr-1">
+    <div
+      v-if="sorts.length > 0"
+      class="space-y-1.5 pr-1 p-1.5 bg-white dark:bg-gray-800/70 rounded border border-gray-200 dark:border-gray-700"
+    >
       <div
         v-for="(sort, index) in sorts"
         :key="index"
-        class="grid grid-cols-[3.5rem_minmax(0,1fr)_6rem_1.75rem] items-center gap-1.5 min-w-0 p-1.5 bg-white dark:bg-gray-800/70 rounded border border-gray-200 dark:border-gray-700"
+        class="grid grid-cols-[3.5rem_minmax(0,1fr)_6rem_1.75rem] items-center gap-1.5 min-w-0"
       >
         <span class="text-xs text-gray-400 px-1">ORDER</span>
         <FormSelect

@@ -208,7 +208,7 @@
                         v-if="table.selected && !isCDCMode"
                         class="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-all"
                         :class="
-                          selectedTableNames.includes(table.name)
+                          isTableSettingsOpen(table.name)
                             ? 'bg-teal-500/20 text-teal-600 dark:text-teal-400'
                             : hasTableFilter(table)
                               ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
@@ -219,16 +219,8 @@
                       >
                         <Filter class="w-3.5 h-3.5" />
                         <span v-if="hasTableFilter(table)" class="hidden sm:inline">filtered</span>
-                        <ChevronUp v-if="selectedTableNames.includes(table.name)" class="w-3 h-3" />
+                        <ChevronUp v-if="isTableSettingsOpen(table.name)" class="w-3 h-3" />
                       </button>
-                    </div>
-
-                    <!-- Table Settings Panel - Full width below row -->
-                    <div
-                      v-if="selectedTableNames.includes(table.name) && !isCDCMode"
-                      class="col-span-1 lg:col-span-2 px-4 py-3 bg-gray-50 dark:bg-gray-800/30 border-b border-gray-200 dark:border-gray-700"
-                    >
-                      <TableSettings :key="table.name" :table="table" />
                     </div>
                   </template>
                 </div>
@@ -336,7 +328,7 @@
                     v-if="table.selected && !isCDCMode"
                     class="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-all"
                     :class="
-                      selectedTableNames.includes(table.name)
+                      isTableSettingsOpen(table.name)
                         ? 'bg-teal-500/20 text-teal-600 dark:text-teal-400'
                         : hasTableFilter(table)
                           ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
@@ -347,16 +339,8 @@
                   >
                     <Filter class="w-3.5 h-3.5" />
                     <span v-if="hasTableFilter(table)" class="hidden sm:inline">filtered</span>
-                    <ChevronUp v-if="selectedTableNames.includes(table.name)" class="w-3 h-3" />
+                    <ChevronUp v-if="isTableSettingsOpen(table.name)" class="w-3 h-3" />
                   </button>
-                </div>
-
-                <!-- Table Settings Panel - Full width below row -->
-                <div
-                  v-if="selectedTableNames.includes(table.name) && !isCDCMode"
-                  class="col-span-1 lg:col-span-2 px-4 py-3 bg-gray-50 dark:bg-gray-800/30 border-b border-gray-200 dark:border-gray-700"
-                >
-                  <TableSettings :key="table.name" :table="table" />
                 </div>
               </template>
             </div>
@@ -364,6 +348,21 @@
         </template>
       </div>
     </div>
+
+    <SlideOverPanel
+      :open="Boolean(activeFilterTableName) && !isCDCMode"
+      title="Data Filter"
+      :subtitle="activeFilterTable ? getTableDisplayName(activeFilterTable.name) : ''"
+      size="xl"
+      body-padding
+      @close="closeTableSettingsDrawer"
+    >
+      <TableSettings
+        v-if="activeFilterTable"
+        :key="activeFilterTable.name"
+        :table="activeFilterTable"
+      />
+    </SlideOverPanel>
   </div>
 </template>
 
@@ -376,6 +375,7 @@ import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useDatabaseOverviewStore } from '@/stores/databaseOverview'
 import { useSelectableList } from '@/composables/useSelectableList'
 import FormCheckbox from '@/components/base/FormCheckbox.vue'
+import SlideOverPanel from '@/components/common/SlideOverPanel.vue'
 import HighlightedText from '@/components/common/HighlightedText.vue'
 import TableSettings from './TableSettings.vue'
 import {
@@ -432,7 +432,7 @@ const tables = ref<Table[]>(
 )
 
 const searchQuery = ref('')
-const selectedTableNames = ref<string[]>([])
+const activeFilterTableName = ref<string | null>(null)
 const expandedSchemas = ref(new Set<string>())
 const schemasInitialized = ref(false)
 
@@ -759,12 +759,20 @@ function clearAllInConnection(alias: string) {
 }
 
 function toggleTableSettings(tableName: string) {
-  const index = selectedTableNames.value.indexOf(tableName)
-  if (index > -1) {
-    selectedTableNames.value.splice(index, 1)
-  } else {
-    selectedTableNames.value.push(tableName)
-  }
+  activeFilterTableName.value = activeFilterTableName.value === tableName ? null : tableName
+}
+
+function isTableSettingsOpen(tableName: string): boolean {
+  return activeFilterTableName.value === tableName
+}
+
+const activeFilterTable = computed(() => {
+  if (!activeFilterTableName.value) return null
+  return tables.value.find((table) => table.name === activeFilterTableName.value) || null
+})
+
+function closeTableSettingsDrawer() {
+  activeFilterTableName.value = null
 }
 
 function hasTableFilter(table: Table): boolean {
@@ -1047,6 +1055,13 @@ const debouncedRefreshTables = debounce(refreshTables, 500)
 watch(
   tables,
   (newTables) => {
+    if (
+      activeFilterTableName.value &&
+      !newTables.some((table) => table.name === activeFilterTableName.value && table.selected)
+    ) {
+      activeFilterTableName.value = null
+    }
+
     // Store the full table list (including unselected) in _allTablesWithState for UI navigation
     currentStreamConfig.value._allTablesWithState = newTables
 

@@ -1,171 +1,176 @@
 <template>
-  <FilterBuilderShell>
-    <template #header>
-      <FilterBuilderHeader>
-        <template #left>
-          <Filter class="w-4 h-4 text-teal-600 dark:text-teal-400" />
-          <span
-            class="text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide"
-            >Data Filter</span
-          >
-          <div class="flex items-center gap-1 ml-3">
-            <button
-              type="button"
-              class="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-white dark:hover:bg-gray-800 rounded transition-colors"
-              :class="showColumnSelector ? 'bg-teal-500/20 text-teal-600 dark:text-teal-400' : ''"
-              title="Select columns to transfer"
-              @click="toggleColumnSelector"
-            >
-              <Columns2 class="w-3 h-3" />
-              <span>Columns</span>
-              <span
-                v-if="selectedColumns.length > 0 && selectedColumns.length < columns.length"
-                class="px-1 py-0.5 text-[10px] bg-teal-500/30 rounded"
-              >
-                {{ selectedColumns.length }}
-              </span>
-            </button>
-            <button
-              type="button"
-              class="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-white dark:hover:bg-gray-800 rounded transition-colors"
-              title="Add WHERE condition"
-              @click="addFilter"
-            >
-              <Plus class="w-3 h-3" />
-              <span>Filter</span>
-            </button>
-            <button
-              type="button"
-              class="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-white dark:hover:bg-gray-800 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-gray-600 dark:disabled:hover:text-gray-400"
-              :title="canAddSort ? 'Add ORDER BY' : 'All columns are already used in sorting'"
-              :disabled="!canAddSort"
-              @click="addSort"
-            >
-              <ArrowUpDown class="w-3 h-3" />
-              <span>Sort</span>
-            </button>
-          </div>
-        </template>
-        <template #right>
+  <div class="min-w-0">
+    <div
+      class="flex items-center justify-between gap-2 px-1 pb-2 border-b border-gray-200 dark:border-gray-700"
+    >
+      <div class="flex items-center gap-1.5 min-w-0">
+        <Filter class="w-4 h-4 text-teal-600 dark:text-teal-400" />
+        <span class="text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide"
+          >Data Filter</span
+        >
+        <div class="flex items-center gap-1 ml-2">
           <button
-            v-if="canPreview"
             type="button"
             class="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-white dark:hover:bg-gray-800 rounded transition-colors"
-            :class="isLoadingPreview ? 'animate-pulse' : ''"
-            :disabled="isLoadingPreview"
-            title="Preview sample data"
-            @click="runPreview"
+            :class="showColumnSelector ? 'bg-teal-500/20 text-teal-600 dark:text-teal-400' : ''"
+            title="Select columns to transfer"
+            @click="toggleColumnSelector"
           >
-            <Play v-if="!isLoadingPreview" class="w-3 h-3" />
-            <RefreshCw v-else class="w-3 h-3 animate-spin" />
-            <span>Preview</span>
-          </button>
-        </template>
-      </FilterBuilderHeader>
-    </template>
-
-    <!-- Builder Content - using shared FilterBuilder -->
-    <div class="p-3">
-      <FilterBuilder
-        ref="filterBuilderRef"
-        :columns="normalizedColumns"
-        :dialect="dialect"
-        :table-name="tableName"
-        mode="stream"
-        :show-column-selector="showColumnSelector"
-        :initial-selected-columns="selectedColumns"
-        :initial-filters="filters"
-        :initial-sorts="orderBy"
-        :initial-limit="limit"
-        @update="onBuilderUpdate"
-        @columns-change="onColumnsChange"
-      />
-
-      <!-- Preview Results Panel -->
-      <div
-        v-if="showPreview"
-        class="mt-3 bg-white dark:bg-gray-800/70 rounded border border-gray-200 dark:border-gray-700 overflow-hidden"
-      >
-        <!-- Preview Header -->
-        <div
-          class="flex items-center justify-between px-2 py-1.5 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
-        >
-          <div class="flex items-center gap-2">
-            <Sheet class="w-3.5 h-3.5 text-teal-500" />
-            <span class="text-xs font-medium text-gray-600 dark:text-gray-300">
-              Preview
-              <span v-if="previewData" class="text-gray-400">
-                ({{ previewData.rows.length }}
-                {{ previewData.rows.length === previewLimit ? '+' : '' }} rows)
-              </span>
+            <Columns2 class="w-3 h-3" />
+            <span>Columns</span>
+            <span
+              v-if="selectedColumns.length > 0 && selectedColumns.length < columns.length"
+              class="px-1 py-0.5 text-[10px] bg-teal-500/30 rounded"
+            >
+              {{ selectedColumns.length }}
             </span>
-          </div>
+          </button>
           <button
             type="button"
-            class="p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-            @click="showPreview = false"
+            class="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-white dark:hover:bg-gray-800 rounded transition-colors"
+            title="Add WHERE condition"
+            @click="addFilter"
           >
-            <X class="w-3.5 h-3.5" />
+            <Plus class="w-3 h-3" />
+            <span>Filter</span>
+          </button>
+          <button
+            type="button"
+            class="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-white dark:hover:bg-gray-800 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-gray-600 dark:disabled:hover:text-gray-400"
+            :title="canAddSort ? 'Add ORDER BY' : 'All columns are already used in sorting'"
+            :disabled="!canAddSort"
+            @click="addSort"
+          >
+            <ArrowUpDown class="w-3 h-3" />
+            <span>Sort</span>
           </button>
         </div>
+      </div>
 
-        <!-- Error State -->
+      <button
+        v-if="canPreview"
+        type="button"
+        class="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-white dark:hover:bg-gray-800 rounded transition-colors"
+        :class="isLoadingPreview ? 'animate-pulse' : ''"
+        :disabled="isLoadingPreview"
+        title="Preview sample data"
+        @click="runPreview"
+      >
+        <Play v-if="!isLoadingPreview" class="w-3 h-3" />
+        <RefreshCw v-else class="w-3 h-3 animate-spin" />
+        <span>Preview</span>
+      </button>
+    </div>
+
+    <FilterBuilderShell class="mt-3 border-0">
+      <div class="min-w-0">
+        <FilterBuilder
+          ref="filterBuilderRef"
+          :columns="normalizedColumns"
+          :dialect="dialect"
+          :table-name="tableName"
+          mode="stream"
+          :show-column-selector="showColumnSelector"
+          :initial-selected-columns="selectedColumns"
+          :initial-filters="filters"
+          :initial-sorts="orderBy"
+          :initial-limit="limit"
+          @update="onBuilderUpdate"
+          @columns-change="onColumnsChange"
+        />
+      </div>
+
+      <!-- Preview Results Panel -->
+      <div v-if="showPreview" class="mt-4 pt-3 border-t border-gray-200/80 dark:border-gray-700/80">
         <div
-          v-if="previewError"
-          class="p-3 text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20"
+          class="bg-white dark:bg-gray-800/70 rounded-md border border-gray-200 dark:border-gray-700 shadow-xs ring-1 ring-teal-500/10 overflow-hidden"
         >
-          <div class="flex items-start gap-2">
-            <AlertTriangle class="w-4 h-4 shrink-0 mt-0.5" />
-            <div>
-              <p class="font-medium">Query error</p>
-              <p class="mt-1 text-red-500 dark:text-red-300">{{ previewError }}</p>
+          <!-- Preview Header -->
+          <div
+            class="flex items-center justify-between px-2.5 py-2 bg-gray-50/90 dark:bg-gray-800/90 border-b border-gray-200 dark:border-gray-700"
+          >
+            <div class="flex items-center gap-2">
+              <Sheet class="w-3.5 h-3.5 text-teal-500" />
+              <span
+                class="text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide"
+              >
+                Preview
+              </span>
+              <span v-if="previewData" class="text-xs text-gray-500 dark:text-gray-400">
+                {{ previewData.rows.length
+                }}{{ previewData.rows.length === previewLimit ? '+' : '' }} rows
+              </span>
+            </div>
+            <button
+              type="button"
+              class="p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              @click="showPreview = false"
+            >
+              <X class="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <!-- Error State -->
+          <div
+            v-if="previewError"
+            class="p-3 text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20"
+          >
+            <div class="flex items-start gap-2">
+              <AlertTriangle class="w-4 h-4 shrink-0 mt-0.5" />
+              <div>
+                <p class="font-medium">Query error</p>
+                <p class="mt-1 text-red-500 dark:text-red-300">{{ previewError }}</p>
+              </div>
             </div>
           </div>
-        </div>
 
-        <!-- Data Table -->
-        <div v-else-if="previewData && previewData.rows.length > 0" class="overflow-auto max-h-48">
-          <table class="w-full text-xs">
-            <thead class="bg-gray-50 dark:bg-gray-900 sticky top-0">
-              <tr>
-                <th
-                  v-for="col in previewData.columns"
-                  :key="col"
-                  class="px-2 py-1.5 text-left font-medium text-gray-600 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700 whitespace-nowrap"
+          <!-- Data Table -->
+          <div
+            v-else-if="previewData && previewData.rows.length > 0"
+            class="overflow-auto max-h-96"
+          >
+            <table class="w-full text-xs">
+              <thead class="bg-gray-50 dark:bg-gray-900 sticky top-0">
+                <tr>
+                  <th
+                    v-for="col in previewData.columns"
+                    :key="col"
+                    class="px-2 py-1.5 text-left font-medium text-gray-600 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700 whitespace-nowrap"
+                  >
+                    {{ col }}
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                <tr
+                  v-for="(row, idx) in previewData.rows"
+                  :key="idx"
+                  class="hover:bg-gray-50 dark:hover:bg-gray-800/50"
                 >
-                  {{ col }}
-                </th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
-              <tr
-                v-for="(row, idx) in previewData.rows"
-                :key="idx"
-                class="hover:bg-gray-50 dark:hover:bg-gray-800/50"
-              >
-                <td
-                  v-for="col in previewData.columns"
-                  :key="col"
-                  class="px-2 py-1 text-gray-900 dark:text-gray-100 whitespace-nowrap max-w-[200px] truncate"
-                  :title="formatCellValue(row[col])"
-                >
-                  {{ formatCellValue(row[col]) }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+                  <td
+                    v-for="col in previewData.columns"
+                    :key="col"
+                    class="px-2 py-1 text-gray-900 dark:text-gray-100 whitespace-nowrap max-w-[200px] truncate"
+                    :title="formatCellValue(row[col])"
+                  >
+                    {{ formatCellValue(row[col]) }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
 
-        <!-- Empty State -->
-        <div
-          v-else-if="previewData && previewData.rows.length === 0"
-          class="p-4 text-center text-xs text-gray-500 dark:text-gray-400"
-        >
-          No rows match the filter criteria
+          <!-- Empty State -->
+          <div
+            v-else-if="previewData && previewData.rows.length === 0"
+            class="p-4 text-center text-xs text-gray-500 dark:text-gray-400"
+          >
+            No rows match the filter criteria
+          </div>
         </div>
       </div>
-    </div>
-  </FilterBuilderShell>
+    </FilterBuilderShell>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -181,9 +186,8 @@ import {
   Sheet,
   X
 } from 'lucide-vue-next'
-import FilterBuilderHeader from './FilterBuilderHeader.vue'
-import FilterBuilderShell from './FilterBuilderShell.vue'
 import FilterBuilder from './FilterBuilder.vue'
+import FilterBuilderShell from './FilterBuilderShell.vue'
 import type { ColumnInfo, FilterCondition, SortCondition, ColumnDef } from './types'
 import { UNARY_OPERATORS } from './types'
 import { operatorToSql } from './sql-utils'

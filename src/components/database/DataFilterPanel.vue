@@ -28,22 +28,68 @@
 
     <!-- Expanded State: Full Builder UI -->
     <div v-if="isExpanded" class="p-2">
-      <FilterBuilderShell body-class="px-3 pb-3 pt-2">
-        <template #header>
-          <FilterBuilderHeader
-            clickable
-            header-class="-my-2 -mx-3 px-3 py-1.5 hover:bg-white/50 dark:hover:bg-gray-800/50"
-            @click="toggleExpanded"
+      <div
+        class="flex items-center justify-between gap-2 px-1 pb-2 border-b border-gray-200 dark:border-gray-700"
+      >
+        <div class="flex items-center gap-1.5 min-w-0">
+          <Filter class="w-4 h-4 text-teal-600 dark:text-teal-400" />
+          <span
+            class="text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide"
           >
-            <template #left>
-              <ChevronDown class="w-4 h-4 text-gray-400" />
-              <span class="text-xs font-medium text-gray-500 dark:text-gray-400"
-                >Filter Builder</span
+            Data Filter
+          </span>
+          <div class="flex items-center gap-1 ml-2">
+            <button
+              type="button"
+              class="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-white dark:hover:bg-gray-800 rounded transition-colors"
+              :class="showColumnSelector ? 'bg-teal-500/20 text-teal-600 dark:text-teal-400' : ''"
+              title="Select columns"
+              @click="toggleColumnSelector"
+            >
+              <Columns2 class="w-3 h-3" />
+              <span>Columns</span>
+              <span
+                v-if="
+                  selectedColumns.length > 0 && selectedColumns.length < normalizedColumns.length
+                "
+                class="px-1 py-0.5 text-[10px] bg-teal-500/30 rounded"
               >
-            </template>
-          </FilterBuilderHeader>
-        </template>
+                {{ selectedColumns.length }}
+              </span>
+            </button>
+            <button
+              type="button"
+              class="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-white dark:hover:bg-gray-800 rounded transition-colors"
+              title="Add WHERE condition"
+              @click="addFilter"
+            >
+              <Plus class="w-3 h-3" />
+              <span>Filter</span>
+            </button>
+            <button
+              type="button"
+              class="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-white dark:hover:bg-gray-800 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-gray-600 dark:disabled:hover:text-gray-400"
+              :title="canAddSort ? 'Add ORDER BY' : 'All columns are already used in sorting'"
+              :disabled="!canAddSort"
+              @click="addSort"
+            >
+              <ArrowUpDown class="w-3 h-3" />
+              <span>Sort</span>
+            </button>
+          </div>
+        </div>
 
+        <button
+          type="button"
+          class="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-white dark:hover:bg-gray-800 rounded transition-colors"
+          title="Collapse filter panel"
+          @click="toggleExpanded"
+        >
+          <ChevronDown class="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+      <FilterBuilderShell class="mt-3 border-0 bg-none" body-class="px-3 pb-3 pt-2">
         <FilterBuilder
           ref="filterBuilderRef"
           :columns="normalizedColumns"
@@ -94,11 +140,19 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
-import { ChevronDown, ChevronRight, Play, X } from 'lucide-vue-next'
+import {
+  ArrowUpDown,
+  ChevronDown,
+  ChevronRight,
+  Columns2,
+  Filter,
+  Play,
+  Plus,
+  X
+} from 'lucide-vue-next'
 import type { ColDef } from 'ag-grid-community'
 import { useObjectTabStateStore, type FilterConfig, type SortConfig } from '@/stores/objectTabState'
 import {
-  FilterBuilderHeader,
   FilterBuilderShell,
   FilterBuilder,
   type ColumnDef,

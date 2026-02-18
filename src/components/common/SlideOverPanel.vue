@@ -8,7 +8,7 @@ const props = defineProps<{
   open: boolean
   title: string
   subtitle?: string
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'sm' | 'md' | 'lg' | 'xl'
   bodyScrollable?: boolean
   bodyPadding?: boolean
 }>()
@@ -26,6 +26,8 @@ const panelWidthClass = computed(() => {
       return 'max-w-sm'
     case 'lg':
       return 'max-w-lg'
+    case 'xl':
+      return 'max-w-2xl'
     case 'md':
     default:
       return 'max-w-md'
