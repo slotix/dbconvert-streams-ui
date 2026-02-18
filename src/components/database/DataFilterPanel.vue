@@ -1,11 +1,10 @@
 <template>
   <div
-    v-if="hasValidModifications || isExpanded"
+    v-if="hasValidModifications && !isExpanded"
     class="border-b border-gray-200 dark:border-gray-700"
   >
     <!-- Collapsed State: Single-line SQL preview -->
     <div
-      v-if="!isExpanded && hasValidModifications"
       class="flex items-center gap-2 px-3 py-1.5 bg-gray-50 dark:bg-gray-800/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
       @click="toggleExpanded"
     >
@@ -25,131 +24,109 @@
         <X class="w-3.5 h-3.5" />
       </button>
     </div>
+  </div>
 
-    <!-- Expanded State: Full Builder UI -->
-    <div v-if="isExpanded" class="p-2">
-      <div
-        class="flex items-center justify-between gap-2 px-1 pb-2 border-b border-gray-200 dark:border-gray-700"
-      >
-        <div class="flex items-center gap-1.5 min-w-0">
-          <Filter class="w-4 h-4 text-teal-600 dark:text-teal-400" />
+  <SlideOverPanel
+    :open="isExpanded"
+    title="Data Filter"
+    :subtitle="tableName || undefined"
+    size="xl"
+    :body-padding="false"
+    @close="toggleExpanded"
+  >
+    <div class="px-3 pt-3 pb-2 border-b border-gray-200 dark:border-gray-700">
+      <div class="flex items-center gap-1">
+        <button
+          type="button"
+          class="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-white dark:hover:bg-gray-800 rounded transition-colors"
+          :class="showColumnSelector ? 'bg-teal-500/20 text-teal-600 dark:text-teal-400' : ''"
+          title="Select columns"
+          @click="toggleColumnSelector"
+        >
+          <Columns2 class="w-3 h-3" />
+          <span>Columns</span>
           <span
-            class="text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide"
+            v-if="selectedColumns.length > 0 && selectedColumns.length < normalizedColumns.length"
+            class="px-1 py-0.5 text-[10px] bg-teal-500/30 rounded"
           >
-            Data Filter
+            {{ selectedColumns.length }}
           </span>
-          <div class="flex items-center gap-1 ml-2">
-            <button
-              type="button"
-              class="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-white dark:hover:bg-gray-800 rounded transition-colors"
-              :class="showColumnSelector ? 'bg-teal-500/20 text-teal-600 dark:text-teal-400' : ''"
-              title="Select columns"
-              @click="toggleColumnSelector"
-            >
-              <Columns2 class="w-3 h-3" />
-              <span>Columns</span>
-              <span
-                v-if="
-                  selectedColumns.length > 0 && selectedColumns.length < normalizedColumns.length
-                "
-                class="px-1 py-0.5 text-[10px] bg-teal-500/30 rounded"
-              >
-                {{ selectedColumns.length }}
-              </span>
-            </button>
-            <button
-              type="button"
-              class="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-white dark:hover:bg-gray-800 rounded transition-colors"
-              title="Add WHERE condition"
-              @click="addFilter"
-            >
-              <Plus class="w-3 h-3" />
-              <span>Filter</span>
-            </button>
-            <button
-              type="button"
-              class="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-white dark:hover:bg-gray-800 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-gray-600 dark:disabled:hover:text-gray-400"
-              :title="canAddSort ? 'Add ORDER BY' : 'All columns are already used in sorting'"
-              :disabled="!canAddSort"
-              @click="addSort"
-            >
-              <ArrowUpDown class="w-3 h-3" />
-              <span>Sort</span>
-            </button>
-          </div>
-        </div>
+        </button>
 
         <button
           type="button"
           class="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-white dark:hover:bg-gray-800 rounded transition-colors"
-          title="Collapse filter panel"
-          @click="toggleExpanded"
+          title="Add WHERE condition"
+          @click="addFilter"
         >
-          <ChevronDown class="w-3.5 h-3.5" />
+          <Plus class="w-3 h-3" />
+          <span>Filter</span>
+        </button>
+
+        <button
+          type="button"
+          class="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-white dark:hover:bg-gray-800 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-gray-600 dark:disabled:hover:text-gray-400"
+          :title="canAddSort ? 'Add ORDER BY' : 'All columns are already used in sorting'"
+          :disabled="!canAddSort"
+          @click="addSort"
+        >
+          <ArrowUpDown class="w-3 h-3" />
+          <span>Sort</span>
         </button>
       </div>
-
-      <FilterBuilderShell class="mt-3 border-0 bg-none" body-class="px-3 pb-3 pt-2">
-        <FilterBuilder
-          ref="filterBuilderRef"
-          :columns="normalizedColumns"
-          :dialect="dialect"
-          :table-name="tableName"
-          mode="explorer"
-          :show-column-selector="showColumnSelector"
-          :initial-selected-columns="selectedColumns"
-          :initial-filters="filters"
-          :initial-sorts="sorts"
-          :initial-limit="limit"
-          @update="onBuilderUpdate"
-          @apply="applyFilters"
-          @columns-change="onColumnsChange"
-        >
-          <template #footer="{ hasModifications: hasMod, isDirty: dirty }">
-            <div class="flex items-center justify-between gap-2">
-              <p class="text-[10px] text-gray-500 dark:text-gray-400 italic">
-                {{
-                  !dirty
-                    ? 'No changes to apply'
-                    : hasMod
-                      ? 'Click Apply to execute the query'
-                      : 'Click Apply to refresh data'
-                }}
-              </p>
-              <button
-                type="button"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                :class="
-                  dirty
-                    ? 'text-white bg-teal-600 hover:bg-teal-700'
-                    : 'text-gray-400 bg-gray-200 dark:bg-gray-700 cursor-not-allowed'
-                "
-                :disabled="!dirty"
-                @click="applyFilters"
-              >
-                <Play class="w-3.5 h-3.5" />
-                Apply
-              </button>
-            </div>
-          </template>
-        </FilterBuilder>
-      </FilterBuilderShell>
     </div>
-  </div>
+
+    <FilterBuilderShell class="border-0 bg-none" body-class="px-3 pb-3 pt-3">
+      <FilterBuilder
+        ref="filterBuilderRef"
+        :columns="normalizedColumns"
+        :dialect="dialect"
+        :table-name="tableName"
+        mode="explorer"
+        :show-column-selector="showColumnSelector"
+        :initial-selected-columns="selectedColumns"
+        :initial-filters="filters"
+        :initial-sorts="sorts"
+        :initial-limit="limit"
+        @update="onBuilderUpdate"
+        @apply="applyFilters"
+        @columns-change="onColumnsChange"
+      >
+        <template #footer="{ hasModifications: hasMod, isDirty: dirty }">
+          <div class="flex items-center justify-between gap-2">
+            <p class="text-[10px] text-gray-500 dark:text-gray-400 italic">
+              {{
+                !dirty
+                  ? 'No changes to apply'
+                  : hasMod
+                    ? 'Click Apply to execute the query'
+                    : 'Click Apply to refresh data'
+              }}
+            </p>
+            <button
+              type="button"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              :class="
+                dirty
+                  ? 'text-white bg-teal-600 hover:bg-teal-700'
+                  : 'text-gray-400 bg-gray-200 dark:bg-gray-700 cursor-not-allowed'
+              "
+              :disabled="!dirty"
+              @click="applyFilters"
+            >
+              <Play class="w-3.5 h-3.5" />
+              Apply
+            </button>
+          </div>
+        </template>
+      </FilterBuilder>
+    </FilterBuilderShell>
+  </SlideOverPanel>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
-import {
-  ArrowUpDown,
-  ChevronDown,
-  ChevronRight,
-  Columns2,
-  Filter,
-  Play,
-  Plus,
-  X
-} from 'lucide-vue-next'
+import { ArrowUpDown, ChevronRight, Columns2, Play, Plus, X } from 'lucide-vue-next'
 import type { ColDef } from 'ag-grid-community'
 import { useObjectTabStateStore, type FilterConfig, type SortConfig } from '@/stores/objectTabState'
 import {
@@ -161,6 +138,7 @@ import {
   buildPanelClauses,
   isUnaryOperator
 } from '@/components/query'
+import SlideOverPanel from '@/components/common/SlideOverPanel.vue'
 
 interface Props {
   columns: ColDef[]
@@ -353,6 +331,11 @@ function toggleExpanded() {
   saveState()
 }
 
+function openPanel() {
+  isExpanded.value = true
+  saveState()
+}
+
 function addFilter() {
   filterBuilderRef.value?.addFilter()
   isDirty.value = true
@@ -416,6 +399,7 @@ const hasActiveSorts = computed(() => sorts.value.length > 0)
 
 // Expose methods to parent
 defineExpose({
+  openPanel,
   clearAll,
   applyFilters,
   addFilter,

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch, defineAsyncComponent, type Component } from 'vue'
-import { ArrowUpDown, Columns2, Filter, RefreshCw, Share2, Terminal } from 'lucide-vue-next'
+import { Filter, RefreshCw, Share2, Terminal } from 'lucide-vue-next'
 import type { SQLRoutineMeta, SQLSequenceMeta, SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import { type FileSystemEntry } from '@/api/fileSystem'
 import { type FileMetadata } from '@/types/files'
@@ -284,6 +284,7 @@ function onTabChange(i: number) {
 // Keep refs to the rendered child components so parent can trigger refresh
 type Refreshable = { refresh?: () => Promise<void> | void }
 type FilterPanelMethods = {
+  openPanel?: () => void
   addFilter?: () => void
   addSort?: () => void
   toggleColumnSelector?: () => void
@@ -328,12 +329,6 @@ function getFilterPanel(): FilterPanelMethods | null {
   return panel as FilterPanelMethods
 }
 
-// Computed values that read from child panel state
-const showingColumnSelector = computed(() => {
-  const panel = getFilterPanel()
-  return panel?.showColumnSelector?.value ?? false
-})
-
 const hasActiveFilters = computed(() => {
   const panel = getFilterPanel()
   return panel?.hasActiveFilters?.value ?? false
@@ -344,37 +339,12 @@ const hasActiveSorts = computed(() => {
   return panel?.hasActiveSorts?.value ?? false
 })
 
-const canAddSort = computed(() => {
-  const panel = getFilterPanel()
-  return panel?.canAddSort?.value ?? true
-})
+const hasAnyFilterActivity = computed(() => hasActiveFilters.value || hasActiveSorts.value)
 
-// Get selected columns count and total columns count for badge display
-// Read from the store which is reactive and gets updated by DataFilterPanel
-const selectedColumnsCount = computed(() => {
-  const state = tabStateStore.getFilterPanelState(objectKey.value)
-  return state?.selectedColumns?.length ?? 0
-})
-
-// Filter control methods that delegate to child component
-function toggleColumnSelector() {
+function openFilterPanel() {
   const panel = getFilterPanel()
-  if (panel?.toggleColumnSelector) {
-    panel.toggleColumnSelector()
-  }
-}
-
-function addFilter() {
-  const panel = getFilterPanel()
-  if (panel?.addFilter) {
-    panel.addFilter()
-  }
-}
-
-function addSort() {
-  const panel = getFilterPanel()
-  if (panel?.addSort) {
-    panel.addSort()
+  if (panel?.openPanel) {
+    panel.openPanel()
   }
 }
 
@@ -480,52 +450,15 @@ function onOpenDiagram() {
               type="button"
               class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded transition-colors"
               :class="
-                showingColumnSelector
-                  ? 'bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300 border border-teal-300 dark:border-teal-700'
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 border border-transparent'
-              "
-              title="Select columns to display"
-              @click="toggleColumnSelector"
-            >
-              <Columns2 class="w-4 h-4" />
-              <span class="hidden sm:inline">Columns</span>
-              <span
-                v-if="selectedColumnsCount > 0"
-                class="px-1.5 py-0.5 text-[10px] font-semibold rounded bg-teal-500/30 text-teal-700 dark:text-teal-300"
-              >
-                {{ selectedColumnsCount }}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded transition-colors"
-              :class="
-                hasActiveFilters
+                hasAnyFilterActivity
                   ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700'
                   : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 border border-transparent'
               "
-              title="Add filter condition"
-              @click="addFilter"
+              title="Open data filter"
+              @click="openFilterPanel"
             >
               <Filter class="w-4 h-4" />
-              <span class="hidden sm:inline">Filter</span>
-            </button>
-
-            <button
-              type="button"
-              class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded transition-colors"
-              :class="
-                hasActiveSorts
-                  ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700'
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 border border-transparent'
-              "
-              :disabled="!canAddSort"
-              title="Add sort column"
-              @click="addSort"
-            >
-              <ArrowUpDown class="w-4 h-4" />
-              <span class="hidden sm:inline">Sort</span>
+              <span>Filter</span>
             </button>
           </div>
         </div>
