@@ -27,19 +27,14 @@
       </div>
 
       <!-- Select All -->
-      <label class="inline-flex items-center gap-2 cursor-pointer group">
-        <input
-          :checked="selectAllCheckboxState"
+      <div class="inline-flex items-center">
+        <FormCheckbox
+          :model-value="selectAllCheckboxState"
           :indeterminate="indeterminate"
-          type="checkbox"
-          class="h-4 w-4 text-teal-600 dark:text-teal-500 focus:ring-teal-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
-          @change="toggleSelectAll"
+          label="All"
+          @update:model-value="setSelectAllFromValue"
         />
-        <span
-          class="text-sm text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-200"
-          >All</span
-        >
-      </label>
+      </div>
 
       <!-- Refresh button -->
       <button
@@ -380,6 +375,7 @@ import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useDatabaseOverviewStore } from '@/stores/databaseOverview'
 import { useSelectableList } from '@/composables/useSelectableList'
+import FormCheckbox from '@/components/base/FormCheckbox.vue'
 import HighlightedText from '@/components/common/HighlightedText.vue'
 import TableSettings from './TableSettings.vue'
 import {
@@ -785,8 +781,8 @@ function handleCheckboxChange(table: Table, checked: boolean) {
   table.selected = checked
 }
 
-function toggleSelectAll(event: Event) {
-  const selectAll = (event.target as HTMLInputElement).checked
+function setSelectAllFromValue(value: boolean | unknown[]) {
+  const selectAll = Array.isArray(value) ? value.length > 0 : value
   filteredTables.value.forEach((table) => {
     table.selected = selectAll
   })

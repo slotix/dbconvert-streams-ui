@@ -88,45 +88,49 @@
     </div>
 
     <!-- WHERE Filters -->
-    <div v-if="filters.length > 0" class="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+    <div v-if="filters.length > 0" class="space-y-1.5 pr-1">
       <div
         v-for="filter in filters"
         :key="filter.id"
-        class="flex items-center gap-1.5 p-1.5 bg-white dark:bg-gray-800/70 rounded border border-gray-200 dark:border-gray-700"
+        class="grid items-center gap-1.5 min-w-0 p-1.5 bg-white dark:bg-gray-800/70 rounded border border-gray-200 dark:border-gray-700"
+        :class="
+          isUnaryOperator(filter.operator)
+            ? 'grid-cols-[3.5rem_minmax(0,1fr)_11rem_1.75rem]'
+            : 'grid-cols-[3.5rem_minmax(0,1fr)_11rem_minmax(0,1fr)_1.75rem]'
+        "
       >
-        <span class="text-xs text-gray-400 px-1 w-12 shrink-0">WHERE</span>
-        <select
-          v-model="filter.column"
-          class="flex-1 min-w-0 px-1.5 py-1 text-xs border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded focus:ring-1 focus:ring-teal-500 cursor-pointer"
-          @change="emitUpdate"
-        >
-          <option value="" disabled>column</option>
-          <option v-for="col in columnList" :key="col.name" :value="col.name">
-            {{ col.label || col.name }}
-          </option>
-        </select>
-        <select
-          v-model="filter.operator"
-          class="w-44 shrink-0 px-1 py-1 text-xs border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded focus:ring-1 focus:ring-teal-500 cursor-pointer"
-          @change="emitUpdate"
-        >
-          <option v-for="op in OPERATORS" :key="op.value" :value="op.value">
-            {{ op.label }}
-          </option>
-        </select>
+        <span class="text-xs text-gray-400 px-1">WHERE</span>
+        <FormSelect
+          :model-value="filter.column"
+          :options="columnSelectOptions"
+          compact
+          button-class="h-7"
+          class="w-full min-w-0"
+          placeholder="column"
+          @update:model-value="updateFilterColumn(filter.id, String($event ?? ''))"
+        />
+        <FormSelect
+          :model-value="filter.operator"
+          :options="operatorSelectOptions"
+          :options-scrollable="false"
+          compact
+          button-class="h-7"
+          class="w-full min-w-0"
+          @update:model-value="updateFilterOperator(filter.id, String($event ?? ''))"
+        />
         <template v-if="!isUnaryOperator(filter.operator)">
           <input
             v-model="filter.value"
             type="text"
             :placeholder="getPlaceholder(filter.operator)"
-            class="flex-1 min-w-0 px-1.5 py-1 text-xs border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded focus:ring-1 focus:ring-teal-500"
+            class="w-full min-w-0 px-1.5 py-1 text-xs border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded focus:ring-1 focus:ring-teal-500"
             @input="emitUpdate"
             @keyup.enter="$emit('apply')"
           />
         </template>
         <button
           type="button"
-          class="p-1 text-gray-400 hover:text-red-500 transition-colors shrink-0"
+          class="p-1 text-gray-400 hover:text-red-500 transition-colors justify-self-end"
           @click="removeFilter(filter.id)"
         >
           <X class="w-3.5 h-3.5" />
@@ -135,30 +139,25 @@
     </div>
 
     <!-- ORDER BY -->
-    <div v-if="sorts.length > 0" class="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+    <div v-if="sorts.length > 0" class="space-y-1.5 pr-1">
       <div
         v-for="(sort, index) in sorts"
         :key="index"
-        class="flex items-center gap-1.5 p-1.5 bg-white dark:bg-gray-800/70 rounded border border-gray-200 dark:border-gray-700"
+        class="grid grid-cols-[3.5rem_minmax(0,1fr)_6rem_1.75rem] items-center gap-1.5 min-w-0 p-1.5 bg-white dark:bg-gray-800/70 rounded border border-gray-200 dark:border-gray-700"
       >
-        <span class="text-xs text-gray-400 px-1 w-12 shrink-0">ORDER</span>
-        <select
-          v-model="sort.column"
-          class="flex-1 min-w-0 px-1.5 py-1 text-xs border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded focus:ring-1 focus:ring-teal-500 cursor-pointer"
-          @change="emitUpdate"
-        >
-          <option value="" disabled>column</option>
-          <option
-            v-for="col in getAvailableColumnsForSort(index)"
-            :key="col.name"
-            :value="col.name"
-          >
-            {{ col.label || col.name }}
-          </option>
-        </select>
+        <span class="text-xs text-gray-400 px-1">ORDER</span>
+        <FormSelect
+          :model-value="sort.column"
+          :options="getSortColumnSelectOptions(index)"
+          compact
+          button-class="h-7"
+          class="w-full min-w-0"
+          placeholder="column"
+          @update:model-value="updateSortColumn(index, String($event ?? ''))"
+        />
         <button
           type="button"
-          class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors shrink-0"
+          class="inline-flex items-center justify-center gap-1 px-2 py-1 text-xs rounded transition-colors w-full"
           :class="
             sort.direction === 'ASC'
               ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/40'
@@ -172,7 +171,7 @@
         </button>
         <button
           type="button"
-          class="p-1 text-gray-400 hover:text-red-500 transition-colors shrink-0"
+          class="p-1 text-gray-400 hover:text-red-500 transition-colors justify-self-end"
           @click="removeSort(index)"
         >
           <X class="w-3.5 h-3.5" />
@@ -188,6 +187,8 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { ArrowDown, ArrowUp, X } from 'lucide-vue-next'
+import FormSelect from '@/components/base/FormSelect.vue'
+import type { SelectOption } from '@/components/base/FormSelect.vue'
 import type { ColumnDef, SortCondition, FilterCondition } from './types'
 import {
   operatorToSql as sharedOperatorToSql,
@@ -263,6 +264,11 @@ const OPERATORS = [
   { value: 'NOT IN', label: 'Not in list' }
 ]
 
+const operatorSelectOptions: SelectOption[] = OPERATORS.map((operator) => ({
+  value: operator.value,
+  label: operator.label
+}))
+
 // State
 const selectedColumns = ref<string[]>([...props.initialSelectedColumns])
 const filters = ref<FilterCondition[]>([...props.initialFilters])
@@ -272,6 +278,12 @@ const isDirty = ref(false)
 
 // Normalized column list
 const columnList = computed(() => props.columns)
+const columnSelectOptions = computed<SelectOption[]>(() =>
+  columnList.value.map((column) => ({
+    value: column.name,
+    label: column.label || column.name
+  }))
+)
 
 // Filter ID generator
 let filterId = 0
@@ -359,6 +371,34 @@ function getAvailableColumnsForSort(index: number) {
       .filter(Boolean)
   )
   return columnList.value.filter((col) => !usedColumns.has(col.name))
+}
+
+function getSortColumnSelectOptions(index: number): SelectOption[] {
+  return getAvailableColumnsForSort(index).map((column) => ({
+    value: column.name,
+    label: column.label || column.name
+  }))
+}
+
+function updateFilterColumn(filterId: string, column: string) {
+  const filter = filters.value.find((entry) => entry.id === filterId)
+  if (!filter) return
+  filter.column = column
+  emitUpdate()
+}
+
+function updateFilterOperator(filterId: string, operator: string) {
+  const filter = filters.value.find((entry) => entry.id === filterId)
+  if (!filter) return
+  filter.operator = operator
+  emitUpdate()
+}
+
+function updateSortColumn(index: number, column: string) {
+  const sort = sorts.value[index]
+  if (!sort) return
+  sort.column = column
+  emitUpdate()
 }
 
 // Actions

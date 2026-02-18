@@ -64,13 +64,21 @@ interface Props {
   placeholder?: string
   disabled?: boolean
   required?: boolean
+  compact?: boolean
+  buttonClass?: string
+  optionsScrollable?: boolean
+  optionsMaxHeightClass?: string
   options: SelectOption[]
 }
 
 const props = withDefaults(defineProps<Props>(), {
   disabled: false,
   required: false,
-  placeholder: 'Select an option'
+  placeholder: 'Select an option',
+  compact: false,
+  buttonClass: '',
+  optionsScrollable: true,
+  optionsMaxHeightClass: 'max-h-60'
 })
 
 const emit = defineEmits<{
@@ -105,6 +113,25 @@ const handleChange = (option: SelectValueOption | null) => {
   emit('update:modelValue', value)
   emit('change', value)
 }
+
+const buttonSizeClass = computed(() =>
+  props.compact ? 'text-xs py-1.5 pl-2.5 pr-9' : 'sm:text-sm py-2 pl-3 pr-10'
+)
+
+const chevronSizeClass = computed(() => (props.compact ? 'h-4 w-4' : 'h-5 w-5'))
+
+const optionsTextClass = computed(() => (props.compact ? 'text-xs' : 'text-sm'))
+
+const optionPaddingClass = computed(() => (props.compact ? 'py-1.5 pr-8' : 'py-2 pr-9'))
+
+const selectedIconClass = computed(() => (props.compact ? 'h-4 w-4' : 'h-5 w-5'))
+
+const optionsBehaviorClass = computed(() => {
+  if (props.optionsScrollable) {
+    return [props.optionsMaxHeightClass, 'overflow-auto'].filter(Boolean).join(' ')
+  }
+  return 'max-h-none overflow-visible'
+})
 </script>
 
 <template>
@@ -128,7 +155,8 @@ const handleChange = (option: SelectValueOption | null) => {
       <!-- Button -->
       <ListboxButton
         :class="[
-          'relative w-full rounded-md shadow-sm sm:text-sm py-2 pl-3 pr-10 text-left',
+          'relative w-full rounded-md shadow-sm text-left',
+          buttonSizeClass,
           'transition-colors duration-150',
           'focus:outline-none focus:ring-1',
           error
@@ -136,7 +164,8 @@ const handleChange = (option: SelectValueOption | null) => {
             : 'border border-gray-300 dark:border-gray-600 focus:border-teal-500 dark:focus:border-teal-400 focus:ring-teal-500 dark:focus:ring-teal-400',
           disabled
             ? 'bg-gray-100 dark:bg-gray-700 cursor-not-allowed text-gray-500 dark:text-gray-400'
-            : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 cursor-pointer'
+            : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 cursor-pointer',
+          buttonClass
         ]"
       >
         <span v-if="selectedOption" class="block truncate">
@@ -146,7 +175,10 @@ const handleChange = (option: SelectValueOption | null) => {
           {{ placeholder }}
         </span>
         <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
-          <ChevronDown class="h-5 w-5 text-gray-400 dark:text-gray-500" aria-hidden="true" />
+          <ChevronDown
+            :class="[chevronSizeClass, 'text-gray-400 dark:text-gray-500']"
+            aria-hidden="true"
+          />
         </span>
       </ListboxButton>
 
@@ -157,7 +189,11 @@ const handleChange = (option: SelectValueOption | null) => {
         leave-to-class="opacity-0"
       >
         <ListboxOptions
-          class="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white dark:bg-gray-800 py-1 text-sm shadow-lg ring-1 ring-black dark:ring-gray-600 ring-opacity-5 dark:ring-opacity-100 focus:outline-none"
+          :class="[
+            'absolute z-50 mt-1 w-full rounded-md bg-white dark:bg-gray-800 py-1 shadow-lg ring-1 ring-black dark:ring-gray-600 ring-opacity-5 dark:ring-opacity-100 focus:outline-none',
+            optionsBehaviorClass,
+            optionsTextClass
+          ]"
         >
           <template v-for="(option, index) in options" :key="getOptionKey(option, index)">
             <li
@@ -186,7 +222,8 @@ const handleChange = (option: SelectValueOption | null) => {
                     : 'text-gray-900 dark:text-gray-100',
                   option.disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
                   option.indented ? 'pl-6' : 'pl-3',
-                  'relative select-none py-2 pr-9'
+                  'relative select-none',
+                  optionPaddingClass
                 ]"
               >
                 <span :class="[selected ? 'font-semibold' : 'font-normal', 'block truncate']">
@@ -202,7 +239,7 @@ const handleChange = (option: SelectValueOption | null) => {
                     'absolute inset-y-0 right-0 flex items-center pr-3'
                   ]"
                 >
-                  <Check class="h-5 w-5" aria-hidden="true" />
+                  <Check :class="selectedIconClass" aria-hidden="true" />
                 </span>
               </li>
             </ListboxOption>

@@ -27,21 +27,23 @@
     </div>
 
     <!-- Expanded State: Full Builder UI -->
-    <div
-      v-if="isExpanded"
-      class="bg-linear-to-br from-gray-50 to-gray-100/50 dark:from-gray-900/60 dark:to-gray-800/40"
-    >
-      <!-- Collapse header -->
-      <div
-        class="flex items-center gap-2 px-3 py-1.5 cursor-pointer hover:bg-white/50 dark:hover:bg-gray-800/50 transition-colors border-b border-gray-200 dark:border-gray-700"
-        @click="toggleExpanded"
-      >
-        <ChevronDown class="w-4 h-4 text-gray-400" />
-        <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Filter Builder</span>
-      </div>
+    <div v-if="isExpanded" class="p-2">
+      <FilterBuilderShell body-class="px-3 pb-3 pt-2">
+        <template #header>
+          <FilterBuilderHeader
+            clickable
+            header-class="-my-2 -mx-3 px-3 py-1.5 hover:bg-white/50 dark:hover:bg-gray-800/50"
+            @click="toggleExpanded"
+          >
+            <template #left>
+              <ChevronDown class="w-4 h-4 text-gray-400" />
+              <span class="text-xs font-medium text-gray-500 dark:text-gray-400"
+                >Filter Builder</span
+              >
+            </template>
+          </FilterBuilderHeader>
+        </template>
 
-      <!-- Builder Content - using shared FilterBuilder component -->
-      <div class="px-3 pb-3 pt-2">
         <FilterBuilder
           ref="filterBuilderRef"
           :columns="normalizedColumns"
@@ -85,7 +87,7 @@
             </div>
           </template>
         </FilterBuilder>
-      </div>
+      </FilterBuilderShell>
     </div>
   </div>
 </template>
@@ -96,6 +98,8 @@ import { ChevronDown, ChevronRight, Play, X } from 'lucide-vue-next'
 import type { ColDef } from 'ag-grid-community'
 import { useObjectTabStateStore, type FilterConfig, type SortConfig } from '@/stores/objectTabState'
 import {
+  FilterBuilderHeader,
+  FilterBuilderShell,
   FilterBuilder,
   type ColumnDef,
   type FilterCondition,

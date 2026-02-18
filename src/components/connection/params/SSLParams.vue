@@ -6,7 +6,7 @@
         <!-- SSL Mode -->
         <div class="mb-6">
           <div class="flex items-center mb-2">
-            <label for="ssl-mode" class="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
               SSL Mode
               <span
                 v-tooltip="'Choose the SSL verification mode for your connection'"
@@ -16,18 +16,14 @@
               </span>
             </label>
           </div>
-          <select
-            id="ssl-mode"
-            :value="localSSLConfig.mode"
-            class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 py-2 pl-3 pr-10 text-base focus:border-gray-500 dark:focus:border-teal-400 focus:outline-none focus:ring-gray-500 dark:focus:ring-teal-400 sm:text-sm"
-            @change="
-              handleModeChange(($event.target as HTMLSelectElement).value as SSLConfig['mode'])
+          <FormSelect
+            class="mt-1"
+            :model-value="localSSLConfig.mode"
+            :options="sslModeOptions"
+            @update:model-value="
+              handleModeChange(String($event ?? 'disabled') as SSLConfig['mode'])
             "
-          >
-            <option v-for="mode in SSL_MODES" :key="mode.value" :value="mode.value">
-              {{ mode.label }}
-            </option>
-          </select>
+          />
           <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
             {{ getSSLModeDescription(localSSLConfig.mode) }}
           </p>
@@ -58,6 +54,7 @@
 import { ref, watch, computed } from 'vue'
 import { CircleHelp } from 'lucide-vue-next'
 import { useConnectionsStore } from '@/stores/connections'
+import FormSelect from '@/components/base/FormSelect.vue'
 import type { SSLConfig } from '@/types/connections'
 import { vTooltip } from '@/directives/tooltip'
 import CertificateInput from './CertificateInput.vue'
@@ -69,6 +66,11 @@ const SSL_MODES = [
   { value: 'verify-ca', label: 'Verify CA' },
   { value: 'verify-full', label: 'Verify Full' }
 ] as const
+
+const sslModeOptions = SSL_MODES.map((mode) => ({
+  value: mode.value,
+  label: mode.label
+}))
 
 const CERT_TYPES = [
   {

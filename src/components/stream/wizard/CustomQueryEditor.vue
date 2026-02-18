@@ -16,17 +16,16 @@
       </div>
       <div class="flex items-center gap-2">
         <!-- Template Selector - hide for federated mode (templates don't apply to DuckDB syntax) -->
-        <select
+        <FormSelect
           v-if="activeQuery && !needsFederatedExecution"
-          class="text-xs px-2 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 focus:ring-1 focus:ring-teal-500"
-          @change="applyTemplate($event, activeQuery)"
-        >
-          <option value="">Templates</option>
-          <option value="cte">CTE with aggregation</option>
-          <option value="join">Multi-table JOIN</option>
-          <option value="subquery">Subquery filter</option>
-          <option value="union">UNION query</option>
-        </select>
+          class="w-[220px]"
+          :model-value="selectedTemplate"
+          :options="templateOptions"
+          compact
+          button-class="bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600"
+          placeholder="Templates"
+          @update:model-value="applyTemplateSelection($event, activeQuery)"
+        />
         <!-- Source count badge -->
         <span
           v-if="sourceConnections.length > 1"
@@ -308,6 +307,7 @@ import {
 } from 'lucide-vue-next'
 import { SqlMonaco } from '@/components/monaco'
 import { SqlQueryTabs } from '@/components/database/sql-console'
+import FormSelect from '@/components/base/FormSelect.vue'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
@@ -334,6 +334,13 @@ const props = withDefaults(defineProps<Props>(), {
 const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
 const navigationStore = useExplorerNavigationStore()
+const selectedTemplate = ref<string | number | null>('')
+const templateOptions = [
+  { value: 'cte', label: 'CTE with aggregation' },
+  { value: 'join', label: 'Multi-table JOIN' },
+  { value: 'subquery', label: 'Subquery filter' },
+  { value: 'union', label: 'UNION query' }
+]
 
 // Federated execution needed when multiple DB sources or mixed DB+file sources
 const needsFederatedExecution = computed(() => {
@@ -662,9 +669,9 @@ const formatCellValue = (value: unknown): string => {
   return String(value)
 }
 
-const applyTemplate = (event: Event, query: QuerySource) => {
-  const select = event.target as HTMLSelectElement
-  const template = select.value
+const applyTemplateSelection = (value: string | number | null, query: QuerySource) => {
+  const template = String(value ?? '')
+  selectedTemplate.value = template
 
   if (!template) return
 

@@ -1,70 +1,68 @@
 <template>
-  <div
-    class="bg-linear-to-br from-gray-50 to-gray-100/50 dark:from-gray-900/60 dark:to-gray-800/40 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden"
-  >
-    <!-- Compact Header -->
-    <div
-      class="flex items-center justify-between px-3 py-2 bg-white/50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700"
-    >
-      <div class="flex items-center gap-2">
-        <Filter class="w-4 h-4 text-teal-600 dark:text-teal-400" />
-        <span class="text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide"
-          >Data Filter</span
-        >
-        <!-- Quick action buttons moved here -->
-        <div class="flex items-center gap-1 ml-3">
-          <button
-            type="button"
-            class="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-white dark:hover:bg-gray-800 rounded transition-colors"
-            :class="showColumnSelector ? 'bg-teal-500/20 text-teal-600 dark:text-teal-400' : ''"
-            title="Select columns to transfer"
-            @click="toggleColumnSelector"
+  <FilterBuilderShell>
+    <template #header>
+      <FilterBuilderHeader>
+        <template #left>
+          <Filter class="w-4 h-4 text-teal-600 dark:text-teal-400" />
+          <span
+            class="text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide"
+            >Data Filter</span
           >
-            <Columns2 class="w-3 h-3" />
-            <span>Columns</span>
-            <span
-              v-if="selectedColumns.length > 0 && selectedColumns.length < columns.length"
-              class="px-1 py-0.5 text-[10px] bg-teal-500/30 rounded"
+          <div class="flex items-center gap-1 ml-3">
+            <button
+              type="button"
+              class="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-white dark:hover:bg-gray-800 rounded transition-colors"
+              :class="showColumnSelector ? 'bg-teal-500/20 text-teal-600 dark:text-teal-400' : ''"
+              title="Select columns to transfer"
+              @click="toggleColumnSelector"
             >
-              {{ selectedColumns.length }}
-            </span>
-          </button>
+              <Columns2 class="w-3 h-3" />
+              <span>Columns</span>
+              <span
+                v-if="selectedColumns.length > 0 && selectedColumns.length < columns.length"
+                class="px-1 py-0.5 text-[10px] bg-teal-500/30 rounded"
+              >
+                {{ selectedColumns.length }}
+              </span>
+            </button>
+            <button
+              type="button"
+              class="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-white dark:hover:bg-gray-800 rounded transition-colors"
+              title="Add WHERE condition"
+              @click="addFilter"
+            >
+              <Plus class="w-3 h-3" />
+              <span>Filter</span>
+            </button>
+            <button
+              type="button"
+              class="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-white dark:hover:bg-gray-800 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-gray-600 dark:disabled:hover:text-gray-400"
+              :title="canAddSort ? 'Add ORDER BY' : 'All columns are already used in sorting'"
+              :disabled="!canAddSort"
+              @click="addSort"
+            >
+              <ArrowUpDown class="w-3 h-3" />
+              <span>Sort</span>
+            </button>
+          </div>
+        </template>
+        <template #right>
           <button
+            v-if="canPreview"
             type="button"
             class="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-white dark:hover:bg-gray-800 rounded transition-colors"
-            title="Add WHERE condition"
-            @click="addFilter"
+            :class="isLoadingPreview ? 'animate-pulse' : ''"
+            :disabled="isLoadingPreview"
+            title="Preview sample data"
+            @click="runPreview"
           >
-            <Plus class="w-3 h-3" />
-            <span>Filter</span>
+            <Play v-if="!isLoadingPreview" class="w-3 h-3" />
+            <RefreshCw v-else class="w-3 h-3 animate-spin" />
+            <span>Preview</span>
           </button>
-          <button
-            type="button"
-            class="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-white dark:hover:bg-gray-800 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-gray-600 dark:disabled:hover:text-gray-400"
-            :title="canAddSort ? 'Add ORDER BY' : 'All columns are already used in sorting'"
-            :disabled="!canAddSort"
-            @click="addSort"
-          >
-            <ArrowUpDown class="w-3 h-3" />
-            <span>Sort</span>
-          </button>
-        </div>
-      </div>
-      <!-- Preview button moved to the right -->
-      <button
-        v-if="canPreview"
-        type="button"
-        class="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-white dark:hover:bg-gray-800 rounded transition-colors"
-        :class="isLoadingPreview ? 'animate-pulse' : ''"
-        :disabled="isLoadingPreview"
-        title="Preview sample data"
-        @click="runPreview"
-      >
-        <Play v-if="!isLoadingPreview" class="w-3 h-3" />
-        <RefreshCw v-else class="w-3 h-3 animate-spin" />
-        <span>Preview</span>
-      </button>
-    </div>
+        </template>
+      </FilterBuilderHeader>
+    </template>
 
     <!-- Builder Content - using shared FilterBuilder -->
     <div class="p-3">
@@ -167,7 +165,7 @@
         </div>
       </div>
     </div>
-  </div>
+  </FilterBuilderShell>
 </template>
 
 <script setup lang="ts">
@@ -183,6 +181,8 @@ import {
   Sheet,
   X
 } from 'lucide-vue-next'
+import FilterBuilderHeader from './FilterBuilderHeader.vue'
+import FilterBuilderShell from './FilterBuilderShell.vue'
 import FilterBuilder from './FilterBuilder.vue'
 import type { ColumnInfo, FilterCondition, SortCondition, ColumnDef } from './types'
 import { UNARY_OPERATORS } from './types'

@@ -2,6 +2,8 @@
 import { computed, ref, watch } from 'vue'
 import SlideOverPanel from '@/components/common/SlideOverPanel.vue'
 import FolderSelectionModal from '@/components/common/FolderSelectionModal.vue'
+import FormSelect from '@/components/base/FormSelect.vue'
+import FormCheckbox from '@/components/base/FormCheckbox.vue'
 import { useObjectTabStateStore } from '@/stores/objectTabState'
 import { useToast } from 'vue-toastification'
 import { isWailsContext } from '@/composables/useWailsEvents'
@@ -70,6 +72,12 @@ const selectedColumnsLabel = computed(() => {
   }
   return `${selectedColumns.value.length} columns selected`
 })
+
+const formatOptions = [
+  { value: 'csv', label: 'CSV' },
+  { value: 'parquet', label: 'Parquet' },
+  { value: 'jsonl', label: 'JSONL' }
+]
 
 const compressionOptions = computed(() => {
   if (format.value === 'parquet') {
@@ -284,26 +292,24 @@ async function onCreateStream() {
         </div>
         <label class="block">
           <span class="text-xs text-gray-700 dark:text-gray-300">Format</span>
-          <select
-            v-model="format"
-            class="mt-1 w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-850 px-2.5 py-2 text-sm text-gray-900 dark:text-gray-100"
-          >
-            <option value="csv">CSV</option>
-            <option value="parquet">Parquet</option>
-            <option value="jsonl">JSONL</option>
-          </select>
+          <FormSelect
+            class="mt-1"
+            :model-value="format"
+            :options="formatOptions"
+            @update:model-value="format = String($event ?? 'csv') as StreamExportFormat"
+          />
         </label>
 
         <label class="block">
           <span class="text-xs text-gray-700 dark:text-gray-300">Compression</span>
-          <select
-            v-model="compression"
-            class="mt-1 w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-850 px-2.5 py-2 text-sm text-gray-900 dark:text-gray-100"
-          >
-            <option v-for="option in compressionOptions" :key="option.value" :value="option.value">
-              {{ option.label }}
-            </option>
-          </select>
+          <FormSelect
+            class="mt-1"
+            :model-value="compression"
+            :options="compressionOptions"
+            @update:model-value="
+              compression = String($event ?? 'none') as 'none' | 'gzip' | 'zstd' | 'snappy'
+            "
+          />
         </label>
 
         <label class="block">
@@ -340,10 +346,7 @@ async function onCreateStream() {
         <div class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase">
           Stream
         </div>
-        <label class="inline-flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
-          <input v-model="runImmediately" type="checkbox" class="rounded border-gray-300" />
-          Run immediately
-        </label>
+        <FormCheckbox v-model="runImmediately" label="Run immediately" />
 
         <label class="block">
           <span class="text-xs text-gray-700 dark:text-gray-300">Stream name</span>

@@ -249,31 +249,17 @@
 
                         <div class="flex items-center gap-2 min-w-0 flex-1">
                           <span class="text-xs text-gray-400 dark:text-gray-500 shrink-0">→</span>
-                          <div class="relative w-full">
-                            <select
-                              class="custom-dropdown text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 px-2 pr-9 h-7 rounded w-full"
-                              :value="mapping.database || ''"
-                              @change="
-                                updateDatabaseForMapping(
-                                  mapping,
-                                  ($event.target as HTMLSelectElement).value
-                                )
-                              "
-                            >
-                              <option
-                                v-for="db in getDatabaseOptionsForMapping(conn, mapping)"
-                                :key="db.name"
-                                :value="db.name"
-                              >
-                                {{ db.name }}
-                              </option>
-                            </select>
-                            <span
-                              class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2 text-gray-500 dark:text-gray-400"
-                            >
-                              <ChevronDown class="h-4 w-4" />
-                            </span>
-                          </div>
+                          <FormSelect
+                            :model-value="mapping.database || ''"
+                            :options="getDatabaseSelectOptionsForMapping(conn, mapping)"
+                            compact
+                            button-class="h-7"
+                            class="w-full"
+                            placeholder="Select database"
+                            @update:model-value="
+                              updateDatabaseForMapping(mapping, String($event ?? ''))
+                            "
+                          />
                         </div>
 
                         <button
@@ -398,35 +384,18 @@
                         >folder</span
                       >
                       <div
-                        class="relative"
+                        class="w-full"
                         :class="props.compact ? 'max-w-[12rem]' : 'max-w-[14rem]'"
                       >
-                        <select
-                          :value="getDatabase(conn.id)"
-                          class="custom-dropdown text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 pr-9"
-                          :class="
-                            props.compact
-                              ? 'h-7 px-2 rounded-full w-full'
-                              : 'px-2 py-1 rounded w-full'
-                          "
-                          @change="
-                            updateDatabase(conn.id, ($event.target as HTMLSelectElement).value)
-                          "
-                        >
-                          <option value="">All folders</option>
-                          <option
-                            v-for="db in getSelectableDatabases(conn)"
-                            :key="db.name"
-                            :value="db.name"
-                          >
-                            {{ db.name }}
-                          </option>
-                        </select>
-                        <span
-                          class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2 text-gray-500 dark:text-gray-400"
-                        >
-                          <ChevronDown class="h-4 w-4" />
-                        </span>
+                        <FormSelect
+                          :model-value="getDatabase(conn.id)"
+                          :options="getFolderScopeSelectOptions(conn)"
+                          compact
+                          :button-class="props.compact ? 'h-7 rounded-full' : ''"
+                          class="w-full"
+                          placeholder="All folders"
+                          @update:model-value="updateDatabase(conn.id, String($event ?? ''))"
+                        />
                       </div>
                     </div>
                   </div>
@@ -455,8 +424,10 @@ import { RouterLink } from 'vue-router'
 import { ChevronDown, Cloud, Database, Folder, Plus } from 'lucide-vue-next'
 import { useConnectionsStore } from '@/stores/connections'
 import connectionsApi from '@/api/connections'
+import FormSelect from '@/components/base/FormSelect.vue'
 import type { Connection } from '@/types/connections'
 import type { ConnectionMapping } from '@/api/federated'
+import type { SelectOption } from '@/components/base/FormSelect.vue'
 import { generateTypeBasedAlias } from '@/utils/federatedUtils'
 import {
   getConnectionKindFromSpec,
@@ -709,6 +680,23 @@ function getDatabaseOptionsForMapping(
   )
 
   return options.filter((db) => db.name === currentDatabase || !usedByOther.has(db.name))
+}
+
+function getDatabaseSelectOptionsForMapping(
+  conn: Connection,
+  mapping: ConnectionMapping
+): SelectOption[] {
+  return getDatabaseOptionsForMapping(conn, mapping).map((db) => ({
+    value: db.name,
+    label: db.name
+  }))
+}
+
+function getFolderScopeSelectOptions(conn: Connection): SelectOption[] {
+  return [
+    { value: '', label: 'All folders' },
+    ...getSelectableDatabases(conn).map((db) => ({ value: db.name, label: db.name }))
+  ]
 }
 
 function getSelectableDatabases(conn: Connection): Array<{ name: string; isSystem?: boolean }> {
@@ -1019,17 +1007,6 @@ watch(
 .alias-inline-display,
 .alias-inline-input {
   min-height: 1.25rem;
-}
-
-.custom-dropdown {
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  background-image: none !important;
-}
-
-.custom-dropdown::-ms-expand {
-  display: none;
 }
 
 .alias-inline-display {
