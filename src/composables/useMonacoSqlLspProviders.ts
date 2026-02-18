@@ -106,6 +106,20 @@ export interface SqlLspConnectionContext {
   dialect?: string
 }
 
+function normalizeSqlLspContextPart(value: string | undefined): string {
+  return value?.trim() || ''
+}
+
+export function getSqlLspConnectionContextSignature(context?: SqlLspConnectionContext): string {
+  const connectionId = normalizeSqlLspContextPart(context?.connectionId)
+  const database = normalizeSqlLspContextPart(context?.database)
+  if (!connectionId || !database) {
+    return ''
+  }
+  const dialect = normalizeSqlLspContextPart(context?.dialect)
+  return `${connectionId}::${database}::${dialect}`
+}
+
 interface PendingRequest {
   resolve: (value: unknown) => void
   reject: (error: Error) => void
@@ -362,11 +376,34 @@ class MonacoSqlLspSessionImpl {
       connectionContext: this.params.connectionContext
     })
 
-    this.ws = await this.openWebSocket(url)
-    this.bindSocketHandlers(this.ws)
+    const socket = await this.openWebSocket(url)
+    if (this.isDisposed) {
+      try {
+        socket.close(1000, 'SQL LSP session disposed before startup')
+      } catch {
+        // no-op
+      }
+      return
+    }
+
+    this.ws = socket
+    this.bindSocketHandlers(socket)
     await this.initializeLsp()
+    if (this.isDisposed) {
+      return
+    }
+
     this.registerProviders()
+    if (this.isDisposed) {
+      this.providerDisposables.forEach((d) => d.dispose())
+      this.providerDisposables.length = 0
+      return
+    }
+
     this.modelChangeDisposable = this.model.onDidChangeContent(() => {
+      if (this.isDisposed) {
+        return
+      }
       this.documentVersion += 1
       this.sendNotification('textDocument/didChange', {
         textDocument: {
@@ -383,15 +420,13 @@ class MonacoSqlLspSessionImpl {
   }
 
   dispose(): void {
-    if (this.isDisposed) {
-      return
+    if (!this.isDisposed) {
+      this.sendNotification('textDocument/didClose', {
+        textDocument: { uri: this.textDocumentUri }
+      })
+      this.sendNotification('exit')
+      this.isDisposed = true
     }
-
-    this.sendNotification('textDocument/didClose', {
-      textDocument: { uri: this.textDocumentUri }
-    })
-    this.sendNotification('exit')
-    this.isDisposed = true
 
     this.providerDisposables.forEach((d) => d.dispose())
     this.providerDisposables.length = 0

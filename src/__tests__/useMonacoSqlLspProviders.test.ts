@@ -1,5 +1,10 @@
-import { describe, expect, it } from 'vitest'
-import { buildSqlLspWebSocketUrl, isSqlLspEnabled } from '@/composables/useMonacoSqlLspProviders'
+import { describe, expect, it, vi } from 'vitest'
+import {
+  buildSqlLspWebSocketUrl,
+  createMonacoSqlLspSession,
+  getSqlLspConnectionContextSignature,
+  isSqlLspEnabled
+} from '@/composables/useMonacoSqlLspProviders'
 
 describe('isSqlLspEnabled', () => {
   it('prefers runtime flag when provided', () => {
@@ -78,5 +83,196 @@ describe('buildSqlLspWebSocketUrl', () => {
     expect(url.searchParams.has('install_id')).toBe(false)
     expect(url.searchParams.get('connection_id')).toBe('conn_123')
     expect(url.searchParams.get('database')).toBe('sakila')
+  })
+})
+
+describe('getSqlLspConnectionContextSignature', () => {
+  it('returns empty signature when connectionId or database is missing', () => {
+    expect(getSqlLspConnectionContextSignature()).toBe('')
+    expect(
+      getSqlLspConnectionContextSignature({
+        connectionId: 'conn_1',
+        database: ''
+      })
+    ).toBe('')
+    expect(
+      getSqlLspConnectionContextSignature({
+        connectionId: '',
+        database: 'db1'
+      })
+    ).toBe('')
+  })
+
+  it('normalizes and stabilizes signature from meaningful fields', () => {
+    expect(
+      getSqlLspConnectionContextSignature({
+        connectionId: ' conn_1 ',
+        database: ' db1 ',
+        dialect: ' pgsql '
+      })
+    ).toBe('conn_1::db1::pgsql')
+
+    expect(
+      getSqlLspConnectionContextSignature({
+        connectionId: 'conn_1',
+        database: 'db1'
+      })
+    ).toBe('conn_1::db1::')
+  })
+})
+
+describe('createMonacoSqlLspSession', () => {
+  it('ignores stale startup errors after session dispose', async () => {
+    class FailingWebSocket extends EventTarget {
+      static readonly OPEN = 1
+      static readonly CLOSED = 3
+
+      readyState = 0
+
+      constructor(_url: string) {
+        super()
+        setTimeout(() => {
+          this.readyState = FailingWebSocket.CLOSED
+          this.dispatchEvent(new CloseEvent('close', { code: 1006 }))
+        }, 0)
+      }
+
+      send(_data: string) {}
+
+      close() {
+        this.readyState = FailingWebSocket.CLOSED
+      }
+    }
+
+    vi.stubGlobal('WebSocket', FailingWebSocket as unknown as typeof WebSocket)
+
+    const onError = vi.fn()
+    const model = {
+      uri: {
+        toString: () => 'inmemory://sql/test'
+      },
+      onDidChangeContent: () => ({ dispose: () => {} }),
+      getValue: () => ''
+    }
+    const editor = {
+      getModel: () => model
+    }
+    const monaco = {
+      editor: {
+        setModelMarkers: () => {}
+      },
+      languages: {
+        registerCompletionItemProvider: () => ({ dispose: () => {} }),
+        registerHoverProvider: () => ({ dispose: () => {} }),
+        CompletionItemInsertTextRule: {
+          InsertAsSnippet: 1
+        },
+        CompletionItemKind: {
+          Text: 0
+        }
+      },
+      MarkerSeverity: {
+        Error: 1,
+        Warning: 2,
+        Info: 3,
+        Hint: 4
+      }
+    }
+
+    const session = createMonacoSqlLspSession({
+      monaco: monaco as never,
+      editor: editor as never,
+      language: 'sql',
+      apiKey: '',
+      installId: '',
+      onError
+    })
+
+    expect(session).not.toBeNull()
+    session?.dispose()
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    expect(onError).not.toHaveBeenCalled()
+
+    vi.unstubAllGlobals()
+  })
+
+  it('does not register providers when disposed before websocket opens', async () => {
+    class DelayedOpenWebSocket extends EventTarget {
+      static readonly OPEN = 1
+      static readonly CLOSED = 3
+
+      readyState = 0
+
+      constructor(_url: string) {
+        super()
+        setTimeout(() => {
+          this.readyState = DelayedOpenWebSocket.OPEN
+          this.dispatchEvent(new Event('open'))
+        }, 10)
+      }
+
+      send(_data: string) {}
+
+      close() {
+        this.readyState = DelayedOpenWebSocket.CLOSED
+      }
+    }
+
+    vi.stubGlobal('WebSocket', DelayedOpenWebSocket as unknown as typeof WebSocket)
+
+    const onError = vi.fn()
+    const registerCompletionItemProvider = vi.fn(() => ({ dispose: () => {} }))
+    const registerHoverProvider = vi.fn(() => ({ dispose: () => {} }))
+
+    const model = {
+      uri: {
+        toString: () => 'inmemory://sql/test'
+      },
+      onDidChangeContent: () => ({ dispose: () => {} }),
+      getValue: () => ''
+    }
+    const editor = {
+      getModel: () => model
+    }
+    const monaco = {
+      editor: {
+        setModelMarkers: () => {}
+      },
+      languages: {
+        registerCompletionItemProvider,
+        registerHoverProvider,
+        CompletionItemInsertTextRule: {
+          InsertAsSnippet: 1
+        },
+        CompletionItemKind: {
+          Text: 0
+        }
+      },
+      MarkerSeverity: {
+        Error: 1,
+        Warning: 2,
+        Info: 3,
+        Hint: 4
+      }
+    }
+
+    const session = createMonacoSqlLspSession({
+      monaco: monaco as never,
+      editor: editor as never,
+      language: 'sql',
+      apiKey: '',
+      installId: '',
+      onError
+    })
+
+    expect(session).not.toBeNull()
+    session?.dispose()
+    await new Promise((resolve) => setTimeout(resolve, 30))
+
+    expect(registerCompletionItemProvider).not.toHaveBeenCalled()
+    expect(registerHoverProvider).not.toHaveBeenCalled()
+    expect(onError).not.toHaveBeenCalled()
+
+    vi.unstubAllGlobals()
   })
 })

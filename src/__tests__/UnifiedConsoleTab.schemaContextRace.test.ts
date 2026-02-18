@@ -18,6 +18,12 @@ vi.mock('@/stores/confirmDialog', () => ({
   })
 }))
 
+vi.mock('@/stores/editorPreferences', () => ({
+  useEditorPreferencesStore: () => ({
+    sqlLspEnabled: false
+  })
+}))
+
 vi.mock('@/composables/useConsoleTab', async () => {
   const { ref, computed } = await import('vue')
 

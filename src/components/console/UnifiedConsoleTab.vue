@@ -162,10 +162,11 @@
 <script setup lang="ts">
 import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue'
 import { ChevronRight } from 'lucide-vue-next'
-import type { SchemaContext } from '@/composables/useMonacoSqlProviders'
+import type { SchemaContext } from '@/types/sqlSchemaContext'
 import type { SqlLspConnectionContext } from '@/composables/useMonacoSqlLspProviders'
 import { useConnectionsStore } from '@/stores/connections'
 import { useConfirmDialogStore } from '@/stores/confirmDialog'
+import { useEditorPreferencesStore } from '@/stores/editorPreferences'
 import { usePaneTabsStore, createConsoleSessionId } from '@/stores/paneTabs'
 import connections from '@/api/connections'
 import { SqlQueryTabs, SqlEditorPane, SqlResultsPane } from '@/components/database/sql-console'
@@ -220,6 +221,7 @@ const props = defineProps<{
 
 const connectionsStore = useConnectionsStore()
 const confirmDialogStore = useConfirmDialogStore()
+const editorPreferencesStore = useEditorPreferencesStore()
 const paneTabsStore = usePaneTabsStore()
 const isSourceDrawerOpen = ref(false)
 const executionToolbarRef = ref<HTMLElement | null>(null)
@@ -578,6 +580,9 @@ const schemaContext = computed<SchemaContext>(() => {
   if (props.mode === 'file') {
     return { tables: [], columns: {}, dialect: 'sql' }
   }
+  if (editorPreferencesStore.sqlLspEnabled) {
+    return { tables: [], columns: {}, dialect: currentDialect.value }
+  }
   if (useFederatedEngine.value) {
     return {
       tables: federatedTablesList.value,
@@ -625,6 +630,13 @@ async function loadTableSuggestions() {
 async function loadTableSuggestionsWithRefresh(forceRefresh: boolean) {
   const requestId = ++schemaLoadRequestId
   if (props.mode !== 'database') return
+  if (editorPreferencesStore.sqlLspEnabled) {
+    tablesList.value = []
+    columnsMap.value = {}
+    federatedTablesList.value = []
+    federatedColumnsMap.value = {}
+    return
+  }
 
   const dbMappings = autocompleteDatabaseMappings.value
   if (dbMappings.length === 0) {
@@ -862,6 +874,23 @@ watch([selectedConnections, executionContextValue, showUnifiedExecutionSelector]
   await nextTick()
   updateToolbarLabelVisibility()
 })
+
+watch(
+  () => editorPreferencesStore.sqlLspEnabled,
+  async (enabled) => {
+    if (props.mode !== 'database') {
+      return
+    }
+    if (enabled) {
+      tablesList.value = []
+      columnsMap.value = {}
+      federatedTablesList.value = []
+      federatedColumnsMap.value = {}
+      return
+    }
+    await loadTableSuggestions()
+  }
+)
 
 // ========== Public API ==========
 function insertIntoEditor(text: string) {

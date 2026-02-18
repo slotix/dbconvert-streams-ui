@@ -23,7 +23,7 @@ import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { QueryBuilder } from '@/components/query'
 import type { ColumnInfo } from '@/components/query'
 import { type StreamConfig, type Table, type TableFilterState } from '@/types/streamConfig'
-import type { SchemaContext } from '@/composables/useMonacoSqlProviders'
+import type { SchemaContext } from '@/types/sqlSchemaContext'
 import {
   getConnectionForTable,
   isFederatedMode,

@@ -468,7 +468,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { SqlMonaco } from '@/components/monaco'
-import type { SchemaContext } from '@/composables/useMonacoSqlProviders'
+import type { SchemaContext } from '@/types/sqlSchemaContext'
 import type { SqlLspConnectionContext } from '@/composables/useMonacoSqlLspProviders'
 import type { QueryTemplate } from '@/components/console/queryTemplates'
 import type { QueryHistoryItem } from '@/composables/useConsoleTab'
