@@ -21,6 +21,28 @@ export interface CSVFormatDetails {
   skipBlankLines: boolean
 }
 
+export interface CSVSniffColumn {
+  name: string
+  type: string
+}
+
+export interface CSVSniffResult {
+  path: string
+  samplePath: string
+  delimiter: string
+  quote: string
+  escape: string
+  newLineDelimiter: string
+  comment: string
+  skipRows: number
+  hasHeader: boolean
+  columns: CSVSniffColumn[]
+  dateFormat?: string
+  timestampFormat?: string
+  userArguments?: string
+  prompt: string
+}
+
 export interface JSONStructurePathStats {
   jsonPath: string
   occurrences: number

@@ -1,7 +1,18 @@
 <script setup lang="ts">
 import { computed, ref, nextTick, watch } from 'vue'
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/vue'
-import { Key, Link } from 'lucide-vue-next'
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  CircleHelp,
+  Clock3,
+  Hash,
+  Key,
+  Link,
+  Search,
+  Type
+} from 'lucide-vue-next'
 import { type SQLTableMeta, type SQLColumnMeta, type SQLTriggerMeta } from '@/types/metadata'
 import { useObjectTabStateStore } from '@/stores/objectTabState'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
@@ -40,6 +51,9 @@ const navigationStore = useExplorerNavigationStore()
 
 const isLoading = ref(false)
 const showAdvancedColumns = ref(false)
+const columnFilterQuery = ref('')
+const columnSortBy = ref<'name' | 'type' | 'nullable' | 'default' | 'checks'>('name')
+const columnSortDirection = ref<'asc' | 'desc'>('asc')
 
 function handleRefresh() {
   isLoading.value = true
@@ -77,6 +91,52 @@ const columns = computed(() => {
       isPrimaryKey: isPrimaryKey,
       isForeignKey: isForeignKey
     }
+  })
+})
+
+const filteredSortedColumns = computed(() => {
+  const query = columnFilterQuery.value.trim().toLowerCase()
+  const filtered = query
+    ? columns.value.filter((column) => {
+        const searchableText = [
+          column.name,
+          getColumnType(column),
+          column.isNullable ? 'yes nullable true' : 'no not null false',
+          getColumnDefault(column),
+          getColumnCheckConstraints(column)
+        ]
+          .join(' ')
+          .toLowerCase()
+        return searchableText.includes(query)
+      })
+    : columns.value
+
+  const direction = columnSortDirection.value === 'asc' ? 1 : -1
+  return [...filtered].sort((a, b) => {
+    if (columnSortBy.value === 'name') {
+      return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }) * direction
+    }
+    if (columnSortBy.value === 'type') {
+      return (
+        getColumnType(a).localeCompare(getColumnType(b), undefined, { sensitivity: 'base' }) *
+        direction
+      )
+    }
+    if (columnSortBy.value === 'nullable') {
+      if (a.isNullable === b.isNullable) return 0
+      return (a.isNullable ? 1 : -1) * direction
+    }
+    if (columnSortBy.value === 'default') {
+      return (
+        getColumnDefault(a).localeCompare(getColumnDefault(b), undefined, { sensitivity: 'base' }) *
+        direction
+      )
+    }
+    return (
+      getColumnCheckConstraints(a).localeCompare(getColumnCheckConstraints(b), undefined, {
+        sensitivity: 'base'
+      }) * direction
+    )
   })
 })
 
@@ -160,6 +220,15 @@ watch(
   { immediate: true }
 )
 
+watch(
+  () => props.objectKey,
+  () => {
+    columnFilterQuery.value = ''
+    columnSortBy.value = 'name'
+    columnSortDirection.value = 'asc'
+  }
+)
+
 // Handle sub-tab changes and save to store
 function onSubTabChange(index: number) {
   activeTabIndex.value = index
@@ -181,6 +250,66 @@ function getColumnType(column: SQLColumnMeta) {
     type += `(${precisionValue}${scaleStr})`
   }
   return type
+}
+
+function getColumnTypeCategory(column: SQLColumnMeta): 'number' | 'text' | 'datetime' | 'other' {
+  const normalized = (column.dataType || '').toUpperCase()
+  if (
+    normalized.includes('INT') ||
+    normalized.includes('DECIMAL') ||
+    normalized.includes('NUMERIC') ||
+    normalized.includes('FLOAT') ||
+    normalized.includes('DOUBLE') ||
+    normalized.includes('REAL')
+  ) {
+    return 'number'
+  }
+  if (
+    normalized.includes('DATE') ||
+    normalized.includes('TIME') ||
+    normalized.includes('TIMESTAMP')
+  ) {
+    return 'datetime'
+  }
+  if (
+    normalized.includes('CHAR') ||
+    normalized.includes('TEXT') ||
+    normalized.includes('STRING') ||
+    normalized.includes('VARCHAR')
+  ) {
+    return 'text'
+  }
+  return 'other'
+}
+
+function getColumnTypeIcon(column: SQLColumnMeta) {
+  const category = getColumnTypeCategory(column)
+  if (category === 'number') return Hash
+  if (category === 'datetime') return Clock3
+  if (category === 'text') return Type
+  return CircleHelp
+}
+
+function getColumnTypeIconClass(column: SQLColumnMeta): string {
+  const category = getColumnTypeCategory(column)
+  if (category === 'number') return 'text-blue-500 dark:text-blue-400'
+  if (category === 'datetime') return 'text-amber-500 dark:text-amber-400'
+  if (category === 'text') return 'text-emerald-500 dark:text-emerald-400'
+  return 'text-gray-400 dark:text-gray-500'
+}
+
+function toggleColumnSort(key: 'name' | 'type' | 'nullable' | 'default' | 'checks') {
+  if (columnSortBy.value === key) {
+    columnSortDirection.value = columnSortDirection.value === 'asc' ? 'desc' : 'asc'
+    return
+  }
+  columnSortBy.value = key
+  columnSortDirection.value = 'asc'
+}
+
+function getSortIcon(key: 'name' | 'type' | 'nullable' | 'default' | 'checks') {
+  if (columnSortBy.value !== key) return ArrowUpDown
+  return columnSortDirection.value === 'asc' ? ArrowUp : ArrowDown
 }
 
 function parseSqlStringLiteralList(input: string): string[] | null {
@@ -369,20 +498,37 @@ function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
       <TabPanels class="p-4">
         <!-- Columns Panel -->
         <TabPanel>
-          <div class="mb-3 flex items-center justify-end">
-            <button
-              type="button"
-              class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset transition-colors"
-              :class="
-                showAdvancedColumns
-                  ? 'bg-gray-100 text-gray-900 ring-gray-200 dark:bg-gray-800 dark:text-gray-100 dark:ring-gray-700'
-                  : 'bg-white text-gray-600 ring-gray-200 hover:bg-gray-50 dark:bg-gray-850 dark:text-gray-300 dark:ring-gray-700 dark:hover:bg-gray-800'
-              "
-              :aria-pressed="showAdvancedColumns"
-              @click="showAdvancedColumns = !showAdvancedColumns"
-            >
-              Advanced
-            </button>
+          <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <div class="relative w-full max-w-xs">
+              <Search
+                class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+              />
+              <input
+                v-model="columnFilterQuery"
+                type="text"
+                placeholder="Filter columns..."
+                class="h-8 w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-850 pl-8 pr-2 text-xs text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-teal-500/40 dark:focus:ring-teal-500/30"
+              />
+            </div>
+
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-gray-500 dark:text-gray-400">
+                {{ filteredSortedColumns.length }} / {{ columns.length }}
+              </span>
+              <button
+                type="button"
+                class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset transition-colors"
+                :class="
+                  showAdvancedColumns
+                    ? 'bg-gray-100 text-gray-900 ring-gray-200 dark:bg-gray-800 dark:text-gray-100 dark:ring-gray-700'
+                    : 'bg-white text-gray-600 ring-gray-200 hover:bg-gray-50 dark:bg-gray-850 dark:text-gray-300 dark:ring-gray-700 dark:hover:bg-gray-800'
+                "
+                :aria-pressed="showAdvancedColumns"
+                @click="showAdvancedColumns = !showAdvancedColumns"
+              >
+                Advanced
+              </button>
+            </div>
           </div>
 
           <div class="overflow-x-auto">
@@ -394,27 +540,62 @@ function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
                       <th
                         class="px-3 py-2 text-left text-sm font-semibold text-gray-900 dark:text-gray-100 whitespace-nowrap"
                       >
-                        Column
+                        <button
+                          type="button"
+                          class="inline-flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200"
+                          @click="toggleColumnSort('name')"
+                        >
+                          Column
+                          <component :is="getSortIcon('name')" class="h-3 w-3" />
+                        </button>
                       </th>
                       <th
                         class="px-3 py-2 text-left text-sm font-semibold text-gray-900 dark:text-gray-100 whitespace-nowrap"
                       >
-                        Type
+                        <button
+                          type="button"
+                          class="inline-flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200"
+                          @click="toggleColumnSort('type')"
+                        >
+                          Type
+                          <component :is="getSortIcon('type')" class="h-3 w-3" />
+                        </button>
                       </th>
                       <th
                         class="px-3 py-2 text-left text-sm font-semibold text-gray-900 dark:text-gray-100 whitespace-nowrap"
                       >
-                        Null
+                        <button
+                          type="button"
+                          class="inline-flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200"
+                          @click="toggleColumnSort('nullable')"
+                        >
+                          Null
+                          <component :is="getSortIcon('nullable')" class="h-3 w-3" />
+                        </button>
                       </th>
                       <th
                         class="px-3 py-2 text-left text-sm font-semibold text-gray-900 dark:text-gray-100 whitespace-nowrap"
                       >
-                        Default
+                        <button
+                          type="button"
+                          class="inline-flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200"
+                          @click="toggleColumnSort('default')"
+                        >
+                          Default
+                          <component :is="getSortIcon('default')" class="h-3 w-3" />
+                        </button>
                       </th>
                       <th
                         class="px-3 py-2 text-left text-sm font-semibold text-gray-900 dark:text-gray-100 whitespace-nowrap"
                       >
-                        Check constraints
+                        <button
+                          type="button"
+                          class="inline-flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200"
+                          @click="toggleColumnSort('checks')"
+                        >
+                          Check constraints
+                          <component :is="getSortIcon('checks')" class="h-3 w-3" />
+                        </button>
                       </th>
                     </tr>
                   </thead>
@@ -422,7 +603,7 @@ function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
                     class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-850"
                   >
                     <tr
-                      v-for="column in columns"
+                      v-for="column in filteredSortedColumns"
                       :key="column.name"
                       class="hover:bg-gray-50 dark:hover:bg-gray-800"
                     >
@@ -451,6 +632,10 @@ function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
                       <td class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
                         <div class="leading-5">
                           <div class="flex items-center gap-2">
+                            <component
+                              :is="getColumnTypeIcon(column)"
+                              :class="['h-3.5 w-3.5', getColumnTypeIconClass(column)]"
+                            />
                             <span class="whitespace-nowrap">{{ getColumnType(column) }}</span>
                             <span
                               v-if="column.isUnsigned"
@@ -502,6 +687,12 @@ function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
                   </tbody>
                 </table>
               </div>
+            </div>
+            <div
+              v-if="!filteredSortedColumns.length"
+              class="py-4 text-center text-xs text-gray-500 dark:text-gray-400"
+            >
+              No columns match "{{ columnFilterQuery }}".
             </div>
           </div>
         </TabPanel>

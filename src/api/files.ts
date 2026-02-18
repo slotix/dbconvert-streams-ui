@@ -1,6 +1,6 @@
 import { apiClient } from './apiClient'
 import { handleApiError } from '@/utils/errorHandler'
-import type { FileMetadata, FileDataResponse } from '@/types/files'
+import type { FileMetadata, FileDataResponse, CSVSniffResult } from '@/types/files'
 import type { FileFormat } from '@/utils/fileFormat'
 import type {
   S3ConfigRequest,
@@ -62,6 +62,19 @@ export async function getFileData(
     if (params.refresh) query.set('refresh', 'true')
 
     const response = await apiClient.get<FileDataResponse>(`/files/data?${query.toString()}`)
+    return response.data
+  } catch (error) {
+    throw handleApiError(error)
+  }
+}
+
+export async function sniffCSV(path: string, connectionId?: string): Promise<CSVSniffResult> {
+  try {
+    const response = await apiClient.post<CSVSniffResult>('/files/csv/sniff', {
+      path,
+      format: 'csv',
+      connectionId
+    })
     return response.data
   } catch (error) {
     throw handleApiError(error)
@@ -240,6 +253,7 @@ export async function applyFileRowChanges(
 export default {
   getFileMetadata,
   getFileData,
+  sniffCSV,
   getFileExactCount,
   configureS3Session,
   listS3Objects,

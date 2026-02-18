@@ -18,6 +18,7 @@ export interface OpenFileDuckDbConsolePayload {
   fileName: string
   isDir?: boolean
   format?: string
+  query?: string
 }
 
 export function useSqlConsoleActions() {
@@ -172,7 +173,7 @@ export function useSqlConsoleActions() {
       const ok = await confirmLeavePaneIfDirty(targetPane)
       if (!ok) return
 
-      const { connectionId, filePath, fileName, isDir, format } = payload
+      const { connectionId, filePath, fileName, isDir, format, query: providedQuery } = payload
 
       const conn = connectionsStore.connectionByID(connectionId)
       const kind = getConnectionKindFromSpec(conn?.spec)
@@ -192,7 +193,9 @@ export function useSqlConsoleActions() {
         ? (existingConsoleTab?.id as string)
         : `file-console:${consoleSessionKey}`
 
-      const query = generateDuckDBReadQuery(filePath, fileName, Boolean(isDir), format)
+      const query = providedQuery?.trim()
+        ? providedQuery
+        : generateDuckDBReadQuery(filePath, fileName, Boolean(isDir), format)
       const fileContext = { path: filePath, format, isS3 }
       const existingActiveTab = sqlConsoleStore.getActiveTab(consoleSessionKey, undefined)
       const shouldReuseActiveBlankTab = Boolean(
