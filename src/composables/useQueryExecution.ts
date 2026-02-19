@@ -66,8 +66,6 @@ export interface UseQueryExecutionOptions {
   setExecutionError: (error: string) => void
   /** Callback to save query to history */
   saveToHistory: (query: string, context?: QueryHistoryContext) => void
-  /** Callback to refresh table suggestions (for DDL changes) */
-  loadTableSuggestionsWithRefresh?: (forceRefresh: boolean) => Promise<void>
   /** Optional confirmation callback for potentially destructive SQL */
   confirmDestructiveQuery?: (query: string) => Promise<boolean>
   /** Optional validation callback for single-source database execution target */
@@ -157,7 +155,6 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
     setExecutionResult,
     setExecutionError,
     saveToHistory,
-    loadTableSuggestionsWithRefresh,
     confirmDestructiveQuery,
     validateDatabaseTarget
   } = options
@@ -629,10 +626,6 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
 
       if (refreshes.length > 0) {
         await Promise.all(refreshes)
-        // Refresh autocomplete suggestions with forced metadata refresh
-        if (loadTableSuggestionsWithRefresh) {
-          await loadTableSuggestionsWithRefresh(true)
-        }
       }
     }
   }

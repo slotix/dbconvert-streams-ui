@@ -164,9 +164,7 @@ import { ChevronRight } from 'lucide-vue-next'
 import type { SqlLspConnectionContext } from '@/composables/useSqlLspProviders'
 import { useConnectionsStore } from '@/stores/connections'
 import { useConfirmDialogStore } from '@/stores/confirmDialog'
-import { useEditorPreferencesStore } from '@/stores/editorPreferences'
 import { usePaneTabsStore, createConsoleSessionId } from '@/stores/paneTabs'
-import connections from '@/api/connections'
 import { SqlQueryTabs, SqlEditorPane, SqlResultsPane } from '@/components/database/sql-console'
 import FormSelect from '@/components/base/FormSelect.vue'
 import SlideOverPanel from '@/components/common/SlideOverPanel.vue'
@@ -215,7 +213,6 @@ const props = defineProps<{
 
 const connectionsStore = useConnectionsStore()
 const confirmDialogStore = useConfirmDialogStore()
-const editorPreferencesStore = useEditorPreferencesStore()
 const paneTabsStore = usePaneTabsStore()
 const isSourceDrawerOpen = ref(false)
 const executionToolbarRef = ref<HTMLElement | null>(null)
@@ -356,10 +353,6 @@ function getDirectSourceReadiness(mapping: {
   return { ready: true }
 }
 
-const readyDatabaseSourceMappings = computed(() =>
-  databaseSourceMappings.value.filter((mapping) => getDirectSourceReadiness(mapping).ready)
-)
-
 function getScopedSourceReadiness(mapping: {
   connectionId: string
   database?: string
@@ -406,19 +399,6 @@ const effectiveSelectedConnections = computed(() => {
       mapping.connectionId === federatedScopeConnectionId.value && !isDatabaseMapping(mapping)
   )
   return scoped ? [scoped] : selectedConnections.value
-})
-
-const autocompleteDatabaseMappings = computed(() => {
-  if (props.mode !== 'database') return []
-
-  if (runMode.value === 'federated') {
-    return readyDatabaseSourceMappings.value
-  }
-
-  const direct = singleSourceMapping.value
-  if (!direct) return []
-  if (!getDirectSourceReadiness(direct).ready) return []
-  return [direct]
 })
 
 const {
@@ -529,7 +509,6 @@ const { isExecuting, executeQuery } = useQueryExecution({
   setExecutionResult,
   setExecutionError,
   saveToHistory,
-  loadTableSuggestionsWithRefresh,
   confirmDestructiveQuery: async () => {
     return await confirmDialogStore.confirm({
       title: 'Run destructive query?',
@@ -561,15 +540,6 @@ const { isExecuting, executeQuery } = useQueryExecution({
   }
 })
 
-// ========== Schema Context (database mode) ==========
-const tablesList = ref<Array<{ name: string; schema?: string }>>([])
-const columnsMap = ref<Record<string, Array<{ name: string; type: string; nullable: boolean }>>>({})
-const federatedTablesList = ref<Array<{ name: string; schema?: string }>>([])
-const federatedColumnsMap = ref<
-  Record<string, Array<{ name: string; type: string; nullable: boolean }>>
->({})
-let schemaLoadRequestId = 0
-
 const sqlLspContext = computed<SqlLspConnectionContext | undefined>(() => {
   if (props.mode !== 'database') {
     return undefined
@@ -594,121 +564,6 @@ const sqlLspContext = computed<SqlLspConnectionContext | undefined>(() => {
     database
   }
 })
-
-async function loadTableSuggestions() {
-  await loadTableSuggestionsWithRefresh(false)
-}
-
-async function loadTableSuggestionsWithRefresh(forceRefresh: boolean) {
-  const requestId = ++schemaLoadRequestId
-  if (props.mode !== 'database') return
-  if (editorPreferencesStore.sqlLspEnabled) {
-    tablesList.value = []
-    columnsMap.value = {}
-    federatedTablesList.value = []
-    federatedColumnsMap.value = {}
-    return
-  }
-
-  const dbMappings = autocompleteDatabaseMappings.value
-  if (dbMappings.length === 0) {
-    if (requestId !== schemaLoadRequestId) return
-    tablesList.value = []
-    columnsMap.value = {}
-    federatedTablesList.value = []
-    federatedColumnsMap.value = {}
-    return
-  }
-
-  if (runMode.value === 'federated') {
-    tablesList.value = []
-    columnsMap.value = {}
-
-    const nextTables: Array<{ name: string; schema?: string }> = []
-    const nextColumns: Record<string, Array<{ name: string; type: string; nullable: boolean }>> = {}
-
-    await Promise.all(
-      dbMappings.map(async (mapping) => {
-        const alias = mapping.alias?.trim()
-        const database = mapping.database?.trim() || ''
-
-        if (!alias || !database) return
-
-        try {
-          const metadata = await connections.getMetadata(
-            mapping.connectionId,
-            database,
-            forceRefresh
-          )
-
-          for (const [tableName, table] of Object.entries(metadata.tables)) {
-            const qualifiedTable = `${alias}.${tableName}`
-            nextTables.push({ name: qualifiedTable })
-
-            nextColumns[qualifiedTable] = (
-              table as { columns: Array<{ name: string; dataType?: string; isNullable?: boolean }> }
-            ).columns.map((column) => ({
-              name: column.name,
-              type: column.dataType || 'unknown',
-              nullable: column.isNullable ?? true
-            }))
-          }
-        } catch (error) {
-          console.error('Failed to load federated table suggestions:', {
-            connectionId: mapping.connectionId,
-            alias,
-            database,
-            error
-          })
-        }
-      })
-    )
-
-    if (requestId !== schemaLoadRequestId) return
-    federatedTablesList.value = nextTables
-    federatedColumnsMap.value = nextColumns
-    return
-  }
-
-  if (requestId !== schemaLoadRequestId) return
-  federatedTablesList.value = []
-  federatedColumnsMap.value = {}
-  tablesList.value = []
-  columnsMap.value = {}
-
-  const selected = dbMappings[0]
-  const targetConnectionId = selected.connectionId
-  const db = selected.database?.trim() || ''
-
-  if (!db) {
-    tablesList.value = []
-    columnsMap.value = {}
-    return
-  }
-
-  try {
-    const metadata = await connections.getMetadata(targetConnectionId, db, forceRefresh)
-    if (requestId !== schemaLoadRequestId) return
-    tablesList.value = Object.keys(metadata.tables).map((name) => ({ name }))
-
-    const colMap: Record<string, Array<{ name: string; type: string; nullable: boolean }>> = {}
-    for (const [tableName, table] of Object.entries(metadata.tables)) {
-      colMap[tableName] = (
-        table as { columns: Array<{ name: string; dataType?: string; isNullable?: boolean }> }
-      ).columns.map((c) => ({
-        name: c.name,
-        type: c.dataType || 'unknown',
-        nullable: c.isNullable ?? true
-      }))
-    }
-    columnsMap.value = colMap
-  } catch (error) {
-    if (requestId !== schemaLoadRequestId) return
-    tablesList.value = []
-    columnsMap.value = {}
-    console.error('Failed to load table suggestions:', error)
-  }
-}
 
 // ========== Query Templates ==========
 const queryTemplates = computed(() => {
@@ -785,8 +640,6 @@ onMounted(async () => {
   restoreRunMode()
   restoreSingleSourceConnection()
 
-  if (props.mode === 'database') await loadTableSuggestions()
-
   setupToolbarResizeObserver()
   await nextTick()
   updateToolbarLabelVisibility()
@@ -833,36 +686,10 @@ watch(
   { immediate: true }
 )
 
-watch([runMode, singleSourceMapping], async () => {
-  if (props.mode !== 'database') return
-  if (useFederatedEngine.value) return
-  await loadTableSuggestions()
-})
-
 watch([selectedConnections, executionContextValue, showUnifiedExecutionSelector], async () => {
-  if (props.mode === 'database' && !useFederatedEngine.value) {
-    await loadTableSuggestions()
-  }
   await nextTick()
   updateToolbarLabelVisibility()
 })
-
-watch(
-  () => editorPreferencesStore.sqlLspEnabled,
-  async (enabled) => {
-    if (props.mode !== 'database') {
-      return
-    }
-    if (enabled) {
-      tablesList.value = []
-      columnsMap.value = {}
-      federatedTablesList.value = []
-      federatedColumnsMap.value = {}
-      return
-    }
-    await loadTableSuggestions()
-  }
-)
 
 // ========== Public API ==========
 function insertIntoEditor(text: string) {
