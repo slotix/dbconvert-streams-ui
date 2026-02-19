@@ -77,7 +77,8 @@ const LSP_TRIGGER_KIND_TRIGGER_CHARACTER = 2
 const LSP_RECONNECT_BASE_DELAY_MS = 600
 const LSP_RECONNECT_MAX_DELAY_MS = 8_000
 const LSP_RECONNECT_JITTER_RATIO = 0.2
-const HOVER_REQUEST_DELAY_MS = 280
+const HOVER_REQUEST_DELAY_MS = 150
+const HOVER_HIDE_DELAY_MS = 200
 const MAX_HOVER_TEXT_CHARS = 4_000
 const SIGNATURE_HIDE_DELAY_MS = 6_000
 
@@ -146,9 +147,11 @@ let lspReconnectTimer: ReturnType<typeof setTimeout> | null = null
 let lspReconnectAttempt = 0
 let lspUnavailableWarningShown = false
 let hoverTimer: ReturnType<typeof setTimeout> | null = null
+let hoverHideTimer: ReturnType<typeof setTimeout> | null = null
 let hoverRequestToken = 0
 let hoverTooltipEl: HTMLDivElement | null = null
 let hoverActiveKey = ''
+let hoverTooltipHovered = false
 let hoverMouseOverListener: ((event: MouseEvent) => void) | null = null
 let hoverMouseLeaveListener: (() => void) | null = null
 let hoverMouseDownListener: (() => void) | null = null
@@ -221,6 +224,26 @@ function clearHoverTimer() {
   }
 }
 
+function clearHoverHideTimer() {
+  if (!hoverHideTimer) {
+    return
+  }
+  clearTimeout(hoverHideTimer)
+  hoverHideTimer = null
+}
+
+function scheduleHideHoverTooltip() {
+  clearHoverTimer()
+  clearHoverHideTimer()
+  hoverHideTimer = setTimeout(() => {
+    hoverHideTimer = null
+    if (hoverTooltipHovered) {
+      return
+    }
+    hideHoverTooltip()
+  }, HOVER_HIDE_DELAY_MS)
+}
+
 function clearSignatureHideTimer() {
   if (!signatureHideTimer) {
     return
@@ -231,10 +254,12 @@ function clearSignatureHideTimer() {
 
 function hideHoverTooltip(resetKey = true) {
   clearHoverTimer()
+  clearHoverHideTimer()
   hoverRequestToken += 1
   if (resetKey) {
     hoverActiveKey = ''
   }
+  hoverTooltipHovered = false
   if (!hoverTooltipEl) {
     return
   }
@@ -260,6 +285,14 @@ function ensureHoverTooltipElement(): HTMLDivElement | null {
   if (!hoverTooltipEl) {
     const el = document.createElement('div')
     el.className = 'sql-hover-tooltip-floating'
+    el.addEventListener('mouseenter', () => {
+      hoverTooltipHovered = true
+      clearHoverHideTimer()
+    })
+    el.addEventListener('mouseleave', () => {
+      hoverTooltipHovered = false
+      scheduleHideHoverTooltip()
+    })
     container.appendChild(el)
     hoverTooltipEl = el
   } else if (hoverTooltipEl.parentElement !== container) {
@@ -308,12 +341,20 @@ function positionHoverTooltip(el: HTMLDivElement, view: EditorView, from: number
   el.style.visibility = 'visible'
 }
 
-function showHoverTooltip(text: string, view: EditorView, from: number, to: number) {
+function showHoverTooltip(
+  text: string,
+  view: EditorView,
+  from: number,
+  to: number,
+  hoveredToken?: string
+) {
   const el = ensureHoverTooltipElement()
   if (!el) {
     return
   }
-  renderHoverTooltipContent(el, text)
+  hoverTooltipHovered = false
+  clearHoverHideTimer()
+  renderHoverTooltipContent(el, text, { hoveredToken })
   positionHoverTooltip(el, view, from, to)
 }
 
@@ -488,6 +529,7 @@ function showSignatureTooltip(result: LspSignatureHelpResult, view: EditorView, 
 async function requestHoverAtPosition(view: EditorView, pos: number, hoverKey: string) {
   const token = ++hoverRequestToken
   flushPendingDidChangeNotification()
+  const fallbackRange = getWordRangeAtPosition(view.state, pos)
 
   const response = await sendLspRequest('textDocument/hover', {
     textDocument: { uri: textDocumentUri },
@@ -505,14 +547,13 @@ async function requestHoverAtPosition(view: EditorView, pos: number, hoverKey: s
     return
   }
 
-  const fallbackRange = getWordRangeAtPosition(view.state, pos)
   const start = hover?.range?.start
     ? fromLspPosition(view.state, hover.range.start)
     : (fallbackRange?.from ?? pos)
   const end = hover?.range?.end
     ? fromLspPosition(view.state, hover.range.end)
     : (fallbackRange?.to ?? pos)
-  showHoverTooltip(text, view, Math.min(start, end), Math.max(start, end))
+  showHoverTooltip(text, view, Math.min(start, end), Math.max(start, end), fallbackRange?.text)
 }
 
 async function requestSignatureHelpAtPosition(
@@ -621,6 +662,7 @@ function handleHoverMouseMove(event: MouseEvent, view: EditorView): boolean {
     hideHoverTooltip()
     return false
   }
+  clearHoverHideTimer()
   if (event.buttons !== 0) {
     clearHoverTimer()
     return false
@@ -695,10 +737,11 @@ function detachHoverDomListeners(view: EditorView | null) {
 function attachHoverDomListeners(view: EditorView) {
   detachHoverDomListeners(view)
   hoverMouseOverListener = (event: MouseEvent) => {
+    clearHoverHideTimer()
     void handleHoverMouseMove(event, view)
   }
   hoverMouseLeaveListener = () => {
-    hideHoverTooltip()
+    scheduleHideHoverTooltip()
     hideSignatureTooltip()
   }
   hoverMouseDownListener = () => {
@@ -1032,7 +1075,7 @@ function flushPendingDidChangeNotification() {
 }
 
 async function provideLspCompletions(context: CompletionContext): Promise<CompletionResult | null> {
-  if (!shouldEnableLsp.value || !lspReady) {
+  if (!shouldEnableLsp.value) {
     return null
   }
 
@@ -1042,6 +1085,10 @@ async function provideLspCompletions(context: CompletionContext): Promise<Comple
   const allowBroadCompletion = prevChar === '.' || prevChar === '"' || prevChar === '`'
   const allowExplicitCompletion = context.explicit
   if (!hasWordPrefix && !allowBroadCompletion && !allowExplicitCompletion) {
+    return null
+  }
+
+  if (!lspReady) {
     return null
   }
 
@@ -1571,10 +1618,28 @@ defineExpose({
   --sql-editor-text: #0f172a;
   --sql-editor-detail: #64748b;
   --sql-hover-card-bg: var(--sql-editor-popup-bg);
-  --sql-hover-card-border: var(--sql-editor-popup-border);
-  --sql-hover-heading: var(--sql-editor-text);
-  --sql-hover-table-header-bg: rgba(15, 23, 42, 0.045);
-  --sql-hover-table-row-alt: rgba(15, 23, 42, 0.02);
+  --sql-hover-card-border: transparent;
+  --sql-hover-heading: #0f172a;
+  --sql-hover-meta: #94a3b8;
+  --sql-hover-type: #334155;
+  --sql-hover-badge-text: #94a3b8;
+  --sql-hover-badge-bg: rgba(0, 0, 0, 0.05);
+  --sql-hover-row-accent: rgba(20, 184, 166, 0.65);
+  --sql-hover-name-active: #f1f5f9;
+  --sql-hover-more: #94a3b8;
+  --sql-type-keyword: #2563eb;
+  --sql-type-muted: #94a3b8;
+  --sql-search-panel-bg: var(--sql-editor-popup-bg);
+  --sql-search-panel-border: rgba(148, 163, 184, 0.15);
+  --sql-search-input-bg: #ffffff;
+  --sql-search-input-border: rgba(148, 163, 184, 0.35);
+  --sql-search-input-focus: rgba(139, 92, 246, 0.7);
+  --sql-search-input-focus-ring: rgba(139, 92, 246, 0.18);
+  --sql-search-button-bg: rgba(0, 0, 0, 0.05);
+  --sql-search-button-border: rgba(148, 163, 184, 0.35);
+  --sql-search-button-hover: rgba(20, 184, 166, 0.12);
+  --sql-search-checkbox-border: rgba(100, 116, 139, 0.6);
+  --sql-search-muted: #94a3b8;
 }
 
 .sql-cm-dark {
@@ -1589,15 +1654,34 @@ defineExpose({
   --sql-editor-text: #e5e7eb;
   --sql-editor-detail: #9ca3af;
   --sql-hover-card-bg: var(--sql-editor-popup-bg);
-  --sql-hover-card-border: var(--sql-editor-popup-border);
-  --sql-hover-heading: var(--sql-editor-text);
-  --sql-hover-table-header-bg: rgba(148, 163, 184, 0.1);
-  --sql-hover-table-row-alt: rgba(148, 163, 184, 0.04);
+  --sql-hover-card-border: transparent;
+  --sql-hover-heading: #f3f4f6;
+  --sql-hover-meta: #6b7280;
+  --sql-hover-type: #d1d5db;
+  --sql-hover-badge-text: #9ca3af;
+  --sql-hover-badge-bg: rgba(0, 0, 0, 0.22);
+  --sql-hover-row-accent: rgba(45, 212, 191, 0.85);
+  --sql-hover-name-active: #f9fafb;
+  --sql-hover-more: #6b7280;
+  --sql-type-keyword: #93c5fd;
+  --sql-type-muted: #6b7280;
+  --sql-search-panel-bg: var(--sql-editor-popup-bg);
+  --sql-search-panel-border: rgba(148, 163, 184, 0.1);
+  --sql-search-input-bg: #101722;
+  --sql-search-input-border: rgba(148, 163, 184, 0.2);
+  --sql-search-input-focus: rgba(139, 92, 246, 0.7);
+  --sql-search-input-focus-ring: rgba(139, 92, 246, 0.2);
+  --sql-search-button-bg: rgba(255, 255, 255, 0.08);
+  --sql-search-button-border: rgba(148, 163, 184, 0.28);
+  --sql-search-button-hover: rgba(20, 184, 166, 0.18);
+  --sql-search-checkbox-border: rgba(148, 163, 184, 0.45);
+  --sql-search-muted: #9ca3af;
 }
 
 :deep(.cm-editor) {
+  --sql-ui-scale: var(--sql-editor-font-scale, 1);
   font-family: 'JetBrains Mono', 'Fira Code', 'SFMono-Regular', ui-monospace, Menlo, monospace;
-  font-size: calc(13.5px * var(--sql-editor-font-scale, 1));
+  font-size: calc(13.5px * var(--sql-ui-scale));
   line-height: 1.5;
   caret-color: #2dd4bf;
   background: var(--sql-editor-bg);
@@ -1605,12 +1689,12 @@ defineExpose({
 }
 
 :deep(.cm-content) {
-  padding: 10px 0;
+  padding: calc(10px * var(--sql-ui-scale)) 0;
   background: var(--sql-editor-bg);
 }
 
 :deep(.cm-line) {
-  padding: 0 14px;
+  padding: 0 calc(14px * var(--sql-ui-scale));
 }
 
 :deep(.cm-gutters) {
@@ -1623,60 +1707,229 @@ defineExpose({
 }
 
 :deep(.cm-tooltip.cm-tooltip-autocomplete) {
-  border-radius: 10px;
-  border: 1px solid var(--sql-editor-popup-border);
+  border-radius: calc(10px * var(--sql-ui-scale));
+  border: none;
   background: var(--sql-editor-popup-bg);
   color: var(--sql-editor-text);
-  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.45);
+  box-shadow:
+    0 calc(12px * var(--sql-ui-scale)) calc(36px * var(--sql-ui-scale)) rgba(0, 0, 0, 0.55),
+    0 calc(2px * var(--sql-ui-scale)) calc(8px * var(--sql-ui-scale)) rgba(0, 0, 0, 0.3);
   overflow: hidden;
   z-index: 120;
+  font-size: calc(13px * var(--sql-ui-scale));
+}
+
+.sql-cm-dark :deep(.cm-tooltip.cm-tooltip-autocomplete)::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: calc(10px * var(--sql-ui-scale)) calc(10px * var(--sql-ui-scale)) 0 0;
+  pointer-events: none;
+}
+
+:deep(.cm-panels) {
+  background: var(--sql-search-panel-bg);
+  color: var(--sql-editor-text);
+  border-top: 1px solid var(--sql-search-panel-border);
+}
+
+:deep(.cm-panels-bottom) {
+  border-top: 1px solid var(--sql-search-panel-border);
+}
+
+:deep(.cm-panel.cm-search) {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: calc(6px * var(--sql-ui-scale));
+  padding: calc(8px * var(--sql-ui-scale)) calc(12px * var(--sql-ui-scale));
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+  font-size: calc(12px * var(--sql-ui-scale));
+}
+
+:deep(.cm-panel.cm-search br) {
+  flex-basis: 100%;
+  height: 0;
+  margin: 0;
+}
+
+:deep(.cm-panel.cm-search label) {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(5px * var(--sql-ui-scale));
+  color: var(--sql-search-muted);
+  font-size: calc(11.5px * var(--sql-ui-scale));
+  cursor: pointer;
+}
+
+:deep(.cm-panel.cm-search input[type='text']) {
+  min-width: calc(160px * var(--sql-ui-scale));
+  height: calc(27px * var(--sql-ui-scale));
+  padding: 0 9px;
+  border-radius: 7px !important;
+  border: 1px solid var(--sql-search-input-border);
+  background: var(--sql-search-input-bg);
+  color: var(--sql-editor-text);
+  outline: none;
+  font-size: calc(12px * var(--sql-ui-scale));
+  font-family: 'JetBrains Mono', 'Fira Code', 'SFMono-Regular', ui-monospace, Menlo, monospace;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+
+:deep(.cm-panel.cm-search input[type='text']:focus) {
+  border-color: var(--sql-search-input-focus);
+  border-radius: 7px !important;
+  box-shadow: 0 0 0 2px var(--sql-search-input-focus-ring);
+}
+
+:deep(.cm-panel.cm-search input[type='checkbox']) {
+  appearance: none;
+  -webkit-appearance: none;
+  width: calc(14px * var(--sql-ui-scale));
+  height: calc(14px * var(--sql-ui-scale));
+  margin: 0;
+  cursor: pointer;
+  border-radius: 4px;
+  border: 1px solid var(--sql-search-checkbox-border);
+  background: rgba(255, 255, 255, 0.07);
+  flex-shrink: 0;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+
+:deep(.cm-panel.cm-search input[type='checkbox']:checked) {
+  background: #14b8a6;
+  border-color: #14b8a6;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' d='M2 6l3 3 5-5'/%3E%3C/svg%3E");
+  background-size: calc(9px * var(--sql-ui-scale));
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+:deep(.cm-panel.cm-search input[type='checkbox']:focus-visible) {
+  outline: 2px solid rgba(20, 184, 166, 0.45);
+  outline-offset: 1px;
+}
+
+:deep(.cm-panel.cm-search .cm-button) {
+  height: calc(27px * var(--sql-ui-scale));
+  padding: 0 calc(10px * var(--sql-ui-scale));
+  border-radius: calc(7px * var(--sql-ui-scale));
+  border: 1px solid var(--sql-search-button-border);
+  background: var(--sql-search-button-bg);
+  color: var(--sql-editor-text);
+  cursor: pointer;
+  font-size: calc(12px * var(--sql-ui-scale));
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+
+:deep(.cm-panel.cm-search .cm-button:hover) {
+  background: var(--sql-search-button-hover);
+  border-color: rgba(20, 184, 166, 0.4);
+}
+
+:deep(.cm-panel.cm-search [name='close']) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  width: calc(26px * var(--sql-ui-scale));
+  min-width: calc(26px * var(--sql-ui-scale));
+  height: calc(26px * var(--sql-ui-scale));
+  padding: 0;
+  border: none;
+  background: transparent;
+  border-radius: calc(5px * var(--sql-ui-scale));
+  color: var(--sql-search-muted);
+  font-size: calc(16px * var(--sql-ui-scale));
+  line-height: 1;
+  transition:
+    color 0.15s,
+    background 0.15s;
+}
+
+:deep(.cm-panel.cm-search [name='close']:hover) {
+  color: var(--sql-editor-text);
+  background: rgba(148, 163, 184, 0.1);
 }
 
 :deep(.sql-hover-tooltip-floating) {
+  --sql-ui-scale: var(--sql-editor-font-scale, 1);
   position: absolute;
-  pointer-events: none;
-  user-select: none;
-  -webkit-user-select: none;
-  border-radius: 10px;
-  border: 1px solid var(--sql-hover-card-border);
+  pointer-events: auto;
+  user-select: text;
+  -webkit-user-select: text;
+  border-radius: calc(10px * var(--sql-ui-scale));
+  border: none;
   background: var(--sql-hover-card-bg);
   color: var(--sql-editor-text);
-  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.45);
-  max-width: min(720px, 82vw);
-  max-height: min(420px, 58vh);
-  overflow: auto;
-  scrollbar-width: thin;
+  box-shadow:
+    0 calc(12px * var(--sql-ui-scale)) calc(36px * var(--sql-ui-scale)) rgba(0, 0, 0, 0.55),
+    0 calc(2px * var(--sql-ui-scale)) calc(8px * var(--sql-ui-scale)) rgba(0, 0, 0, 0.3);
+  width: clamp(300px, 38vw, 460px);
+  min-width: min(300px, calc(100% - 16px));
+  max-width: min(460px, calc(100% - 16px));
+  overflow: hidden;
   z-index: 130;
-  font-size: 13px;
-  line-height: 1.45;
-  padding: 10px 12px;
+  font-size: calc(12.5px * var(--sql-ui-scale));
+  line-height: 1.4;
+  padding: calc(11px * var(--sql-ui-scale)) calc(12px * var(--sql-ui-scale));
+}
+
+.sql-cm-dark :deep(.sql-hover-tooltip-floating)::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: calc(10px * var(--sql-ui-scale)) calc(10px * var(--sql-ui-scale)) 0 0;
+  pointer-events: none;
 }
 
 :deep(.sql-signature-tooltip-floating) {
+  --sql-ui-scale: var(--sql-editor-font-scale, 1);
   position: absolute;
   pointer-events: none;
   user-select: none;
   -webkit-user-select: none;
-  border-radius: 8px;
+  border-radius: calc(8px * var(--sql-ui-scale));
   border: 1px solid var(--sql-hover-card-border);
   background: var(--sql-hover-card-bg);
   color: var(--sql-editor-text);
-  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.45);
-  max-width: min(680px, 78vw);
+  box-shadow: 0 calc(10px * var(--sql-ui-scale)) calc(35px * var(--sql-ui-scale))
+    rgba(0, 0, 0, 0.45);
+  max-width: min(calc(680px * var(--sql-ui-scale)), 78vw);
   z-index: 135;
-  font-size: 14px;
+  font-size: calc(14px * var(--sql-ui-scale));
   line-height: 1.45;
-  padding: 9px 11px;
+  padding: calc(9px * var(--sql-ui-scale)) calc(11px * var(--sql-ui-scale));
 }
 
 :deep(.sql-signature-tooltip-content) {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: calc(6px * var(--sql-ui-scale));
 }
 
 :deep(.sql-signature-tooltip-label) {
-  font-size: 14px;
+  font-size: calc(14px * var(--sql-ui-scale));
   line-height: 1.4;
   color: var(--sql-editor-text);
   white-space: pre-wrap;
@@ -1689,7 +1942,7 @@ defineExpose({
 }
 
 :deep(.sql-signature-tooltip-doc) {
-  font-size: 14px;
+  font-size: calc(14px * var(--sql-ui-scale));
   line-height: 1.45;
   color: var(--sql-editor-detail);
   white-space: pre-wrap;
@@ -1699,11 +1952,11 @@ defineExpose({
 :deep(.sql-hover-tooltip-content) {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: calc(8px * var(--sql-ui-scale));
 }
 
 :deep(.sql-hover-tooltip-heading) {
-  font-size: 15px;
+  font-size: calc(15px * var(--sql-ui-scale));
   font-weight: 700;
   line-height: 1.3;
   color: var(--sql-hover-heading);
@@ -1713,101 +1966,202 @@ defineExpose({
   margin: 0;
   white-space: pre-wrap;
   word-break: break-word;
-  font-size: 12.5px;
-  line-height: 1.5;
+  font-size: calc(12px * var(--sql-ui-scale));
+  line-height: 1.45;
   color: var(--sql-editor-text);
 }
 
 :deep(.sql-hover-tooltip-table-wrap) {
-  overflow: auto;
-  border: 1px solid var(--sql-hover-card-border);
-  border-radius: 8px;
+  width: 100%;
   background: transparent;
+  padding: calc(2px * var(--sql-ui-scale)) 0;
 }
 
-:deep(.sql-hover-tooltip-table) {
-  width: max-content;
-  min-width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  table-layout: auto;
-  font-size: 12px;
-  line-height: 1.4;
+:deep(.sql-hover-schema-card) {
+  display: flex;
+  flex-direction: column;
+  gap: calc(8px * var(--sql-ui-scale));
 }
 
-:deep(.sql-hover-tooltip-table th),
-:deep(.sql-hover-tooltip-table td) {
-  padding: 7px 10px;
-  border-bottom: 1px solid var(--sql-editor-border);
-  border-right: 1px solid var(--sql-editor-border);
-  text-align: left;
-  vertical-align: top;
-  white-space: normal;
-  word-break: break-word;
-  overflow-wrap: anywhere;
-  max-width: 280px;
-  color: var(--sql-editor-text);
+:deep(.sql-hover-schema-header) {
+  display: block;
 }
 
-:deep(.sql-hover-tooltip-table th:last-child),
-:deep(.sql-hover-tooltip-table td:last-child) {
-  border-right: none;
+:deep(.sql-hover-schema-header-line) {
+  display: flex;
+  align-items: baseline;
+  gap: calc(6px * var(--sql-ui-scale));
+  min-width: 0;
 }
 
-:deep(.sql-hover-tooltip-table tr:last-child td) {
-  border-bottom: none;
-}
-
-:deep(.sql-hover-tooltip-table th) {
-  font-weight: 600;
-  background: var(--sql-hover-table-header-bg);
+:deep(.sql-hover-schema-title) {
   color: var(--sql-hover-heading);
+  font-size: calc(12.5px * var(--sql-ui-scale));
+  font-weight: 600;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-:deep(.sql-hover-tooltip-table tbody tr:nth-child(even) td) {
-  background: var(--sql-hover-table-row-alt);
+:deep(.sql-hover-schema-meta) {
+  flex: 1 1 auto;
+  color: var(--sql-hover-meta);
+  font-size: calc(10px * var(--sql-ui-scale));
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-:deep(.sql-hover-tooltip-floating::-webkit-scrollbar) {
-  width: 8px;
+:deep(.sql-hover-schema-body) {
+  display: flex;
+  flex-direction: column;
+  gap: calc(7px * var(--sql-ui-scale));
 }
 
-:deep(.sql-hover-tooltip-floating::-webkit-scrollbar-thumb) {
-  background: rgba(148, 163, 184, 0.4);
+:deep(.sql-hover-schema-row) {
+  position: relative;
+  display: block;
+  min-height: calc(24px * var(--sql-ui-scale));
+  padding: calc(1px * var(--sql-ui-scale)) calc(2px * var(--sql-ui-scale))
+    calc(1px * var(--sql-ui-scale)) calc(4px * var(--sql-ui-scale));
+}
+
+:deep(.sql-hover-schema-row-active) {
+  padding-left: calc(9px * var(--sql-ui-scale));
+}
+
+:deep(.sql-hover-schema-row-active)::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: calc(2px * var(--sql-ui-scale));
+  bottom: calc(2px * var(--sql-ui-scale));
+  width: calc(1.5px * var(--sql-ui-scale));
   border-radius: 999px;
+  background: var(--sql-hover-row-accent);
+}
+
+:deep(.sql-hover-schema-top) {
+  display: grid;
+  grid-template-columns: minmax(0, calc(140px * var(--sql-ui-scale))) minmax(0, 1fr);
+  align-items: center;
+  column-gap: calc(8px * var(--sql-ui-scale));
+  min-width: 0;
+}
+
+:deep(.sql-hover-schema-name) {
+  display: block;
+  font-size: calc(12px * var(--sql-ui-scale));
+  line-height: 1.3;
+  color: var(--sql-editor-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+:deep(.sql-hover-schema-row-active .sql-hover-schema-name) {
+  color: var(--sql-hover-name-active);
+}
+
+:deep(.sql-hover-schema-right) {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: calc(6px * var(--sql-ui-scale));
+  min-width: 0;
+}
+
+:deep(.sql-hover-schema-type) {
+  display: block;
+  max-width: min(48vw, calc(430px * var(--sql-ui-scale)));
+  font-size: calc(11.5px * var(--sql-ui-scale));
+  line-height: 1.3;
+  color: var(--sql-hover-type);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+:deep(.sql-hover-schema-badges) {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(3px * var(--sql-ui-scale));
+  flex: 0 0 auto;
+  margin-left: calc(4px * var(--sql-ui-scale));
+}
+
+:deep(.sql-hover-schema-badge) {
+  display: inline-flex;
+  align-items: center;
+  padding: calc(1.5px * var(--sql-ui-scale)) calc(5px * var(--sql-ui-scale));
+  border-radius: 3px;
+  border: none;
+  background: var(--sql-hover-badge-bg);
+  color: var(--sql-hover-badge-text);
+  font-size: calc(9.5px * var(--sql-ui-scale));
+  font-weight: 500;
+  opacity: 0.85;
+}
+
+:deep(.sql-type-keyword) {
+  color: var(--sql-type-keyword);
+}
+
+:deep(.sql-type-precision) {
+  color: var(--sql-type-muted);
+}
+
+:deep(.sql-type-modifier) {
+  color: var(--sql-type-muted);
+}
+
+:deep(.sql-hover-schema-more) {
+  appearance: none;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--sql-hover-more);
+  font-size: calc(11px * var(--sql-ui-scale));
+  line-height: 1.2;
+  text-align: left;
+  cursor: pointer;
+}
+
+:deep(.sql-hover-schema-more:hover) {
+  color: var(--sql-editor-text);
 }
 
 :deep(.cm-tooltip-autocomplete ul li[aria-selected='true']) {
   background: var(--sql-editor-selected-item);
   color: var(--sql-editor-text);
+  box-shadow: inset 1.5px 0 0 var(--sql-hover-row-accent);
 }
 
 :deep(.cm-tooltip-autocomplete ul li) {
-  padding: 6px 10px;
-  border-bottom: 1px solid var(--sql-editor-border);
-}
-
-:deep(.cm-tooltip-autocomplete ul li:last-child) {
+  padding: calc(5px * var(--sql-ui-scale)) calc(10px * var(--sql-ui-scale));
   border-bottom: none;
 }
 
 :deep(.cm-tooltip-autocomplete ul) {
-  max-height: 320px;
+  max-height: calc(320px * var(--sql-ui-scale));
   scrollbar-width: thin;
 }
 
 :deep(.cm-completionDetail) {
   color: var(--sql-editor-detail);
-  opacity: 0.9;
-  font-size: 12px;
+  opacity: 0.85;
+  font-size: calc(11.5px * var(--sql-ui-scale));
 }
 
 :deep(.cm-tooltip-autocomplete ul::-webkit-scrollbar) {
-  width: 10px;
+  width: calc(6px * var(--sql-ui-scale));
 }
 
 :deep(.cm-tooltip-autocomplete ul::-webkit-scrollbar-thumb) {
-  background: rgba(148, 163, 184, 0.4);
+  background: rgba(148, 163, 184, 0.3);
   border-radius: 999px;
 }
 

@@ -541,27 +541,72 @@ const { isExecuting, executeQuery } = useQueryExecution({
 })
 
 const sqlLspContext = computed<SqlLspConnectionContext | undefined>(() => {
+  if (props.mode === 'file') {
+    const filePath = activeQueryTab.value?.fileContext?.path?.trim() || ''
+    return {
+      provider: 'duckdb',
+      connectionId: props.connectionId,
+      filePath: filePath || undefined,
+      fileFormat: activeQueryTab.value?.fileContext?.format?.trim() || undefined
+    }
+  }
+
+  if (runMode.value !== 'single') {
+    const federatedConnections: Array<{
+      connectionId: string
+      alias?: string
+      database?: string
+    }> = []
+
+    effectiveSelectedConnections.value.forEach((mapping) => {
+      const conn = connectionsStore.connectionByID(mapping.connectionId)
+      const kind = getConnectionKindFromSpec(conn?.spec)
+      if (isFileBasedKind(kind)) {
+        return
+      }
+      federatedConnections.push({
+        connectionId: mapping.connectionId,
+        alias: mapping.alias,
+        database: mapping.database
+      })
+    })
+
+    if (federatedConnections.length === 0) {
+      return undefined
+    }
+
+    return {
+      provider: 'duckdb',
+      federatedConnections
+    }
+  }
+
   if (props.mode !== 'database') {
     return undefined
   }
 
-  if (runMode.value !== 'single') {
+  const direct = singleSourceMapping.value
+  if (!direct) {
     return undefined
   }
 
-  const direct = singleSourceMapping.value
-  if (!direct || !getDirectSourceReadiness(direct).ready) {
+  const directConnection = connectionsStore.connectionByID(direct.connectionId)
+  const directConnectionType = directConnection?.type?.trim().toLowerCase() || ''
+  const useDuckDBLsp = directConnectionType.includes('duckdb')
+
+  if (!useDuckDBLsp && !getDirectSourceReadiness(direct).ready) {
     return undefined
   }
 
   const database = direct.database?.trim() || ''
-  if (!database) {
+  if (!useDuckDBLsp && !database) {
     return undefined
   }
 
   return {
+    provider: useDuckDBLsp ? 'duckdb' : 'sqls',
     connectionId: direct.connectionId,
-    database
+    database: database || undefined
   }
 })
 

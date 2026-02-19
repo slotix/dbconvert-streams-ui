@@ -39,17 +39,48 @@ function toAbsoluteURL(url: string): URL {
 }
 
 export interface SqlLspConnectionContext {
+  provider?: 'sqls' | 'duckdb'
   connectionId?: string
   database?: string
+  filePath?: string
+  fileFormat?: string
+  federatedConnections?: Array<{
+    connectionId: string
+    alias?: string
+    database?: string
+  }>
 }
 
 export function getSqlLspConnectionContextSignature(context?: SqlLspConnectionContext): string {
+  const provider = normalizeSqlLspContextPart(context?.provider) || 'sqls'
   const connectionId = normalizeSqlLspContextPart(context?.connectionId)
   const database = normalizeSqlLspContextPart(context?.database)
-  if (!connectionId || !database) {
+
+  if (provider !== 'duckdb') {
+    if (!connectionId || !database) {
+      return ''
+    }
+    return `${provider}::${connectionId}::${database}`
+  }
+
+  const filePath = normalizeSqlLspContextPart(context?.filePath)
+  const fileFormat = normalizeSqlLspContextPart(context?.fileFormat)
+  const federated = (context?.federatedConnections || [])
+    .map((mapping) => {
+      const mappedConnectionID = normalizeSqlLspContextPart(mapping.connectionId)
+      const mappedAlias = normalizeSqlLspContextPart(mapping.alias)
+      const mappedDatabase = normalizeSqlLspContextPart(mapping.database)
+      if (!mappedConnectionID) return ''
+      return `${mappedConnectionID}:${mappedAlias}:${mappedDatabase}`
+    })
+    .filter((value) => value)
+    .join('|')
+
+  if (!federated && !filePath && !connectionId) {
     return ''
   }
-  return `${connectionId}::${database}`
+
+  return `${provider}::${connectionId}::${database}::${filePath}::${fileFormat}::${federated}`
 }
 
 export function buildSqlLspWebSocketUrl(params: {
@@ -63,7 +94,8 @@ export function buildSqlLspWebSocketUrl(params: {
   ws.hash = ''
   ws.search = ''
   ws.protocol = ws.protocol === 'https:' ? 'wss:' : 'ws:'
-  ws.pathname = joinPath(ws.pathname, 'lsp/ws')
+  const provider = params.connectionContext?.provider?.trim() || 'sqls'
+  ws.pathname = joinPath(ws.pathname, provider === 'duckdb' ? 'lsp/duckdb/ws' : 'lsp/ws')
 
   const apiKey = params.apiKey.trim()
   if (apiKey) {
@@ -84,6 +116,34 @@ export function buildSqlLspWebSocketUrl(params: {
   if (database) {
     ws.searchParams.set('database', database)
   }
+
+  const filePath = params.connectionContext?.filePath?.trim()
+  if (filePath) {
+    ws.searchParams.set('file', filePath)
+  }
+
+  const fileFormat = params.connectionContext?.fileFormat?.trim()
+  if (fileFormat) {
+    ws.searchParams.set('format', fileFormat)
+  }
+
+  const federatedConnections = params.connectionContext?.federatedConnections || []
+  federatedConnections.forEach((mapping) => {
+    const mappedConnectionID = mapping.connectionId?.trim()
+    if (!mappedConnectionID) return
+
+    ws.searchParams.append('connection_id', mappedConnectionID)
+
+    const mappedAlias = mapping.alias?.trim()
+    if (mappedAlias) {
+      ws.searchParams.append('connection_alias', mappedAlias)
+    }
+
+    const mappedDatabase = mapping.database?.trim()
+    if (mappedDatabase) {
+      ws.searchParams.append('database', mappedDatabase)
+    }
+  })
 
   return ws.toString()
 }

@@ -475,18 +475,46 @@ const sourceDatabase = computed(
 
 const sqlLspContext = computed<SqlLspConnectionContext | undefined>(() => {
   if (needsFederatedExecution.value) {
+    const federatedConnections = props.sourceConnections
+      .filter((mapping) => !isFileConnection(mapping.connectionId))
+      .map((mapping) => ({
+        connectionId: mapping.connectionId,
+        alias: mapping.alias,
+        database: mapping.database
+      }))
+
+    if (federatedConnections.length === 0) {
+      return undefined
+    }
+
+    return {
+      provider: 'duckdb',
+      federatedConnections
+    }
+  }
+  if (!sourceConnectionId.value) {
     return undefined
   }
-  if (!sourceConnectionId.value || !sourceDatabase.value) {
-    return undefined
-  }
+
+  const sourceConnection = connectionsStore.connectionByID(sourceConnectionId.value)
+  const sourceConnectionType = sourceConnection?.type?.trim().toLowerCase() || ''
+  const useDuckDBLsp = sourceConnectionType.includes('duckdb')
+
   if (isFileConnection(sourceConnectionId.value)) {
+    return {
+      provider: 'duckdb',
+      connectionId: sourceConnectionId.value
+    }
+  }
+
+  if (!useDuckDBLsp && !sourceDatabase.value) {
     return undefined
   }
 
   return {
+    provider: useDuckDBLsp ? 'duckdb' : 'sqls',
     connectionId: sourceConnectionId.value,
-    database: sourceDatabase.value
+    database: sourceDatabase.value || undefined
   }
 })
 
@@ -734,6 +762,6 @@ WHERE last_login < '2024-01-01'`
   }
 
   // Reset select
-  select.value = ''
+  selectedTemplate.value = ''
 }
 </script>

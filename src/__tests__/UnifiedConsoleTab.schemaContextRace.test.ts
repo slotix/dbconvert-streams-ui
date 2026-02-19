@@ -389,7 +389,7 @@ describe('UnifiedConsoleTab SQL LSP context isolation in multisource switching',
     wrapper.unmount()
   })
 
-  it('does not provide direct LSP context in federated mode', async () => {
+  it('provides DuckDB LSP context in federated mode', async () => {
     const __mockConsoleSourcesState = await getMockConsoleSourcesState()
 
     __mockConsoleSourcesState.runMode.value = 'federated'
@@ -421,7 +421,13 @@ describe('UnifiedConsoleTab SQL LSP context isolation in multisource switching',
 
     const sqlEditorPane = wrapper.findComponent({ name: 'SqlEditorPane' })
     const lspContext = sqlEditorPane.props('lspContext')
-    expect(lspContext).toBeUndefined()
+    expect(lspContext).toEqual({
+      provider: 'duckdb',
+      federatedConnections: [
+        { connectionId: 'my-1', alias: 'my1', database: '' },
+        { connectionId: 'pg-1', alias: 'pg1', database: '' }
+      ]
+    })
     expect(connections.getMetadata).not.toHaveBeenCalled()
 
     wrapper.unmount()

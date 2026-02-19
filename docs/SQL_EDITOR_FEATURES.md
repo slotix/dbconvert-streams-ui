@@ -51,16 +51,25 @@ Supported:
 
 ### 4) Keyboard shortcuts
 
-| Shortcut | Action |
-|----------|--------|
-| `Ctrl+Space` | Trigger autocomplete manually |
-| `F12` | Go to definition (within current query buffer) |
-| `Ctrl+Shift+Space` / `Cmd+Shift+Space` | Trigger signature help manually |
-| `Ctrl+Alt+F` / `Cmd+Alt+F` | LSP format |
-| `Ctrl+Enter` / `Cmd+Enter` | Execute query (if enabled in host surface) |
-| `Shift+Enter` | Execute query (alternative) |
-| `Shift+Alt+F` | Format action callback |
-| `Ctrl+Shift+F` / `Cmd+Shift+F` | Format action callback |
+| Shortcut                               | Action                                                  |
+| -------------------------------------- | ------------------------------------------------------- |
+| `Ctrl+Space` / `Cmd+Space`             | Trigger autocomplete manually                           |
+| `F12`                                  | Go to definition (within current query buffer)          |
+| `Ctrl+Shift+Space` / `Cmd+Shift+Space` | Trigger signature help manually                         |
+| `Ctrl+Alt+F` / `Cmd+Alt+F`             | LSP format                                              |
+| `Ctrl+Enter` / `Cmd+Enter`             | Execute query (if enabled in host surface)              |
+| `Shift+Enter`                          | Execute query (alternative)                             |
+| `Shift+Alt+F`                          | Format action callback                                  |
+| `Ctrl+Shift+F` / `Cmd+Shift+F`         | Format action callback                                  |
+| `Ctrl+F` / `Cmd+F`                     | Open built-in Find/Replace panel (CodeMirror search UI) |
+
+### 4.1) Find/Replace panel (`Ctrl+F` / `Cmd+F`)
+
+- Opens an inline editor panel with:
+  - find input
+  - next/previous/all matches
+  - match case / regexp / whole-word toggles
+  - replace / replace all actions
 
 ### 5) Theme integration
 
@@ -76,6 +85,25 @@ Selection highlight and autocomplete colors are aligned to current app palette.
 - Frontend does not implement a custom SQL parser/state machine for completions.
 - Websocket auth for LSP uses existing API auth context and install metadata.
 - SQL LSP enablement is context-driven (direct DB context present), not a user runtime toggle.
+
+### DuckDB LSP route
+
+- DuckDB contexts use backend route: `/api/v1/lsp/duckdb/ws`.
+- This route does **not** spawn `sqls`; it handles JSON-RPC in Go using DuckDB driver.
+- Supported context params include:
+  - `file` + optional `format`
+  - `connection_id` (can be repeated for federated metadata scope)
+  - optional `connection_alias`
+
+### DuckDB completion fallback (graceful)
+
+- Primary completion source: DuckDB `sql_auto_complete(...)`.
+- Fallback on error/empty result:
+  - SQL keywords
+  - known table/view names from `information_schema.tables`
+- Hover and formatting stay non-blocking:
+  - hover returns `null` when unresolved
+  - formatting returns no-op edits if unavailable
 
 ## Expected limitations (normal)
 
