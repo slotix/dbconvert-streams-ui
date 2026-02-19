@@ -119,7 +119,7 @@ Phase 4 status snapshot (2026-02-19):
 - Completed: editor/completion visuals aligned to current app light/dark palette.
 - Completed: legacy frontend metadata-refresh path for SQL autocomplete removed from `UnifiedConsoleTab` (LSP context-only flow).
 - Completed: UI runtime LSP feature-toggle state removed from active SQL path.
-- In progress: formal pre-commit smoke/regression pass for SQL LSP behavior.
+- Completed: formal pre-commit smoke/regression pass for SQL LSP behavior (`docs/SQL_LSP_SMOKE_EXECUTION_REPORT_2026-02-19.md`).
 
 ## 7. Phase Plan (Updated)
 
@@ -191,6 +191,7 @@ Expected: selection visible in both themes; edit behavior intact.
 
 Execution artifact:
 - Use `docs/SQL_LSP_SMOKE_EXECUTION_REPORT_TEMPLATE.md` for each pre-merge/pre-release run.
+- Fast unit regression command: `yarn test:sql-lsp`.
 
 ## 8. Open Decisions
 

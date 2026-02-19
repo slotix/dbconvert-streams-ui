@@ -63,3 +63,6 @@ Use and attach execution artifact:
 - `docs/SQL_LSP_SMOKE_EXECUTION_REPORT_TEMPLATE.md`
 
 Run this matrix before merge/release in desktop and web dev environments.
+
+Latest execution:
+- `docs/SQL_LSP_SMOKE_EXECUTION_REPORT_2026-02-19.md`

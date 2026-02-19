@@ -12,6 +12,7 @@
     "preview": "vite preview",
     "start": "vite preview --port $PORT --host 127.0.0.1",
     "test:unit": "vitest",
+    "test:sql-lsp": "vitest run src/__tests__/useSqlLspProviders.test.ts src/__tests__/useSqlExecutionContextSelector.test.ts src/__tests__/UnifiedConsoleTab.schemaContextRace.test.ts src/__tests__/useQueryExecutionDestructive.test.ts",
     "test": "playwright test",
     "test:headed": "playwright test --headed",
     "test:ui": "playwright test --ui",

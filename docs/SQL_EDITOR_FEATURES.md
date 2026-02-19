@@ -73,6 +73,12 @@ Selection highlight and autocomplete colors are aligned to current app palette.
 4. Repeat completion + DB switching several times -> UI remains responsive.
 5. Confirm selection visibility and editing behavior in both light/dark themes.
 
+Quick regression command (unit scope):
+
+```bash
+yarn test:sql-lsp
+```
+
 ## Troubleshooting
 
 ### No autocomplete at all
