@@ -70,7 +70,6 @@ const { confirmDiscardUnsavedChanges } = useUnsavedChangesGuard()
 const { strokeWidth: iconStroke } = useLucideIcons()
 
 const rowChangesPanelOpen = ref(false)
-const rowChangesRowId = ref<string | null>(null)
 
 const insertRowPanelOpen = ref(false)
 const insertEditingId = ref<string | null>(null)
@@ -178,21 +177,33 @@ const columnMetaByName = computed(() => {
   return out
 })
 
-function openRowChangesPanel(rowId: string) {
-  rowChangesRowId.value = rowId
+function openRowChangesPanel() {
   rowChangesPanelOpen.value = true
 }
 
 function openFirstEditedRowPanel() {
-  const firstEditedRowId = Object.keys(pendingEdits.value)[0]
-  if (firstEditedRowId) {
-    openRowChangesPanel(firstEditedRowId)
+  if (Object.keys(pendingEdits.value).length > 0) {
+    openRowChangesPanel()
   }
 }
 
 function closeRowChangesPanel() {
   rowChangesPanelOpen.value = false
-  rowChangesRowId.value = null
+}
+
+function revertRow(rowId: string) {
+  const row = rowChangeRows.value.find((r) => r.rowId === rowId)
+  row?.items.forEach((item) => revertRowField(rowId, item.field))
+}
+
+async function applyAndClose() {
+  await saveChanges()
+  if (!hasUnsavedChanges.value) closeRowChangesPanel()
+}
+
+function discardAndClose() {
+  cancelChanges()
+  closeRowChangesPanel()
 }
 
 const columnsForDefs = computed(() => {
@@ -460,23 +471,24 @@ function getEditedCellTooltip(rowId: string, field: string, dataType?: string): 
   return `Old: ${oldValue}\nNew: ${newValue}`
 }
 
-const rowChangeItems = computed(() => {
-  const rowId = rowChangesRowId.value
-  if (!rowId) return [] as Array<{ field: string; oldValue: string; newValue: string }>
-  const edit = pendingEdits.value[rowId]
-  if (!edit?.changes) return [] as Array<{ field: string; oldValue: string; newValue: string }>
-
-  return Object.keys(edit.changes)
-    .sort()
-    .map((field) => {
-      const dataType = columnMetaByName.value.get(field)?.dataType
-      return {
-        field,
-        oldValue: formatTableValue(edit.original?.[field], dataType),
-        newValue: formatTableValue(edit.changes[field], dataType)
-      }
-    })
-})
+const rowChangeRows = computed(() =>
+  Object.entries(pendingEdits.value).map(([rowId, edit]) => ({
+    rowId,
+    label: Object.entries(edit.keys)
+      .map(([k, v]) => `${k}=${v}`)
+      .join(', '),
+    items: Object.keys(edit.changes)
+      .sort()
+      .map((field) => {
+        const dataType = columnMetaByName.value.get(field)?.dataType
+        return {
+          field,
+          oldValue: formatTableValue(edit.original?.[field], dataType),
+          newValue: formatTableValue(edit.changes[field], dataType)
+        }
+      })
+  }))
+)
 
 function onCellClicked(event: { column?: { getColId: () => string }; node?: { id?: string } }) {
   const colId = event.column?.getColId?.()
@@ -484,7 +496,7 @@ function onCellClicked(event: { column?: { getColId: () => string }; node?: { id
   const rowId = event.node?.id
   if (!rowId) return
   if (!pendingEdits.value[rowId]) return
-  openRowChangesPanel(rowId)
+  openRowChangesPanel()
 }
 
 function onBeforeUnload(event: BeforeUnloadEvent) {
@@ -950,9 +962,14 @@ defineExpose({
 
     <AGGridRowChangesPanel
       :open="rowChangesPanelOpen"
-      :items="rowChangeItems"
+      :rows="rowChangeRows"
+      :table-name="objectName"
+      :source-name="connection?.name"
       @close="closeRowChangesPanel"
-      @revert="(field) => rowChangesRowId && revertRowField(rowChangesRowId, field)"
+      @revert="(rowId, field) => revertRowField(rowId, field)"
+      @revert-row="revertRow"
+      @apply="applyAndClose"
+      @discard="discardAndClose"
     />
 
     <AGGridInsertRowPanel

@@ -17,6 +17,7 @@ import {
   type FetchDataResult
 } from '@/composables/useBaseAGGridView'
 import { useObjectTabStateStore } from '@/stores/objectTabState'
+import { useConnectionsStore } from '@/stores/connections'
 import { useCopyToClipboard } from '@/composables/useCopyToClipboard'
 import { useToast } from 'vue-toastification'
 import SelectionContextMenu from '@/components/common/SelectionContextMenu.vue'
@@ -45,6 +46,8 @@ const props = withDefaults(
 )
 
 const tabStateStore = useObjectTabStateStore()
+const connectionsStore = useConnectionsStore()
+const connection = computed(() => connectionsStore.connectionByID(props.connectionId))
 
 const toast = useToast()
 const { copy: copyToClipboard } = useCopyToClipboard()
@@ -260,7 +263,6 @@ const baseGrid = useBaseAGGridView({
 })
 
 const rowChangesPanelOpen = ref(false)
-const rowChangesRowId = ref<string | null>(null)
 
 const insertRowPanelOpen = ref(false)
 const insertEditingId = ref<string | null>(null)
@@ -349,38 +351,49 @@ const { columnDefs } = useAgGridDataViewColumnDefs({
   getEditedCellTooltip
 })
 
-const rowChangeItems = computed(() => {
-  const rowId = rowChangesRowId.value
-  if (!rowId) return [] as Array<{ field: string; oldValue: string; newValue: string }>
-  const edit = pendingEdits.value[rowId]
-  if (!edit?.changes) return [] as Array<{ field: string; oldValue: string; newValue: string }>
-
-  return Object.keys(edit.changes)
-    .sort()
-    .map((field) => {
-      return {
+const rowChangeRows = computed(() =>
+  Object.entries(pendingEdits.value).map(([rowId, edit]) => ({
+    rowId,
+    label: Object.entries(edit.keys)
+      .map(([k, v]) => `${k}=${v}`)
+      .join(', '),
+    items: Object.keys(edit.changes)
+      .sort()
+      .map((field) => ({
         field,
         oldValue: String(edit.original?.[field]),
         newValue: String(edit.changes[field])
-      }
-    })
-})
+      }))
+  }))
+)
 
-function openRowChangesPanel(rowId: string) {
-  rowChangesRowId.value = rowId
+function openRowChangesPanel() {
   rowChangesPanelOpen.value = true
 }
 
 function openFirstEditedRowPanel() {
-  const firstEditedRowId = Object.keys(pendingEdits.value)[0]
-  if (firstEditedRowId) {
-    openRowChangesPanel(firstEditedRowId)
+  if (Object.keys(pendingEdits.value).length > 0) {
+    openRowChangesPanel()
   }
 }
 
 function closeRowChangesPanel() {
   rowChangesPanelOpen.value = false
-  rowChangesRowId.value = null
+}
+
+function revertRow(rowId: string) {
+  const row = rowChangeRows.value.find((r) => r.rowId === rowId)
+  row?.items.forEach((item) => revertRowField(rowId, item.field))
+}
+
+async function applyAndClose() {
+  await saveChanges()
+  if (!hasUnsavedChanges.value) closeRowChangesPanel()
+}
+
+function discardAndClose() {
+  cancelChanges()
+  closeRowChangesPanel()
 }
 
 function onCellClicked(event: { column?: { getColId: () => string }; node?: { id?: string } }) {
@@ -389,7 +402,7 @@ function onCellClicked(event: { column?: { getColId: () => string }; node?: { id
   const rowId = event.node?.id
   if (!rowId) return
   if (!pendingEdits.value[rowId]) return
-  openRowChangesPanel(rowId)
+  openRowChangesPanel()
 }
 
 function openInsertRowPanelForNew() {
@@ -957,9 +970,14 @@ defineExpose({
 
     <AGGridRowChangesPanel
       :open="rowChangesPanelOpen"
-      :items="rowChangeItems"
+      :rows="rowChangeRows"
+      :table-name="entry.name"
+      :source-name="connection?.name"
       @close="closeRowChangesPanel"
-      @revert="(field) => rowChangesRowId && revertRowField(rowChangesRowId, field)"
+      @revert="(rowId, field) => revertRowField(rowId, field)"
+      @revert-row="revertRow"
+      @apply="applyAndClose"
+      @discard="discardAndClose"
     />
 
     <AGGridInsertRowPanel

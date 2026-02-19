@@ -121,7 +121,7 @@ Phase 4 status snapshot (2026-02-19):
 - Completed: UI runtime LSP feature-toggle state removed from active SQL path.
 - Completed: formal pre-commit smoke/regression pass for SQL LSP behavior (`docs/SQL_LSP_SMOKE_EXECUTION_REPORT_2026-02-19.md`).
 - Completed: LSP diagnostics rendering in `SqlCodeMirror` via `textDocument/publishDiagnostics`.
-- Completed: LSP hover rendering in `SqlCodeMirror` via `textDocument/hover`.
+- Completed: LSP hover integration in `SqlCodeMirror` via `textDocument/hover`.
 
 ## 7. Phase Plan (Updated)
 

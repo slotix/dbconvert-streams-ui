@@ -104,7 +104,7 @@ const bodyClass = computed(() => ({
 
                   <div
                     v-if="hasFooter"
-                    class="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex items-center justify-end gap-2"
+                    class="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex items-center gap-2"
                   >
                     <slot name="footer" />
                   </div>

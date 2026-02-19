@@ -1,7 +1,7 @@
 <template>
   <div
     :class="[
-      'relative rounded-lg overflow-hidden border',
+      'relative rounded-lg border',
       isDarkTheme ? 'sql-cm-dark' : 'sql-cm-light',
       props.readOnly
         ? 'border-gray-200 dark:border-gray-700'
@@ -26,7 +26,7 @@ import { getBackendUrl } from '@/utils/environment'
 import { getOrCreateInstallId } from '@/utils/installId'
 import { basicSetup } from 'codemirror'
 import { EditorState, Compartment } from '@codemirror/state'
-import { EditorView, hoverTooltip, keymap } from '@codemirror/view'
+import { EditorView, keymap } from '@codemirror/view'
 import { sql, MySQL, PostgreSQL } from '@codemirror/lang-sql'
 import { oneDark } from '@codemirror/theme-one-dark'
 import { type Diagnostic, setDiagnostics } from '@codemirror/lint'
@@ -107,6 +107,16 @@ interface LspHoverResult {
   contents?: LspHoverContents
   range?: LspRange
 }
+
+interface HoverMarkdownTable {
+  headers: string[]
+  rows: string[][]
+}
+
+type HoverMarkdownBlock =
+  | { type: 'heading'; text: string }
+  | { type: 'table'; table: HoverMarkdownTable }
+  | { type: 'text'; text: string }
 
 interface JsonRpcResponse {
   id?: number | string
@@ -190,6 +200,12 @@ let lspDidChangeTimer: ReturnType<typeof setTimeout> | null = null
 let lspDidChangeText = ''
 let lspDidChangeVersion = 1
 let lspUnavailableWarningShown = false
+let hoverTimer: ReturnType<typeof setTimeout> | null = null
+let hoverRequestToken = 0
+let hoverTooltipEl: HTMLDivElement | null = null
+let hoverActiveKey = ''
+let hoverMouseMoveListener: ((event: MouseEvent) => void) | null = null
+let hoverMouseLeaveListener: (() => void) | null = null
 const pendingRequests = new Map<number | string, PendingRequest>()
 const textDocumentUri = `inmemory://sql/${Date.now()}-${Math.random().toString(36).slice(2)}`
 
@@ -360,11 +376,32 @@ function clearLspDiagnostics() {
   applyLspDiagnostics([])
 }
 
+function decodeHoverHtmlEntities(value: string): string {
+  if (!value.includes('&')) {
+    return value
+  }
+
+  if (typeof document !== 'undefined') {
+    const textarea = document.createElement('textarea')
+    textarea.innerHTML = value
+    return textarea.value
+  }
+
+  return value
+    .replaceAll('&nbsp;', ' ')
+    .replaceAll('&amp;', '&')
+    .replaceAll('&lt;', '<')
+    .replaceAll('&gt;', '>')
+    .replaceAll('&quot;', '"')
+    .replaceAll('&#39;', "'")
+}
+
 function normalizeHoverText(value: string): string {
   if (!value) {
     return ''
   }
-  const normalized = value.split('\r\n').join('\n').trim()
+  const decoded = decodeHoverHtmlEntities(value)
+  const normalized = decoded.split('\r\n').join('\n').replaceAll('\u00a0', ' ').trim()
   if (normalized.length <= MAX_HOVER_TEXT_CHARS) {
     return normalized
   }
@@ -395,6 +432,431 @@ function toHoverText(contents: LspHoverContents | undefined): string {
     return normalizeHoverText(contents.value)
   }
   return ''
+}
+
+function normalizeMarkdownInline(value: string): string {
+  let normalized = value.trim()
+  if (normalized.startsWith('`') && normalized.endsWith('`') && normalized.length >= 2) {
+    normalized = normalized.slice(1, -1)
+  }
+  return normalized.replaceAll('\\|', '|').replace(/`([^`]+)`/g, '$1')
+}
+
+function parseMarkdownTableRow(line: string): string[] {
+  let normalized = line.trim()
+  if (normalized.startsWith('|')) {
+    normalized = normalized.slice(1)
+  }
+  if (normalized.endsWith('|')) {
+    normalized = normalized.slice(0, -1)
+  }
+  return normalized.split('|').map((cell) => normalizeMarkdownInline(cell.trim()))
+}
+
+function isMarkdownTableRow(line: string): boolean {
+  return line.includes('|')
+}
+
+function isMarkdownTableDivider(line: string): boolean {
+  const cells = parseMarkdownTableRow(line)
+  if (!cells.length) {
+    return false
+  }
+  return cells.every((cell) => /^:?-{3,}:?$/.test(cell.replaceAll(' ', '')))
+}
+
+function parseMarkdownBlocks(text: string): HoverMarkdownBlock[] {
+  const lines = text.split('\n')
+  const blocks: HoverMarkdownBlock[] = []
+  let i = 0
+
+  while (i < lines.length) {
+    const trimmed = lines[i].trim()
+    if (!trimmed) {
+      i += 1
+      continue
+    }
+
+    const headingMatch = trimmed.match(/^#{1,6}\s+(.+)$/)
+    if (headingMatch) {
+      blocks.push({
+        type: 'heading',
+        text: normalizeMarkdownInline(headingMatch[1])
+      })
+      i += 1
+      continue
+    }
+
+    if (
+      i + 1 < lines.length &&
+      isMarkdownTableRow(trimmed) &&
+      isMarkdownTableDivider(lines[i + 1])
+    ) {
+      const headers = parseMarkdownTableRow(trimmed)
+      const rows: string[][] = []
+      i += 2
+
+      while (i < lines.length) {
+        const rowLine = lines[i].trim()
+        if (!rowLine || !isMarkdownTableRow(rowLine)) {
+          break
+        }
+        rows.push(parseMarkdownTableRow(rowLine))
+        i += 1
+      }
+
+      blocks.push({
+        type: 'table',
+        table: { headers, rows }
+      })
+      continue
+    }
+
+    const paragraph: string[] = []
+    while (i < lines.length) {
+      const line = lines[i]
+      const lineTrimmed = line.trim()
+      if (!lineTrimmed) {
+        i += 1
+        if (paragraph.length) {
+          break
+        }
+        continue
+      }
+
+      const nextIsHeading = /^#{1,6}\s+/.test(lineTrimmed)
+      const nextIsTable =
+        i + 1 < lines.length &&
+        isMarkdownTableRow(lineTrimmed) &&
+        isMarkdownTableDivider(lines[i + 1])
+      if (nextIsHeading || nextIsTable) {
+        if (!paragraph.length) {
+          break
+        }
+        break
+      }
+
+      paragraph.push(line)
+      i += 1
+    }
+
+    if (paragraph.length) {
+      blocks.push({
+        type: 'text',
+        text: paragraph.join('\n').trim()
+      })
+      continue
+    }
+
+    i += 1
+  }
+
+  return blocks
+}
+
+function createHoverTextBlock(text: string): HTMLElement {
+  const pre = document.createElement('pre')
+  pre.className = 'sql-hover-tooltip-text'
+  pre.textContent = text
+  return pre
+}
+
+function createHoverTableBlock(tableData: HoverMarkdownTable): HTMLElement {
+  const wrapper = document.createElement('div')
+  wrapper.className = 'sql-hover-tooltip-table-wrap'
+
+  const table = document.createElement('table')
+  table.className = 'sql-hover-tooltip-table'
+
+  const columnCount = Math.max(
+    tableData.headers.length,
+    ...tableData.rows.map((row) => row.length),
+    0
+  )
+
+  if (tableData.headers.length) {
+    const thead = document.createElement('thead')
+    const headerRow = document.createElement('tr')
+    for (let columnIndex = 0; columnIndex < columnCount; columnIndex += 1) {
+      const th = document.createElement('th')
+      th.textContent = tableData.headers[columnIndex] || ''
+      headerRow.appendChild(th)
+    }
+    thead.appendChild(headerRow)
+    table.appendChild(thead)
+  }
+
+  const tbody = document.createElement('tbody')
+  for (const row of tableData.rows) {
+    const tr = document.createElement('tr')
+    for (let columnIndex = 0; columnIndex < columnCount; columnIndex += 1) {
+      const td = document.createElement('td')
+      td.textContent = row[columnIndex] || ''
+      tr.appendChild(td)
+    }
+    tbody.appendChild(tr)
+  }
+  table.appendChild(tbody)
+
+  wrapper.appendChild(table)
+  return wrapper
+}
+
+function renderHoverTooltipContent(container: HTMLDivElement, text: string) {
+  container.textContent = ''
+
+  const root = document.createElement('div')
+  root.className = 'sql-hover-tooltip-content'
+
+  const blocks = parseMarkdownBlocks(text)
+  if (!blocks.length) {
+    root.appendChild(createHoverTextBlock(text))
+    container.appendChild(root)
+    return
+  }
+
+  for (const block of blocks) {
+    if (block.type === 'heading') {
+      const heading = document.createElement('div')
+      heading.className = 'sql-hover-tooltip-heading'
+      heading.textContent = block.text
+      root.appendChild(heading)
+      continue
+    }
+    if (block.type === 'table') {
+      root.appendChild(createHoverTableBlock(block.table))
+      continue
+    }
+    root.appendChild(createHoverTextBlock(block.text))
+  }
+
+  container.appendChild(root)
+}
+
+function isWordCharacter(char: string): boolean {
+  return /[\w$]/.test(char)
+}
+
+function getWordRangeAtPosition(state: EditorState, pos: number) {
+  const docLength = state.doc.length
+  if (docLength === 0) {
+    return null
+  }
+
+  const clampedPos = clamp(pos, 0, docLength)
+  let from = clampedPos
+  let to = clampedPos
+
+  while (from > 0 && isWordCharacter(state.doc.sliceString(from - 1, from))) {
+    from -= 1
+  }
+  while (to < docLength && isWordCharacter(state.doc.sliceString(to, to + 1))) {
+    to += 1
+  }
+
+  if (from === to) {
+    return null
+  }
+
+  return {
+    from,
+    to,
+    text: state.doc.sliceString(from, to)
+  }
+}
+
+function clearHoverTimer() {
+  if (hoverTimer) {
+    clearTimeout(hoverTimer)
+    hoverTimer = null
+  }
+}
+
+function hideHoverTooltip(resetKey = true) {
+  clearHoverTimer()
+  hoverRequestToken += 1
+  if (resetKey) {
+    hoverActiveKey = ''
+  }
+  if (!hoverTooltipEl) {
+    return
+  }
+  hoverTooltipEl.remove()
+  hoverTooltipEl = null
+}
+
+function ensureHoverTooltipElement(): HTMLDivElement | null {
+  const container = editorHost.value?.parentElement
+  if (!container) {
+    return null
+  }
+
+  if (!hoverTooltipEl) {
+    const el = document.createElement('div')
+    el.className = 'sql-hover-tooltip-floating'
+    container.appendChild(el)
+    hoverTooltipEl = el
+  } else if (hoverTooltipEl.parentElement !== container) {
+    hoverTooltipEl.remove()
+    container.appendChild(hoverTooltipEl)
+  }
+
+  return hoverTooltipEl
+}
+
+function positionHoverTooltip(el: HTMLDivElement, view: EditorView, from: number, to: number) {
+  const container = editorHost.value?.parentElement
+  if (!container) {
+    return
+  }
+
+  const anchor = view.coordsAtPos(from) || view.coordsAtPos(to)
+  if (!anchor) {
+    return
+  }
+
+  const containerRect = container.getBoundingClientRect()
+  el.style.left = '0px'
+  el.style.top = '0px'
+  el.style.visibility = 'hidden'
+  el.style.display = 'block'
+
+  const margin = 8
+  const preferredLeft = anchor.left - containerRect.left
+  const preferredTop = anchor.bottom - containerRect.top + margin
+
+  const maxLeft = Math.max(margin, container.clientWidth - el.offsetWidth - margin)
+  let left = clamp(preferredLeft, margin, maxLeft)
+
+  let top = preferredTop
+  if (top + el.offsetHeight + margin > container.clientHeight) {
+    top = Math.max(margin, anchor.top - containerRect.top - el.offsetHeight - margin)
+  }
+
+  if (left + el.offsetWidth + margin > container.clientWidth) {
+    left = Math.max(margin, container.clientWidth - el.offsetWidth - margin)
+  }
+
+  el.style.left = `${left}px`
+  el.style.top = `${top}px`
+  el.style.visibility = 'visible'
+}
+
+function showHoverTooltip(text: string, view: EditorView, from: number, to: number) {
+  const el = ensureHoverTooltipElement()
+  if (!el) {
+    return
+  }
+  renderHoverTooltipContent(el, text)
+  positionHoverTooltip(el, view, from, to)
+}
+
+async function requestHoverAtPosition(view: EditorView, pos: number, hoverKey: string) {
+  const token = ++hoverRequestToken
+  flushPendingDidChangeNotification()
+
+  const response = await sendLspRequest('textDocument/hover', {
+    textDocument: { uri: textDocumentUri },
+    position: toLspPosition(view.state, pos)
+  }).catch(() => null)
+
+  if (token !== hoverRequestToken || hoverKey !== hoverActiveKey) {
+    return
+  }
+
+  const hover = response as LspHoverResult | null
+  const text = toHoverText(hover?.contents)
+  if (!text) {
+    hideHoverTooltip(false)
+    return
+  }
+
+  const fallbackRange = getWordRangeAtPosition(view.state, pos)
+  const start = hover?.range?.start
+    ? fromLspPosition(view.state, hover.range.start)
+    : (fallbackRange?.from ?? pos)
+  const end = hover?.range?.end
+    ? fromLspPosition(view.state, hover.range.end)
+    : (fallbackRange?.to ?? pos)
+  showHoverTooltip(text, view, Math.min(start, end), Math.max(start, end))
+}
+
+function handleHoverMouseMove(event: MouseEvent, view: EditorView): boolean {
+  if (!shouldEnableLsp.value || !lspReady || props.readOnly) {
+    hideHoverTooltip()
+    return false
+  }
+
+  let pos: number | null = null
+  const target = event.target
+  if (target instanceof Node && view.dom.contains(target)) {
+    try {
+      pos = view.posAtDOM(target, 0)
+    } catch {
+      pos = null
+    }
+  }
+  if (pos === null) {
+    pos = view.posAtCoords({ x: event.clientX, y: event.clientY })
+  }
+  if (pos === null) {
+    hideHoverTooltip()
+    return false
+  }
+
+  const wordRange = getWordRangeAtPosition(view.state, pos)
+  if (!wordRange) {
+    hideHoverTooltip()
+    return false
+  }
+
+  const hoverKey = `${wordRange.from}:${wordRange.to}:${wordRange.text}`
+  if (hoverKey === hoverActiveKey) {
+    // Keep the pending/visible tooltip request alive for the same token under cursor.
+    // Without this guard, frequent mousemove events continuously reset the debounce timer
+    // and hover requests may never be sent.
+    if (hoverTimer || hoverTooltipEl) {
+      return false
+    }
+  }
+
+  hoverActiveKey = hoverKey
+  clearHoverTimer()
+  hoverTimer = setTimeout(() => {
+    hoverTimer = null
+    void requestHoverAtPosition(view, pos, hoverKey)
+  }, HOVER_REQUEST_DELAY_MS)
+
+  return false
+}
+
+function detachHoverDomListeners(view: EditorView | null) {
+  if (!view) {
+    return
+  }
+
+  if (hoverMouseMoveListener) {
+    view.dom.removeEventListener('mousemove', hoverMouseMoveListener)
+    hoverMouseMoveListener = null
+  }
+  if (hoverMouseLeaveListener) {
+    view.dom.removeEventListener('mouseleave', hoverMouseLeaveListener)
+    hoverMouseLeaveListener = null
+  }
+}
+
+function attachHoverDomListeners(view: EditorView) {
+  detachHoverDomListeners(view)
+
+  hoverMouseMoveListener = (event: MouseEvent) => {
+    void handleHoverMouseMove(event, view)
+  }
+  hoverMouseLeaveListener = () => {
+    hideHoverTooltip()
+  }
+
+  view.dom.addEventListener('mousemove', hoverMouseMoveListener)
+  view.dom.addEventListener('mouseleave', hoverMouseLeaveListener)
 }
 
 function getHasSelection(state: EditorState): boolean {
@@ -642,56 +1104,8 @@ function getLspAutocompletionExtension() {
   })
 }
 
-function getLspHoverExtension() {
-  return hoverTooltip(
-    async (view, pos) => {
-      if (!shouldEnableLsp.value || !lspReady) {
-        return null
-      }
-
-      flushPendingDidChangeNotification()
-
-      const response = await sendLspRequest('textDocument/hover', {
-        textDocument: { uri: textDocumentUri },
-        position: toLspPosition(view.state, pos)
-      }).catch(() => null)
-
-      const hover = response as LspHoverResult | null
-      if (!hover) {
-        return null
-      }
-
-      const text = toHoverText(hover.contents)
-      if (!text) {
-        return null
-      }
-
-      const start = hover.range?.start ? fromLspPosition(view.state, hover.range.start) : pos
-      const end = hover.range?.end ? fromLspPosition(view.state, hover.range.end) : pos
-      const tooltipFrom = Math.min(start, end)
-      const tooltipTo = Math.max(tooltipFrom + 1, Math.max(start, end))
-
-      return {
-        pos: tooltipFrom,
-        end: tooltipTo,
-        above: true,
-        create() {
-          const dom = document.createElement('div')
-          dom.className = 'sql-hover-tooltip'
-          dom.textContent = text
-          return { dom }
-        }
-      }
-    },
-    {
-      hoverTime: HOVER_REQUEST_DELAY_MS,
-      hideOnChange: true
-    }
-  )
-}
-
 function getLspEditorExtensions() {
-  return [getLspAutocompletionExtension(), getLspHoverExtension()]
+  return [getLspAutocompletionExtension()]
 }
 
 function handleLspPublishDiagnostics(params: unknown) {
@@ -789,6 +1203,7 @@ async function initializeLspSession(sessionToken: number) {
     sendLspNotification('initialized', {})
     lspDocumentVersion = 1
     lspDidChangeVersion = lspDocumentVersion
+    refreshLspCompartment()
     sendLspNotification('textDocument/didOpen', {
       textDocument: {
         uri: textDocumentUri,
@@ -811,6 +1226,7 @@ async function initializeLspSession(sessionToken: number) {
 function disconnectLspSession() {
   lspSessionToken += 1
   lspReady = false
+  hideHoverTooltip()
 
   if (lspDidChangeTimer) {
     clearTimeout(lspDidChangeTimer)
@@ -936,6 +1352,7 @@ function createEditorState() {
         }
         if (update.docChanged) {
           scheduleDidChangeNotification(update.state.doc.toString())
+          hideHoverTooltip()
         }
         if (update.selectionSet || update.docChanged) {
           emitSelectionState(update.state)
@@ -950,13 +1367,16 @@ function recreateEditor() {
     return
   }
 
+  detachHoverDomListeners(editorView.value)
   editorView.value?.destroy()
-  editorView.value = new EditorView({
+  const view = new EditorView({
     state: createEditorState(),
     parent: editorHost.value
   })
+  editorView.value = view
+  attachHoverDomListeners(view)
 
-  emitSelectionState(editorView.value.state)
+  emitSelectionState(view.state)
 }
 
 watch(
@@ -1047,6 +1467,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   disconnectLspSession()
+  detachHoverDomListeners(editorView.value)
   editorView.value?.destroy()
   editorView.value = null
 })
@@ -1089,7 +1510,7 @@ defineExpose({
 </script>
 
 <style scoped>
-:deep(.cm-editor) {
+.sql-cm-light {
   --sql-editor-bg: #ffffff;
   --sql-editor-gutter-bg: #f8fafc;
   --sql-editor-border: rgba(148, 163, 184, 0.25);
@@ -1100,15 +1521,14 @@ defineExpose({
   --sql-editor-selection-bg: rgba(13, 148, 136, 0.24);
   --sql-editor-text: #0f172a;
   --sql-editor-detail: #64748b;
-  font-family: 'JetBrains Mono', 'Fira Code', 'SFMono-Regular', ui-monospace, Menlo, monospace;
-  font-size: 13.5px;
-  line-height: 1.5;
-  caret-color: #2dd4bf;
-  background: var(--sql-editor-bg);
-  color: var(--sql-editor-text);
+  --sql-hover-card-bg: var(--sql-editor-popup-bg);
+  --sql-hover-card-border: var(--sql-editor-popup-border);
+  --sql-hover-heading: var(--sql-editor-text);
+  --sql-hover-table-header-bg: rgba(15, 23, 42, 0.045);
+  --sql-hover-table-row-alt: rgba(15, 23, 42, 0.02);
 }
 
-.sql-cm-dark :deep(.cm-editor) {
+.sql-cm-dark {
   --sql-editor-bg: var(--color-gray-900);
   --sql-editor-gutter-bg: var(--color-gray-850);
   --sql-editor-border: rgba(148, 163, 184, 0.22);
@@ -1119,6 +1539,20 @@ defineExpose({
   --sql-editor-selection-bg: rgba(20, 184, 166, 0.34);
   --sql-editor-text: #e5e7eb;
   --sql-editor-detail: #9ca3af;
+  --sql-hover-card-bg: var(--sql-editor-popup-bg);
+  --sql-hover-card-border: var(--sql-editor-popup-border);
+  --sql-hover-heading: var(--sql-editor-text);
+  --sql-hover-table-header-bg: rgba(148, 163, 184, 0.1);
+  --sql-hover-table-row-alt: rgba(148, 163, 184, 0.04);
+}
+
+:deep(.cm-editor) {
+  font-family: 'JetBrains Mono', 'Fira Code', 'SFMono-Regular', ui-monospace, Menlo, monospace;
+  font-size: 13.5px;
+  line-height: 1.5;
+  caret-color: #2dd4bf;
+  background: var(--sql-editor-bg);
+  color: var(--sql-editor-text);
 }
 
 :deep(.cm-content) {
@@ -1146,23 +1580,106 @@ defineExpose({
   color: var(--sql-editor-text);
   box-shadow: 0 10px 35px rgba(0, 0, 0, 0.45);
   overflow: hidden;
+  z-index: 120;
 }
 
-:deep(.cm-tooltip.cm-tooltip-hover) {
+:deep(.sql-hover-tooltip-floating) {
+  position: absolute;
+  pointer-events: none;
   border-radius: 10px;
-  border: 1px solid var(--sql-editor-popup-border);
-  background: var(--sql-editor-popup-bg);
+  border: 1px solid var(--sql-hover-card-border);
+  background: var(--sql-hover-card-bg);
   color: var(--sql-editor-text);
-  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.4);
-  max-width: min(520px, 70vw);
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.45);
+  max-width: min(720px, 82vw);
+  max-height: min(420px, 58vh);
+  overflow: auto;
+  scrollbar-width: thin;
+  z-index: 130;
+  font-size: 13px;
+  line-height: 1.45;
+  padding: 10px 12px;
 }
 
-:deep(.sql-hover-tooltip) {
+:deep(.sql-hover-tooltip-content) {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+:deep(.sql-hover-tooltip-heading) {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--sql-hover-heading);
+}
+
+:deep(.sql-hover-tooltip-text) {
+  margin: 0;
   white-space: pre-wrap;
   word-break: break-word;
   font-size: 12.5px;
-  line-height: 1.45;
-  padding: 8px 10px;
+  line-height: 1.5;
+  color: var(--sql-editor-text);
+}
+
+:deep(.sql-hover-tooltip-table-wrap) {
+  overflow: auto;
+  border: 1px solid var(--sql-hover-card-border);
+  border-radius: 8px;
+  background: transparent;
+}
+
+:deep(.sql-hover-tooltip-table) {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: auto;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+:deep(.sql-hover-tooltip-table th),
+:deep(.sql-hover-tooltip-table td) {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--sql-editor-border);
+  border-right: 1px solid var(--sql-editor-border);
+  text-align: left;
+  vertical-align: top;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  max-width: 280px;
+  color: var(--sql-editor-text);
+}
+
+:deep(.sql-hover-tooltip-table th:last-child),
+:deep(.sql-hover-tooltip-table td:last-child) {
+  border-right: none;
+}
+
+:deep(.sql-hover-tooltip-table tr:last-child td) {
+  border-bottom: none;
+}
+
+:deep(.sql-hover-tooltip-table th) {
+  font-weight: 600;
+  background: var(--sql-hover-table-header-bg);
+  color: var(--sql-hover-heading);
+}
+
+:deep(.sql-hover-tooltip-table tbody tr:nth-child(even) td) {
+  background: var(--sql-hover-table-row-alt);
+}
+
+:deep(.sql-hover-tooltip-floating::-webkit-scrollbar) {
+  width: 8px;
+}
+
+:deep(.sql-hover-tooltip-floating::-webkit-scrollbar-thumb) {
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 999px;
 }
 
 :deep(.cm-tooltip-autocomplete ul li[aria-selected='true']) {
