@@ -29,6 +29,12 @@ Context behavior:
   - other severities -> editor `info`
 - Diagnostics are cleared when LSP session is reconnected/disposed.
 
+### 1.2) SQL hover
+
+- Hover uses LSP `textDocument/hover`.
+- Hover content is shown as a lightweight tooltip above the token/range.
+- Hover shares the editor light/dark popup palette and is disabled automatically when LSP is unavailable.
+
 ### 2) SQL dialect-aware syntax highlighting
 
 The editor configures SQL language mode by selected source dialect:
@@ -73,7 +79,6 @@ Selection highlight and autocomplete colors are aligned to current app palette.
 - No guarantee of rich suggestions in syntactically incomplete context.
 - Column suggestions typically require table/alias scope.
 - Behavior can differ slightly between SQL dialects because completions come from LSP engine.
-- Hover tooltips are not enabled yet (next phase item).
 
 ## Smoke checklist (recommended before release)
 

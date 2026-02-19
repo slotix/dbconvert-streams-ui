@@ -120,7 +120,8 @@ Phase 4 status snapshot (2026-02-19):
 - Completed: legacy frontend metadata-refresh path for SQL autocomplete removed from `UnifiedConsoleTab` (LSP context-only flow).
 - Completed: UI runtime LSP feature-toggle state removed from active SQL path.
 - Completed: formal pre-commit smoke/regression pass for SQL LSP behavior (`docs/SQL_LSP_SMOKE_EXECUTION_REPORT_2026-02-19.md`).
-- Started: LSP diagnostics rendering in `SqlCodeMirror` via `textDocument/publishDiagnostics` (hover still pending).
+- Completed: LSP diagnostics rendering in `SqlCodeMirror` via `textDocument/publishDiagnostics`.
+- Completed: LSP hover rendering in `SqlCodeMirror` via `textDocument/hover`.
 
 ## 7. Phase Plan (Updated)
 
@@ -197,10 +198,10 @@ Execution artifact:
 ## 8. Open Decisions
 
 - Whether to keep Monaco as long-term JSON-only editor or migrate JSON later.
-- Hover support scope and UX for first diagnostics-enabled CodeMirror release.
+- Whether hover formatting should stay plain text or move to markdown rendering (with sanitization).
 
 Current working default:
-- Release scope is completion + diagnostics, with hover deferred.
+- Release scope is completion + diagnostics + hover.
 
 ## 9. Source Pointers (Current)
 

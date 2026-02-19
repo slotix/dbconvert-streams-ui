@@ -32,6 +32,7 @@ Use this report for every pre-merge/pre-release SQL editor validation pass.
 | 8 | switch `Run on` DB, then `SELECT * FROM |` + `Ctrl+Space` | list reflects selected DB |  |  |
 | 9 | 3-5 cycles: tab switch + DB switch + `Ctrl+Space` | no dead UI/focus lock |  |  |
 | 10 | `Ctrl+A`, mouse selection, backspace/edit | selection visible, editing works |  |  |
+| 11 | hover known token in valid query context | hover tooltip appears; no freeze |  |  |
 
 ## Observed Issues
 
@@ -44,4 +45,3 @@ Use this report for every pre-merge/pre-release SQL editor validation pass.
 - Overall: `PASS` / `FAIL`
 - Blocking issues:
 - Follow-ups:
-

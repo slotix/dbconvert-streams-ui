@@ -26,7 +26,7 @@ import { getBackendUrl } from '@/utils/environment'
 import { getOrCreateInstallId } from '@/utils/installId'
 import { basicSetup } from 'codemirror'
 import { EditorState, Compartment } from '@codemirror/state'
-import { EditorView, keymap } from '@codemirror/view'
+import { EditorView, hoverTooltip, keymap } from '@codemirror/view'
 import { sql, MySQL, PostgreSQL } from '@codemirror/lang-sql'
 import { oneDark } from '@codemirror/theme-one-dark'
 import { type Diagnostic, setDiagnostics } from '@codemirror/lint'
@@ -43,6 +43,8 @@ const DID_CHANGE_DEBOUNCE_MS = 150
 const MAX_LSP_MESSAGE_CHARS = 250_000
 const LSP_TRIGGER_KIND_INVOKED = 1
 const LSP_TRIGGER_KIND_TRIGGER_CHARACTER = 2
+const HOVER_REQUEST_DELAY_MS = 280
+const MAX_HOVER_TEXT_CHARS = 4_000
 
 interface LspPosition {
   line: number
@@ -83,6 +85,27 @@ interface LspDiagnostic {
 interface LspPublishDiagnosticsParams {
   uri?: string
   diagnostics?: LspDiagnostic[]
+}
+
+interface LspMarkedStringObject {
+  language?: string
+  value?: string
+}
+
+interface LspMarkupContent {
+  kind?: string
+  value?: string
+}
+
+type LspHoverContents =
+  | string
+  | LspMarkedStringObject
+  | LspMarkupContent
+  | Array<string | LspMarkedStringObject>
+
+interface LspHoverResult {
+  contents?: LspHoverContents
+  range?: LspRange
 }
 
 interface JsonRpcResponse {
@@ -337,6 +360,43 @@ function clearLspDiagnostics() {
   applyLspDiagnostics([])
 }
 
+function normalizeHoverText(value: string): string {
+  if (!value) {
+    return ''
+  }
+  const normalized = value.split('\r\n').join('\n').trim()
+  if (normalized.length <= MAX_HOVER_TEXT_CHARS) {
+    return normalized
+  }
+  return `${normalized.slice(0, MAX_HOVER_TEXT_CHARS)}...`
+}
+
+function toHoverText(contents: LspHoverContents | undefined): string {
+  if (!contents) {
+    return ''
+  }
+  if (typeof contents === 'string') {
+    return normalizeHoverText(contents)
+  }
+  if (Array.isArray(contents)) {
+    return normalizeHoverText(
+      contents
+        .map((entry) => {
+          if (typeof entry === 'string') {
+            return entry
+          }
+          return entry.value || ''
+        })
+        .filter(Boolean)
+        .join('\n\n')
+    )
+  }
+  if (typeof contents.value === 'string') {
+    return normalizeHoverText(contents.value)
+  }
+  return ''
+}
+
 function getHasSelection(state: EditorState): boolean {
   return !state.selection.main.empty
 }
@@ -414,7 +474,7 @@ function reportLspUnavailable(error: unknown) {
   }
   if (!lspUnavailableWarningShown) {
     commonStore.showNotification(
-      'SQL LSP unavailable. Autocomplete is disabled until LSP becomes available.',
+      'SQL LSP unavailable. Autocomplete and hover are disabled until LSP becomes available.',
       'warning'
     )
     lspUnavailableWarningShown = true
@@ -582,6 +642,58 @@ function getLspAutocompletionExtension() {
   })
 }
 
+function getLspHoverExtension() {
+  return hoverTooltip(
+    async (view, pos) => {
+      if (!shouldEnableLsp.value || !lspReady) {
+        return null
+      }
+
+      flushPendingDidChangeNotification()
+
+      const response = await sendLspRequest('textDocument/hover', {
+        textDocument: { uri: textDocumentUri },
+        position: toLspPosition(view.state, pos)
+      }).catch(() => null)
+
+      const hover = response as LspHoverResult | null
+      if (!hover) {
+        return null
+      }
+
+      const text = toHoverText(hover.contents)
+      if (!text) {
+        return null
+      }
+
+      const start = hover.range?.start ? fromLspPosition(view.state, hover.range.start) : pos
+      const end = hover.range?.end ? fromLspPosition(view.state, hover.range.end) : pos
+      const tooltipFrom = Math.min(start, end)
+      const tooltipTo = Math.max(tooltipFrom + 1, Math.max(start, end))
+
+      return {
+        pos: tooltipFrom,
+        end: tooltipTo,
+        above: true,
+        create() {
+          const dom = document.createElement('div')
+          dom.className = 'sql-hover-tooltip'
+          dom.textContent = text
+          return { dom }
+        }
+      }
+    },
+    {
+      hoverTime: HOVER_REQUEST_DELAY_MS,
+      hideOnChange: true
+    }
+  )
+}
+
+function getLspEditorExtensions() {
+  return [getLspAutocompletionExtension(), getLspHoverExtension()]
+}
+
 function handleLspPublishDiagnostics(params: unknown) {
   const parsed = params as LspPublishDiagnosticsParams
   if (!parsed || parsed.uri !== textDocumentUri) {
@@ -662,6 +774,9 @@ async function initializeLspSession(sessionToken: number) {
             completionItem: {
               snippetSupport: true
             }
+          },
+          hover: {
+            contentFormat: ['markdown', 'plaintext']
           }
         }
       }
@@ -727,7 +842,7 @@ function refreshLspCompartment() {
     return
   }
   view.dispatch({
-    effects: lspCompartment.reconfigure(getLspAutocompletionExtension())
+    effects: lspCompartment.reconfigure(getLspEditorExtensions())
   })
 }
 
@@ -814,7 +929,7 @@ function createEditorState() {
       languageCompartment.of(getLanguageExtension()),
       readOnlyCompartment.of(EditorState.readOnly.of(props.readOnly)),
       themeCompartment.of(getThemeExtension(resolveDarkMode())),
-      lspCompartment.of(getLspAutocompletionExtension()),
+      lspCompartment.of(getLspEditorExtensions()),
       EditorView.updateListener.of((update) => {
         if (update.docChanged && !suppressModelSync) {
           emit('update:modelValue', update.state.doc.toString())
@@ -1031,6 +1146,23 @@ defineExpose({
   color: var(--sql-editor-text);
   box-shadow: 0 10px 35px rgba(0, 0, 0, 0.45);
   overflow: hidden;
+}
+
+:deep(.cm-tooltip.cm-tooltip-hover) {
+  border-radius: 10px;
+  border: 1px solid var(--sql-editor-popup-border);
+  background: var(--sql-editor-popup-bg);
+  color: var(--sql-editor-text);
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.4);
+  max-width: min(520px, 70vw);
+}
+
+:deep(.sql-hover-tooltip) {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 12.5px;
+  line-height: 1.45;
+  padding: 8px 10px;
 }
 
 :deep(.cm-tooltip-autocomplete ul li[aria-selected='true']) {

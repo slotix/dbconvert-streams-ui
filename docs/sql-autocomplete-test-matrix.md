@@ -42,14 +42,21 @@ Purpose: stable regression checklist for SQL completion behavior in current edit
 | Enter invalid SQL and wait for LSP push diagnostics | Inline diagnostic marker appears without UI freeze |
 | Change context/reconnect LSP | stale diagnostics are cleared |
 
-## 6) Theme Consistency
+## 6) Hover Baseline
+
+| Scenario | Expected |
+| --- | --- |
+| Hover known table/column token in valid query context | Hover tooltip appears with LSP content |
+| LSP unavailable/reconnecting | No freeze; hover gracefully absent |
+
+## 7) Theme Consistency
 
 | Theme | Expected |
 | --- | --- |
 | Dark | Editor background, caret, selection, and completion popup are readable and consistent with app palette |
 | Light | Same as above with light palette |
 
-## 7) LSP Session Health Verification
+## 8) LSP Session Health Verification
 
 Check API logs while testing:
 
@@ -64,7 +71,7 @@ Expected:
 Optional deep trace (if debug log level is enabled):
 - `[lsp]` lines from bridged `sqls` stderr
 
-## 8) Execution Script
+## 9) Execution Script
 
 Use and attach execution artifact:
 - `docs/SQL_LSP_SMOKE_EXECUTION_REPORT_TEMPLATE.md`
