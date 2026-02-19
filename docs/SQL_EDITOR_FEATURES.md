@@ -20,6 +20,15 @@ Context behavior:
 - Column suggestions are expected after known table scope (for example `a.` where `a` is defined alias).
 - In incomplete SQL contexts (for example `SELECT * fr`), suggestions can be limited; this is normal for LSP-first behavior.
 
+### 1.1) SQL diagnostics
+
+- LSP `textDocument/publishDiagnostics` messages are rendered as inline editor diagnostics.
+- Severity mapping:
+  - LSP `Error` -> editor `error`
+  - LSP `Warning` -> editor `warning`
+  - other severities -> editor `info`
+- Diagnostics are cleared when LSP session is reconnected/disposed.
+
 ### 2) SQL dialect-aware syntax highlighting
 
 The editor configures SQL language mode by selected source dialect:
@@ -64,6 +73,7 @@ Selection highlight and autocomplete colors are aligned to current app palette.
 - No guarantee of rich suggestions in syntactically incomplete context.
 - Column suggestions typically require table/alias scope.
 - Behavior can differ slightly between SQL dialects because completions come from LSP engine.
+- Hover tooltips are not enabled yet (next phase item).
 
 ## Smoke checklist (recommended before release)
 

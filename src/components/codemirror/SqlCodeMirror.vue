@@ -29,6 +29,7 @@ import { EditorState, Compartment } from '@codemirror/state'
 import { EditorView, keymap } from '@codemirror/view'
 import { sql, MySQL, PostgreSQL } from '@codemirror/lang-sql'
 import { oneDark } from '@codemirror/theme-one-dark'
+import { type Diagnostic, setDiagnostics } from '@codemirror/lint'
 import {
   autocompletion,
   startCompletion,
@@ -67,6 +68,23 @@ interface LspCompletionContext {
   triggerCharacter?: string
 }
 
+interface LspRange {
+  start?: LspPosition
+  end?: LspPosition
+}
+
+interface LspDiagnostic {
+  range?: LspRange
+  severity?: number
+  message?: string
+  source?: string
+}
+
+interface LspPublishDiagnosticsParams {
+  uri?: string
+  diagnostics?: LspDiagnostic[]
+}
+
 interface JsonRpcResponse {
   id?: number | string
   result?: unknown
@@ -74,6 +92,11 @@ interface JsonRpcResponse {
     code: number
     message: string
   }
+}
+
+interface JsonRpcNotification {
+  method?: string
+  params?: unknown
 }
 
 interface PendingRequest {
@@ -256,6 +279,62 @@ function toLspPosition(state: EditorState, position: number): LspPosition {
     line: Math.max(line.number - 1, 0),
     character: Math.max(position - line.from, 0)
   }
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max)
+}
+
+function fromLspPosition(state: EditorState, pos: LspPosition): number {
+  const safeLine = clamp(pos.line + 1, 1, Math.max(state.doc.lines, 1))
+  const line = state.doc.line(safeLine)
+  const safeCharacter = clamp(pos.character, 0, line.length)
+  return line.from + safeCharacter
+}
+
+function mapLspSeverity(severity: number | undefined): Diagnostic['severity'] {
+  switch (severity) {
+    case 1:
+      return 'error'
+    case 2:
+      return 'warning'
+    default:
+      return 'info'
+  }
+}
+
+function toCodeMirrorDiagnostic(state: EditorState, diagnostic: LspDiagnostic): Diagnostic | null {
+  if (!diagnostic.range?.start || !diagnostic.range?.end || !diagnostic.message) {
+    return null
+  }
+
+  const from = fromLspPosition(state, diagnostic.range.start)
+  const to = Math.max(from, fromLspPosition(state, diagnostic.range.end))
+
+  return {
+    from,
+    to,
+    severity: mapLspSeverity(diagnostic.severity),
+    message: diagnostic.message,
+    source: diagnostic.source
+  }
+}
+
+function applyLspDiagnostics(diagnostics: LspDiagnostic[]) {
+  const view = editorView.value
+  if (!view) {
+    return
+  }
+
+  const mapped = diagnostics
+    .map((diagnostic) => toCodeMirrorDiagnostic(view.state, diagnostic))
+    .filter((diagnostic): diagnostic is Diagnostic => diagnostic !== null)
+
+  view.dispatch(setDiagnostics(view.state, mapped))
+}
+
+function clearLspDiagnostics() {
+  applyLspDiagnostics([])
 }
 
 function getHasSelection(state: EditorState): boolean {
@@ -503,6 +582,24 @@ function getLspAutocompletionExtension() {
   })
 }
 
+function handleLspPublishDiagnostics(params: unknown) {
+  const parsed = params as LspPublishDiagnosticsParams
+  if (!parsed || parsed.uri !== textDocumentUri) {
+    return
+  }
+  applyLspDiagnostics(Array.isArray(parsed.diagnostics) ? parsed.diagnostics : [])
+}
+
+function handleLspNotification(notification: JsonRpcNotification) {
+  switch (notification.method) {
+    case 'textDocument/publishDiagnostics':
+      handleLspPublishDiagnostics(notification.params)
+      break
+    default:
+      break
+  }
+}
+
 function handleSocketMessage(rawData: unknown) {
   if (typeof rawData !== 'string') {
     return
@@ -518,6 +615,12 @@ function handleSocketMessage(rawData: unknown) {
     parsed = JSON.parse(rawData)
   } catch (error) {
     reportLspUnavailable(error)
+    return
+  }
+
+  const notification = parsed as JsonRpcNotification
+  if (typeof notification.method === 'string') {
+    handleLspNotification(notification)
     return
   }
 
@@ -600,6 +703,7 @@ function disconnectLspSession() {
   }
 
   rejectPendingRequests('SQL LSP session disposed')
+  clearLspDiagnostics()
 
   if (lspSocket) {
     try {
@@ -648,6 +752,9 @@ function connectLspSession() {
   lspSocket = socket
 
   socket.onmessage = (event) => {
+    if (!isActiveLspSession(sessionToken)) {
+      return
+    }
     handleSocketMessage(event.data)
   }
   socket.onerror = () => {
