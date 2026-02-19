@@ -27,6 +27,17 @@ export interface LspRange {
   end?: LspPosition
 }
 
+export interface LspLocation {
+  uri?: string
+  range?: LspRange
+}
+
+export interface LspLocationLink {
+  targetUri?: string
+  targetRange?: LspRange
+  targetSelectionRange?: LspRange
+}
+
 export interface LspDiagnostic {
   range?: LspRange
   severity?: number
@@ -58,6 +69,34 @@ export type LspHoverContents =
 export interface LspHoverResult {
   contents?: LspHoverContents
   range?: LspRange
+}
+
+export interface LspFormattingOptions {
+  tabSize?: number
+  insertSpaces?: boolean
+  trimTrailingWhitespace?: boolean
+  insertFinalNewline?: boolean
+  trimFinalNewlines?: boolean
+}
+
+export interface LspTextEdit {
+  range?: LspRange
+  newText?: string
+}
+
+export interface LspSignatureInformation {
+  label?: string
+  documentation?: unknown
+  parameters?: Array<{
+    label?: string | [number, number]
+    documentation?: unknown
+  }>
+}
+
+export interface LspSignatureHelpResult {
+  signatures?: LspSignatureInformation[]
+  activeSignature?: number
+  activeParameter?: number
 }
 
 export interface EditorDocLineLike {

@@ -54,6 +54,9 @@ Supported:
 | Shortcut | Action |
 |----------|--------|
 | `Ctrl+Space` | Trigger autocomplete manually |
+| `F12` | Go to definition (within current query buffer) |
+| `Ctrl+Shift+Space` / `Cmd+Shift+Space` | Trigger signature help manually |
+| `Ctrl+Alt+F` / `Cmd+Alt+F` | LSP format |
 | `Ctrl+Enter` / `Cmd+Enter` | Execute query (if enabled in host surface) |
 | `Shift+Enter` | Execute query (alternative) |
 | `Shift+Alt+F` | Format action callback |

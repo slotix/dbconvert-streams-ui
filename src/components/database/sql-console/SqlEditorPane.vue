@@ -13,16 +13,43 @@
         {{ isExecuting ? 'Running...' : hasSelectedSql ? 'Run selected' : 'Run' }}
       </button>
 
-      <button
-        :disabled="isFormatClickDebounced"
-        class="inline-flex items-center px-2 py-1.5 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded shadow-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500"
-        :title="formatButtonTitle"
-        @click="handleFormatClick"
-      >
-        <AlignLeft v-if="formatState !== 'compacted'" class="h-3.5 w-3.5" />
-        <AlignJustify v-else class="h-3.5 w-3.5" />
-        <span class="ml-1 hidden @[620px]/toolbar:inline">{{ formatButtonCaption }}</span>
-      </button>
+      <div ref="formatDropdownRef" class="relative inline-flex">
+        <button
+          :disabled="isFormatClickDebounced"
+          class="inline-flex items-center px-2 py-1.5 border border-gray-300 dark:border-gray-600 border-r-0 text-xs font-medium rounded-l shadow-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500"
+          :title="formatButtonTitle"
+          @click="handleFormatClick"
+        >
+          <Wand2 class="h-3.5 w-3.5" />
+          <span class="ml-1 hidden @[620px]/toolbar:inline">Format</span>
+        </button>
+
+        <button
+          :disabled="isFormatClickDebounced"
+          class="inline-flex items-center justify-center px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded-r shadow-sm text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500"
+          :class="formatState === 'compacted' ? 'text-teal-700 dark:text-teal-300' : ''"
+          :title="'More formatting options'"
+          @click.stop="toggleFormatMenu"
+        >
+          <ChevronDown class="h-3.5 w-3.5" />
+        </button>
+
+        <div
+          v-if="showFormatMenu"
+          ref="formatMenuRef"
+          class="absolute left-0 top-full mt-1 min-w-[140px] rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg z-[210] overflow-hidden"
+        >
+          <button
+            type="button"
+            class="w-full text-left px-3 py-2 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+            :title="compactButtonTitle"
+            @click="handleCompactClick"
+          >
+            <AlignJustify class="h-3.5 w-3.5" />
+            <span>Compact</span>
+          </button>
+        </div>
+      </div>
 
       <button
         :disabled="!hasQueryToCopy"
@@ -457,7 +484,7 @@
         @update:model-value="$emit('update:modelValue', $event)"
         @execute="emitExecute"
         @selection-change="hasSelectedSql = $event"
-        @format="$emit('format')"
+        @format="handleEditorFormatRequest"
       />
     </div>
   </div>
@@ -468,10 +495,9 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import SqlCodeMirror from '@/components/codemirror/SqlCodeMirror.vue'
 import type { SqlLspConnectionContext } from '@/composables/useSqlLspProviders'
 import type { QueryTemplate } from '@/components/console/queryTemplates'
-import type { QueryHistoryItem } from '@/composables/useConsoleTab'
+import type { FormatMode, QueryHistoryItem } from '@/composables/useConsoleTab'
 import {
   AlignJustify,
-  AlignLeft,
   Check,
   Copy,
   ChevronDown,
@@ -487,12 +513,25 @@ import {
   Play,
   Puzzle,
   Search,
-  Trash2
+  Trash2,
+  Wand2
 } from 'lucide-vue-next'
 
 type HistoryItem = QueryHistoryItem
 
 type Template = QueryTemplate
+type SqlEditorSelectionRange = {
+  startLineNumber: number
+  startColumn: number
+  endLineNumber: number
+  endColumn: number
+}
+type SqlEditorExpose = {
+  getCachedSelectionRange?: () => SqlEditorSelectionRange | null
+  hasSelection?: () => boolean
+  getSelectedSql?: () => string
+  formatDocumentWithLsp?: () => Promise<boolean> | boolean
+}
 type TemplateSection = 'Session' | 'Databases' | 'Files' | 'S3' | 'Joins' | 'Snippets'
 type TemplateIcon = 'session' | 'database' | 'file' | 's3' | 'join'
 const MYSQL_LOGO = '/images/db-logos/mysql.svg'
@@ -512,7 +551,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   'update:modelValue': [value: string]
   execute: [selectedSql?: string]
-  format: []
+  format: [mode?: FormatMode]
   'select-template': [query: string]
   'select-history': [item: HistoryItem]
   'rerun-history': [item: HistoryItem]
@@ -525,8 +564,10 @@ const emit = defineEmits<{
 const templates = computed(() => props.templates || [])
 const history = computed(() => props.history || [])
 
-const sqlEditorRef = ref()
+const sqlEditorRef = ref<SqlEditorExpose | null>(null)
 const hasSelectedSql = ref(false)
+const formatDropdownRef = ref<HTMLElement | null>(null)
+const formatMenuRef = ref<HTMLElement | null>(null)
 const templatesDropdownRef = ref<HTMLElement | null>(null)
 const templateMenuRef = ref<HTMLElement | null>(null)
 const historyDropdownRef = ref<HTMLElement | null>(null)
@@ -535,6 +576,7 @@ const templateSearchInputRef = ref<HTMLInputElement | null>(null)
 const historySearchInputRef = ref<HTMLInputElement | null>(null)
 const showTemplates = ref(false)
 const showHistory = ref(false)
+const showFormatMenu = ref(false)
 const templateSearch = ref('')
 const historySearch = ref('')
 const activeTemplateKey = ref('')
@@ -551,10 +593,8 @@ const historyButtonTitle = computed(() =>
   history.value.length > 0 ? `History (${history.value.length})` : 'History'
 )
 const hasQueryToCopy = computed(() => props.modelValue.trim().length > 0)
-const formatButtonCaption = computed(() =>
-  props.formatState === 'compacted' ? 'Format' : 'Compact'
-)
-const formatButtonTitle = computed(() => `${formatButtonCaption.value} SQL (Shift+Alt+F)`)
+const formatButtonTitle = computed(() => 'Format SQL via LSP (Shift+Alt+F)')
+const compactButtonTitle = computed(() => 'Compact SQL')
 const isFormatClickDebounced = ref(false)
 const isCopyFeedbackVisible = ref(false)
 let formatDebounceTimer: ReturnType<typeof setTimeout> | null = null
@@ -940,6 +980,7 @@ function updateTemplateMenuPosition() {
 }
 
 function toggleTemplates() {
+  showFormatMenu.value = false
   if (showTemplates.value) {
     showTemplates.value = false
     return
@@ -949,6 +990,7 @@ function toggleTemplates() {
 
 function toggleHistory() {
   if (history.value.length === 0) return
+  showFormatMenu.value = false
   if (showHistory.value) {
     showHistory.value = false
     return
@@ -958,6 +1000,16 @@ function toggleHistory() {
   historySearch.value = ''
   updateHistoryMenuPosition()
   void focusHistorySearch()
+}
+
+function toggleFormatMenu() {
+  if (showFormatMenu.value) {
+    showFormatMenu.value = false
+    return
+  }
+  showFormatMenu.value = true
+  showTemplates.value = false
+  showHistory.value = false
 }
 
 function updateHistoryMenuPosition() {
@@ -1116,20 +1168,45 @@ function handleRunClick() {
   emit('execute', selectedSql)
 }
 
-function handleFormatClick() {
+async function runFormatAction(mode: FormatMode) {
+  showFormatMenu.value = false
   if (isFormatClickDebounced.value) return
 
-  emit('format')
   isFormatClickDebounced.value = true
-
   if (formatDebounceTimer) {
     clearTimeout(formatDebounceTimer)
   }
-
   formatDebounceTimer = setTimeout(() => {
     isFormatClickDebounced.value = false
     formatDebounceTimer = null
   }, 180)
+
+  if (mode === 'format') {
+    try {
+      const applied = await sqlEditorRef.value?.formatDocumentWithLsp?.()
+      if (applied) {
+        emit('format', 'format')
+        return
+      }
+    } catch {
+      return
+    }
+    return
+  }
+
+  emit('format', 'compact')
+}
+
+function handleEditorFormatRequest() {
+  void runFormatAction('format')
+}
+
+function handleFormatClick() {
+  void runFormatAction('format')
+}
+
+function handleCompactClick() {
+  void runFormatAction('compact')
 }
 
 async function copyCurrentQuery() {
@@ -1226,11 +1303,16 @@ function handleClickOutside(e: MouseEvent) {
   const target = e.target as Node | null
   if (!target) return
 
+  const clickedInFormat = !!formatDropdownRef.value?.contains(target)
+  const clickedInFormatMenu = !!formatMenuRef.value?.contains(target)
   const clickedInTemplates = !!templatesDropdownRef.value?.contains(target)
   const clickedInTemplateMenu = !!templateMenuRef.value?.contains(target)
   const clickedInHistory = !!historyDropdownRef.value?.contains(target)
   const clickedInHistoryMenu = !!historyMenuRef.value?.contains(target)
 
+  if (!clickedInFormat && !clickedInFormatMenu) {
+    showFormatMenu.value = false
+  }
   if (!clickedInTemplates && !clickedInTemplateMenu) {
     showTemplates.value = false
   }

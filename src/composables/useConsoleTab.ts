@@ -1,7 +1,6 @@
 import { ref, computed, watch, onScopeDispose, type ComputedRef } from 'vue'
 import { useSqlConsoleStore } from '@/stores/sqlConsole'
 import type { QueryPurpose } from '@/stores/logs'
-import { format as formatSQL, type SqlLanguage } from 'sql-formatter'
 import { useSplitPaneResize } from './useSplitPaneResize'
 
 export type QueryHistoryMode = 'single' | 'federated' | 'file'
@@ -71,6 +70,8 @@ export interface ExecuteQueryResult {
   stats?: QueryStats | null
 }
 
+export type FormatMode = 'format' | 'compact'
+
 /**
  * Helper to detect query purpose from SQL for logging
  */
@@ -108,7 +109,6 @@ export function useConsoleTab(options: ConsoleTabOptions) {
     consoleKey: consoleKeyOption,
     historyKey: historyKeyOption,
     database: databaseOption,
-    dialect: dialectOption,
     getDefaultQuery = () => '',
     maxHistoryItems = 50
   } = options
@@ -129,14 +129,6 @@ export function useConsoleTab(options: ConsoleTabOptions) {
         ? databaseOption
         : databaseOption.value
   )
-  const dialect = computed(() =>
-    dialectOption === undefined
-      ? 'sql'
-      : typeof dialectOption === 'string'
-        ? dialectOption
-        : dialectOption.value
-  )
-
   // ========== Query State ==========
   const sqlQuery = ref('')
   const isExecuting = ref(false)
@@ -152,7 +144,6 @@ export function useConsoleTab(options: ConsoleTabOptions) {
       rowsAffected?: number
     }>
   >([])
-  const nextFormatMode = ref<'format' | 'compact'>('format')
   const formatState = ref<'formatted' | 'compacted'>('formatted')
   let formatTaskTimer: ReturnType<typeof setTimeout> | null = null
   const lastQueryStats = ref<QueryStats | null>(null)
@@ -179,10 +170,6 @@ export function useConsoleTab(options: ConsoleTabOptions) {
     sqlConsoleStore.getActiveTab(consoleKey.value, database.value)
   )
   let saveTimeout: ReturnType<typeof setTimeout> | null = null
-
-  watch(activeQueryTabId, () => {
-    nextFormatMode.value = 'format'
-  })
 
   // ========== Tab Sync ==========
   watch(
@@ -292,27 +279,6 @@ export function useConsoleTab(options: ConsoleTabOptions) {
   }
 
   // ========== Query Formatting ==========
-  // Map our dialect names to sql-formatter language names
-  function getFormatterLanguage(d: string): SqlLanguage {
-    const dialectMap: Record<string, SqlLanguage> = {
-      mysql: 'mysql',
-      mariadb: 'mariadb',
-      postgresql: 'postgresql',
-      pgsql: 'postgresql',
-      postgres: 'postgresql',
-      mssql: 'tsql',
-      sqlserver: 'tsql',
-      oracle: 'plsql',
-      snowflake: 'snowflake',
-      redshift: 'redshift',
-      bigquery: 'bigquery',
-      spark: 'spark',
-      duckdb: 'duckdb',
-      sqlite: 'sqlite'
-    }
-    return dialectMap[d.toLowerCase()] || 'sql'
-  }
-
   function compactSql(sql: string): string {
     const lines = sql.split('\n')
     const segments: Array<{ type: 'comment' | 'statement'; text: string }> = []
@@ -361,9 +327,8 @@ export function useConsoleTab(options: ConsoleTabOptions) {
     return output
   }
 
-  function formatQuery() {
-    const lang = getFormatterLanguage(dialect.value)
-    const appliedMode = nextFormatMode.value
+  function formatQuery(mode: FormatMode = 'format') {
+    const appliedMode = mode
     const sourceQuery = sqlQuery.value
 
     if (formatTaskTimer) {
@@ -373,17 +338,18 @@ export function useConsoleTab(options: ConsoleTabOptions) {
     formatTaskTimer = setTimeout(() => {
       formatTaskTimer = null
       try {
-        const nextQuery =
-          appliedMode === 'format'
-            ? formatSQL(sourceQuery, { language: lang })
-            : compactSql(sourceQuery)
+        if (appliedMode === 'format') {
+          formatState.value = 'formatted'
+          return
+        }
+
+        const nextQuery = compactSql(sourceQuery)
 
         if (nextQuery !== sqlQuery.value) {
           sqlQuery.value = nextQuery
         }
 
-        formatState.value = appliedMode === 'format' ? 'formatted' : 'compacted'
-        nextFormatMode.value = appliedMode === 'format' ? 'compact' : 'format'
+        formatState.value = 'compacted'
       } catch (e) {
         console.error('SQL formatting failed:', e)
       }

@@ -104,7 +104,7 @@
           :templates="queryTemplates"
           :history="queryHistory"
           @execute="handleExecute"
-          @format="formatQuery"
+          @format="handleFormatRequest"
           @select-template="insertTemplate"
           @select-history="insertHistoryQuery"
           @rerun-history="rerunHistoryQuery"
@@ -169,7 +169,7 @@ import { SqlQueryTabs, SqlEditorPane, SqlResultsPane } from '@/components/databa
 import FormSelect from '@/components/base/FormSelect.vue'
 import SlideOverPanel from '@/components/common/SlideOverPanel.vue'
 import ConnectionAliasPanel from './ConnectionAliasPanel.vue'
-import { useConsoleTab, type QueryHistoryItem } from '@/composables/useConsoleTab'
+import { useConsoleTab, type FormatMode, type QueryHistoryItem } from '@/composables/useConsoleTab'
 import { useConsoleSources } from '@/composables/useConsoleSources'
 import { useQueryExecution } from '@/composables/useQueryExecution'
 import { useSqlExecutionContextSelector } from '@/composables/useSqlExecutionContextSelector'
@@ -624,6 +624,11 @@ async function rerunHistoryQuery(item: QueryHistoryItem) {
 
 async function handleExecute(selectedSql?: string) {
   await executeQuery(selectedSql)
+}
+
+function handleFormatRequest(mode?: FormatMode) {
+  if (!mode) return
+  formatQuery(mode)
 }
 
 // ========== Lifecycle ==========
