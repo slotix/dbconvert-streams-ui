@@ -427,7 +427,7 @@ import connectionsApi from '@/api/connections'
 import FormSelect from '@/components/base/FormSelect.vue'
 import type { Connection } from '@/types/connections'
 import type { ConnectionMapping } from '@/api/federated'
-import type { SelectOption } from '@/components/base/FormSelect.vue'
+import type { SelectOption } from '@/components/base/formSelectTypes'
 import { generateTypeBasedAlias } from '@/utils/federatedUtils'
 import {
   getConnectionKindFromSpec,

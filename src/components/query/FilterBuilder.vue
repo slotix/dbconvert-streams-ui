@@ -194,7 +194,7 @@
 import { ref, computed, watch } from 'vue'
 import { ArrowDown, ArrowUp, X } from 'lucide-vue-next'
 import FormSelect from '@/components/base/FormSelect.vue'
-import type { SelectOption } from '@/components/base/FormSelect.vue'
+import type { SelectOption } from '@/components/base/formSelectTypes'
 import type { ColumnDef, SortCondition, FilterCondition } from './types'
 import {
   operatorToSql as sharedOperatorToSql,

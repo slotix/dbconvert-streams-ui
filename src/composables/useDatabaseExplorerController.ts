@@ -2,7 +2,6 @@ import { computed, onMounted, onUnmounted, ref, watch, type Ref } from 'vue'
 import type { Router } from 'vue-router'
 import { getConnectionHost, getConnectionPort, getConnectionDatabase } from '@/utils/specBuilder'
 import { useExplorerViewStateStore } from '@/stores/explorerViewState'
-import type SearchInput from '@/components/common/SearchInput.vue'
 import type { useExplorerState } from '@/composables/useExplorerState'
 import type { useSidebar } from '@/composables/useSidebar'
 import type { useRecentConnections } from '@/composables/useRecentConnections'
@@ -25,6 +24,7 @@ type ConnectionsStore = ReturnType<typeof useConnectionsStore>
 type PaneTabsStore = ReturnType<typeof usePaneTabsStore>
 type NavigationStore = ReturnType<typeof useExplorerNavigationStore>
 type FileExplorerStore = ReturnType<typeof useFileExplorerStore>
+type FocusableSearchInput = { focus: () => void }
 
 interface UseDatabaseExplorerControllerOptions {
   router: Router
@@ -35,7 +35,7 @@ interface UseDatabaseExplorerControllerOptions {
   fileExplorerStore: FileExplorerStore
   commonStore: CommonStore
   sidebar: SidebarManager
-  searchInputRef: Ref<InstanceType<typeof SearchInput> | null>
+  searchInputRef: Ref<FocusableSearchInput | null>
   recentConnectionsManager: RecentConnectionsManager
   alwaysOpenNewTab: Ref<boolean>
 }

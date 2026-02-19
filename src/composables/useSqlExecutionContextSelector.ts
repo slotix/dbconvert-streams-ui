@@ -1,6 +1,6 @@
 import { computed, watch, type ComputedRef, type Ref, type WritableComputedRef } from 'vue'
 import type { ConnectionMapping } from '@/api/federated'
-import type { SelectOption, SelectValueOption } from '@/components/base/FormSelect.vue'
+import type { SelectOption, SelectValueOption } from '@/components/base/formSelectTypes'
 
 const EXECUTION_CONTEXT_STORAGE_KEY = 'explorer.sqlExecutionContext'
 

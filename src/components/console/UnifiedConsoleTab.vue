@@ -174,11 +174,12 @@ import FormSelect from '@/components/base/FormSelect.vue'
 import SlideOverPanel from '@/components/common/SlideOverPanel.vue'
 import ConnectionAliasPanel from './ConnectionAliasPanel.vue'
 import { useConsoleTab, type QueryHistoryItem } from '@/composables/useConsoleTab'
-import { useConsoleSources, type ConsoleMode } from '@/composables/useConsoleSources'
+import { useConsoleSources } from '@/composables/useConsoleSources'
 import { useQueryExecution } from '@/composables/useQueryExecution'
 import { useSqlExecutionContextSelector } from '@/composables/useSqlExecutionContextSelector'
 import { useSqlConsoleTabName } from '@/composables/useSqlConsoleTabName'
 import { useSqlSourcePresentation } from '@/composables/useSqlSourcePresentation'
+import type { ConsoleMode, DatabaseScope, FileConnectionType } from './types'
 import {
   getConnectionKindFromSpec,
   getSqlDialectFromConnection,
@@ -200,11 +201,6 @@ type ScopedSourceReadiness = {
   ready: boolean
   reason?: 'missing-folder-scope'
 }
-
-// ========== Props ==========
-export type { ConsoleMode }
-export type DatabaseScope = 'database' | 'connection'
-export type FileConnectionType = 'files' | 's3'
 
 const props = defineProps<{
   connectionId: string

@@ -33,27 +33,12 @@ import {
   ListboxLabel
 } from '@headlessui/vue'
 import { Check, ChevronDown } from 'lucide-vue-next'
-
-export interface SelectValueOption {
-  type?: 'option'
-  value: string | number
-  label: string
-  selectedLabel?: string
-  disabled?: boolean
-  icon?: string // Optional icon URL or component name
-  indented?: boolean
-}
-
-export interface SelectHeaderOption {
-  type: 'header'
-  label: string
-}
-
-export interface SelectDividerOption {
-  type: 'divider'
-}
-
-export type SelectOption = SelectValueOption | SelectHeaderOption | SelectDividerOption
+import type {
+  SelectDividerOption,
+  SelectHeaderOption,
+  SelectOption,
+  SelectValueOption
+} from './formSelectTypes'
 
 interface Props {
   modelValue?: string | number | null
@@ -104,8 +89,11 @@ function getOptionKey(option: SelectOption, index: number): string {
   return `option:${String(option.value)}`
 }
 
-const selectedOption = computed(() => {
-  return props.options.find((opt) => isValueOption(opt) && opt.value === props.modelValue) || null
+const selectedOption = computed<SelectValueOption | null>(() => {
+  const match = props.options.find((opt): opt is SelectValueOption => {
+    return isValueOption(opt) && opt.value === props.modelValue
+  })
+  return match ?? null
 })
 
 const handleChange = (option: SelectValueOption | null) => {
