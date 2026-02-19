@@ -17,7 +17,6 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useThemeStore } from '@/stores/theme'
 import { useCommonStore } from '@/stores/common'
-import { useEditorPreferencesStore } from '@/stores/editorPreferences'
 import {
   buildSqlLspWebSocketUrl,
   getSqlLspConnectionContextSignature,
@@ -118,7 +117,6 @@ const editorHost = ref<HTMLElement | null>(null)
 const editorView = ref<EditorView | null>(null)
 const themeStore = useThemeStore()
 const commonStore = useCommonStore()
-const editorPreferencesStore = useEditorPreferencesStore()
 
 const languageCompartment = new Compartment()
 const readOnlyCompartment = new Compartment()
@@ -151,10 +149,7 @@ const textDocumentUri = `inmemory://sql/${Date.now()}-${Math.random().toString(3
 
 const lspContextSignature = computed(() => getSqlLspConnectionContextSignature(props.lspContext))
 const shouldEnableLsp = computed(
-  () =>
-    props.enableSqlProviders &&
-    editorPreferencesStore.sqlLspEnabled &&
-    Boolean(lspContextSignature.value)
+  () => props.enableSqlProviders && Boolean(lspContextSignature.value)
 )
 
 const containerStyle = computed(() => {

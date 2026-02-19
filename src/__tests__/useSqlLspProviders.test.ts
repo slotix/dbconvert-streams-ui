@@ -1,21 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildSqlLspWebSocketUrl,
-  getSqlLspConnectionContextSignature,
-  isSqlLspEnabled
+  getSqlLspConnectionContextSignature
 } from '@/composables/useSqlLspProviders'
-
-describe('isSqlLspEnabled', () => {
-  it('prefers runtime flag when provided', () => {
-    expect(isSqlLspEnabled('true', 'false')).toBe(true)
-    expect(isSqlLspEnabled('off', 'true')).toBe(false)
-  })
-
-  it('falls back to build-time flag', () => {
-    expect(isSqlLspEnabled(undefined, '1')).toBe(true)
-    expect(isSqlLspEnabled(undefined, 'false')).toBe(false)
-  })
-})
 
 describe('buildSqlLspWebSocketUrl', () => {
   it('builds ws URL for http backend base path', () => {

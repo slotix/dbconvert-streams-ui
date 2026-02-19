@@ -44,7 +44,7 @@ What changed from original audit:
 - Legacy custom SQL provider code was removed.
 - SQL editor surfaces were migrated to `SqlCodeMirror`.
 - Monaco SQL editor component was removed from active code path.
-- Runtime LSP toggle in UI settings was effectively retired (startup-config model only).
+- Runtime LSP toggle path was removed; SQL LSP is always active when direct DB context is available.
 
 ## 4. LSP in Go Binaries: Status
 
@@ -105,6 +105,7 @@ Phase 0 status (2026-02-19):
 - Completed: temporary SQL LSP probe UI controls removed.
 - Completed: temporary backend LSP session debug logs removed.
 - Completed: backend dead `dialect` parsing in LSP WS request struct removed.
+- Completed: desktop runtime SQL LSP enable/disable env toggle removed (`DBCONVERT_STREAMS_DESKTOP_SQL_LSP_ENABLED` and injected `VITE_SQL_LSP_ENABLED`).
 
 Phase 1-3 status snapshot (2026-02-19):
 - Completed: `SqlCodeMirror` foundation (value binding, selection API, run/format shortcuts, theme, fill-parent).
@@ -116,6 +117,8 @@ Phase 4 status snapshot (2026-02-19):
 - Completed: desktop freeze path moved away from Monaco SQL suggest flow by switching SQL surfaces to CodeMirror.
 - Completed: selection and focus behavior hardened after screenshot/debug iterations (`closeOnBlur` restored for normal UX).
 - Completed: editor/completion visuals aligned to current app light/dark palette.
+- Completed: legacy frontend metadata-refresh path for SQL autocomplete removed from `UnifiedConsoleTab` (LSP context-only flow).
+- Completed: UI runtime LSP feature-toggle state removed from active SQL path.
 - In progress: formal pre-commit smoke/regression pass for SQL LSP behavior.
 
 ## 7. Phase Plan (Updated)
@@ -192,7 +195,6 @@ Execution artifact:
 ## 8. Open Decisions
 
 - Whether to keep Monaco as long-term JSON-only editor or migrate JSON later.
-- Whether to keep any Monaco SQL fallback path behind hidden flag during rollout.
 - Minimum diagnostic scope for first CodeMirror+LSP release (completion-only vs completion+hover).
 
 Current working default:
@@ -208,7 +210,6 @@ UI:
 - `src/components/stream/wizard/CustomQueryEditor.vue`
 - `src/components/database/SqlCodeBlock.vue`
 - `src/components/console/UnifiedConsoleTab.vue`
-- `src/stores/editorPreferences.ts`
 
 Backend:
 - `cmd/stream-api/router.go`

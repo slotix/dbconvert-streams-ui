@@ -4,22 +4,6 @@ function normalizeSqlLspContextPart(value: string | undefined): string {
   return value?.trim() || ''
 }
 
-function normalizeFlag(value: unknown): boolean {
-  if (typeof value !== 'string') {
-    return false
-  }
-  const normalized = value.trim().toLowerCase()
-  return normalized === '1' || normalized === 'true' || normalized === 'yes' || normalized === 'on'
-}
-
-function getRuntimeLspFlag(): string | undefined {
-  if (typeof window === 'undefined' || !window.ENV) {
-    return undefined
-  }
-  const value = window.ENV.VITE_SQL_LSP_ENABLED
-  return typeof value === 'string' ? value : undefined
-}
-
 function trimTrailingSlashes(path: string): string {
   let result = path
   for (; result.length > 0 && result.endsWith('/'); ) {
@@ -66,16 +50,6 @@ export function getSqlLspConnectionContextSignature(context?: SqlLspConnectionCo
     return ''
   }
   return `${connectionId}::${database}`
-}
-
-export function isSqlLspEnabled(runtimeValue?: string, buildValue?: string): boolean {
-  const runtimeFlag = runtimeValue ?? getRuntimeLspFlag()
-  if (runtimeFlag !== undefined) {
-    return normalizeFlag(runtimeFlag)
-  }
-
-  const buildFlag = buildValue ?? import.meta.env.VITE_SQL_LSP_ENABLED
-  return normalizeFlag(buildFlag)
 }
 
 export function buildSqlLspWebSocketUrl(params: {

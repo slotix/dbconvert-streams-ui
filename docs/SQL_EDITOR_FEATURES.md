@@ -57,6 +57,7 @@ Selection highlight and autocomplete colors are aligned to current app palette.
 - SQL intelligence source is backend LSP process (`sqls`).
 - Frontend does not implement a custom SQL parser/state machine for completions.
 - Websocket auth for LSP uses existing API auth context and install metadata.
+- SQL LSP enablement is context-driven (direct DB context present), not a user runtime toggle.
 
 ## Expected limitations (normal)
 
