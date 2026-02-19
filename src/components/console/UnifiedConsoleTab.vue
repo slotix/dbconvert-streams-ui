@@ -97,7 +97,6 @@
         <SqlEditorPane
           v-model="sqlQuery"
           :dialect="currentDialect"
-          :schema-context="schemaContext"
           :lsp-context="sqlLspContext"
           :is-executing="isExecuting"
           :format-state="formatState"
@@ -162,7 +161,6 @@
 <script setup lang="ts">
 import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue'
 import { ChevronRight } from 'lucide-vue-next'
-import type { SchemaContext } from '@/types/sqlSchemaContext'
 import type { SqlLspConnectionContext } from '@/composables/useSqlLspProviders'
 import { useConnectionsStore } from '@/stores/connections'
 import { useConfirmDialogStore } from '@/stores/confirmDialog'
@@ -571,27 +569,6 @@ const federatedColumnsMap = ref<
   Record<string, Array<{ name: string; type: string; nullable: boolean }>>
 >({})
 let schemaLoadRequestId = 0
-
-const schemaContext = computed<SchemaContext>(() => {
-  if (props.mode === 'file') {
-    return { tables: [], columns: {}, dialect: 'sql' }
-  }
-  if (editorPreferencesStore.sqlLspEnabled) {
-    return { tables: [], columns: {}, dialect: currentDialect.value }
-  }
-  if (useFederatedEngine.value) {
-    return {
-      tables: federatedTablesList.value,
-      columns: federatedColumnsMap.value,
-      dialect: 'sql'
-    }
-  }
-  return {
-    tables: tablesList.value,
-    columns: columnsMap.value,
-    dialect: currentDialect.value
-  }
-})
 
 const sqlLspContext = computed<SqlLspConnectionContext | undefined>(() => {
   if (props.mode !== 'database') {

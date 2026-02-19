@@ -20,7 +20,7 @@ vi.mock('@/stores/confirmDialog', () => ({
 
 vi.mock('@/stores/editorPreferences', () => ({
   useEditorPreferencesStore: () => ({
-    sqlLspEnabled: false
+    sqlLspEnabled: true
   })
 }))
 
@@ -243,7 +243,7 @@ async function getMockConsoleSourcesState(): Promise<MockConsoleSourcesState> {
   return module.__mockConsoleSourcesState
 }
 
-describe('UnifiedConsoleTab schema context isolation in multisource switching', () => {
+describe('UnifiedConsoleTab SQL LSP context isolation in multisource switching', () => {
   beforeEach(() => {
     vi.useFakeTimers()
     vi.clearAllMocks()
@@ -256,7 +256,7 @@ describe('UnifiedConsoleTab schema context isolation in multisource switching', 
     vi.useRealTimers()
   })
 
-  it('keeps PostgreSQL fields after quick pg -> mysql -> pg switch when stale mysql metadata resolves last', async () => {
+  it('keeps PostgreSQL LSP context after quick pg -> mysql -> pg switch', async () => {
     const __mockConsoleSourcesState = await getMockConsoleSourcesState()
 
     __mockConsoleSourcesState.selectedConnections.value = [
@@ -312,22 +312,20 @@ describe('UnifiedConsoleTab schema context isolation in multisource switching', 
     await nextTick()
 
     const sqlEditorPane = wrapper.findComponent({ name: 'SqlEditorPane' })
-    const schemaContext = sqlEditorPane.props('schemaContext') as {
-      tables: Array<{ name: string }>
-      columns: Record<string, Array<{ name: string }>>
-      dialect: string
+    const lspContext = sqlEditorPane.props('lspContext') as {
+      connectionId: string
+      database: string
     }
 
-    const tableNames = schemaContext.tables.map((table) => table.name)
-
-    expect(schemaContext.dialect).toBe('pgsql')
-    expect(tableNames).toContain('pg_final_table')
-    expect(tableNames).not.toContain('mysql_stale_table')
-    expect(schemaContext.columns.pg_final_table?.[0]?.name).toBe('pg_final_col')
+    expect(lspContext).toEqual({
+      connectionId: 'pg-1',
+      database: 'pg_db'
+    })
+    expect(connections.getMetadata).not.toHaveBeenCalled()
 
     wrapper.unmount()
   })
-  it('keeps MySQL fields after quick mysql -> pg -> mysql switch when stale pg metadata resolves last', async () => {
+  it('keeps MySQL LSP context after quick mysql -> pg -> mysql switch', async () => {
     const __mockConsoleSourcesState = await getMockConsoleSourcesState()
 
     __mockConsoleSourcesState.selectedConnections.value = [
@@ -383,23 +381,21 @@ describe('UnifiedConsoleTab schema context isolation in multisource switching', 
     await nextTick()
 
     const sqlEditorPane = wrapper.findComponent({ name: 'SqlEditorPane' })
-    const schemaContext = sqlEditorPane.props('schemaContext') as {
-      tables: Array<{ name: string }>
-      columns: Record<string, Array<{ name: string }>>
-      dialect: string
+    const lspContext = sqlEditorPane.props('lspContext') as {
+      connectionId: string
+      database: string
     }
 
-    const tableNames = schemaContext.tables.map((table) => table.name)
-
-    expect(schemaContext.dialect).toBe('mysql')
-    expect(tableNames).toContain('mysql_final_table')
-    expect(tableNames).not.toContain('pg_stale_table')
-    expect(schemaContext.columns.mysql_final_table?.[0]?.name).toBe('mysql_final_col')
+    expect(lspContext).toEqual({
+      connectionId: 'my-1',
+      database: 'my_db'
+    })
+    expect(connections.getMetadata).not.toHaveBeenCalled()
 
     wrapper.unmount()
   })
 
-  it('loads federated schema when restored mappings omit database values', async () => {
+  it('does not provide direct LSP context in federated mode', async () => {
     const __mockConsoleSourcesState = await getMockConsoleSourcesState()
 
     __mockConsoleSourcesState.runMode.value = 'federated'
@@ -430,21 +426,9 @@ describe('UnifiedConsoleTab schema context isolation in multisource switching', 
     await nextTick()
 
     const sqlEditorPane = wrapper.findComponent({ name: 'SqlEditorPane' })
-    const schemaContext = sqlEditorPane.props('schemaContext') as {
-      tables: Array<{ name: string }>
-      columns: Record<string, Array<{ name: string }>>
-      dialect: string
-    }
-
-    const tableNames = schemaContext.tables.map((table) => table.name)
-
-    expect(schemaContext.dialect).toBe('sql')
-    expect(tableNames).toContain('my1.actor')
-    expect(tableNames).toContain('pg1.film')
-    expect(schemaContext.columns['my1.actor']?.[0]?.name).toBe('first_name')
-    expect(schemaContext.columns['pg1.film']?.[0]?.name).toBe('title')
-    expect(connections.getMetadata).toHaveBeenCalledWith('my-1', 'my_db', false)
-    expect(connections.getMetadata).toHaveBeenCalledWith('pg-1', 'pg_db', false)
+    const lspContext = sqlEditorPane.props('lspContext')
+    expect(lspContext).toBeUndefined()
+    expect(connections.getMetadata).not.toHaveBeenCalled()
 
     wrapper.unmount()
   })

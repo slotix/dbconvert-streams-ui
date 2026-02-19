@@ -200,8 +200,9 @@ export function useSqlExecutionContextSelector(
         if (connectionId) {
           federatedScopeConnectionId.value = connectionId
         }
-
-        setRunMode('federated')
+        const hasSingleScopedTarget =
+          scopedExecutionOptions.value.length === 1 && directExecutionOptions.value.length === 0
+        setRunMode(hasSingleScopedTarget ? 'single' : 'federated')
         return
       }
 

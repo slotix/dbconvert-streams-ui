@@ -158,7 +158,6 @@
             <SqlCodeMirror
               v-model="activeQuery.query"
               :dialect="connectionDialect"
-              :schema-context="schemaContext"
               :lsp-context="sqlLspContext"
               :enable-sql-providers="true"
               :enable-execute="true"
@@ -310,9 +309,7 @@ import { SqlQueryTabs } from '@/components/database/sql-console'
 import FormSelect from '@/components/base/FormSelect.vue'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
-import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import type { QuerySource } from '@/types/streamConfig'
-import type { SchemaContext } from '@/types/sqlSchemaContext'
 import type { SqlLspConnectionContext } from '@/composables/useSqlLspProviders'
 import type { ConnectionMapping } from '@/api/federated'
 import { executeFederatedQuery } from '@/api/federated'
@@ -334,7 +331,6 @@ const props = withDefaults(defineProps<Props>(), {
 
 const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
-const navigationStore = useExplorerNavigationStore()
 const selectedTemplate = ref<string | number | null>('')
 const templateOptions = [
   { value: 'cte', label: 'CTE with aggregation' },
@@ -377,7 +373,6 @@ const activeTabId = ref<string>('')
 const isRunning = ref<number | null>(null)
 const previewErrors = ref<Record<number, string>>({})
 const previewData = ref<Record<number, { columns: string[]; rows: Record<string, unknown>[] }>>({})
-const schemaContext = ref<SchemaContext | undefined>()
 const {
   splitGrow: editorWidth,
   onDividerMouseDown: startResize,
@@ -494,43 +489,6 @@ const sqlLspContext = computed<SqlLspConnectionContext | undefined>(() => {
     database: sourceDatabase.value
   }
 })
-
-// Load schema context for autocomplete
-watch(
-  [sourceConnectionId, sourceDatabase],
-  async ([connId, db]) => {
-    if (connId && db) {
-      try {
-        await navigationStore.ensureMetadata(connId, db)
-        const metadata = navigationStore.getMetadata(connId, db)
-
-        if (metadata) {
-          schemaContext.value = {
-            tables: Object.keys(metadata.tables).map((name) => ({
-              name,
-              schema: metadata.tables[name].schema
-            })),
-            columns: Object.entries(metadata.tables).reduce(
-              (acc, [tableName, table]) => {
-                acc[tableName] = table.columns.map((col) => ({
-                  name: col.name,
-                  type: col.dataType,
-                  nullable: col.isNullable
-                }))
-                return acc
-              },
-              {} as Record<string, Array<{ name: string; type: string; nullable: boolean }>>
-            ),
-            dialect: connectionDialect.value
-          }
-        }
-      } catch (error) {
-        console.error('Failed to load schema metadata:', error)
-      }
-    }
-  },
-  { immediate: true }
-)
 
 // Methods
 const addQuery = () => {

@@ -18,7 +18,6 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useThemeStore } from '@/stores/theme'
 import { useCommonStore } from '@/stores/common'
 import { useEditorPreferencesStore } from '@/stores/editorPreferences'
-import type { SchemaContext } from '@/types/sqlSchemaContext'
 import {
   buildSqlLspWebSocketUrl,
   getSqlLspConnectionContextSignature,
@@ -92,7 +91,6 @@ interface Props {
   enableFormatAction?: boolean
   fillParent?: boolean
   height?: string
-  schemaContext?: SchemaContext
   lspContext?: SqlLspConnectionContext
   enableSqlProviders?: boolean
 }
@@ -105,7 +103,6 @@ const props = withDefaults(defineProps<Props>(), {
   enableFormatAction: false,
   fillParent: false,
   height: '200px',
-  schemaContext: undefined,
   lspContext: undefined,
   enableSqlProviders: true
 })

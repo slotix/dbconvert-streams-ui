@@ -449,7 +449,6 @@
         ref="sqlEditorRef"
         :model-value="modelValue"
         :dialect="dialect"
-        :schema-context="schemaContext"
         :lsp-context="lspContext"
         :enable-sql-providers="true"
         :enable-execute="true"
@@ -467,7 +466,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import SqlCodeMirror from '@/components/codemirror/SqlCodeMirror.vue'
-import type { SchemaContext } from '@/types/sqlSchemaContext'
 import type { SqlLspConnectionContext } from '@/composables/useSqlLspProviders'
 import type { QueryTemplate } from '@/components/console/queryTemplates'
 import type { QueryHistoryItem } from '@/composables/useConsoleTab'
@@ -503,7 +501,6 @@ const POSTGRES_LOGO = '/images/db-logos/postgresql.svg'
 const props = defineProps<{
   modelValue: string
   dialect: string
-  schemaContext: SchemaContext
   lspContext?: SqlLspConnectionContext
   isExecuting: boolean
   formatState?: 'formatted' | 'compacted'
