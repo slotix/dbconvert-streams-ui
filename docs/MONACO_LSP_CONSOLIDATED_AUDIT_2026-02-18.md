@@ -122,6 +122,9 @@ Phase 4 status snapshot (2026-02-19):
 - Completed: formal pre-commit smoke/regression pass for SQL LSP behavior (`docs/SQL_LSP_SMOKE_EXECUTION_REPORT_2026-02-19.md`).
 - Completed: LSP diagnostics rendering in `SqlCodeMirror` via `textDocument/publishDiagnostics`.
 - Completed: LSP hover integration in `SqlCodeMirror` via `textDocument/hover`.
+- Completed: LSP websocket auto-reconnect (backoff) in `SqlCodeMirror` on unexpected close.
+- Completed: `SqlCodeMirror` internals split into focused helper modules (`sqlCodeMirrorTypes`, `sqlCodeMirrorLspUtils`, `sqlCodeMirrorHoverUtils`) to reduce maintenance risk.
+- Completed: SQL LSP regression command now includes CodeMirror LSP/hover utility unit tests.
 
 ## 7. Phase Plan (Updated)
 
@@ -198,7 +201,9 @@ Execution artifact:
 ## 8. Open Decisions
 
 - Whether to keep Monaco as long-term JSON-only editor or migrate JSON later.
-- Whether hover formatting should stay plain text or move to markdown rendering (with sanitization).
+
+Resolved on 2026-02-19:
+- Hover formatting policy: keep markdown rendering with sanitized DOM output (including markdown table rendering) as default for SQL LSP hover in `SqlCodeMirror`.
 
 Current working default:
 - Release scope is completion + diagnostics + hover.
