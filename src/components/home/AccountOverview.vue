@@ -225,7 +225,7 @@
       >
         <div class="shrink-0">
           <div class="bg-teal-50 dark:bg-teal-900/30 rounded-lg p-3">
-            <BarChart3
+            <CircleUser
               class="h-6 w-6 text-teal-600 dark:text-teal-400"
               :stroke-width="iconStroke"
             />
@@ -345,7 +345,7 @@ import { useConfirmDialogStore } from '@/stores/confirmDialog'
 import { useLucideIcons } from '@/composables/useLucideIcons'
 import {
   AlertTriangle,
-  BarChart3,
+  CircleUser,
   Copy,
   CreditCard,
   ExternalLink,
