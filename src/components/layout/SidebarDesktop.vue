@@ -116,7 +116,11 @@
             isSidebarExpanded ? 'justify-start gap-3 px-3 w-full' : 'justify-center'
           ]"
         >
-          <BarChart3 :class="iconSizes.sidebarMenu" :stroke-width="iconStroke" aria-hidden="true" />
+          <CircleUser
+            :class="iconSizes.sidebarMenu"
+            :stroke-width="iconStroke"
+            aria-hidden="true"
+          />
           <span v-if="isSidebarExpanded" class="truncate">Account Overview</span>
           <span v-else class="sr-only">Account Overview</span>
           <!-- Tooltip -->
@@ -323,7 +327,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
-import { AlertCircle, BarChart3, FileText, Moon, Settings, Sun } from 'lucide-vue-next'
+import { AlertCircle, CircleUser, FileText, Moon, Settings, Sun } from 'lucide-vue-next'
 import { useCommonStore } from '@/stores/common'
 import { useLogsStore } from '@/stores/logs'
 import { useThemeStore } from '@/stores/theme'

@@ -67,7 +67,7 @@
                     class="w-full group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700"
                     @click="closeSidebar"
                   >
-                    <BarChart3
+                    <CircleUser
                       :class="[iconSizes.sidebarMenu, 'shrink-0']"
                       :stroke-width="iconStroke"
                       aria-hidden="true"
@@ -147,7 +147,7 @@
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { Dialog, DialogPanel, TransitionChild, TransitionRoot } from '@headlessui/vue'
-import { AlertCircle, BarChart3, FileText, X } from 'lucide-vue-next'
+import { AlertCircle, CircleUser, FileText, X } from 'lucide-vue-next'
 import ThemeToggle from '@/components/ThemeToggle.vue'
 import { useLogsStore } from '@/stores/logs'
 import { useDesktopMode } from '@/composables/useDesktopMode'
