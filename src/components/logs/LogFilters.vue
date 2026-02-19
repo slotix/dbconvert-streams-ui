@@ -162,7 +162,8 @@ function handleKeyboardShortcut(event: KeyboardEvent) {
     target.tagName === 'INPUT' ||
     target.tagName === 'TEXTAREA' ||
     target.isContentEditable ||
-    target.closest('.monaco-editor') !== null
+    target.closest('.monaco-editor') !== null ||
+    target.closest('.cm-editor') !== null
 
   // F: Focus search box
   if (event.key.toLowerCase() === 'f' && !isInputField) {

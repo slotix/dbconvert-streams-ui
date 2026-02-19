@@ -120,7 +120,7 @@
             <div class="flex flex-wrap gap-2">
               <div
                 v-for="conn in sourceConnections"
-                :key="conn.connectionId"
+                :key="`${conn.connectionId}:${conn.alias}`"
                 class="inline-flex items-center gap-1.5 px-2 py-1 text-xs bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded"
               >
                 <span class="font-mono font-semibold text-teal-600 dark:text-teal-400">{{
@@ -155,16 +155,15 @@
             class="border-r border-gray-200 dark:border-gray-700 min-h-0"
             :style="{ width: `${editorWidth}%` }"
           >
-            <SqlMonaco
+            <SqlCodeMirror
               v-model="activeQuery.query"
               :dialect="connectionDialect"
               :schema-context="schemaContext"
               :lsp-context="sqlLspContext"
-              :show-copy="false"
-              height="100%"
               :enable-sql-providers="true"
               :enable-execute="true"
               :enable-format-action="true"
+              fill-parent
             />
           </div>
 
@@ -306,7 +305,7 @@ import {
   RefreshCw,
   Sheet
 } from 'lucide-vue-next'
-import { SqlMonaco } from '@/components/monaco'
+import SqlCodeMirror from '@/components/codemirror/SqlCodeMirror.vue'
 import { SqlQueryTabs } from '@/components/database/sql-console'
 import FormSelect from '@/components/base/FormSelect.vue'
 import { useStreamsStore } from '@/stores/streamConfig'
@@ -314,7 +313,7 @@ import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import type { QuerySource } from '@/types/streamConfig'
 import type { SchemaContext } from '@/types/sqlSchemaContext'
-import type { SqlLspConnectionContext } from '@/composables/useMonacoSqlLspProviders'
+import type { SqlLspConnectionContext } from '@/composables/useSqlLspProviders'
 import type { ConnectionMapping } from '@/api/federated'
 import { executeFederatedQuery } from '@/api/federated'
 import connections from '@/api/connections'
@@ -492,8 +491,7 @@ const sqlLspContext = computed<SqlLspConnectionContext | undefined>(() => {
 
   return {
     connectionId: sourceConnectionId.value,
-    database: sourceDatabase.value,
-    dialect: connectionDialect.value
+    database: sourceDatabase.value
   }
 })
 

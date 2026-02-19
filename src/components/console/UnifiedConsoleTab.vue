@@ -56,7 +56,7 @@
         <div ref="sourcesPillsRef" class="sources-pills">
           <span
             v-for="pill in sourcePills"
-            :key="pill.connectionId"
+            :key="`${pill.connectionId}:${pill.alias}`"
             class="inline-flex shrink-0 items-center max-w-[140px] px-2 py-0.5 text-[11px] rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700"
           >
             <span class="truncate">{{ pill.alias }}</span>
@@ -163,7 +163,7 @@
 import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue'
 import { ChevronRight } from 'lucide-vue-next'
 import type { SchemaContext } from '@/types/sqlSchemaContext'
-import type { SqlLspConnectionContext } from '@/composables/useMonacoSqlLspProviders'
+import type { SqlLspConnectionContext } from '@/composables/useSqlLspProviders'
 import { useConnectionsStore } from '@/stores/connections'
 import { useConfirmDialogStore } from '@/stores/confirmDialog'
 import { useEditorPreferencesStore } from '@/stores/editorPreferences'
@@ -618,8 +618,7 @@ const sqlLspContext = computed<SqlLspConnectionContext | undefined>(() => {
 
   return {
     connectionId: direct.connectionId,
-    database,
-    dialect: currentDialect.value
+    database
   }
 })
 

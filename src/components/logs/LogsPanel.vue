@@ -357,7 +357,8 @@ function handleKeyboardShortcut(event: KeyboardEvent) {
     target.tagName === 'INPUT' ||
     target.tagName === 'TEXTAREA' ||
     target.isContentEditable ||
-    target.closest('.monaco-editor') !== null
+    target.closest('.monaco-editor') !== null ||
+    target.closest('.cm-editor') !== null
 
   // Only apply shortcuts for system logs view
   if (selectedView.value !== 'system') return

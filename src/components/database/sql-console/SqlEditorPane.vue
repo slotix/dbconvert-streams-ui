@@ -445,13 +445,12 @@
 
     <!-- SQL Editor -->
     <div class="flex-1 overflow-hidden bg-white dark:bg-gray-900 h-full min-h-0">
-      <SqlMonaco
+      <SqlCodeMirror
         ref="sqlEditorRef"
         :model-value="modelValue"
         :dialect="dialect"
         :schema-context="schemaContext"
         :lsp-context="lspContext"
-        :show-copy="false"
         :enable-sql-providers="true"
         :enable-execute="true"
         :enable-format-action="true"
@@ -467,9 +466,9 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import { SqlMonaco } from '@/components/monaco'
+import SqlCodeMirror from '@/components/codemirror/SqlCodeMirror.vue'
 import type { SchemaContext } from '@/types/sqlSchemaContext'
-import type { SqlLspConnectionContext } from '@/composables/useMonacoSqlLspProviders'
+import type { SqlLspConnectionContext } from '@/composables/useSqlLspProviders'
 import type { QueryTemplate } from '@/components/console/queryTemplates'
 import type { QueryHistoryItem } from '@/composables/useConsoleTab'
 import {

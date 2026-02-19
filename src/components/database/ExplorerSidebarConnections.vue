@@ -361,7 +361,8 @@ function isTypingTarget(target: EventTarget | null): boolean {
     el.tagName === 'INPUT' ||
     el.tagName === 'TEXTAREA' ||
     el.isContentEditable ||
-    el.closest('.monaco-editor') !== null
+    el.closest('.monaco-editor') !== null ||
+    el.closest('.cm-editor') !== null
   )
 }
 

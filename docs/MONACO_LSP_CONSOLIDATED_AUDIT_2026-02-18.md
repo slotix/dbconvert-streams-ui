@@ -1,230 +1,220 @@
 # Monaco + SQL Editor Consolidated Audit
 
-Date: February 18, 2026
-Scope: `dbconvert-streams-ui` + `dbconvert-stream` (`stream-api`, `stream-desktop`)
+Original date: February 18, 2026  
+Last updated: February 19, 2026  
+Scope: `dbconvert-streams-ui` + `dbconvert-stream` (`stream-api`, desktop runtime)
 
-## 1. Executive Summary
+## 1. Executive Summary (Updated)
 
 Current recommendation:
-- Keep Monaco for now.
-- Move SQL intelligence from custom frontend logic to LSP-backed backend.
-- Do not migrate to CodeMirror/Ace before LSP extraction, unless bundle size remains a hard blocker after LSP rollout.
+- Stop investing in Monaco SQL completion path.
+- Keep backend SQL LSP (`sqls` over `/api/v1/lsp/ws`) as the intelligence backend.
+- Migrate SQL editor UX from Monaco to CodeMirror 6.
+- Keep Monaco only where already stable (JSON/editor/viewers) until a separate migration pass.
 
-Why:
-- Monaco is used, but mostly for core editor primitives.
-- The real complexity/debt is custom SQL intelligence in frontend (`useMonacoSqlProviders.ts`), not the editor widget itself.
-- Replacing Monaco now is high rewrite cost with moderate practical gain.
+Why this changed:
+- LSP backend transport works.
+- Direct LSP probes (`initialize` and `textDocument/completion`) work repeatedly.
+- Desktop UI still freezes on Monaco completion trigger path (`Ctrl+Space`), even after multiple hardening passes.
+- Practical bottleneck is Monaco + WebKit desktop integration in suggestion flow, not `sqls` itself.
 
-## 2. What Monaco Is Actually Used For
+## 2. What We Confirmed in Runtime
 
-Used in code:
-- Editor lifecycle and model operations (`create`, `getValue`, `executeEdits`): `src/components/monaco/MonacoEditor.vue`
-- Selection and shortcuts (Ctrl/Cmd+Enter, Shift+Enter, format hotkeys): `src/components/monaco/SqlMonaco.vue`
-- Content/focus/resize listeners: `src/components/monaco/MonacoEditor.vue`, `src/components/monaco/SqlMonaco.vue`
-- Custom context menu: `src/components/monaco/MonacoEditor.vue`
-- SQL completion + hover providers (custom): `src/composables/useMonacoSqlProviders.ts`
-- Theme/language switching: `src/components/monaco/MonacoEditor.vue`
-- JSON schema diagnostics: `src/components/monaco/JsonEditor.vue`
-- JSON fold action: `src/components/monaco/JsonViewer.vue`
+Validated during debugging:
+- `stream-api` receives and serves LSP websocket sessions.
+- `sqls` starts and handles DB cache/update cycles.
+- Probe calls from UI to LSP succeed:
+  - `initialize` success (multiple times)
+  - `textDocument/completion` success with stable item counts
 
-Not used:
-- Custom marker diagnostics pipeline (`setModelMarkers`, `IMarkerData`) for SQL runtime errors
-- Monaco diff editor
-- Definition/reference/rename/code actions providers for SQL
-- LSP integration
+Observed failure mode:
+- UI freeze reproduced when invoking Monaco completion path (`Ctrl+Space`) in SQL editor.
+- Freeze is not reproduced by direct LSP websocket probes (without Monaco suggest widget).
 
-## 3. SQL Intelligence Debt (Main Finding)
+Conclusion:
+- Backend LSP path is healthy.
+- Freeze is on Monaco-side completion interaction in desktop runtime.
 
-`src/composables/useMonacoSqlProviders.ts` is 1018 lines and implements:
-- regex/context parsing
-- suggestion ranking and context heuristics
-- table/column/function/snippet logic
-- hover docs
+## 3. Current Monaco SQL Status
 
-Associated test surface:
-- `src/__tests__/useMonacoSqlProvidersDialect.test.ts` (970 lines)
+What remains true:
+- Monaco still powers JSON editor/viewer paths.
 
-This is effectively a hand-rolled mini SQL language service in TypeScript.
+What changed from original audit:
+- Legacy custom SQL provider code was removed.
+- SQL editor surfaces were migrated to `SqlCodeMirror`.
+- Monaco SQL editor component was removed from active code path.
+- Runtime LSP toggle in UI settings was effectively retired (startup-config model only).
 
-## 4. Bundle/Asset Reality
+## 4. LSP in Go Binaries: Status
 
-Observed in `dist/assets` (current local build):
-- `monaco-editor-*.js`: ~3.82 MB raw / ~986 KB gzip
-- `monaco-editor-*.css`: ~147 KB raw / ~23 KB gzip
-- `json.worker-*.js`: ~387 KB raw / ~115 KB gzip
-- `codicon-*.ttf`: ~122 KB raw / ~59 KB gzip
-
-Monaco dependency chain currently references many language chunks (86 language-related files referenced by monaco chunk).
-
-Computed totals:
-- Monaco chain (resolved assets): ~4.9 MB raw, ~1.35 MB gzip
-- All assets: ~2.57 MB gzip
-
-## 5. Current Runtime Error UX Gap
-
-SQL execution errors are shown as text in results pane, not as editor markers.
-
-Relevant paths:
-- Error rendering: `src/components/database/sql-console/SqlResultsPane.vue`
-- Error normalization: `src/utils/errorHandler.ts`
-- No active marker calls in SQL editor path.
-
-Backend currently does not consistently return line/column offsets for SQL errors in API payloads.
-
-## 6. Option Analysis
-
-### Option A: Keep Monaco As-Is
-Pros:
-- No migration risk.
-- Existing UX remains stable.
-
-Cons:
-- SQL intelligence debt stays in frontend.
-- Dialect expansion continues increasing fragile logic.
-
-Verdict: acceptable short-term only.
-
-### Option B: Replace Monaco with CodeMirror 6 Now
-Pros:
-- Potentially smaller editor payload.
-- Modern modular ecosystem.
-
-Cons:
-- Large rewrite surface:
-  - `MonacoEditor.vue`, `SqlMonaco.vue`, `JsonEditor.vue`, `JsonViewer.vue`
-  - SQL provider logic integration
-  - keyboard/actions/context menu/theme/auto-resize parity
-  - JSON schema behavior parity
-- Existing debt still exists unless moved to LSP.
-
-Verdict: not first move.
-
-### Option C: Keep Monaco + Introduce LSP (Recommended)
-Pros:
-- Removes custom SQL brain from frontend.
-- Better parsing/diagnostics/autocomplete quality.
-- Frontend SQL logic shrinks significantly.
-
-Cons:
-- Requires backend WS + JSON-RPC/LSP plumbing.
-- Requires transport/session lifecycle work.
-
-Verdict: best complexity-reduction path.
-
-## 7. LSP in Current Go Binaries: Feasibility
-
-Short answer: yes, feasible.
-
-### 7.1 Stream API status (updated on 2026-02-18)
-- LSP websocket route is added: `GET /api/v1/lsp/ws` in `cmd/stream-api/router.go`
-- Initial WS <-> stdio bridge handler exists: `cmd/stream-api/lsp_ws_handler.go`
-- Bridge supports configurable LSP process launch via env:
-  - `SQL_LSP_COMMAND` (default: `sqls`)
+Backend status:
+- `GET /api/v1/lsp/ws` implemented.
+- WS <-> stdio bridge implemented in `cmd/stream-api/lsp_ws_handler.go`.
+- `sqls` command/args configurable via env:
+  - `SQL_LSP_COMMAND`
   - `SQL_LSP_ARGS`
-- API key auth middleware now supports websocket handshake fallback query params for browsers:
+- WS auth query fallback is in place:
   - `api_key`
   - `install_id`
-- Existing REST/SSE/auth infrastructure is reused.
 
-### 7.2 Desktop status today
-`stream-desktop` supervisor is hardcoded around `stream-api`, `stream-reader`, `stream-writer`:
-- required service binaries check: `cmd/stream-desktop/supervisor.go`
-- stale cleanup targets: `cmd/stream-desktop/cleanup_linux.go`, `cmd/stream-desktop/cleanup_windows.go`
-- build services list: `cmd/stream-desktop/Makefile`
-- readiness gate expects only nats/api/reader/writer: `cmd/stream-desktop/supervisor.go`
+Desktop packaging:
+- Current approach (LSP process managed by `stream-api`) is viable and already operational.
+- Dedicated separate desktop-managed LSP service is not required for first production rollout.
 
-Implication:
-- If LSP is a separate managed desktop service, supervisor/build/cleanup/readiness need extension.
-- If LSP process is spawned by `stream-api` internally, desktop supervisor changes can be minimized.
+## 5. Option Analysis (Revised)
 
-### 7.3 Practical embedding models
-1. Backend proxy model (recommended first):
-- `stream-api` exposes `/api/v1/lsp/ws`
-- `stream-api` bridges WS JSON-RPC <-> LSP stdio process (`sqls` or similar)
-- keeps desktop supervisor mostly unchanged
+### Option A: Continue Monaco SQL + LSP
+Pros:
+- No immediate editor rewrite.
 
-2. Native in-process model:
-- implement minimal LSP methods directly in Go in `stream-api`
-- no external LSP binary, but more backend implementation effort
+Cons:
+- Current completion path is unstable in desktop runtime.
+- Additional fixes are increasingly low ROI and high uncertainty.
 
-## 8. SQL LSP Candidate Snapshot (as of 2026-02-18)
+Verdict:
+- Not recommended as primary direction.
 
-- `sqls-server/sqls`
-  - Active, Go-based, multi-DB focus
-  - Latest release observed: `v0.2.45` (2026-01-07)
+### Option B: CodeMirror 6 for SQL (Recommended)
+Pros:
+- Clean break from current Monaco completion freeze path.
+- Smaller/editor-focused integration surface for SQL.
+- Can keep backend LSP architecture unchanged.
 
-- `supabase-community/postgres-language-server`
-  - Very active, strong feature set, frequent releases
-  - Postgres-focused (not multi-dialect)
+Cons:
+- Requires SQL editor migration work (component + bindings + shortcuts).
 
-- `joe-re/sql-language-server`
-  - Stable project history but latest release is older (`v1.7.0`, 2023-08-13)
+Verdict:
+- Recommended next step.
 
-## 9. Consolidated Recommendation
+### Option C: Keep Monaco everywhere forever
+Verdict:
+- Rejected for SQL use case due to current production risk in desktop UX.
 
-Proceed with Monaco + LSP backend integration.
+## 6. Migration Decision
 
-Execution order:
-1. Add LSP transport path in backend.
-2. Swap frontend SQL completion/hover from custom provider to LSP client.
-3. Keep minimal local frontend helpers only for product-specific logic (for example, file/federated shortcuts/snippets).
-4. Add diagnostic marker mapping once backend returns positional errors consistently.
+Decision for next implementation cycle:
+1. Clean temporary SQL LSP probe/debug UI code used for diagnosis.
+2. Keep backend LSP implementation and transport.
+3. Introduce CodeMirror 6 SQL editor path.
+4. Wire CodeMirror SQL completion to backend LSP (same endpoint).
+5. Switch SQL consoles/wizards to CodeMirror.
+6. Leave Monaco JSON/editor paths untouched until a dedicated follow-up pass.
 
-Do not start CodeMirror migration before step 2 and observed post-LSP metrics.
+Phase 0 status (2026-02-19):
+- Completed: temporary SQL LSP probe UI controls removed.
+- Completed: temporary backend LSP session debug logs removed.
+- Completed: backend dead `dialect` parsing in LSP WS request struct removed.
 
-## 10. Implementation Plan (Ready for Discussion)
+Phase 1-3 status snapshot (2026-02-19):
+- Completed: `SqlCodeMirror` foundation (value binding, selection API, run/format shortcuts, theme, fill-parent).
+- Completed: CodeMirror -> backend LSP completion path over `/api/v1/lsp/ws`.
+- Completed: SQL surface migration in console pane and stream wizard custom query editor.
+- Completed: read-only SQL block moved to CodeMirror.
 
-### Phase 0: Baseline and contract
-- Define LSP endpoint contract: auth, connection/session identity, payload limits.
-- Decide candidate server per dialect coverage (`sqls` vs custom minimal vs hybrid).
+Phase 4 status snapshot (2026-02-19):
+- Completed: desktop freeze path moved away from Monaco SQL suggest flow by switching SQL surfaces to CodeMirror.
+- Completed: selection and focus behavior hardened after screenshot/debug iterations (`closeOnBlur` restored for normal UX).
+- Completed: editor/completion visuals aligned to current app light/dark palette.
+- In progress: formal pre-commit smoke/regression pass for SQL LSP behavior.
 
-### Phase 1: Backend transport
-- [x] Add `/api/v1/lsp/ws` in `stream-api`.
-- [x] Implement initial WS <-> JSON-RPC framing bridge with stdio LSP process.
-- [x] Reuse existing auth middleware (with WS query fallback for browser clients).
-- [x] Add unit tests for LSP framing/parser helpers and desktop LSP command resolution.
-- [ ] Add integration-level WS tests around process lifecycle and close semantics.
+## 7. Phase Plan (Updated)
 
-### Phase 2: Frontend integration
-- [x] Add feature-flagged Monaco LSP client integration in UI (`VITE_SQL_LSP_ENABLED`).
-- [x] Add runtime fallback to existing `useMonacoSqlProviders` when LSP is disabled/unavailable.
-- [x] Add runtime UI toggle in Settings (LSP/Legacy) without rebuild.
-- [x] Add user-visible warning toast on LSP fallback to legacy mode.
-- [ ] Replace `useMonacoSqlProviders` for completion/hover path by default.
-- [ ] Keep only minimal product-specific helpers (file/federated snippets) after LSP cutover.
+### Phase 0: Cleanup before migration
+- Remove temporary debug probe controls/messages added only for diagnosis.
+- Keep only necessary production safeguards in LSP client/backend.
+- Reconfirm no legacy SQL provider files remain in active path.
 
-### Phase 3: Diagnostics and runtime errors
-- Return/normalize line+column info from backend SQL errors where available.
-- Map diagnostics and execution errors to editor markers.
+### Phase 1: CodeMirror SQL foundation
+- Create `CodeMirrorSqlEditor` with:
+  - value binding
+  - selection APIs
+  - run/format shortcut parity
+  - theme integration
+  - fill-parent layout parity
 
-### Phase 4: Cleanup
-- Remove dead custom SQL provider code and reduce test surface tied to regex parser logic.
+### Phase 2: LSP integration for CodeMirror
+- Reuse existing backend websocket endpoint.
+- Implement completion request/response path without Monaco-specific provider APIs.
+- Add hover/diagnostics only after completion path is stable.
 
-## 11. Open Decisions for Next Discussion
+### Phase 3: SQL surface migration
+- Replace Monaco SQL component usage in:
+  - SQL console editor pane
+  - stream wizard custom query editor
+  - other SQL entry points
 
-- Which LSP backend strategy first: external `sqls` proxy or minimal custom Go LSP.
-- Dialect coverage priority: PostgreSQL-first vs MySQL+PostgreSQL in first milestone.
-- [Resolved] Desktop packaging includes bundled `sqls` binary in `services/` (with env override support).
+### Phase 4: Stabilization
+- Desktop smoke tests for:
+  - open/close editor
+  - source/database switching
+  - completion invocation
+  - run selected/run query
+- Regression checks for shortcuts and focus behavior.
 
-## 12. Source Pointers (Primary)
+### Phase 4.1: SQL LSP smoke script (manual)
+
+Use this script before merge/release in desktop + web dev:
+
+1. `SELECT * FROM |` + `Ctrl+Space`
+Expected: tables for selected DB.
+
+2. `SELECT * FROM actor WHERE |` + `Ctrl+Space`
+Expected: columns/keywords in current scope.
+
+3. `SELECT * FROM actor a WHERE a.|` + `Ctrl+Space`
+Expected: `actor` columns only.
+
+4. `SELECT a.| FROM actor a` + `Ctrl+Space`
+Expected: `actor` columns.
+
+5. `SELECT COUNT(|) FROM actor` + `Ctrl+Space`
+Expected: expression/context suggestions, no freeze.
+
+6. `SELECT * FROM actor JOIN address ON actor.address_id = |` + `Ctrl+Space`
+Expected: join-condition relevant suggestions.
+
+7. `SELECT * fr|` + `Ctrl+Space`
+Expected: no freeze; completion may be limited before valid `FROM` context.
+
+8. Switch `Run on` to another DB, then `SELECT * FROM |` + `Ctrl+Space`
+Expected: table list reflects new DB.
+
+9. Repeat context switching 3-5 times (tab switch + DB switch + `Ctrl+Space`)
+Expected: no dead UI/focus lock.
+
+10. `Ctrl+A`, mouse selection, backspace/edit
+Expected: selection visible in both themes; edit behavior intact.
+
+Execution artifact:
+- Use `docs/SQL_LSP_SMOKE_EXECUTION_REPORT_TEMPLATE.md` for each pre-merge/pre-release run.
+
+## 8. Open Decisions
+
+- Whether to keep Monaco as long-term JSON-only editor or migrate JSON later.
+- Whether to keep any Monaco SQL fallback path behind hidden flag during rollout.
+- Minimum diagnostic scope for first CodeMirror+LSP release (completion-only vs completion+hover).
+
+Current working default:
+- Release scope is completion-first (stable completion path, no hover/diagnostics gating rollout).
+
+## 9. Source Pointers (Current)
 
 UI:
 - `src/components/monaco/MonacoEditor.vue`
-- `src/components/monaco/SqlMonaco.vue`
-- `src/components/monaco/JsonEditor.vue`
-- `src/components/monaco/JsonViewer.vue`
-- `src/composables/useMonacoSqlProviders.ts`
+- `src/components/codemirror/SqlCodeMirror.vue`
+- `src/composables/useSqlLspProviders.ts`
+- `src/components/database/sql-console/SqlEditorPane.vue`
+- `src/components/stream/wizard/CustomQueryEditor.vue`
+- `src/components/database/SqlCodeBlock.vue`
 - `src/components/console/UnifiedConsoleTab.vue`
-- `src/components/database/sql-console/SqlResultsPane.vue`
-- `src/utils/errorHandler.ts`
-- `vite.config.ts`
-- `src/utils/monaco-loader.ts`
+- `src/stores/editorPreferences.ts`
 
-Backend/Desktop:
+Backend:
 - `cmd/stream-api/router.go`
-- `cmd/stream-api/database_handlers.go`
-- `internal/errors/errors.go`
+- `cmd/stream-api/lsp_ws_handler.go`
+
+Desktop:
 - `cmd/stream-desktop/supervisor.go`
 - `cmd/stream-desktop/cleanup_linux.go`
 - `cmd/stream-desktop/cleanup_windows.go`
-- `cmd/stream-desktop/Makefile`

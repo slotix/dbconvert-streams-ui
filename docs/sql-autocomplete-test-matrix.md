@@ -1,123 +1,65 @@
-# SQL Autocomplete Test Matrix
+# SQL Autocomplete Test Matrix (CodeMirror + SQL LSP)
 
-Purpose: provide a stable regression checklist for Monaco SQL completion behavior across run modes, schema states, and dialects.
+Purpose: stable regression checklist for SQL completion behavior in current editor architecture:
+- editor: CodeMirror 6
+- intelligence: backend `sqls` over `/api/v1/lsp/ws`
 
-## 1) Core Clause Transitions
+## 1) Baseline Completion Availability
 
-### 1.1 SELECT head/list transitions
+| Input (cursor at end) | Action | Expected |
+| --- | --- | --- |
+| `SELECT * FROM ` | `Ctrl+Space` | Table suggestions for selected DB |
+| `SELECT * FROM actor a WHERE a.` | `Ctrl+Space` | `actor` columns |
+| `SELECT a. FROM actor a` (cursor after `a.`) | `Ctrl+Space` | `actor` columns |
 
-| Input (cursor at end) | Expected top suggestion(s) |
-| --------------------- | -------------------------- |
-| `SELECT `             | `*`                        |
-| `SELECT DISTINCT `    | `*`                        |
-| `SELECT * `           | `FROM`                     |
-| `SELECT col1, col2 `  | `FROM`                     |
-| `SELECT col1, `       | no forced `FROM`           |
+## 2) Incomplete Query Context (No Freeze)
 
-### 1.2 FROM/JOIN transitions
+| Input (cursor at end) | Action | Expected |
+| --- | --- | --- |
+| `SELECT * fr` | `Ctrl+Space` | UI responsive; completion may be limited |
+| `SELECT COUNT(` | `Ctrl+Space` | UI responsive; context suggestions may vary |
+| `SELECT * FROM actor WHERE ` | `Ctrl+Space` | UI responsive; suggestions available or empty, but no lock/freeze |
 
-| Input                              | Expected top suggestion(s) |
-| ---------------------------------- | -------------------------- |
-| `SELECT * FROM users `             | `JOIN`, `WHERE`            |
-| `SELECT * FROM users JOIN orders ` | `ON`                       |
+## 3) Source/Database Switching
 
-### 1.3 Predicate/Aggregation transitions
+| Scenario | Expected |
+| --- | --- |
+| Switch `Run on` DB, then `SELECT * FROM ` + `Ctrl+Space` | Suggestions reflect newly selected DB |
+| Repeat tab switch + DB switch + completion 3-5 times | No dead UI/focus lock |
 
-| Input                                             | Expected top suggestion(s) |
-| ------------------------------------------------- | -------------------------- |
-| `SELECT * FROM users WHERE id > 10 `              | `GROUP BY`                 |
-| `SELECT city, COUNT(*) FROM users GROUP BY city ` | `ORDER BY`, `HAVING`       |
-| `SELECT city FROM users ORDER BY city `           | `LIMIT`                    |
-| `SELECT city FROM users ORDER BY city LIMIT 10 `  | `OFFSET`                   |
+## 4) Selection/Edit Behavior
 
-## 2) Suggestion Priority Rules
+| Action | Expected |
+| --- | --- |
+| `Ctrl+A` in SQL editor | Selection clearly visible in active theme |
+| Mouse drag selection | Selection clearly visible |
+| Backspace/delete/replace selected text | Normal editing behavior |
 
-Validate ordering in visible completion list:
+## 5) Theme Consistency
 
-1. Context transition keywords (forced top rules)
-2. Columns/tables from schema context
-3. Generic SQL keywords
-4. SQL functions
-5. Snippets
+| Theme | Expected |
+| --- | --- |
+| Dark | Editor background, caret, selection, and completion popup are readable and consistent with app palette |
+| Light | Same as above with light palette |
 
-## 3) Source Scope Behavior
+## 6) LSP Session Health Verification
 
-### 3.1 Direct source mode (`Run on: Database: <alias>`)
+Check API logs while testing:
 
-| Scenario                          | Expected                                            |
-| --------------------------------- | --------------------------------------------------- |
-| PostgreSQL direct source selected | only selected PG source tables/columns suggested    |
-| MySQL direct source selected      | only selected MySQL source tables/columns suggested |
-
-### 3.2 Multi-source mode (`Run on: Multi-source`)
-
-| Scenario                        | Expected                                                                                              |
-| ------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `pg1`, `my1`, `files1` selected | schema suggestions include DB sources (`pg1`, `my1`), file source excluded from table/column metadata |
-| Typing `pg1.`                   | pg1-qualified table/column suggestions appear                                                         |
-| Typing `my1.`                   | my1-qualified table/column suggestions appear                                                         |
-
-## 4) Metadata Availability Cases
-
-| Scenario                                | Expected                                                                            |
-| --------------------------------------- | ----------------------------------------------------------------------------------- |
-| schema metadata present                 | table/column suggestions appear and rank above generic keywords/functions           |
-| schema metadata missing                 | no crashes, contextual keyword transitions still work                               |
-| source mapping has no explicit database | no invalid fallback guessing; DB suggestions remain empty until mapping is explicit |
-
-## 5) Dialect Baseline Coverage
-
-Confirm baseline behavior per dialect parameter:
-
-| Dialect | Validate                                                                               |
-| ------- | -------------------------------------------------------------------------------------- |
-| `mysql` | identifier quoting with backticks where applicable; MySQL functions/keywords available |
-| `pgsql` | PostgreSQL-specific functions/keywords available                                       |
-| `sql`   | generic SQL keyword/function set remains usable                                        |
-
-## 6) Manual Regression Script
-
-Run each sequence in SQL console after opening a fresh tab:
-
-1. `SELECT `
-2. `SELECT * `
-3. `SELECT id, name `
-4. `SELECT * FROM users `
-5. `SELECT * FROM users JOIN orders `
-6. `SELECT * FROM users WHERE id > 10 `
-7. `SELECT city, COUNT(*) FROM users GROUP BY city `
-8. `SELECT city FROM users ORDER BY city `
-9. `SELECT city FROM users ORDER BY city LIMIT 10 `
-
-For each step, confirm top suggestions match sections 1 and 2.
-
-## 7) Debug Mode (Optional)
-
-Enable completion diagnostics in browser devtools:
-
-```js
-localStorage.setItem('sqlCompletionDebug', '1')
+```bash
+tail -f ~/.local/share/dbconvert-streams/logs/api.log | rg --line-buffered "LSP session start|LSP session closed"
 ```
 
-Disable:
+Expected:
+- session start/closed entries appear when editor establishes/tears down LSP websocket
+- no repeated rapid reconnect loops during normal typing
 
-```js
-localStorage.removeItem('sqlCompletionDebug')
-```
+Optional deep trace (if debug log level is enabled):
+- `[lsp]` lines from bridged `sqls` stderr
 
-Use logs to verify active context flags and suggestion counts while running matrix scenarios.
+## 7) Execution Script
 
-## 8) Validation Status
+Use and attach execution artifact:
+- `docs/SQL_LSP_SMOKE_EXECUTION_REPORT_TEMPLATE.md`
 
-Automated validation (2026-02-17):
-
-- Context rule presence verified in `useMonacoSqlProviders.ts` for: `*`, `FROM`, `JOIN`, `ON`, `WHERE`, `GROUP BY`, `HAVING`, `ORDER BY`, `LIMIT`, `OFFSET`, plus dialect keywords `ILIKE` (pgsql) and `REGEXP` (mysql).
-- Completion context flags verified in code for all clause states listed in section 1.
-- Error check for modified files completed with no current diagnostics in:
-	- `src/composables/useMonacoSqlProviders.ts`
-	- `src/components/console/UnifiedConsoleTab.vue`
-
-Manual UX validation remains required for final sign-off:
-
-- Execute section 6 scenarios in UI for both direct and multi-source modes.
-- Confirm top suggestion ordering in section 2 under real metadata latency conditions.
+Run this matrix before merge/release in desktop and web dev environments.
