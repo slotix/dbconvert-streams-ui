@@ -1,7 +1,7 @@
 <template>
   <div
     :class="[
-      'relative rounded-lg border',
+      'relative rounded-lg border codemirror-editor-container',
       isDarkTheme ? 'sql-cm-dark' : 'sql-cm-light',
       props.readOnly
         ? 'border-gray-200 dark:border-gray-700'
@@ -14,7 +14,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
 import { useThemeStore } from '@/stores/theme'
 import { useCommonStore } from '@/stores/common'
 import {
@@ -43,6 +43,9 @@ const DID_CHANGE_DEBOUNCE_MS = 150
 const MAX_LSP_MESSAGE_CHARS = 250_000
 const LSP_TRIGGER_KIND_INVOKED = 1
 const LSP_TRIGGER_KIND_TRIGGER_CHARACTER = 2
+const LSP_RECONNECT_BASE_DELAY_MS = 600
+const LSP_RECONNECT_MAX_DELAY_MS = 8_000
+const LSP_RECONNECT_JITTER_RATIO = 0.2
 const HOVER_REQUEST_DELAY_MS = 280
 const MAX_HOVER_TEXT_CHARS = 4_000
 
@@ -108,6 +111,34 @@ interface LspHoverResult {
   range?: LspRange
 }
 
+interface EditorDocLineLike {
+  number: number
+  from: number
+  to: number
+  length: number
+}
+
+interface EditorDocLike {
+  length: number
+  lines: number
+  lineAt: (pos: number) => EditorDocLineLike
+  line: (n: number) => EditorDocLineLike
+  sliceString: (from: number, to: number) => string
+}
+
+interface EditorSelectionMainLike {
+  empty: boolean
+  from: number
+  to: number
+}
+
+interface EditorStateLike {
+  doc: EditorDocLike
+  selection: {
+    main: EditorSelectionMainLike
+  }
+}
+
 interface HoverMarkdownTable {
   headers: string[]
   rows: string[][]
@@ -170,7 +201,7 @@ const emit = defineEmits<{
 }>()
 
 const editorHost = ref<HTMLElement | null>(null)
-const editorView = ref<EditorView | null>(null)
+const editorView = shallowRef<EditorView | null>(null)
 const themeStore = useThemeStore()
 const commonStore = useCommonStore()
 
@@ -199,13 +230,16 @@ let lspDocumentVersion = 1
 let lspDidChangeTimer: ReturnType<typeof setTimeout> | null = null
 let lspDidChangeText = ''
 let lspDidChangeVersion = 1
+let lspReconnectTimer: ReturnType<typeof setTimeout> | null = null
+let lspReconnectAttempt = 0
 let lspUnavailableWarningShown = false
 let hoverTimer: ReturnType<typeof setTimeout> | null = null
 let hoverRequestToken = 0
 let hoverTooltipEl: HTMLDivElement | null = null
 let hoverActiveKey = ''
-let hoverMouseMoveListener: ((event: MouseEvent) => void) | null = null
+let hoverMouseOverListener: ((event: MouseEvent) => void) | null = null
 let hoverMouseLeaveListener: (() => void) | null = null
+let hoverMouseDownListener: (() => void) | null = null
 const pendingRequests = new Map<number | string, PendingRequest>()
 const textDocumentUri = `inmemory://sql/${Date.now()}-${Math.random().toString(36).slice(2)}`
 
@@ -312,7 +346,7 @@ function getCompletionBoost(label: string, prefix: string): number {
   return 0
 }
 
-function toLspPosition(state: EditorState, position: number): LspPosition {
+function toLspPosition(state: EditorStateLike, position: number): LspPosition {
   const line = state.doc.lineAt(position)
   return {
     line: Math.max(line.number - 1, 0),
@@ -324,7 +358,7 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max)
 }
 
-function fromLspPosition(state: EditorState, pos: LspPosition): number {
+function fromLspPosition(state: EditorStateLike, pos: LspPosition): number {
   const safeLine = clamp(pos.line + 1, 1, Math.max(state.doc.lines, 1))
   const line = state.doc.line(safeLine)
   const safeCharacter = clamp(pos.character, 0, line.length)
@@ -342,7 +376,10 @@ function mapLspSeverity(severity: number | undefined): Diagnostic['severity'] {
   }
 }
 
-function toCodeMirrorDiagnostic(state: EditorState, diagnostic: LspDiagnostic): Diagnostic | null {
+function toCodeMirrorDiagnostic(
+  state: EditorStateLike,
+  diagnostic: LspDiagnostic
+): Diagnostic | null {
   if (!diagnostic.range?.start || !diagnostic.range?.end || !diagnostic.message) {
     return null
   }
@@ -637,7 +674,7 @@ function isWordCharacter(char: string): boolean {
   return /[\w$]/.test(char)
 }
 
-function getWordRangeAtPosition(state: EditorState, pos: number) {
+function getWordRangeAtPosition(state: EditorStateLike, pos: number) {
   const docLength = state.doc.length
   if (docLength === 0) {
     return null
@@ -786,6 +823,10 @@ function handleHoverMouseMove(event: MouseEvent, view: EditorView): boolean {
     hideHoverTooltip()
     return false
   }
+  if (event.buttons !== 0) {
+    clearHoverTimer()
+    return false
+  }
 
   let pos: number | null = null
   const target = event.target
@@ -835,35 +876,42 @@ function detachHoverDomListeners(view: EditorView | null) {
     return
   }
 
-  if (hoverMouseMoveListener) {
-    view.dom.removeEventListener('mousemove', hoverMouseMoveListener)
-    hoverMouseMoveListener = null
+  if (hoverMouseOverListener) {
+    view.dom.removeEventListener('mouseover', hoverMouseOverListener)
+    hoverMouseOverListener = null
   }
   if (hoverMouseLeaveListener) {
     view.dom.removeEventListener('mouseleave', hoverMouseLeaveListener)
     hoverMouseLeaveListener = null
   }
+  if (hoverMouseDownListener) {
+    view.dom.removeEventListener('mousedown', hoverMouseDownListener)
+    hoverMouseDownListener = null
+  }
 }
 
 function attachHoverDomListeners(view: EditorView) {
   detachHoverDomListeners(view)
-
-  hoverMouseMoveListener = (event: MouseEvent) => {
+  hoverMouseOverListener = (event: MouseEvent) => {
     void handleHoverMouseMove(event, view)
   }
   hoverMouseLeaveListener = () => {
     hideHoverTooltip()
   }
+  hoverMouseDownListener = () => {
+    hideHoverTooltip()
+  }
 
-  view.dom.addEventListener('mousemove', hoverMouseMoveListener)
+  view.dom.addEventListener('mouseover', hoverMouseOverListener, { passive: true })
   view.dom.addEventListener('mouseleave', hoverMouseLeaveListener)
+  view.dom.addEventListener('mousedown', hoverMouseDownListener)
 }
 
-function getHasSelection(state: EditorState): boolean {
+function getHasSelection(state: EditorStateLike): boolean {
   return !state.selection.main.empty
 }
 
-function toMonacoLikeRange(state: EditorState) {
+function toMonacoLikeRange(state: EditorStateLike) {
   const selection = state.selection.main
   const startLine = state.doc.lineAt(selection.from)
   const endLine = state.doc.lineAt(selection.to)
@@ -875,7 +923,7 @@ function toMonacoLikeRange(state: EditorState) {
   }
 }
 
-function emitSelectionState(state: EditorState) {
+function emitSelectionState(state: EditorStateLike) {
   const selected = getHasSelection(state)
   if (selected) {
     cachedSelectionRange = toMonacoLikeRange(state)
@@ -946,6 +994,39 @@ function reportLspUnavailable(error: unknown) {
 
 function isActiveLspSession(token: number): boolean {
   return token === lspSessionToken
+}
+
+function clearLspReconnectTimer() {
+  if (!lspReconnectTimer) {
+    return
+  }
+  clearTimeout(lspReconnectTimer)
+  lspReconnectTimer = null
+}
+
+function scheduleLspReconnect(sessionToken: number) {
+  if (!isActiveLspSession(sessionToken) || !shouldEnableLsp.value) {
+    return
+  }
+
+  clearLspReconnectTimer()
+
+  lspReconnectAttempt += 1
+  const exponentialDelay = Math.min(
+    LSP_RECONNECT_BASE_DELAY_MS * 2 ** (lspReconnectAttempt - 1),
+    LSP_RECONNECT_MAX_DELAY_MS
+  )
+  const jitterBound = Math.floor(exponentialDelay * LSP_RECONNECT_JITTER_RATIO)
+  const jitter = jitterBound > 0 ? Math.floor(Math.random() * (jitterBound + 1)) : 0
+  const reconnectDelay = exponentialDelay + jitter
+
+  lspReconnectTimer = setTimeout(() => {
+    lspReconnectTimer = null
+    if (!isActiveLspSession(sessionToken) || !shouldEnableLsp.value) {
+      return
+    }
+    connectLspSession(false)
+  }, reconnectDelay)
 }
 
 function sendLspNotification(method: string, params?: unknown): void {
@@ -1220,10 +1301,24 @@ async function initializeLspSession(sessionToken: number) {
     }
     lspReady = false
     reportLspUnavailable(error)
+    if (lspSocket && lspSocket.readyState === WebSocket.OPEN) {
+      try {
+        lspSocket.close()
+        return
+      } catch {
+        // Fall through to reconnect scheduling.
+      }
+    }
+    scheduleLspReconnect(sessionToken)
   }
 }
 
-function disconnectLspSession() {
+function disconnectLspSession(resetReconnectBackoff = true) {
+  clearLspReconnectTimer()
+  if (resetReconnectBackoff) {
+    lspReconnectAttempt = 0
+  }
+
   lspSessionToken += 1
   lspReady = false
   hideHoverTooltip()
@@ -1262,8 +1357,8 @@ function refreshLspCompartment() {
   })
 }
 
-function connectLspSession() {
-  disconnectLspSession()
+function connectLspSession(resetReconnectBackoff = true) {
+  disconnectLspSession(resetReconnectBackoff)
   if (!shouldEnableLsp.value) {
     refreshLspCompartment()
     return
@@ -1304,6 +1399,7 @@ function connectLspSession() {
     }
     lspReady = false
     rejectPendingRequests('SQL LSP websocket closed')
+    clearLspDiagnostics()
     if (event.code !== 1000) {
       const reason = event.reason ? `: ${event.reason}` : ''
       reportLspUnavailable(
@@ -1313,8 +1409,10 @@ function connectLspSession() {
       )
     }
     lspSocket = null
+    scheduleLspReconnect(sessionToken)
   }
   socket.onopen = () => {
+    lspReconnectAttempt = 0
     void initializeLspSession(sessionToken)
   }
 
@@ -1349,6 +1447,9 @@ function createEditorState() {
       EditorView.updateListener.of((update) => {
         if (update.docChanged && !suppressModelSync) {
           emit('update:modelValue', update.state.doc.toString())
+        }
+        if (update.selectionSet) {
+          hideHoverTooltip()
         }
         if (update.docChanged) {
           scheduleDidChangeNotification(update.state.doc.toString())
@@ -1548,7 +1649,7 @@ defineExpose({
 
 :deep(.cm-editor) {
   font-family: 'JetBrains Mono', 'Fira Code', 'SFMono-Regular', ui-monospace, Menlo, monospace;
-  font-size: 13.5px;
+  font-size: calc(13.5px * var(--sql-editor-font-scale, 1));
   line-height: 1.5;
   caret-color: #2dd4bf;
   background: var(--sql-editor-bg);
@@ -1586,6 +1687,8 @@ defineExpose({
 :deep(.sql-hover-tooltip-floating) {
   position: absolute;
   pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
   border-radius: 10px;
   border: 1px solid var(--sql-hover-card-border);
   background: var(--sql-hover-card-bg);

@@ -99,6 +99,13 @@
     zoom: calc(1 / var(--app-zoom, 1));
   }
 
+  /* CodeMirror zoom compensation - same rationale as Monaco:
+     avoid WebKit coordinate/selection glitches under CSS zoom by excluding editor container. */
+  html.desktop-zoom .codemirror-editor-container {
+    zoom: calc(1 / var(--app-zoom, 1));
+    --sql-editor-font-scale: var(--app-zoom, 1);
+  }
+
   /* Improve SVG icon rendering at non-100% zoom levels in WebKitGTK. */
   html.desktop-zoom svg {
     shape-rendering: geometricPrecision;
