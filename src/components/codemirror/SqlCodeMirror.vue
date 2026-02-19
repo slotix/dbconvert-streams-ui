@@ -36,6 +36,32 @@ import {
   type CompletionContext,
   type CompletionResult
 } from '@codemirror/autocomplete'
+import {
+  buildLspCompletionContext,
+  clamp,
+  fromLspPosition,
+  getCompletionBoost,
+  mapCompletionType,
+  normalizeCompletionItems,
+  toCodeMirrorDiagnostic,
+  toLspPosition
+} from './sqlCodeMirrorLspUtils'
+import {
+  getWordRangeAtPosition,
+  renderHoverTooltipContent,
+  toHoverText
+} from './sqlCodeMirrorHoverUtils'
+import type {
+  EditorStateLike,
+  JsonRpcNotification,
+  JsonRpcResponse,
+  LspCompletionItem,
+  LspCompletionList,
+  LspDiagnostic,
+  LspHoverResult,
+  LspPublishDiagnosticsParams,
+  PendingRequest
+} from './sqlCodeMirrorTypes'
 
 const REQUEST_TIMEOUT_MS = 8000
 const MAX_COMPLETION_ITEMS = 200
@@ -48,126 +74,6 @@ const LSP_RECONNECT_MAX_DELAY_MS = 8_000
 const LSP_RECONNECT_JITTER_RATIO = 0.2
 const HOVER_REQUEST_DELAY_MS = 280
 const MAX_HOVER_TEXT_CHARS = 4_000
-
-interface LspPosition {
-  line: number
-  character: number
-}
-
-interface LspCompletionItem {
-  label?: string
-  kind?: number
-  detail?: string
-  insertText?: string
-  textEdit?: {
-    newText?: string
-  }
-}
-
-interface LspCompletionList {
-  items?: LspCompletionItem[]
-}
-
-interface LspCompletionContext {
-  triggerKind: number
-  triggerCharacter?: string
-}
-
-interface LspRange {
-  start?: LspPosition
-  end?: LspPosition
-}
-
-interface LspDiagnostic {
-  range?: LspRange
-  severity?: number
-  message?: string
-  source?: string
-}
-
-interface LspPublishDiagnosticsParams {
-  uri?: string
-  diagnostics?: LspDiagnostic[]
-}
-
-interface LspMarkedStringObject {
-  language?: string
-  value?: string
-}
-
-interface LspMarkupContent {
-  kind?: string
-  value?: string
-}
-
-type LspHoverContents =
-  | string
-  | LspMarkedStringObject
-  | LspMarkupContent
-  | Array<string | LspMarkedStringObject>
-
-interface LspHoverResult {
-  contents?: LspHoverContents
-  range?: LspRange
-}
-
-interface EditorDocLineLike {
-  number: number
-  from: number
-  to: number
-  length: number
-}
-
-interface EditorDocLike {
-  length: number
-  lines: number
-  lineAt: (pos: number) => EditorDocLineLike
-  line: (n: number) => EditorDocLineLike
-  sliceString: (from: number, to: number) => string
-}
-
-interface EditorSelectionMainLike {
-  empty: boolean
-  from: number
-  to: number
-}
-
-interface EditorStateLike {
-  doc: EditorDocLike
-  selection: {
-    main: EditorSelectionMainLike
-  }
-}
-
-interface HoverMarkdownTable {
-  headers: string[]
-  rows: string[][]
-}
-
-type HoverMarkdownBlock =
-  | { type: 'heading'; text: string }
-  | { type: 'table'; table: HoverMarkdownTable }
-  | { type: 'text'; text: string }
-
-interface JsonRpcResponse {
-  id?: number | string
-  result?: unknown
-  error?: {
-    code: number
-    message: string
-  }
-}
-
-interface JsonRpcNotification {
-  method?: string
-  params?: unknown
-}
-
-interface PendingRequest {
-  resolve: (value: unknown) => void
-  reject: (error: Error) => void
-  timeoutId: ReturnType<typeof setTimeout>
-}
 
 interface Props {
   modelValue?: string
@@ -282,120 +188,6 @@ function getThemeExtension(isDark: boolean) {
   return isDark ? oneDark : []
 }
 
-function normalizeCompletionItems(
-  response: LspCompletionItem[] | LspCompletionList | null | undefined
-) {
-  if (!response) {
-    return []
-  }
-  if (Array.isArray(response)) {
-    return response
-  }
-  return Array.isArray(response.items) ? response.items : []
-}
-
-function mapCompletionType(kind: number | undefined): string {
-  switch (kind) {
-    case 2:
-    case 3:
-      return 'function'
-    case 5:
-    case 6:
-    case 10:
-      return 'variable'
-    case 17:
-      return 'keyword'
-    case 22:
-      return 'snippet'
-    default:
-      return 'text'
-  }
-}
-
-function buildLspCompletionContext(
-  prevChar: string,
-  explicit: boolean
-): LspCompletionContext | undefined {
-  if (prevChar === '.' || prevChar === '"' || prevChar === '`') {
-    return {
-      triggerKind: LSP_TRIGGER_KIND_TRIGGER_CHARACTER,
-      triggerCharacter: prevChar
-    }
-  }
-
-  if (explicit) {
-    return { triggerKind: LSP_TRIGGER_KIND_INVOKED }
-  }
-
-  return undefined
-}
-
-function getCompletionBoost(label: string, prefix: string): number {
-  if (!prefix) {
-    return 0
-  }
-
-  const normalizedLabel = label.toLowerCase()
-  const normalizedPrefix = prefix.toLowerCase()
-  if (normalizedLabel.startsWith(normalizedPrefix)) {
-    return 100
-  }
-  if (normalizedLabel.includes(normalizedPrefix)) {
-    return 25
-  }
-  return 0
-}
-
-function toLspPosition(state: EditorStateLike, position: number): LspPosition {
-  const line = state.doc.lineAt(position)
-  return {
-    line: Math.max(line.number - 1, 0),
-    character: Math.max(position - line.from, 0)
-  }
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(Math.max(value, min), max)
-}
-
-function fromLspPosition(state: EditorStateLike, pos: LspPosition): number {
-  const safeLine = clamp(pos.line + 1, 1, Math.max(state.doc.lines, 1))
-  const line = state.doc.line(safeLine)
-  const safeCharacter = clamp(pos.character, 0, line.length)
-  return line.from + safeCharacter
-}
-
-function mapLspSeverity(severity: number | undefined): Diagnostic['severity'] {
-  switch (severity) {
-    case 1:
-      return 'error'
-    case 2:
-      return 'warning'
-    default:
-      return 'info'
-  }
-}
-
-function toCodeMirrorDiagnostic(
-  state: EditorStateLike,
-  diagnostic: LspDiagnostic
-): Diagnostic | null {
-  if (!diagnostic.range?.start || !diagnostic.range?.end || !diagnostic.message) {
-    return null
-  }
-
-  const from = fromLspPosition(state, diagnostic.range.start)
-  const to = Math.max(from, fromLspPosition(state, diagnostic.range.end))
-
-  return {
-    from,
-    to,
-    severity: mapLspSeverity(diagnostic.severity),
-    message: diagnostic.message,
-    source: diagnostic.source
-  }
-}
-
 function applyLspDiagnostics(diagnostics: LspDiagnostic[]) {
   const view = editorView.value
   if (!view) {
@@ -411,295 +203,6 @@ function applyLspDiagnostics(diagnostics: LspDiagnostic[]) {
 
 function clearLspDiagnostics() {
   applyLspDiagnostics([])
-}
-
-function decodeHoverHtmlEntities(value: string): string {
-  if (!value.includes('&')) {
-    return value
-  }
-
-  if (typeof document !== 'undefined') {
-    const textarea = document.createElement('textarea')
-    textarea.innerHTML = value
-    return textarea.value
-  }
-
-  return value
-    .replaceAll('&nbsp;', ' ')
-    .replaceAll('&amp;', '&')
-    .replaceAll('&lt;', '<')
-    .replaceAll('&gt;', '>')
-    .replaceAll('&quot;', '"')
-    .replaceAll('&#39;', "'")
-}
-
-function normalizeHoverText(value: string): string {
-  if (!value) {
-    return ''
-  }
-  const decoded = decodeHoverHtmlEntities(value)
-  const normalized = decoded.split('\r\n').join('\n').replaceAll('\u00a0', ' ').trim()
-  if (normalized.length <= MAX_HOVER_TEXT_CHARS) {
-    return normalized
-  }
-  return `${normalized.slice(0, MAX_HOVER_TEXT_CHARS)}...`
-}
-
-function toHoverText(contents: LspHoverContents | undefined): string {
-  if (!contents) {
-    return ''
-  }
-  if (typeof contents === 'string') {
-    return normalizeHoverText(contents)
-  }
-  if (Array.isArray(contents)) {
-    return normalizeHoverText(
-      contents
-        .map((entry) => {
-          if (typeof entry === 'string') {
-            return entry
-          }
-          return entry.value || ''
-        })
-        .filter(Boolean)
-        .join('\n\n')
-    )
-  }
-  if (typeof contents.value === 'string') {
-    return normalizeHoverText(contents.value)
-  }
-  return ''
-}
-
-function normalizeMarkdownInline(value: string): string {
-  let normalized = value.trim()
-  if (normalized.startsWith('`') && normalized.endsWith('`') && normalized.length >= 2) {
-    normalized = normalized.slice(1, -1)
-  }
-  return normalized.replaceAll('\\|', '|').replace(/`([^`]+)`/g, '$1')
-}
-
-function parseMarkdownTableRow(line: string): string[] {
-  let normalized = line.trim()
-  if (normalized.startsWith('|')) {
-    normalized = normalized.slice(1)
-  }
-  if (normalized.endsWith('|')) {
-    normalized = normalized.slice(0, -1)
-  }
-  return normalized.split('|').map((cell) => normalizeMarkdownInline(cell.trim()))
-}
-
-function isMarkdownTableRow(line: string): boolean {
-  return line.includes('|')
-}
-
-function isMarkdownTableDivider(line: string): boolean {
-  const cells = parseMarkdownTableRow(line)
-  if (!cells.length) {
-    return false
-  }
-  return cells.every((cell) => /^:?-{3,}:?$/.test(cell.replaceAll(' ', '')))
-}
-
-function parseMarkdownBlocks(text: string): HoverMarkdownBlock[] {
-  const lines = text.split('\n')
-  const blocks: HoverMarkdownBlock[] = []
-  let i = 0
-
-  while (i < lines.length) {
-    const trimmed = lines[i].trim()
-    if (!trimmed) {
-      i += 1
-      continue
-    }
-
-    const headingMatch = trimmed.match(/^#{1,6}\s+(.+)$/)
-    if (headingMatch) {
-      blocks.push({
-        type: 'heading',
-        text: normalizeMarkdownInline(headingMatch[1])
-      })
-      i += 1
-      continue
-    }
-
-    if (
-      i + 1 < lines.length &&
-      isMarkdownTableRow(trimmed) &&
-      isMarkdownTableDivider(lines[i + 1])
-    ) {
-      const headers = parseMarkdownTableRow(trimmed)
-      const rows: string[][] = []
-      i += 2
-
-      while (i < lines.length) {
-        const rowLine = lines[i].trim()
-        if (!rowLine || !isMarkdownTableRow(rowLine)) {
-          break
-        }
-        rows.push(parseMarkdownTableRow(rowLine))
-        i += 1
-      }
-
-      blocks.push({
-        type: 'table',
-        table: { headers, rows }
-      })
-      continue
-    }
-
-    const paragraph: string[] = []
-    while (i < lines.length) {
-      const line = lines[i]
-      const lineTrimmed = line.trim()
-      if (!lineTrimmed) {
-        i += 1
-        if (paragraph.length) {
-          break
-        }
-        continue
-      }
-
-      const nextIsHeading = /^#{1,6}\s+/.test(lineTrimmed)
-      const nextIsTable =
-        i + 1 < lines.length &&
-        isMarkdownTableRow(lineTrimmed) &&
-        isMarkdownTableDivider(lines[i + 1])
-      if (nextIsHeading || nextIsTable) {
-        if (!paragraph.length) {
-          break
-        }
-        break
-      }
-
-      paragraph.push(line)
-      i += 1
-    }
-
-    if (paragraph.length) {
-      blocks.push({
-        type: 'text',
-        text: paragraph.join('\n').trim()
-      })
-      continue
-    }
-
-    i += 1
-  }
-
-  return blocks
-}
-
-function createHoverTextBlock(text: string): HTMLElement {
-  const pre = document.createElement('pre')
-  pre.className = 'sql-hover-tooltip-text'
-  pre.textContent = text
-  return pre
-}
-
-function createHoverTableBlock(tableData: HoverMarkdownTable): HTMLElement {
-  const wrapper = document.createElement('div')
-  wrapper.className = 'sql-hover-tooltip-table-wrap'
-
-  const table = document.createElement('table')
-  table.className = 'sql-hover-tooltip-table'
-
-  const columnCount = Math.max(
-    tableData.headers.length,
-    ...tableData.rows.map((row) => row.length),
-    0
-  )
-
-  if (tableData.headers.length) {
-    const thead = document.createElement('thead')
-    const headerRow = document.createElement('tr')
-    for (let columnIndex = 0; columnIndex < columnCount; columnIndex += 1) {
-      const th = document.createElement('th')
-      th.textContent = tableData.headers[columnIndex] || ''
-      headerRow.appendChild(th)
-    }
-    thead.appendChild(headerRow)
-    table.appendChild(thead)
-  }
-
-  const tbody = document.createElement('tbody')
-  for (const row of tableData.rows) {
-    const tr = document.createElement('tr')
-    for (let columnIndex = 0; columnIndex < columnCount; columnIndex += 1) {
-      const td = document.createElement('td')
-      td.textContent = row[columnIndex] || ''
-      tr.appendChild(td)
-    }
-    tbody.appendChild(tr)
-  }
-  table.appendChild(tbody)
-
-  wrapper.appendChild(table)
-  return wrapper
-}
-
-function renderHoverTooltipContent(container: HTMLDivElement, text: string) {
-  container.textContent = ''
-
-  const root = document.createElement('div')
-  root.className = 'sql-hover-tooltip-content'
-
-  const blocks = parseMarkdownBlocks(text)
-  if (!blocks.length) {
-    root.appendChild(createHoverTextBlock(text))
-    container.appendChild(root)
-    return
-  }
-
-  for (const block of blocks) {
-    if (block.type === 'heading') {
-      const heading = document.createElement('div')
-      heading.className = 'sql-hover-tooltip-heading'
-      heading.textContent = block.text
-      root.appendChild(heading)
-      continue
-    }
-    if (block.type === 'table') {
-      root.appendChild(createHoverTableBlock(block.table))
-      continue
-    }
-    root.appendChild(createHoverTextBlock(block.text))
-  }
-
-  container.appendChild(root)
-}
-
-function isWordCharacter(char: string): boolean {
-  return /[\w$]/.test(char)
-}
-
-function getWordRangeAtPosition(state: EditorStateLike, pos: number) {
-  const docLength = state.doc.length
-  if (docLength === 0) {
-    return null
-  }
-
-  const clampedPos = clamp(pos, 0, docLength)
-  let from = clampedPos
-  let to = clampedPos
-
-  while (from > 0 && isWordCharacter(state.doc.sliceString(from - 1, from))) {
-    from -= 1
-  }
-  while (to < docLength && isWordCharacter(state.doc.sliceString(to, to + 1))) {
-    to += 1
-  }
-
-  if (from === to) {
-    return null
-  }
-
-  return {
-    from,
-    to,
-    text: state.doc.sliceString(from, to)
-  }
 }
 
 function clearHoverTimer() {
@@ -802,7 +305,7 @@ async function requestHoverAtPosition(view: EditorView, pos: number, hoverKey: s
   }
 
   const hover = response as LspHoverResult | null
-  const text = toHoverText(hover?.contents)
+  const text = toHoverText(hover?.contents, MAX_HOVER_TEXT_CHARS)
   if (!text) {
     hideHoverTooltip(false)
     return
@@ -1139,7 +642,12 @@ async function provideLspCompletions(context: CompletionContext): Promise<Comple
   // Ensure completion request is evaluated against the latest editor text.
   flushPendingDidChangeNotification()
 
-  const lspCompletionContext = buildLspCompletionContext(prevChar, allowExplicitCompletion)
+  const lspCompletionContext = buildLspCompletionContext(
+    prevChar,
+    allowExplicitCompletion,
+    LSP_TRIGGER_KIND_INVOKED,
+    LSP_TRIGGER_KIND_TRIGGER_CHARACTER
+  )
   const response = await sendLspRequest('textDocument/completion', {
     textDocument: { uri: textDocumentUri },
     position: toLspPosition(context.state, context.pos),
@@ -1573,40 +1081,13 @@ onBeforeUnmount(() => {
   editorView.value = null
 })
 
-function hasSelection(): boolean {
-  const view = editorView.value
-  return Boolean(view && !view.state.selection.main.empty)
-}
-
 function getCachedSelectionRange() {
   return cachedSelectionRange
 }
 
-function insertTextAtCursor(text: string) {
-  const view = editorView.value
-  if (!view || props.readOnly) {
-    return
-  }
-  const selection = view.state.selection.main
-  const from = selection.from
-  view.dispatch({
-    changes: {
-      from: selection.from,
-      to: selection.to,
-      insert: text
-    },
-    selection: {
-      anchor: from + text.length
-    }
-  })
-  view.focus()
-}
-
 defineExpose({
-  hasSelection,
   getSelectedSql,
-  getCachedSelectionRange,
-  insertTextAtCursor
+  getCachedSelectionRange
 })
 </script>
 
