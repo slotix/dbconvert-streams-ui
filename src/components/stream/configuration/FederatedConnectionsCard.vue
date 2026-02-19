@@ -24,7 +24,7 @@
             <div class="flex flex-wrap items-center gap-1">
               <span
                 class="font-medium text-gray-900 dark:text-gray-100 truncate max-w-[150px]"
-                :class="{ 'text-red-500 dark:text-red-400': !getConnection(fedConn.connectionId) }"
+                :class="{ 'text-red-500 dark:text-red-300': !getConnection(fedConn.connectionId) }"
                 :title="getConnection(fedConn.connectionId)?.name"
               >
                 {{ getConnection(fedConn.connectionId)?.name || 'Connection not found' }}
@@ -42,7 +42,7 @@
               />
               <AlertCircle
                 v-if="!getConnection(fedConn.connectionId)"
-                class="h-4 w-4 text-red-500 dark:text-red-400 shrink-0"
+                class="h-4 w-4 text-red-500 dark:text-red-300 shrink-0"
                 aria-hidden="true"
               />
             </div>
@@ -51,7 +51,7 @@
                 v-if="getConnection(fedConn.connectionId)"
                 :connection="getConnection(fedConn.connectionId)!"
               />
-              <span v-else class="text-red-500 dark:text-red-400">Connection not found</span>
+              <span v-else class="text-red-500 dark:text-red-300">Connection not found</span>
             </div>
           </div>
         </div>

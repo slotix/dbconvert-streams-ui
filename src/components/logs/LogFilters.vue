@@ -162,7 +162,6 @@ function handleKeyboardShortcut(event: KeyboardEvent) {
     target.tagName === 'INPUT' ||
     target.tagName === 'TEXTAREA' ||
     target.isContentEditable ||
-    target.closest('.monaco-editor') !== null ||
     target.closest('.cm-editor') !== null
 
   // F: Focus search box
@@ -414,8 +413,8 @@ onBeforeUnmount(() => {
       <div class="flex items-center gap-1" :title="'Show only errors (E)'">
         <FormCheckbox v-model="errorsOnly">
           <span class="flex items-center gap-1.5">
-            <AlertTriangle class="w-4 h-4 text-red-600 dark:text-red-400" />
-            <span class="text-xs font-semibold text-red-600 dark:text-red-400">Errors Only</span>
+            <AlertTriangle class="w-4 h-4 text-red-600 dark:text-red-300" />
+            <span class="text-xs font-semibold text-red-600 dark:text-red-300">Errors Only</span>
           </span>
         </FormCheckbox>
       </div>

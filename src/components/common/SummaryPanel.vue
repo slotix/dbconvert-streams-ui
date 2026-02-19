@@ -149,7 +149,7 @@ function getNullPercentageClass(pct: number): string {
   if (pct === 0) return 'text-green-600 dark:text-green-400'
   if (pct < 5) return 'text-yellow-600 dark:text-yellow-400'
   if (pct < 20) return 'text-orange-600 dark:text-orange-400'
-  return 'text-red-600 dark:text-red-400'
+  return 'text-red-600 dark:text-red-300'
 }
 
 // Get cardinality indicator
@@ -208,15 +208,18 @@ function getCardinalityLabel(indicator: string): string {
   </div>
 
   <!-- Error State -->
-  <div v-else-if="error" class="rounded-lg bg-red-50 dark:bg-red-900/20 p-6">
+  <div
+    v-else-if="error"
+    class="rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700/70 p-6"
+  >
     <div class="flex items-start gap-3">
-      <AlertCircle class="h-5 w-5 text-red-500 dark:text-red-400 shrink-0 mt-0.5" />
+      <AlertCircle class="h-5 w-5 text-red-500 dark:text-red-300 shrink-0 mt-0.5" />
       <div>
         <h3 class="text-sm font-medium text-red-800 dark:text-red-200">Failed to load summary</h3>
-        <p class="mt-1 text-sm text-red-700 dark:text-red-300">{{ error }}</p>
+        <p class="mt-1 text-sm text-red-700 dark:text-red-100/95">{{ error }}</p>
         <button
           type="button"
-          class="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-red-700 dark:text-red-300 hover:text-red-800 dark:hover:text-red-200"
+          class="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-red-700 dark:text-red-100 hover:text-red-800 dark:hover:text-red-50"
           @click="emit('retry')"
         >
           <RefreshCw class="h-4 w-4" />

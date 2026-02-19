@@ -158,7 +158,7 @@
             />
             <p
               v-if="dataBundleSize < 10 || dataBundleSize > 1000"
-              class="mt-1 text-xs text-red-600 dark:text-red-400"
+              class="mt-1 text-xs text-red-600 dark:text-red-300"
             >
               Value must be 10-1000
             </p>

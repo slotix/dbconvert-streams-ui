@@ -32,8 +32,8 @@
               type="button"
               :class="[
                 active
-                  ? 'bg-gray-100 dark:bg-gray-700 text-red-500 dark:text-red-400'
-                  : 'text-red-600 dark:text-red-400',
+                  ? 'bg-gray-100 dark:bg-gray-700 text-red-500 dark:text-red-300'
+                  : 'text-red-600 dark:text-red-300',
                 'group flex w-full items-center px-4 py-2 text-sm'
               ]"
               @click="$emit('deleteRow')"
@@ -41,7 +41,7 @@
               <Trash
                 :class="[
                   iconSizes.navigationHeader,
-                  'mr-3 text-red-600 dark:text-red-400 group-hover:text-red-500 dark:group-hover:text-red-300'
+                  'mr-3 text-red-600 dark:text-red-300 group-hover:text-red-500 dark:group-hover:text-red-300'
                 ]"
                 aria-hidden="true"
               />

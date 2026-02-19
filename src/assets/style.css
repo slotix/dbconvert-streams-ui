@@ -6,7 +6,7 @@
   --font-sans: 'Inter', system-ui, sans-serif;
   --font-heading: 'Plus Jakarta Sans', system-ui, sans-serif;
   --font-mono:
-    'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
+    'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono',
     'Courier New', monospace;
   --font-ui: 'DM Sans', system-ui, sans-serif;
 
@@ -92,14 +92,7 @@
     zoom: var(--app-zoom, 1);
   }
 
-  /* Monaco editor zoom compensation - exclude from CSS zoom to fix cursor positioning.
-     Monaco has known issues with CSS zoom affecting mouse coordinate calculations.
-     Apply inverse zoom to container and use fontSize scaling for visual consistency. */
-  html.desktop-zoom .monaco-editor-container {
-    zoom: calc(1 / var(--app-zoom, 1));
-  }
-
-  /* CodeMirror zoom compensation - same rationale as Monaco:
+  /* CodeMirror zoom compensation:
      avoid WebKit coordinate/selection glitches under CSS zoom by excluding editor container. */
   html.desktop-zoom .codemirror-editor-container {
     zoom: calc(1 / var(--app-zoom, 1));

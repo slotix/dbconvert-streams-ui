@@ -101,7 +101,7 @@ function handleFocusConsumed() {
 
     <div
       v-else-if="error"
-      class="h-full flex items-center justify-center text-sm text-red-600 dark:text-red-400"
+      class="h-full flex items-center justify-center text-sm text-red-600 dark:text-red-300"
     >
       {{ error }}
     </div>

@@ -161,7 +161,7 @@ const activeDescription = computed(() => {
     </RadioGroupDescription>
 
     <!-- Error Message -->
-    <p v-if="error" class="mt-2 text-sm text-red-600 dark:text-red-400">
+    <p v-if="error" class="mt-2 text-sm text-red-600 dark:text-red-300">
       {{ error }}
     </p>
   </RadioGroup>

@@ -116,7 +116,7 @@ function toggleExpanded() {
     <div
       v-if="!isLocationCollapsed"
       class="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-      :class="{ 'bg-red-50 dark:bg-red-900/20': log.error }"
+      :class="{ 'bg-red-50 dark:bg-red-900/30': log.error }"
     >
       <!-- Header row with all metadata -->
       <div class="flat-row-header" @click="toggleExpanded">
@@ -153,7 +153,7 @@ function toggleExpanded() {
           class="text-right text-[0.7rem]"
           :class="{
             'flat-meta--status-empty': !log.error,
-            'text-red-600 dark:text-red-400 font-semibold': log.error
+            'text-red-600 dark:text-red-300 font-semibold': log.error
           }"
         >
           <template v-if="log.error">ERROR</template>
@@ -187,7 +187,7 @@ function toggleExpanded() {
         :class="[
           'ml-2 rounded px-4 py-3',
           log.error
-            ? 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20'
+            ? 'border-red-300 dark:border-red-700/70 bg-red-50 dark:bg-red-900/30'
             : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-850'
         ]"
       >
@@ -201,9 +201,9 @@ function toggleExpanded() {
 
         <!-- Error -->
         <div v-if="log.error" class="mb-3">
-          <div class="text-xs font-semibold text-red-700 dark:text-red-400 mb-1">Error:</div>
+          <div class="text-xs font-semibold text-red-700 dark:text-red-200 mb-1">Error:</div>
           <div
-            class="text-xs bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 p-3 rounded border border-red-300 dark:border-red-800"
+            class="text-xs bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-100/95 p-3 rounded border border-red-300 dark:border-red-700/70"
           >
             {{ log.error }}
           </div>

@@ -19,7 +19,7 @@ Enable users to directly edit stream configuration JSON as an alternative to the
 
 ### 1.1 Edit Mode Toggle
 - Add "Edit" button next to "Copy" button in read-only mode
-- Toggle between read-only JSON display and editable Monaco Editor
+- Toggle between read-only JSON display and editable JSON editor
 - Show different button sets for each mode:
   - **Read-only:** `[Copy] [Edit]`
   - **Edit mode:** `[Revert] [Format JSON] [Cancel] [Save]`
@@ -29,7 +29,7 @@ Enable users to directly edit stream configuration JSON as an alternative to the
 - Saved changes will apply on next stream start
 - Handle 404 gracefully if stream is deleted while editing
 
-### 1.3 Monaco Editor Integration
+### 1.3 JSON Editor Integration
 - Full-featured JSON editor with:
   - Syntax highlighting (dark theme matching app)
   - Real-time validation
@@ -77,11 +77,11 @@ Must match wizard validation rules exactly:
 - `reportingIntervalSec` - Cannot be changed (system-managed)
 
 ### 1.5 Error Handling
-- JSON syntax errors (Monaco built-in)
+- JSON syntax errors (built-in parser)
 - Schema validation errors (custom validator)
 - API errors on save
 - Display errors:
-  - Inline in Monaco Editor (red squiggles)
+  - Inline in JSON editor (line-focused validation cues)
   - Summary panel below editor with error list
   - Toast notifications for API errors
 
@@ -92,7 +92,7 @@ Must match wizard validation rules exactly:
 ### 2.1 New Components
 
 #### `StreamConfigJsonEditor.vue`
-Monaco Editor wrapper component
+JSON editor wrapper component
 
 **Props:**
 - `modelValue: object` - Stream configuration object
@@ -152,7 +152,7 @@ function checkUnsavedChanges()
 
 **Layout Changes:**
 - Replace read-only `<pre>` with conditional rendering
-- Show Monaco editor when `isEditMode === true`
+- Show JSON editor when `isEditMode === true`
 - Update button layout based on mode
 - Add validation error summary section
 - Add "Stream must be stopped" warning
@@ -226,7 +226,7 @@ export async function getStreamStatus(
    - Check if stream is running
    - If running: Show error notification, prevent edit
    - If stopped: Enter edit mode
-3. Monaco editor loads with current configuration
+3. JSON editor loads with current configuration
 4. User edits JSON
    - Real-time syntax validation
    - Schema validation on change (debounced 500ms)
@@ -254,7 +254,7 @@ export async function getStreamStatus(
 
 #### Edit Mode
 - Teal-500 border (indicating active editing)
-- Monaco editor with dark theme
+- JSON editor with dark theme
 - Header: "Editing Configuration" with unsaved indicator (*)
 - Buttons: `[Revert] [Format JSON] [Cancel] [Save]`
 - Validation errors section below editor (if errors exist)
@@ -297,10 +297,10 @@ export const streamConfigSchema = {
 
 ### 6.3 Error Display
 
-#### Monaco Inline Errors
+#### Inline Errors
 ```typescript
-monaco.editor.setModelMarkers(model, 'streamConfig', markers)
-// markers: { startLineNumber, endLineNumber, message, severity }
+const markers = [{ line: 12, message: 'Required field missing: source.id' }]
+// markers: { line, message, severity }
 ```
 
 #### Error Summary Panel
@@ -358,7 +358,7 @@ onBeforeRouteLeave((to, from, next) => {
 
 ---
 
-## 8. Monaco Editor Configuration
+## 8. JSON Editor Configuration
 
 ### 8.1 Editor Options
 
@@ -381,9 +381,9 @@ onBeforeRouteLeave((to, from, next) => {
 }
 ```
 
-### 8.2 Monaco Integration Points
+### 8.2 Editor Integration Points
 
-- Use existing `src/components/monaco/MonacoEditor.vue`
+- Use `src/components/common/JsonConfigEditor.vue`
 - Enhance with JSON schema validation
 - Add custom validation markers
 - Implement format command
@@ -409,14 +409,14 @@ onBeforeRouteLeave((to, from, next) => {
    - Test with backend
 
 ### Phase 2: Editor Component (Steps 4-5)
-4. **Enhance Monaco Editor component**
+4. **Enhance JSON editor component**
    - Add JSON schema support
    - Add validation marker integration
    - Add format command
    - Test standalone
 
 5. **Create StreamConfigJsonEditor wrapper**
-   - Wrap Monaco with validation logic
+   - Wrap JSON editor with validation logic
    - Add error display
    - Add dirty state tracking
    - Test with sample configs
@@ -507,8 +507,6 @@ onBeforeRouteLeave((to, from, next) => {
 ```
 src/
 ├── components/
-│   ├── monaco/
-│   │   └── MonacoEditor.vue (enhance)
 │   └── stream/
 │       ├── StreamConfigurationTab.vue (modify - add edit mode)
 │       └── StreamConfigJsonEditor.vue (new - wrapper with validation)
@@ -540,19 +538,17 @@ tests/
 ## 13. Dependencies
 
 ### Required Packages (Already Installed)
-- `monaco-editor` - Already in use for SQL editor
-- `monaco-editor-webpack-plugin` or Vite equivalent
 - JSON schema validator (may need to add)
 
 ### Potential New Dependencies
 - `ajv` (JSON schema validator) - if not already present
-- Or use built-in Monaco JSON validation
+- Or use built-in JSON parse/validation
 
 ---
 
 ## 14. Accessibility
 
-- Keyboard navigation in Monaco editor (built-in)
+- Keyboard navigation in the JSON editor
 - ARIA labels for buttons
 - Error announcements for screen readers
 - Focus management when entering/exiting edit mode
@@ -562,8 +558,8 @@ tests/
 ## 15. Performance Considerations
 
 - Debounce validation (500ms)
-- Lazy-load Monaco editor (only when edit mode activated)
-- Dispose Monaco instance when exiting edit mode
+- Lazy-load JSON editor (only when edit mode activated)
+- Dispose editor resources when exiting edit mode
 - Limit editor height with scroll for large configs
 
 ---

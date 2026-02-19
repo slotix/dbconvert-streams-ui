@@ -154,15 +154,15 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
     isSqlBannerExpanded.value ? SQL_BANNER_EXPANDED_HEIGHT : SQL_BANNER_COLLAPSED_HEIGHT
   )
 
-  // Monaco language based on connection type
-  const monacoLanguage = computed(() => {
+  // SQL language based on connection type
+  const sqlLanguage = computed(() => {
     if (!connectionType?.value) return 'sql'
     const type = connectionType.value.toLowerCase()
     if (type.includes('duckdb')) return 'sql'
     return getSqlDialectFromType(type)
   })
 
-  // Monaco editor options for inline SQL banner
+  // Read-only SQL banner editor options
   const sqlBannerEditorOptions = computed<Record<string, unknown>>(() => ({
     readOnly: true,
     minimap: { enabled: false },
@@ -681,7 +681,7 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
     toggleSqlBanner,
     sqlBannerHeight,
     sqlBannerEditorOptions,
-    monacoLanguage,
+    sqlLanguage,
 
     // Grid options
     gridOptions,

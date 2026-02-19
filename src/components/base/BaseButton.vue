@@ -51,7 +51,7 @@ const variantClasses: Record<Variant, string> = {
   secondary:
     'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 focus:ring-gray-500 dark:focus:ring-gray-400 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-400',
   danger:
-    'bg-white dark:bg-gray-800 text-red-600 dark:text-red-400 border border-red-300 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-400 dark:hover:border-red-600 focus:ring-red-500 dark:focus:ring-red-400 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-400',
+    'bg-white dark:bg-gray-800 text-red-600 dark:text-red-300 border border-red-300 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 hover:border-red-400 dark:hover:border-red-600 focus:ring-red-500 dark:focus:ring-red-400 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-400',
   ghost:
     'bg-transparent text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200 focus:ring-gray-400 disabled:text-gray-400 disabled:hover:bg-transparent dark:disabled:hover:bg-transparent'
 }

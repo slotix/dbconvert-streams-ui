@@ -1,5 +1,5 @@
 /**
- * SQL Keywords, Functions, and Snippets for Monaco Editor Autocomplete
+ * SQL keywords, functions, and snippets for SQL editor autocomplete.
  *
  * Organized by category and dialect for intelligent SQL editing
  */

@@ -34,15 +34,4 @@ interface Window {
     WindowReload?: () => void
     WindowReloadApp?: () => void
   }
-  MonacoEnvironment?: {
-    getWorker?: (workerId: string, label: string) => Worker
-  }
-}
-
-// Monaco Editor worker types
-declare module '*?worker' {
-  const workerConstructor: {
-    new (): Worker
-  }
-  export default workerConstructor
 }

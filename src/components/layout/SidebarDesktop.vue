@@ -288,8 +288,8 @@
               commonStore.isBackendConnected
                 ? 'text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/20'
                 : commonStore.error
-                  ? 'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/20'
-                  : 'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/20',
+                  ? 'text-red-600 bg-red-100 dark:text-red-300 dark:bg-red-900/30'
+                  : 'text-red-600 bg-red-100 dark:text-red-300 dark:bg-red-900/30',
               isSidebarExpanded ? 'justify-start gap-3 px-3' : 'justify-center'
             ]"
             :title="statusText"

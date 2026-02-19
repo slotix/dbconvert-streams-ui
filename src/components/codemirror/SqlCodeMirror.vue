@@ -414,7 +414,7 @@ function getHasSelection(state: EditorStateLike): boolean {
   return !state.selection.main.empty
 }
 
-function toMonacoLikeRange(state: EditorStateLike) {
+function toEditorSelectionRange(state: EditorStateLike) {
   const selection = state.selection.main
   const startLine = state.doc.lineAt(selection.from)
   const endLine = state.doc.lineAt(selection.to)
@@ -429,7 +429,7 @@ function toMonacoLikeRange(state: EditorStateLike) {
 function emitSelectionState(state: EditorStateLike) {
   const selected = getHasSelection(state)
   if (selected) {
-    cachedSelectionRange = toMonacoLikeRange(state)
+    cachedSelectionRange = toEditorSelectionRange(state)
   } else {
     cachedSelectionRange = null
   }

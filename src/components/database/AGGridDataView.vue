@@ -915,7 +915,7 @@ defineExpose({
     <!-- Error message -->
     <div
       v-if="baseGrid.error.value"
-      class="mb-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-md text-sm text-red-700 dark:text-red-300"
+      class="mb-3 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700/70 rounded-md text-sm text-red-700 dark:text-red-100/95"
     >
       {{ baseGrid.error.value }}
     </div>

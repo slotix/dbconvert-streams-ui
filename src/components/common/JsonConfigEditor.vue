@@ -1,6 +1,5 @@
 <template>
   <div class="json-config-editor">
-    <!-- Header with buttons -->
     <div class="flex items-center justify-between mb-3">
       <div class="flex items-center gap-2">
         <span
@@ -59,27 +58,23 @@
       </div>
     </div>
 
-    <!-- Editor container -->
     <div
       class="rounded-lg border overflow-hidden transition-colors border-teal-500 dark:border-teal-400"
     >
-      <MonacoEditor
+      <JsonCodeMirror
         ref="editorRef"
         v-model="editorContent"
-        language="json"
         :height="height"
-        :read-only="false"
-        :options="editorOptions"
-        @mount="handleEditorMount"
+        @save-shortcut="handleSaveShortcut"
+        @format-shortcut="formatJson"
       />
     </div>
 
-    <!-- Validation errors panel -->
     <div
       v-if="validationErrors.length > 0"
-      class="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg"
+      class="mt-3 p-3 bg-red-50 dark:bg-red-950/35 border border-red-200 dark:border-red-700/70 rounded-lg"
     >
-      <h4 class="text-sm font-medium text-red-800 dark:text-red-300 mb-2 flex items-center gap-1.5">
+      <h4 class="text-sm font-medium text-red-800 dark:text-red-200 mb-2 flex items-center gap-1.5">
         <AlertTriangle class="h-4 w-4" />
         Validation Errors ({{ validationErrors.length }})
       </h4>
@@ -87,7 +82,7 @@
         <li
           v-for="(error, index) in validationErrors"
           :key="index"
-          class="text-sm text-red-700 dark:text-red-400 cursor-pointer hover:underline"
+          class="text-sm text-red-700 dark:text-red-200/90 cursor-pointer hover:underline hover:text-red-800 dark:hover:text-red-100"
           @click="jumpToError(error)"
         >
           <span v-if="error.path" class="font-mono">{{ error.path }}:</span>
@@ -111,9 +106,9 @@ export default {
 <script setup lang="ts">
 import { ref, computed, watch, onBeforeUnmount, onMounted } from 'vue'
 import { AlertTriangle, Check, Clipboard, Code, Loader2, SquarePen, Undo } from 'lucide-vue-next'
-import MonacoEditor from '@/components/monaco/MonacoEditor.vue'
 import { useCommonStore } from '@/stores/common'
 import { debounce } from '@/utils/debounce'
+import JsonCodeMirror from '@/components/codemirror/JsonCodeMirror.vue'
 
 export interface ValidationError {
   path: string
@@ -145,17 +140,13 @@ const emit = defineEmits<{
 }>()
 
 const commonStore = useCommonStore()
-const editorRef = ref<InstanceType<typeof MonacoEditor>>()
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const monacoInstance = ref<any>(null)
+const editorRef = ref<InstanceType<typeof JsonCodeMirror> | null>(null)
 
-// State
 const isSaving = ref(false)
 const originalContent = ref('')
 const editorContent = ref('')
 const validationErrors = ref<ValidationError[]>([])
 
-// Initialize content from props
 const initializeContent = () => {
   const content = JSON.stringify(props.config, null, 2)
   originalContent.value = content
@@ -163,11 +154,9 @@ const initializeContent = () => {
   validationErrors.value = []
 }
 
-// Watch for config changes (e.g., after external update)
 watch(
   () => props.config,
   (newConfig, oldConfig) => {
-    // Only reinitialize if the config ID changed or if we're not dirty
     const newId = (newConfig as Record<string, unknown>)?.id
     const oldId = (oldConfig as Record<string, unknown>)?.id
     if (newId !== oldId || !isDirty.value) {
@@ -177,17 +166,12 @@ watch(
   { deep: true }
 )
 
-// Initialize on mount
 onMounted(() => {
   initializeContent()
 })
 
-// Computed
-const isDirty = computed(() => {
-  return editorContent.value !== originalContent.value
-})
+const isDirty = computed(() => editorContent.value !== originalContent.value)
 
-// Default JSON validation
 const defaultValidate = (content: string): ValidationResult => {
   try {
     const parsed = JSON.parse(content)
@@ -201,79 +185,33 @@ const defaultValidate = (content: string): ValidationResult => {
   }
 }
 
-// Debounced validation
 const debouncedValidate = debounce(() => {
   const validateFn = props.validator || defaultValidate
   const result = validateFn(editorContent.value, props.config)
-  validationErrors.value = result.errors
+  validationErrors.value = normalizeValidationErrors(result.errors)
 }, 500)
 
-// Watch editor content for validation
 watch(editorContent, () => {
   debouncedValidate()
 })
 
-// Monaco editor options - always editable
-const editorOptions = computed<Record<string, unknown>>(() => ({
-  minimap: { enabled: true },
-  scrollBeyondLastLine: false,
-  fontSize: 13,
-  lineNumbers: 'on',
-  glyphMargin: true,
-  folding: true,
-  lineDecorationsWidth: 5,
-  lineNumbersMinChars: 3,
-  renderLineHighlight: 'line',
-  scrollbar: {
-    verticalScrollbarSize: 10,
-    horizontalScrollbarSize: 10,
-    useShadows: false
-  },
-  wordWrap: 'on',
-  contextmenu: true,
-  quickSuggestions: true,
-  formatOnPaste: true,
-  autoClosingBrackets: 'always',
-  autoClosingQuotes: 'always'
-}))
-
-// Methods
-const handleEditorMount = (editor: unknown, monaco: unknown) => {
-  monacoInstance.value = monaco
-
-  const ed = editor as {
-    addCommand: (keybinding: number, handler: () => void) => void
+const copyConfig = async () => {
+  try {
+    await navigator.clipboard.writeText(editorContent.value)
+    commonStore.showNotification('Configuration copied to clipboard', 'success')
+  } catch {
+    commonStore.showNotification('Failed to copy configuration', 'error')
   }
-  const mon = monaco as {
-    KeyMod: { CtrlCmd: number; Shift: number }
-    KeyCode: { KeyF: number; KeyS: number }
-  }
-
-  // Add keyboard shortcut for format (Ctrl+Shift+F)
-  ed.addCommand(mon.KeyMod.CtrlCmd | mon.KeyMod.Shift | mon.KeyCode.KeyF, () => {
-    formatJson()
-  })
-
-  // Add keyboard shortcut for save (Ctrl+S)
-  ed.addCommand(mon.KeyMod.CtrlCmd | mon.KeyCode.KeyS, () => {
-    if (isDirty.value && validationErrors.value.length === 0) {
-      handleSave()
-    }
-  })
-}
-
-const copyConfig = () => {
-  navigator.clipboard.writeText(editorContent.value)
-  commonStore.showNotification('Configuration copied to clipboard', 'success')
 }
 
 const formatJson = () => {
-  const editor = editorRef.value?.editor
-  if (editor) {
-    const ed = editor as {
-      getAction: (id: string) => { run: () => void } | null
-    }
-    ed.getAction('editor.action.formatDocument')?.run()
+  try {
+    const parsed = JSON.parse(editorContent.value)
+    editorContent.value = JSON.stringify(parsed, null, 2)
+    commonStore.showNotification('JSON formatted', 'success')
+  } catch (e) {
+    const error = e as SyntaxError
+    commonStore.showNotification(`Format failed: ${error.message}`, 'error')
   }
 }
 
@@ -288,11 +226,10 @@ const handleSave = async () => {
     return
   }
 
-  // Final validation before save
   const validateFn = props.validator || defaultValidate
   const result = validateFn(editorContent.value, props.config)
   if (!result.valid) {
-    validationErrors.value = result.errors
+    validationErrors.value = normalizeValidationErrors(result.errors)
     commonStore.showNotification('Configuration has validation errors', 'error')
     return
   }
@@ -302,14 +239,12 @@ const handleSave = async () => {
   try {
     const updatedConfig = result.parsed as Record<string, unknown>
     emit('save', updatedConfig)
-    // Parent will handle API call and call onSaveSuccess/onSaveError
-  } catch (error) {
+  } catch {
     commonStore.showNotification('Failed to save configuration', 'error')
     isSaving.value = false
   }
 }
 
-// Find line for path helper
 const findLineForPath = (jsonString: string, path: string): number | undefined => {
   if (!path) return 1
 
@@ -334,24 +269,55 @@ const findLineForPath = (jsonString: string, path: string): number | undefined =
   return 1
 }
 
-const jumpToError = (error: ValidationError) => {
-  const editor = editorRef.value?.editor
-  if (editor && error.path) {
-    const line = findLineForPath(editorContent.value, error.path)
-    if (line) {
-      const ed = editor as {
-        revealLineInCenter: (line: number) => void
-        setPosition: (position: { lineNumber: number; column: number }) => void
-        focus: () => void
-      }
-      ed.revealLineInCenter(line)
-      ed.setPosition({ lineNumber: line, column: 1 })
-      ed.focus()
+const normalizeValidationErrors = (errors: ValidationError[]): ValidationError[] => {
+  return errors.map((error) => {
+    if (error.path) {
+      return error
     }
+
+    if (!error.message.startsWith('Invalid JSON:')) {
+      return error
+    }
+
+    const hint = editorRef.value?.getLikelySyntaxIssueHint()
+    if (!hint || error.message.includes(hint)) {
+      return error
+    }
+
+    return {
+      ...error,
+      message: `${error.message} ${hint}`
+    }
+  })
+}
+
+const jumpToError = (error: ValidationError) => {
+  if (!editorRef.value) return
+
+  if (!error.path && !error.line) {
+    const syntaxOffset = editorRef.value.getFirstSyntaxErrorOffset()
+    if (syntaxOffset !== undefined) {
+      editorRef.value.focusOffset(syntaxOffset)
+      return
+    }
+  }
+
+  const line =
+    error.line || (error.path ? findLineForPath(editorContent.value, error.path) : undefined)
+
+  if (!line) {
+    editorRef.value.focus()
+    return
+  }
+  editorRef.value.focusLine(line)
+}
+
+const handleSaveShortcut = () => {
+  if (isDirty.value && validationErrors.value.length === 0 && !isSaving.value) {
+    void handleSave()
   }
 }
 
-// Handle unsaved changes warning
 const handleBeforeUnload = (e: BeforeUnloadEvent) => {
   if (isDirty.value) {
     e.preventDefault()
@@ -359,7 +325,6 @@ const handleBeforeUnload = (e: BeforeUnloadEvent) => {
   }
 }
 
-// Register beforeunload handler
 if (typeof window !== 'undefined') {
   window.addEventListener('beforeunload', handleBeforeUnload)
 }
@@ -370,29 +335,20 @@ onBeforeUnmount(() => {
   }
 })
 
-// Called by parent after successful save
 const onSaveSuccess = () => {
   originalContent.value = editorContent.value
   isSaving.value = false
   commonStore.showNotification('Configuration saved successfully', 'success')
 }
 
-// Called by parent on save error
 const onSaveError = (message: string) => {
   isSaving.value = false
   commonStore.showNotification(message || 'Failed to save configuration', 'error')
 }
 
-// Expose methods for parent
 defineExpose({
   onSaveSuccess,
   onSaveError,
   isDirty
 })
 </script>
-
-<style scoped>
-.json-config-editor {
-  /* Component wrapper */
-}
-</style>

@@ -178,7 +178,6 @@ export function useDatabaseExplorerController({
       target.tagName === 'INPUT' ||
       target.tagName === 'TEXTAREA' ||
       target.isContentEditable ||
-      target.closest('.monaco-editor') !== null ||
       target.closest('.cm-editor') !== null
 
     if (e.key === '/' && !isInputField) {

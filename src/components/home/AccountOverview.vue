@@ -189,7 +189,7 @@
           <div v-if="subscriptionStatus === 'canceled'" class="mt-2 flex items-start space-x-2">
             <div class="shrink-0 mt-0.5">
               <svg
-                class="h-4 w-4 text-red-500 dark:text-red-400"
+                class="h-4 w-4 text-red-500 dark:text-red-300"
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
                 fill="currentColor"
@@ -316,7 +316,7 @@
             <div class="flex items-center justify-end gap-3">
               <button
                 type="button"
-                class="inline-flex items-center text-sm font-medium text-red-600 dark:text-red-400 hover:text-red-500 dark:hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-50"
+                class="inline-flex items-center text-sm font-medium text-red-600 dark:text-red-300 hover:text-red-500 dark:hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-50"
                 :disabled="!hasApiKey || isClearingApiKey"
                 @click="confirmClearApiKey"
               >

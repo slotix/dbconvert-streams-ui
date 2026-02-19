@@ -39,7 +39,7 @@ const copied = ref(false)
 
 const rowBackgroundClass = computed(() => {
   if (props.isError) {
-    return 'bg-red-50 dark:bg-red-900/20'
+    return 'bg-red-50 dark:bg-red-900/30'
   }
   return 'hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors'
 })

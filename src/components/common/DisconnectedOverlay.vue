@@ -20,7 +20,7 @@ async function handleRetry() {
     <div class="text-center max-w-md px-6">
       <!-- Icon -->
       <div class="mx-auto w-24 h-24 mb-6 flex items-center justify-center">
-        <XCircle class="w-20 h-20 text-red-500 dark:text-red-400" />
+        <XCircle class="w-20 h-20 text-red-500 dark:text-red-300" />
       </div>
 
       <!-- Title -->

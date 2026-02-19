@@ -136,7 +136,7 @@ const ActionsCell = defineComponent({
           {
             type: 'button',
             class:
-              'p-1.5 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-200',
+              'p-1.5 text-red-600 dark:text-red-300 hover:text-red-700 dark:hover:text-red-300 rounded-md hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors duration-200',
             title: 'Delete this run from history',
             onClick: deleteRun
           },

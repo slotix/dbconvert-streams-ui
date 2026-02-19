@@ -268,7 +268,7 @@ function click(action: string, openInRightSplit?: boolean) {
             <span>Clone</span>
           </button>
           <button
-            class="w-full text-left px-3 py-1.5 text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
+            class="w-full text-left px-3 py-1.5 text-red-600 dark:text-red-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
             @click="click('delete-connection')"
           >
             <Trash2 class="w-4 h-4 shrink-0" />

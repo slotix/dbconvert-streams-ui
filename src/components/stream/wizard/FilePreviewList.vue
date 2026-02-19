@@ -45,7 +45,7 @@
       <div v-if="isLoading" class="py-10 text-center text-sm text-gray-500 dark:text-gray-400">
         Loading files…
       </div>
-      <div v-else-if="error" class="py-10 text-center text-sm text-red-600 dark:text-red-400">
+      <div v-else-if="error" class="py-10 text-center text-sm text-red-600 dark:text-red-300">
         {{ error }}
       </div>
       <div

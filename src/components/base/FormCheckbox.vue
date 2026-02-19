@@ -115,7 +115,7 @@ const checkboxId = props.id || `form-checkbox-${Math.random().toString(36).subst
             'transition-colors duration-150',
             'focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-900',
             error
-              ? 'border-red-300 dark:border-red-600 text-red-600 dark:text-red-400 focus:ring-red-500 dark:focus:ring-red-400'
+              ? 'border-red-300 dark:border-red-600 text-red-600 dark:text-red-300 focus:ring-red-500 dark:focus:ring-red-400'
               : 'border-gray-300 dark:border-gray-600 text-teal-600 dark:text-teal-400 focus:ring-teal-500 dark:focus:ring-teal-400',
             disabled
               ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed'
@@ -149,7 +149,7 @@ const checkboxId = props.id || `form-checkbox-${Math.random().toString(36).subst
           v-if="error || helperText"
           :class="[
             'mt-0.5 text-xs',
-            error ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'
+            error ? 'text-red-600 dark:text-red-300' : 'text-gray-500 dark:text-gray-400'
           ]"
         >
           {{ error || helperText }}

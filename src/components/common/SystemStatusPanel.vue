@@ -100,7 +100,7 @@ onMounted(async () => {
       Open Logs Folder
     </button>
 
-    <div v-if="error" class="text-[11px] text-red-500 dark:text-red-400 whitespace-pre-wrap">
+    <div v-if="error" class="text-[11px] text-red-500 dark:text-red-300 whitespace-pre-wrap">
       {{ error }}
     </div>
   </div>

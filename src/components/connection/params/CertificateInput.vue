@@ -44,7 +44,7 @@
         <button
           v-if="value && !isLoading"
           type="button"
-          class="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+          class="text-red-500 dark:text-red-300 hover:text-red-700 dark:hover:text-red-300"
           @click="$emit('clear')"
         >
           <Trash class="h-5 w-5" />

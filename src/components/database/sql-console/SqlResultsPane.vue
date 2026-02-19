@@ -49,14 +49,14 @@
       <!-- Error Display -->
       <div
         v-else-if="error"
-        class="m-3 rounded-md bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3"
+        class="m-3 rounded-md bg-red-50 dark:bg-red-950/35 border border-red-200 dark:border-red-700/70 p-3"
       >
         <div class="flex">
-          <XCircle class="h-4 w-4 text-red-400 dark:text-red-500 shrink-0" />
+          <XCircle class="h-4 w-4 text-red-400 dark:text-red-300 shrink-0" />
           <div class="ml-2">
             <h3 class="text-xs font-medium text-red-800 dark:text-red-200">Query Error</h3>
             <pre
-              class="mt-1 whitespace-pre-wrap font-mono text-xs text-red-700 dark:text-red-300"
+              class="mt-1 whitespace-pre-wrap font-mono text-xs text-red-700 dark:text-red-200/90"
               >{{ error }}</pre
             >
           </div>

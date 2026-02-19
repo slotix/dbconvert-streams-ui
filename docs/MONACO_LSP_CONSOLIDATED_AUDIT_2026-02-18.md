@@ -10,7 +10,7 @@ Current recommendation:
 - Stop investing in Monaco SQL completion path.
 - Keep backend SQL LSP (`sqls` over `/api/v1/lsp/ws`) as the intelligence backend.
 - Migrate SQL editor UX from Monaco to CodeMirror 6.
-- Keep Monaco only where already stable (JSON/editor/viewers) until a separate migration pass.
+- Remove Monaco from active UI code paths, including JSON editor/viewer surfaces.
 
 Why this changed:
 - LSP backend transport works.
@@ -38,12 +38,13 @@ Conclusion:
 ## 3. Current Monaco SQL Status
 
 What remains true:
-- Monaco still powers JSON editor/viewer paths.
+- Monaco is fully removed from active UI editor/viewer paths.
 
 What changed from original audit:
 - Legacy custom SQL provider code was removed.
 - SQL editor surfaces were migrated to `SqlCodeMirror`.
 - Monaco SQL editor component was removed from active code path.
+- JSON editor/viewer surfaces were migrated off Monaco.
 - Runtime LSP toggle path was removed; SQL LSP is always active when direct DB context is available.
 
 ## 4. LSP in Go Binaries: Status
@@ -99,7 +100,7 @@ Decision for next implementation cycle:
 3. Introduce CodeMirror 6 SQL editor path.
 4. Wire CodeMirror SQL completion to backend LSP (same endpoint).
 5. Switch SQL consoles/wizards to CodeMirror.
-6. Leave Monaco JSON/editor paths untouched until a dedicated follow-up pass.
+6. Migrate JSON editor/viewer paths off Monaco and remove Monaco dependencies/config.
 
 Phase 0 status (2026-02-19):
 - Completed: temporary SQL LSP probe UI controls removed.
@@ -125,6 +126,7 @@ Phase 4 status snapshot (2026-02-19):
 - Completed: LSP websocket auto-reconnect (backoff) in `SqlCodeMirror` on unexpected close.
 - Completed: `SqlCodeMirror` internals split into focused helper modules (`sqlCodeMirrorTypes`, `sqlCodeMirrorLspUtils`, `sqlCodeMirrorHoverUtils`) to reduce maintenance risk.
 - Completed: SQL LSP regression command now includes CodeMirror LSP/hover utility unit tests.
+- Completed: Monaco removed from JSON editor/viewer paths and build/dependency config.
 
 ## 7. Phase Plan (Updated)
 
@@ -198,9 +200,9 @@ Execution artifact:
 - Use `docs/SQL_LSP_SMOKE_EXECUTION_REPORT_TEMPLATE.md` for each pre-merge/pre-release run.
 - Fast unit regression command: `yarn test:sql-lsp`.
 
-## 8. Open Decisions
+## 8. Remaining Decisions
 
-- Whether to keep Monaco as long-term JSON-only editor or migrate JSON later.
+- None.
 
 Resolved on 2026-02-19:
 - Hover formatting policy: keep markdown rendering with sanitized DOM output (including markdown table rendering) as default for SQL LSP hover in `SqlCodeMirror`.
@@ -211,8 +213,9 @@ Current working default:
 ## 9. Source Pointers (Current)
 
 UI:
-- `src/components/monaco/MonacoEditor.vue`
 - `src/components/codemirror/SqlCodeMirror.vue`
+- `src/components/common/JsonConfigEditor.vue`
+- `src/components/common/JsonViewer.vue`
 - `src/composables/useSqlLspProviders.ts`
 - `src/components/database/sql-console/SqlEditorPane.vue`
 - `src/components/stream/wizard/CustomQueryEditor.vue`

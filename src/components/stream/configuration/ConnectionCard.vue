@@ -14,7 +14,7 @@
           <div class="flex flex-wrap items-center gap-1">
             <span
               class="font-medium text-gray-900 dark:text-gray-100 truncate"
-              :class="{ 'text-red-500 dark:text-red-400': !hasConnection }"
+              :class="{ 'text-red-500 dark:text-red-300': !hasConnection }"
               :title="connection?.name"
             >
               {{ connection?.name || 'N/A' }}
@@ -27,7 +27,7 @@
             />
             <AlertCircle
               v-if="!hasConnection"
-              class="h-4 w-4 text-red-500 dark:text-red-400 shrink-0"
+              class="h-4 w-4 text-red-500 dark:text-red-300 shrink-0"
               aria-hidden="true"
             />
           </div>
@@ -46,7 +46,7 @@
     </div>
     <div class="text-xs text-gray-500 dark:text-gray-400 truncate">
       <ConnectionStringDisplay v-if="connection" :connection="connection" />
-      <span v-else class="text-red-500 dark:text-red-400">Connection not found</span>
+      <span v-else class="text-red-500 dark:text-red-300">Connection not found</span>
     </div>
   </div>
 
@@ -72,7 +72,7 @@
           />
           <span
             class="font-medium text-gray-900 dark:text-gray-100 truncate"
-            :class="{ 'text-red-500 dark:text-red-400': !hasConnection }"
+            :class="{ 'text-red-500 dark:text-red-300': !hasConnection }"
           >
             {{ connection?.name || 'N/A' }}
           </span>
@@ -83,7 +83,7 @@
           />
           <AlertCircle
             v-if="!hasConnection"
-            class="h-4 w-4 text-red-500 dark:text-red-400 shrink-0"
+            class="h-4 w-4 text-red-500 dark:text-red-300 shrink-0"
             aria-hidden="true"
           />
         </div>
@@ -100,7 +100,7 @@
       </div>
       <div class="text-sm text-gray-600 dark:text-gray-400">
         <ConnectionStringDisplay v-if="connection" :connection="connection" />
-        <span v-else class="text-red-500 dark:text-red-400 text-xs">Connection not found</span>
+        <span v-else class="text-red-500 dark:text-red-300 text-xs">Connection not found</span>
       </div>
     </div>
   </div>

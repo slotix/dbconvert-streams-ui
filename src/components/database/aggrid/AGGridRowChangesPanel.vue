@@ -77,7 +77,9 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeyDown))
 
         <div class="flex-1 min-w-0">
           <!-- Row header -->
-          <div class="flex items-center justify-between gap-2 px-3 py-2 bg-gray-50/80 dark:bg-gray-800/50">
+          <div
+            class="flex items-center justify-between gap-2 px-3 py-2 bg-gray-50/80 dark:bg-gray-800/50"
+          >
             <div class="flex items-center gap-2">
               <span class="text-sm font-semibold text-gray-800 dark:text-gray-100">
                 {{ formatRowLabel(row.label) }}

@@ -248,7 +248,7 @@ const optionsBehaviorClass = computed(() => {
       v-if="error || helperText"
       :class="[
         'mt-1 text-xs',
-        error ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'
+        error ? 'text-red-600 dark:text-red-300' : 'text-gray-500 dark:text-gray-400'
       ]"
     >
       {{ error || helperText }}

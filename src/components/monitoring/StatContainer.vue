@@ -372,7 +372,7 @@ const statusMessageClass = computed(() => {
 
   const hasFailed = store.stats.some((stat) => stat.status === 'FAILED')
   if (hasFailed) {
-    return 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-800'
+    return 'bg-red-50 dark:bg-red-900/30 text-red-800 dark:text-red-100/95 border border-red-200 dark:border-red-700/70'
   }
 
   if (props.isStopped) {

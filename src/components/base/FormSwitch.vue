@@ -86,7 +86,7 @@ const handleChange = (value: boolean) => {
         as="span"
         :class="[
           'text-sm font-medium',
-          error ? 'text-red-700 dark:text-red-400' : 'text-gray-900 dark:text-gray-300',
+          error ? 'text-red-700 dark:text-red-300' : 'text-gray-900 dark:text-gray-300',
           disabled ? 'opacity-60' : 'cursor-pointer'
         ]"
       >
@@ -107,7 +107,7 @@ const handleChange = (value: boolean) => {
         v-if="error || helperText"
         :class="[
           'mt-1 text-xs',
-          error ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'
+          error ? 'text-red-600 dark:text-red-300' : 'text-gray-500 dark:text-gray-400'
         ]"
       >
         {{ error || helperText }}

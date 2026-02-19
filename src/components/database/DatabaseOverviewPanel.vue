@@ -540,7 +540,7 @@ async function handleCreateSchema() {
     <div v-if="isLoading" class="text-sm text-gray-500 dark:text-gray-400 py-8 text-center">
       Loading overview…
     </div>
-    <div v-else-if="error" class="text-sm text-red-600 dark:text-red-400 py-8 text-center">
+    <div v-else-if="error" class="text-sm text-red-600 dark:text-red-300 py-8 text-center">
       {{ error }}
     </div>
     <div
@@ -940,7 +940,7 @@ async function handleCreateSchema() {
             :class="{
               'bg-sky-100/50 dark:bg-sky-900/20': n.severity === 'info',
               'bg-amber-100/50 dark:bg-amber-900/20': n.severity === 'warn',
-              'bg-red-100/50 dark:bg-red-900/20': n.severity === 'error'
+              'bg-red-100/50 dark:bg-red-900/30': n.severity === 'error'
             }"
           >
             <span
@@ -967,7 +967,7 @@ async function handleCreateSchema() {
                 :class="{
                   'text-sky-600 dark:text-sky-400': n.severity === 'info',
                   'text-amber-600 dark:text-amber-400': n.severity === 'warn',
-                  'text-red-600 dark:text-red-400': n.severity === 'error'
+                  'text-red-600 dark:text-red-300': n.severity === 'error'
                 }"
                 target="_blank"
                 rel="noopener noreferrer"

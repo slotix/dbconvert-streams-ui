@@ -47,7 +47,8 @@ function validateConnection(content: string, original: Record<string, unknown>):
     valid: result.valid,
     errors: result.errors.map((e) => ({
       path: e.path,
-      message: e.message
+      message: e.message,
+      line: e.line
     })),
     parsed: result.valid ? parsed : undefined
   }

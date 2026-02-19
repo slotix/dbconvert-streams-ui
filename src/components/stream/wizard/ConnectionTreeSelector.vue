@@ -67,7 +67,7 @@
 
           <div
             v-else-if="getS3BucketsError(connection.id)"
-            class="px-4 py-3 text-sm text-red-600 dark:text-red-400"
+            class="px-4 py-3 text-sm text-red-600 dark:text-red-300"
           >
             {{ getS3BucketsError(connection.id) }}
           </div>
@@ -147,7 +147,7 @@
                 </div>
                 <div class="mt-1">
                   <template v-if="getFileError(connection.id)">
-                    <span class="text-red-600 dark:text-red-400">{{
+                    <span class="text-red-600 dark:text-red-300">{{
                       getFileError(connection.id)
                     }}</span>
                   </template>

@@ -269,7 +269,7 @@
     >
       <div class="flex items-center">
         <svg
-          class="w-5 h-5 text-red-600 dark:text-red-400 mr-2"
+          class="w-5 h-5 text-red-600 dark:text-red-300 mr-2"
           fill="currentColor"
           viewBox="0 0 20 20"
         >

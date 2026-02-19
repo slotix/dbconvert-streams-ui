@@ -196,9 +196,9 @@
               <!-- Error Display -->
               <div
                 v-if="error"
-                class="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md"
+                class="mt-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700/70 rounded-md"
               >
-                <p class="text-sm text-red-800 dark:text-red-300">{{ error }}</p>
+                <p class="text-sm text-red-800 dark:text-red-100/95">{{ error }}</p>
               </div>
             </DialogPanel>
           </TransitionChild>

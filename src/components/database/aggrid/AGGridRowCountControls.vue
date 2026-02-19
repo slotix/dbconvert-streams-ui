@@ -34,7 +34,7 @@ function formatCount(n: number): string {
 
       <span
         v-if="countError"
-        class="text-sm text-red-600 dark:text-red-400 flex items-center gap-1"
+        class="text-sm text-red-600 dark:text-red-300 flex items-center gap-1"
       >
         <AlertCircle class="w-4 h-4" />
         {{ countError }}

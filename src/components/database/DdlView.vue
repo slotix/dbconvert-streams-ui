@@ -20,7 +20,7 @@ const dialect = computed(() => props.dialect)
 const indexesSql = computed(() => {
   if (!props.ddl.createIndexes?.length) return ''
 
-  // Join indexes with semicolons and newlines (Monaco will format)
+  // Join indexes with semicolons and newlines for SQL block rendering
   return props.ddl.createIndexes.map((sql) => sql.trim().replace(/;+$/, '')).join(';\n')
 })
 </script>

@@ -827,7 +827,7 @@ async function selectTable(tableName: string) {
 
           <div
             v-else-if="targetFileError"
-            class="h-full flex items-center justify-center text-center text-sm text-red-600 dark:text-red-400 px-4"
+            class="h-full flex items-center justify-center text-center text-sm text-red-600 dark:text-red-300 px-4"
           >
             {{ targetFileError }}
           </div>

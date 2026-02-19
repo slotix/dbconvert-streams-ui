@@ -28,9 +28,6 @@ console.log(
 console.log(`API URL: ${window.ENV?.VITE_API_URL || import.meta.env.VITE_API_URL || '/api'}`)
 console.log('─'.repeat(34))
 
-// Monaco Editor is now lazy-loaded via src/utils/monaco-loader.ts
-// This reduces the initial bundle size by ~3.8MB (986KB gzipped)
-
 // Ensure window.ENV exists
 if (!window.ENV) {
   // console.warn('window.ENV is not defined. Using default environment variables.')

@@ -31,13 +31,13 @@ const props = withDefaults(
 
 const labelClass = computed(() => {
   return props.variant === 'error'
-    ? 'text-red-600 dark:text-red-400'
+    ? 'text-red-600 dark:text-red-300'
     : 'text-gray-600 dark:text-gray-400'
 })
 
 const valueClass = computed(() => {
   return props.variant === 'error'
-    ? 'text-red-600 dark:text-red-400'
+    ? 'text-red-600 dark:text-red-300'
     : 'text-gray-900 dark:text-gray-100'
 })
 </script>
