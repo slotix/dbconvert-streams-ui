@@ -276,71 +276,59 @@
                 </template>
 
                 <template v-else>
-                  <div class="flex items-center gap-2">
-                    <!-- Checkbox -->
-                    <input
-                      :id="`conn-${conn.id}`"
-                      type="checkbox"
-                      :checked="isSelected(conn.id)"
-                      class="h-3 w-3 rounded-[3px] border-gray-400/70 dark:border-gray-600/70 text-teal-500 focus:ring-0 focus:ring-offset-0 bg-transparent"
-                      @change="toggleConnection(conn)"
-                    />
-
-                    <!-- Connection Icon -->
-                    <div class="shrink-0 w-5 flex items-center justify-center">
-                      <img
-                        v-if="getPrimaryDatabaseLogoForConnection(conn)"
-                        :src="getPrimaryDatabaseLogoForConnection(conn)"
-                        :alt="`${getConnectionTypeLabelForUI(conn)} logo`"
-                        class="h-4 w-4 object-contain opacity-90 dark:opacity-100 dark:brightness-0 dark:invert"
+                  <div class="flex items-center justify-between gap-2 px-1">
+                    <div class="flex items-center gap-2 min-w-0 flex-1">
+                      <input
+                        :id="`conn-${conn.id}`"
+                        type="checkbox"
+                        :checked="isSelected(conn.id)"
+                        class="h-3 w-3 rounded-[3px] border-gray-400/70 dark:border-gray-600/70 text-teal-500 focus:ring-0 focus:ring-offset-0 bg-transparent"
+                        @change="toggleConnection(conn)"
                       />
-                      <component
-                        :is="getConnectionIcon(getConnectionTypeLabelForUI(conn))"
-                        v-else
-                        class="h-4 w-4"
-                        :class="getConnectionIconColor(getConnectionTypeLabelForUI(conn))"
-                      />
-                    </div>
 
-                    <!-- Connection Info -->
-                    <div class="flex-1 min-w-0">
+                      <div class="shrink-0 w-5 flex items-center justify-center">
+                        <img
+                          v-if="getPrimaryDatabaseLogoForConnection(conn)"
+                          :src="getPrimaryDatabaseLogoForConnection(conn)"
+                          :alt="`${getConnectionTypeLabelForUI(conn)} logo`"
+                          class="h-4 w-4 object-contain opacity-90 dark:opacity-100 dark:brightness-0 dark:invert"
+                        />
+                        <component
+                          :is="getConnectionIcon(getConnectionTypeLabelForUI(conn))"
+                          v-else
+                          class="h-4 w-4"
+                          :class="getConnectionIconColor(getConnectionTypeLabelForUI(conn))"
+                        />
+                      </div>
+
                       <label
                         :for="`conn-${conn.id}`"
-                        class="block font-semibold text-gray-950 dark:text-gray-100 truncate cursor-pointer text-sm"
+                        class="block text-sm font-semibold text-gray-900 dark:text-gray-100 truncate cursor-pointer"
+                        :title="getConnectionMeta(conn)"
                       >
                         {{ conn.name }}
                       </label>
-                      <p
-                        class="truncate text-gray-500 dark:text-gray-400 text-[11px]"
-                        :title="getConnectionMeta(conn)"
-                      >
-                        {{ getConnectionMeta(conn) }}
-                      </p>
                     </div>
+                  </div>
 
-                    <!-- Alias Input (non-database sources like S3) -->
-                    <div
-                      v-if="
-                        isSelected(conn.id) &&
-                        showAliasForConnection(conn) &&
-                        getPrimaryMapping(conn.id)
-                      "
-                      class="flex items-center shrink-0 gap-1 self-start mt-0.5"
-                    >
-                      <span v-if="!props.compact" class="text-xs text-gray-500 dark:text-gray-400"
-                        >as</span
-                      >
+                  <!-- Alias Input (non-database sources like S3) -->
+                  <div
+                    v-if="
+                      isSelected(conn.id) &&
+                      showAliasForConnection(conn) &&
+                      getPrimaryMapping(conn.id)
+                    "
+                    class="ml-7 mt-1 w-full max-w-[34rem] rounded-md bg-gray-100/45 dark:bg-gray-800/20 px-2 py-1.5"
+                  >
+                    <div class="flex items-center gap-2 px-0.5">
                       <button
                         v-if="
                           editingAliasTargetId !== getMappingTargetId(getPrimaryMapping(conn.id)!)
                         "
                         type="button"
                         :title="`Edit alias for ${conn.name}`"
-                        class="alias-inline-display text-xs font-mono leading-none text-gray-600 dark:text-gray-300 focus:outline-none transition-colors"
-                        :class="[
-                          props.compact ? 'w-[4.25rem] truncate py-0.5' : 'w-[4.25rem] py-0.5',
-                          !getAlias(conn.id) && 'text-gray-400 dark:text-gray-500'
-                        ]"
+                        class="alias-inline-display text-xs font-mono leading-none text-gray-600 dark:text-gray-300 focus:outline-none transition-colors w-[4.25rem] truncate py-0.5"
+                        :class="!getAlias(conn.id) && 'text-gray-400 dark:text-gray-500'"
                         @click="startAliasEdit(getPrimaryMapping(conn.id)!)"
                       >
                         {{ getAlias(conn.id) || 'alias' }}
@@ -361,8 +349,7 @@
                         "
                         :title="`Alias for ${conn.name}`"
                         placeholder="alias"
-                        class="alias-inline-input text-xs font-mono leading-none bg-transparent border-0 border-b border-gray-400 dark:border-gray-500 rounded-none text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-0 focus:border-teal-500 dark:focus:border-teal-400 caret-teal-500"
-                        :class="props.compact ? 'w-[4.25rem] py-0.5' : 'w-[4.25rem] py-0.5'"
+                        class="alias-inline-input text-xs font-mono leading-none bg-transparent border-0 border-b border-gray-400 dark:border-gray-500 rounded-none text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-0 focus:border-teal-500 dark:focus:border-teal-400 caret-teal-500 w-[4.25rem] py-0.5"
                         @input="
                           setAliasDraft(
                             getMappingTargetId(getPrimaryMapping(conn.id)!),
@@ -374,29 +361,23 @@
                         @keydown.escape.prevent="cancelAliasEdit(getPrimaryMapping(conn.id)!)"
                       />
                     </div>
+                  </div>
 
-                    <!-- Optional Folder Scope (file connections) -->
-                    <div
-                      v-if="isSelected(conn.id) && shouldShowFolderScopeSelector(conn)"
-                      class="flex items-center shrink-0 gap-1 self-start mt-0.5"
-                    >
-                      <span v-if="!props.compact" class="text-xs text-gray-500 dark:text-gray-400"
-                        >folder</span
-                      >
-                      <div
+                  <!-- Optional Folder Scope (file connections) -->
+                  <div
+                    v-if="isSelected(conn.id) && shouldShowFolderScopeSelector(conn)"
+                    class="ml-7 mr-1 mt-1 rounded-md bg-gray-100/45 dark:bg-gray-800/20 px-2 py-1.5"
+                  >
+                    <div class="flex items-center gap-2 px-0.5">
+                      <FormSelect
+                        :model-value="getDatabase(conn.id)"
+                        :options="getFolderScopeSelectOptions(conn)"
+                        compact
+                        button-class="h-7"
                         class="w-full"
-                        :class="props.compact ? 'max-w-[12rem]' : 'max-w-[14rem]'"
-                      >
-                        <FormSelect
-                          :model-value="getDatabase(conn.id)"
-                          :options="getFolderScopeSelectOptions(conn)"
-                          compact
-                          :button-class="props.compact ? 'h-7 rounded-full' : ''"
-                          class="w-full"
-                          placeholder="All folders"
-                          @update:model-value="updateDatabase(conn.id, String($event ?? ''))"
-                        />
-                      </div>
+                        placeholder="All folders"
+                        @update:model-value="updateDatabase(conn.id, String($event ?? ''))"
+                      />
                     </div>
                   </div>
                 </template>
