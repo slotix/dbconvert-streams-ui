@@ -95,15 +95,44 @@ Selection highlight and autocomplete colors are aligned to current app palette.
   - `connection_id` (can be repeated for federated metadata scope)
   - optional `connection_alias`
 
-### DuckDB completion fallback (graceful)
+### Multi-source SQL conventions (DuckDB-native)
 
-- Primary completion source: DuckDB `sql_auto_complete(...)`.
-- Fallback on error/empty result:
-  - SQL keywords
-  - known table/view names from `information_schema.tables`
-- Hover and formatting stay non-blocking:
-  - hover returns `null` when unresolved
-  - formatting returns no-op edits if unavailable
+In multi-source mode, SQL naming follows DuckDB attached-catalog conventions.
+
+- Root relation context (`FROM`, `JOIN`, `INTO`, `UPDATE`, `TABLE`) suggests:
+  - selected source aliases
+  - DuckDB file read functions (`read_csv_auto(`, `read_parquet(`, `read_json_auto(`, ...)
+- System schemas are hidden from suggestions by default:
+  - `information_schema`
+  - `pg_catalog`
+  - `pg_toast`
+
+Dot navigation by source type:
+
+- PostgreSQL (attached as alias `pg1`):
+  - `pg1.` -> schemas (`public`, `private`, ...)
+  - `pg1.public.` -> tables
+  - `pg1.public.actor.` -> columns
+  - Query shape: `alias.schema.table`
+- MySQL (attached as alias `my1`):
+  - `my1.` -> databases/schemas (`sakila`, ...)
+  - `my1.sakila.` -> tables
+  - `my1.sakila.actor.` -> columns
+  - Query shape: `alias.database.table`
+- File alias (for example `files1`):
+  - `files1.` -> file-backed table/view or column scope (depending on object)
+
+Important:
+
+- Multi-source execution uses the same naming conventions as autocomplete.
+- No hidden query rewriting should be required to execute valid suggested identifiers.
+- If a suggestion is shown, its inserted form is expected to run as-is.
+
+DuckDB references:
+
+- PostgreSQL extension: <https://duckdb.org/docs/stable/core_extensions/postgres>
+- MySQL extension: <https://duckdb.org/docs/stable/core_extensions/mysql>
+- Multi-database `ATTACH` model: <https://duckdb.org/2024/01/26/multi-database-support-in-duckdb.html>
 
 ## Expected limitations (normal)
 
@@ -118,6 +147,19 @@ Selection highlight and autocomplete colors are aligned to current app palette.
 3. Switch `Run on` database and repeat #1 -> list reflects selected DB.
 4. Repeat completion + DB switching several times -> UI remains responsive.
 5. Confirm selection visibility and editing behavior in both light/dark themes.
+
+Multi-source checklist:
+
+1. Run context: `Multi-source` with aliases `my1`, `pg1`, `files1`.
+2. `SELECT * FROM ` + `Ctrl+Space` -> only aliases + `read_*` functions.
+3. `SELECT * FROM pg1.` -> schemas (for example `public`), no `postgres` database hop.
+4. `SELECT * FROM pg1.public.` -> PostgreSQL table list.
+5. `SELECT * FROM my1.` -> MySQL database list (for example `sakila`).
+6. `SELECT * FROM my1.sakila.` -> MySQL table list.
+7. Execute:
+   - `SELECT * FROM pg1.public.actor LIMIT 10;`
+   - `SELECT * FROM my1.sakila.actor LIMIT 10;`
+   - both succeed without manual identifier rewriting.
 
 Quick regression command (unit scope):
 

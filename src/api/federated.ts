@@ -22,6 +22,12 @@ export interface ConnectionMapping {
   connectionId: string
   /** Optional specific database to connect to */
   database?: string
+  /**
+   * Optional file scope path for local files sources in federated mode.
+   * For file mappings, UI stores selected folder in `database`; this field
+   * carries it explicitly for backend path normalization.
+   */
+  scopePath?: string
 }
 
 /**
@@ -84,9 +90,13 @@ export async function executeFederatedQuery(
   request: FederatedQueryRequest
 ): Promise<FederatedQueryResponse> {
   try {
+    const normalizedRequest: FederatedQueryRequest = {
+      ...request,
+      connections: normalizeFederatedConnectionMappings(request.connections)
+    }
     const response: AxiosResponse<FederatedQueryResponse> = await apiClient.post(
       '/query/federated',
-      request,
+      normalizedRequest,
       {
         timeout: API_TIMEOUTS.VERY_LONG // 2 minutes for complex cross-connection queries
       }
@@ -108,9 +118,13 @@ export async function validateFederatedQuery(
   request: FederatedQueryRequest
 ): Promise<{ valid: boolean; errors?: string[] }> {
   try {
+    const normalizedRequest: FederatedQueryRequest = {
+      ...request,
+      connections: normalizeFederatedConnectionMappings(request.connections)
+    }
     const response: AxiosResponse<{ valid: boolean; errors?: string[] }> = await apiClient.post(
       '/query/federated/validate',
-      request,
+      normalizedRequest,
       {
         timeout: API_TIMEOUTS.SHORT
       }
@@ -132,9 +146,10 @@ export async function getFederatedSchemas(
   connections: ConnectionMapping[]
 ): Promise<AttachedDatabaseSchema[]> {
   try {
+    const normalizedConnections = normalizeFederatedConnectionMappings(connections)
     const response: AxiosResponse<AttachedDatabaseSchema[]> = await apiClient.post(
       '/query/federated/schemas',
-      { connections },
+      { connections: normalizedConnections },
       {
         timeout: API_TIMEOUTS.MEDIUM
       }
@@ -149,4 +164,27 @@ export default {
   executeFederatedQuery,
   validateFederatedQuery,
   getFederatedSchemas
+}
+
+function normalizeFederatedConnectionMappings(
+  connections: ConnectionMapping[]
+): ConnectionMapping[] {
+  return connections.map((mapping) => {
+    const explicitScopePath = mapping.scopePath?.trim()
+    if (explicitScopePath) {
+      return { ...mapping, scopePath: explicitScopePath }
+    }
+
+    const selectedDatabase = mapping.database?.trim()
+    if (!selectedDatabase) {
+      return mapping
+    }
+
+    // For file sources, selected folder scope is currently kept in `database`.
+    // Send it explicitly as scopePath so backend can normalize relative read_* paths.
+    return {
+      ...mapping,
+      scopePath: selectedDatabase
+    }
+  })
 }

@@ -65,9 +65,9 @@
             none
           </span>
         </div>
-        <ChevronRight
-          class="h-3.5 w-3.5 shrink-0 text-gray-400 dark:text-gray-500 group-hover:text-gray-500 dark:group-hover:text-gray-400 transition-colors"
-        />
+        <span class="sources-inline-chevron-hit shrink-0">
+          <ChevronRight class="sources-inline-chevron shrink-0" />
+        </span>
       </button>
     </div>
 
@@ -540,37 +540,59 @@ const { isExecuting, executeQuery } = useQueryExecution({
   }
 })
 
+function collectDatabaseLspMappings(): Array<{
+  connectionId: string
+  alias?: string
+  database?: string
+}> {
+  const federatedConnections: Array<{
+    connectionId: string
+    alias?: string
+    database?: string
+  }> = []
+
+  selectedConnections.value.forEach((mapping) => {
+    const conn = connectionsStore.connectionByID(mapping.connectionId)
+    const kind = getConnectionKindFromSpec(conn?.spec)
+    if (isFileBasedKind(kind)) {
+      return
+    }
+    federatedConnections.push({
+      connectionId: mapping.connectionId,
+      alias: mapping.alias,
+      database: mapping.database
+    })
+  })
+
+  return federatedConnections
+}
+
 const sqlLspContext = computed<SqlLspConnectionContext | undefined>(() => {
   if (props.mode === 'file') {
     const filePath = activeQueryTab.value?.fileContext?.path?.trim() || ''
+    const fileFormat = activeQueryTab.value?.fileContext?.format?.trim() || undefined
+    const hasMultipleSelectedSources = selectedConnections.value.length > 1
+    if (hasMultipleSelectedSources) {
+      const federatedConnections = collectDatabaseLspMappings()
+      return {
+        provider: 'duckdb',
+        filePath: filePath || undefined,
+        fileFormat,
+        federatedConnections: federatedConnections.length > 0 ? federatedConnections : undefined
+      }
+    }
+
     return {
       provider: 'duckdb',
       connectionId: props.connectionId,
       filePath: filePath || undefined,
-      fileFormat: activeQueryTab.value?.fileContext?.format?.trim() || undefined
+      fileFormat
     }
   }
 
-  if (runMode.value !== 'single') {
-    const federatedConnections: Array<{
-      connectionId: string
-      alias?: string
-      database?: string
-    }> = []
-
-    selectedConnections.value.forEach((mapping) => {
-      const conn = connectionsStore.connectionByID(mapping.connectionId)
-      const kind = getConnectionKindFromSpec(conn?.spec)
-      if (isFileBasedKind(kind)) {
-        return
-      }
-      federatedConnections.push({
-        connectionId: mapping.connectionId,
-        alias: mapping.alias,
-        database: mapping.database
-      })
-    })
-
+  const hasMultipleSelectedSources = selectedConnections.value.length > 1
+  if (runMode.value !== 'single' || hasMultipleSelectedSources) {
+    const federatedConnections = collectDatabaseLspMappings()
     if (federatedConnections.length === 0) {
       return undefined
     }
@@ -776,12 +798,64 @@ defineExpose({
 .sources-inline-trigger {
   border: 0;
   background: transparent;
+  cursor: pointer;
 }
 
 .sources-inline-trigger:focus-visible {
   outline: 2px solid #14b8a6;
   outline-offset: 2px;
   border-radius: 0.375rem;
+}
+
+.sources-inline-chevron-hit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.125rem;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: background-color 140ms ease;
+}
+
+.sources-inline-chevron {
+  width: 1.125rem;
+  height: 1.125rem;
+  color: #0f766e;
+  background: rgb(20 184 166 / 14%);
+  border: 1px solid rgb(20 184 166 / 35%);
+  border-radius: 9999px;
+  transition:
+    color 140ms ease,
+    background-color 140ms ease,
+    border-color 140ms ease,
+    transform 140ms ease;
+}
+
+:global(.dark) .sources-inline-chevron {
+  color: #5eead4;
+  background: rgb(20 184 166 / 22%);
+  border-color: rgb(94 234 212 / 40%);
+}
+
+.sources-inline-trigger:hover .sources-inline-chevron-hit {
+  background: rgb(20 184 166 / 12%);
+}
+
+:global(.dark) .sources-inline-trigger:hover .sources-inline-chevron-hit {
+  background: rgb(20 184 166 / 22%);
+}
+
+.sources-inline-trigger:hover .sources-inline-chevron {
+  color: #0f766e;
+  background: rgb(20 184 166 / 20%);
+  border-color: rgb(20 184 166 / 50%);
+  transform: translateX(1px);
+}
+
+:global(.dark) .sources-inline-trigger:hover .sources-inline-chevron {
+  color: #99f6e4;
+  background: rgb(20 184 166 / 28%);
+  border-color: rgb(153 246 228 / 55%);
 }
 
 .execution-context-select :deep(button) {

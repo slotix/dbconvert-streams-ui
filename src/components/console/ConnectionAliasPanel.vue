@@ -127,6 +127,13 @@
               >read_parquet('/path/file.parquet')</code
             >
           </p>
+          <p v-if="hasSelectedLocalFilesConnections">
+            <strong class="text-gray-700 dark:text-gray-300">Federated files:</strong>
+            <code class="ml-1 px-1 py-0.5 bg-gray-200/80 dark:bg-gray-700/70 rounded font-mono"
+              >read_csv_auto('./')</code
+            >
+            resolves relative to selected folder scope in FILES.
+          </p>
           <p v-if="hasMultipleS3Connections">
             <strong class="text-gray-700 dark:text-gray-300">Multi-S3:</strong>
             <code
@@ -503,6 +510,14 @@ const hasMultipleS3Connections = computed(() => {
     return kind === 's3'
   }).length
   return s3ConnectionCount > 1
+})
+
+const hasSelectedLocalFilesConnections = computed(() => {
+  return props.modelValue.some((mapping) => {
+    const conn = connectionsStore.connections.find((c) => c.id === mapping.connectionId)
+    const kind = getConnectionKindFromSpec(conn?.spec)
+    return kind === 'files'
+  })
 })
 
 const selectedCount = computed(() => props.modelValue.length)
