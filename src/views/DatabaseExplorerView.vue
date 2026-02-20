@@ -197,70 +197,35 @@ function handleOpenSqlConsole(payload: {
   const connection = connectionsStore.connectionByID(payload.connectionId)
   const dialect = getSqlDialectFromConnection(connection?.spec, connection?.type)
   const targetPane = paneTabsStore.activePane || 'left'
-  const existingConsoleTab = paneTabsStore
-    .getPaneState(targetPane)
-    .tabs.find(
-      (tab) =>
-        tab.tabType === 'sql-console' &&
-        tab.connectionId === payload.connectionId &&
-        (tab.database || '') === (payload.database || '')
-    )
-  const hasSessionId = Boolean(existingConsoleTab?.consoleSessionId?.trim())
-  const consoleSessionId = hasSessionId
-    ? (existingConsoleTab?.consoleSessionId as string)
-    : createConsoleSessionId()
-  const tabId = hasSessionId
-    ? (existingConsoleTab?.id as string)
-    : `sql-console:${consoleSessionId}`
+  const consoleSessionId = createConsoleSessionId()
+  const tabId = `sql-console:${consoleSessionId}`
 
   // Opening SQL console from a database item should start on a neutral default query.
   if (payload.sqlScope === 'database' && payload.database) {
-    const active = sqlConsoleStore.getActiveTab(consoleSessionId, payload.database)
-    let targetTab = active
-
-    if (active && active.query.trim()) {
-      const blankTab = sqlConsoleStore
-        .getTabs(consoleSessionId, payload.database)
-        .find((tab) => !tab.query.trim())
-      if (blankTab) {
-        sqlConsoleStore.setActiveTab(consoleSessionId, payload.database, blankTab.id)
-        targetTab = blankTab
-      } else {
-        targetTab = sqlConsoleStore.addTab(consoleSessionId, payload.database, 'List tables')
-      }
-    }
-
     const listTablesQuery =
       dialect === 'pgsql'
         ? "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';"
         : 'SHOW TABLES;'
-
-    if (targetTab && !targetTab.query.trim()) {
-      sqlConsoleStore.updateTabQuery(
-        consoleSessionId,
-        payload.database,
-        targetTab.id,
-        listTablesQuery
-      )
-      sqlConsoleStore.renameTab(consoleSessionId, payload.database, targetTab.id, 'List tables')
-    }
+    sqlConsoleStore.addTabWithQuery(
+      consoleSessionId,
+      payload.database,
+      listTablesQuery,
+      'List tables'
+    )
   }
 
   // Opening SQL console from a connection item should start on a neutral admin query.
   if (payload.sqlScope === 'connection') {
-    const active = sqlConsoleStore.getActiveTab(consoleSessionId, undefined)
-    const targetTab =
-      active && !active.query.trim()
-        ? active
-        : sqlConsoleStore.addTab(consoleSessionId, undefined, 'List databases')
-
     const listDatabasesQuery =
       dialect === 'pgsql'
         ? 'SELECT datname FROM pg_database WHERE datistemplate = false;'
         : 'SHOW DATABASES;'
-
-    sqlConsoleStore.updateTabQuery(consoleSessionId, undefined, targetTab.id, listDatabasesQuery)
-    sqlConsoleStore.renameTab(consoleSessionId, undefined, targetTab.id, 'List databases')
+    sqlConsoleStore.addTabWithQuery(
+      consoleSessionId,
+      undefined,
+      listDatabasesQuery,
+      'List databases'
+    )
   }
 
   const connName = connection?.name || 'SQL'

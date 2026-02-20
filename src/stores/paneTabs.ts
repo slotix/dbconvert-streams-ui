@@ -113,8 +113,8 @@ function buildObjectKey(paneId: PaneId, tab: PaneTab): string | null {
     return `${paneId}:file-${tab.filePath}`
   }
   if (tab.tabType === 'sql-console') {
-    const dbPart = tab.database || '*'
-    return `${paneId}:sql-${tab.connectionId}-${dbPart}`
+    const sessionPart = tab.consoleSessionId || tab.id
+    return `${paneId}:sql-${sessionPart}`
   }
   if (tab.tabType === 'diagram' && tab.database) {
     return `${paneId}:diagram-${tab.connectionId}-${tab.database}`
@@ -323,11 +323,10 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
       return `file:${tab.filePath}`
     }
     if (tab.tabType === 'file-console') {
-      return `file-console:${tab.connectionId}`
+      return `file-console:${tab.consoleSessionId || tab.id}`
     }
     if (tab.tabType === 'sql-console') {
-      const dbPart = tab.database || '*'
-      return `sql:${tab.connectionId}:${dbPart}`
+      return `sql:${tab.consoleSessionId || tab.id}`
     }
     if (tab.tabType === 'diagram') {
       return `diagram:${tab.connectionId}:${tab.database || ''}`

@@ -113,36 +113,11 @@ export function useSqlConsoleActions() {
       const conn = connectionsStore.connectionByID(connectionId)
       const dialect = getSqlDialectFromConnection(conn?.spec, conn?.type)
       const query = generateSelectQuery(tableName, schema, dialect)
-      const paneState = paneTabsStore.getPaneState(targetPane)
-      const existingConsoleTab = paneState.tabs.find(
-        (tab) =>
-          tab.tabType === 'sql-console' &&
-          tab.connectionId === connectionId &&
-          (tab.database || '') === (database || '')
-      )
-      const hasSessionId = Boolean(existingConsoleTab?.consoleSessionId?.trim())
-      const consoleSessionKey = hasSessionId
-        ? (existingConsoleTab?.consoleSessionId as string)
-        : createConsoleSessionId()
-      const tabId = hasSessionId
-        ? (existingConsoleTab?.id as string)
-        : `sql-console:${consoleSessionKey}`
+      const consoleSessionKey = createConsoleSessionId()
+      const tabId = `sql-console:${consoleSessionKey}`
 
       const tableContext = { tableName, schema }
-      const existingActiveTab = sqlConsoleStore.getActiveTab(consoleSessionKey, database)
-      const shouldReuseActiveBlankTab = Boolean(
-        existingActiveTab && !existingActiveTab.query.trim()
-      )
-
-      if (existingActiveTab && shouldReuseActiveBlankTab) {
-        sqlConsoleStore.updateTabQuery(consoleSessionKey, database, existingActiveTab.id, query)
-        sqlConsoleStore.renameTab(consoleSessionKey, database, existingActiveTab.id, tableName)
-        existingActiveTab.tableContext = tableContext
-        delete existingActiveTab.fileContext
-        sqlConsoleStore.saveState()
-      } else {
-        sqlConsoleStore.addTabWithQuery(consoleSessionKey, database, query, tableName, tableContext)
-      }
+      sqlConsoleStore.addTabWithQuery(consoleSessionKey, database, query, tableName, tableContext)
 
       const connection = connectionsStore.connectionByID(connectionId)
       const connName = connection?.name || 'SQL'
@@ -181,43 +156,21 @@ export function useSqlConsoleActions() {
         return
       }
       const isS3 = kind === 's3'
-      const paneState = paneTabsStore.getPaneState(targetPane)
-      const existingConsoleTab = paneState.tabs.find(
-        (tab) => tab.tabType === 'file-console' && tab.connectionId === connectionId
-      )
-      const hasSessionId = Boolean(existingConsoleTab?.consoleSessionId?.trim())
-      const consoleSessionKey = hasSessionId
-        ? (existingConsoleTab?.consoleSessionId as string)
-        : createConsoleSessionId()
-      const tabId = hasSessionId
-        ? (existingConsoleTab?.id as string)
-        : `file-console:${consoleSessionKey}`
+      const consoleSessionKey = createConsoleSessionId()
+      const tabId = `file-console:${consoleSessionKey}`
 
       const query = providedQuery?.trim()
         ? providedQuery
         : generateDuckDBReadQuery(filePath, fileName, Boolean(isDir), format)
       const fileContext = { path: filePath, format, isS3 }
-      const existingActiveTab = sqlConsoleStore.getActiveTab(consoleSessionKey, undefined)
-      const shouldReuseActiveBlankTab = Boolean(
-        existingActiveTab && !existingActiveTab.query.trim()
+      sqlConsoleStore.addTabWithQuery(
+        consoleSessionKey,
+        undefined,
+        query,
+        fileName,
+        undefined,
+        fileContext
       )
-
-      if (existingActiveTab && shouldReuseActiveBlankTab) {
-        sqlConsoleStore.updateTabQuery(consoleSessionKey, undefined, existingActiveTab.id, query)
-        sqlConsoleStore.renameTab(consoleSessionKey, undefined, existingActiveTab.id, fileName)
-        existingActiveTab.fileContext = fileContext
-        delete existingActiveTab.tableContext
-        sqlConsoleStore.saveState()
-      } else {
-        sqlConsoleStore.addTabWithQuery(
-          consoleSessionKey,
-          undefined,
-          query,
-          fileName,
-          undefined,
-          fileContext
-        )
-      }
 
       const basePath = isS3 ? conn?.spec?.s3?.scope?.bucket : conn?.spec?.files?.basePath
 
