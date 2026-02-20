@@ -4,6 +4,7 @@ import { usePaneTabsStore, createConsoleSessionId } from '@/stores/paneTabs'
 import { useSqlConsoleStore } from '@/stores/sqlConsole'
 import { useUnsavedChangesGuard } from '@/composables/useUnsavedChangesGuard'
 import { getConnectionKindFromSpec, getSqlDialectFromConnection } from '@/types/specs'
+import { getParentPath, parseS3Uri } from '@/utils/pathUtils'
 
 export interface OpenTableSqlConsolePayload {
   connectionId: string
@@ -102,6 +103,56 @@ export function useSqlConsoleActions() {
     return `SELECT * FROM ${funcCall} LIMIT 100;`
   }
 
+  function normalizePathSeparators(path: string): string {
+    return path.replace(/\\/g, '/')
+  }
+
+  function trimTrailingSlashes(path: string): string {
+    return path.replace(/\/+$/, '')
+  }
+
+  function deriveInitialFileScope(options: {
+    filePath: string
+    isDir: boolean
+    isS3: boolean
+    basePath?: string
+  }): string | undefined {
+    const pathForScope = options.isDir ? options.filePath : getParentPath(options.filePath)
+    if (!pathForScope) return undefined
+
+    const basePath = options.basePath?.trim() || ''
+
+    if (options.isS3) {
+      const parsed = parseS3Uri(pathForScope)
+      if (!parsed) return undefined
+
+      if (basePath && parsed.bucket === basePath) {
+        const scope = parsed.prefix.split('/').filter(Boolean)[0]
+        return scope || undefined
+      }
+
+      return parsed.prefix.split('/').filter(Boolean)[0] || undefined
+    }
+
+    const normalizedPath = trimTrailingSlashes(normalizePathSeparators(pathForScope))
+    const normalizedBase = trimTrailingSlashes(normalizePathSeparators(basePath))
+
+    let relativePath = normalizedPath
+    if (normalizedBase) {
+      if (normalizedPath === normalizedBase) {
+        relativePath = ''
+      } else if (normalizedPath.startsWith(`${normalizedBase}/`)) {
+        relativePath = normalizedPath.slice(normalizedBase.length + 1)
+      }
+    }
+
+    const scope = relativePath
+      .split('/')
+      .map((segment) => segment.trim())
+      .filter(Boolean)[0]
+    return scope || undefined
+  }
+
   function openTableInSqlConsole(payload: OpenTableSqlConsolePayload): void {
     ;(async () => {
       const targetPane = paneTabsStore.activePane || 'left'
@@ -173,6 +224,12 @@ export function useSqlConsoleActions() {
       )
 
       const basePath = isS3 ? conn?.spec?.s3?.scope?.bucket : conn?.spec?.files?.basePath
+      const initialFileScope = deriveInitialFileScope({
+        filePath,
+        isDir: Boolean(isDir),
+        isS3,
+        basePath
+      })
 
       paneTabsStore.addTab(
         targetPane,
@@ -184,6 +241,7 @@ export function useSqlConsoleActions() {
           tabType: 'file-console',
           fileConnectionType: isS3 ? 's3' : 'files',
           basePath,
+          initialFileScope,
           objectKey: tabId
         },
         'pinned'

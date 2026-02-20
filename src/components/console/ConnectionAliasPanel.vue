@@ -143,7 +143,6 @@
           </p>
         </div>
       </div>
-
       <!-- Connection List -->
       <div
         class="overflow-y-auto"
@@ -386,6 +385,13 @@
                         @update:model-value="updateDatabase(conn.id, String($event ?? ''))"
                       />
                     </div>
+                    <div
+                      v-if="props.fileScopeWarning && hasMissingFolderScope(conn.id)"
+                      class="mt-1 flex items-start gap-1.5 px-0.5 text-[11px] leading-4 text-amber-700 dark:text-amber-300"
+                    >
+                      <AlertCircle class="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-85" />
+                      <span>{{ props.fileScopeWarning }}</span>
+                    </div>
                   </div>
                 </template>
               </div>
@@ -409,7 +415,7 @@
 <script setup lang="ts">
 import { ref, computed, nextTick, watch } from 'vue'
 import { RouterLink } from 'vue-router'
-import { ChevronDown, Cloud, Database, Folder, Plus } from 'lucide-vue-next'
+import { AlertCircle, ChevronDown, Cloud, Database, Folder, Plus } from 'lucide-vue-next'
 import { useConnectionsStore } from '@/stores/connections'
 import connectionsApi from '@/api/connections'
 import FormSelect from '@/components/base/FormSelect.vue'
@@ -441,6 +447,8 @@ interface Props {
   showCreateConnectionLink?: boolean
   /** Route to the New Connection flow */
   createConnectionTo?: string
+  /** Optional info block shown when selected file sources are not scoped to folders */
+  fileScopeWarning?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -450,7 +458,8 @@ const props = withDefaults(defineProps<Props>(), {
   showHints: true,
   showHeader: true,
   showCreateConnectionLink: false,
-  createConnectionTo: '/explorer/add'
+  createConnectionTo: '/explorer/add',
+  fileScopeWarning: ''
 })
 
 // Emits
@@ -722,6 +731,12 @@ function shouldShowFolderScopeSelector(conn: Connection): boolean {
 
   const options = getSelectableDatabases(conn)
   return options.length > 0
+}
+
+function hasMissingFolderScope(connectionId: string): boolean {
+  const mapping = getPrimaryMapping(connectionId)
+  if (!mapping) return false
+  return !(mapping.database?.trim() || '')
 }
 
 async function ensureDatabasesLoaded(

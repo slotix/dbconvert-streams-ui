@@ -88,6 +88,7 @@
       :connection-id="activeTab.connectionId"
       :connection-type="activeTab.fileConnectionType || 'files'"
       :base-path="activeTab.basePath"
+      :initial-file-scope="activeTab.initialFileScope"
       :pane-tab-id="activeTab.id"
       :console-session-id="activeTab.consoleSessionId"
     />

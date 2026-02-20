@@ -19,6 +19,8 @@ export interface UseConsoleSourcesOptions {
   mode: ComputedRef<ConsoleMode> | Ref<ConsoleMode>
   /** Database name (for database mode) */
   database?: ComputedRef<string | undefined> | Ref<string | undefined>
+  /** Initial folder scope for file consoles opened from tree items */
+  initialFileScope?: ComputedRef<string | undefined> | Ref<string | undefined>
   /** Console key for persistence (e.g., 'file:connId' or 'connId:dbName') */
   consoleKey: ComputedRef<string> | Ref<string>
 }
@@ -189,7 +191,7 @@ export function escapeRegExp(value: string): string {
 
 // ========== Composable ==========
 export function useConsoleSources(options: UseConsoleSourcesOptions): UseConsoleSourcesReturn {
-  const { connectionId, mode, database, consoleKey } = options
+  const { connectionId, mode, database, initialFileScope, consoleKey } = options
 
   const connectionsStore = useConnectionsStore()
 
@@ -197,6 +199,7 @@ export function useConsoleSources(options: UseConsoleSourcesOptions): UseConsole
   const connectionIdValue = computed(() => connectionId.value)
   const modeValue = computed(() => mode.value)
   const databaseValue = computed(() => database?.value)
+  const initialFileScopeValue = computed(() => initialFileScope?.value)
   const consoleKeyValue = computed(() => consoleKey.value)
 
   // ========== State ==========
@@ -225,6 +228,9 @@ export function useConsoleSources(options: UseConsoleSourcesOptions): UseConsole
     if (modeValue.value === 'database') {
       const db = primaryDefaultDatabase.value
       if (db) mapping.database = db
+    } else if (modeValue.value === 'file') {
+      const folderScope = initialFileScopeValue.value?.trim() || ''
+      if (folderScope) mapping.database = folderScope
     }
     return mapping
   })

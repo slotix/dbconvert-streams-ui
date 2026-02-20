@@ -52,6 +52,7 @@ export type PaneTab = {
   // File console specific properties
   fileConnectionType?: 'files' | 's3'
   basePath?: string
+  initialFileScope?: string
 }
 
 /**

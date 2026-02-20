@@ -8,7 +8,9 @@ export interface UseSqlConsoleTabNameOptions {
   effectiveSelectedConnections: ComputedRef<ConnectionMapping[]>
   singleSourceMapping: ComputedRef<ConnectionMapping | null>
   databaseSourceMappings: ComputedRef<ConnectionMapping[]>
+  primaryConnectionId: Ref<string> | ComputedRef<string>
   federatedScopeConnectionId: Ref<string>
+  isDatabaseMapping: (mapping: { connectionId: string }) => boolean
   getConnectionName: (connectionId: string) => string | null
   currentConnectionName: Ref<string | null> | ComputedRef<string | null>
 }
@@ -27,14 +29,43 @@ export function useSqlConsoleTabName(
     effectiveSelectedConnections,
     singleSourceMapping,
     databaseSourceMappings,
+    primaryConnectionId,
     federatedScopeConnectionId,
+    isDatabaseMapping,
     getConnectionName,
     currentConnectionName
   } = options
 
-  const singleExecutionMapping = computed(
-    () => singleSourceMapping.value || databaseSourceMappings.value[0] || null
-  )
+  const singleExecutionMapping = computed(() => {
+    if (mode.value === 'file') {
+      if (runMode.value === 'single' && singleSourceMapping.value) {
+        return singleSourceMapping.value
+      }
+
+      const fileMappings = selectedConnections.value.filter(
+        (selectedMapping) => !isDatabaseMapping(selectedMapping)
+      )
+
+      if (fileMappings.length === 0) {
+        return null
+      }
+
+      const originConnectionId = primaryConnectionId.value?.trim()
+      if (originConnectionId) {
+        const originMapping = fileMappings.find(
+          (selectedMapping) => selectedMapping.connectionId === originConnectionId
+        )
+        if (originMapping) return originMapping
+      }
+
+      if (fileMappings.length === 1) {
+        return fileMappings[0]
+      }
+
+      return null
+    }
+    return singleSourceMapping.value || databaseSourceMappings.value[0] || null
+  })
 
   const paneTabDefaultName = computed(() => {
     if (mode.value === 'file') {

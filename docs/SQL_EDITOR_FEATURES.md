@@ -4,7 +4,8 @@
 
 SQL editing in DBConvert Streams UI is powered by:
 - **CodeMirror 6** as the editor UI layer
-- **`sqls` via backend websocket** (`/api/v1/lsp/ws`) as SQL intelligence
+- **`sqls` via backend websocket** (`/api/v1/lsp/ws`) for direct DB SQL contexts
+- **DuckDB LSP websocket** (`/api/v1/lsp/duckdb/ws`) for file/federated contexts
 
 This keeps SQL parsing/completion in backend LSP and avoids frontend SQL parser logic.
 
@@ -81,7 +82,9 @@ Selection highlight and autocomplete colors are aligned to current app palette.
 
 ## Architecture notes
 
-- SQL intelligence source is backend LSP process (`sqls`).
+- SQL intelligence source is backend LSP:
+  - `sqls` for direct DB contexts
+  - DuckDB LSP handler for file/federated contexts
 - Frontend does not implement a custom SQL parser/state machine for completions.
 - Websocket auth for LSP uses existing API auth context and install metadata.
 - SQL LSP enablement is context-driven (direct DB context present), not a user runtime toggle.
@@ -128,6 +131,12 @@ Important:
 - No hidden query rewriting should be required to execute valid suggested identifiers.
 - If a suggestion is shown, its inserted form is expected to run as-is.
 
+### Single-source -> Multi-source flow
+
+Detailed end-to-end flow (single-source start, automatic promote on source add, execution context, explicit rewrite) is documented in:
+
+- `docs/SQL_MULTI_SOURCE_FLOW.md`
+
 DuckDB references:
 
 - PostgreSQL extension: <https://duckdb.org/docs/stable/core_extensions/postgres>
@@ -160,6 +169,9 @@ Multi-source checklist:
    - `SELECT * FROM pg1.public.actor LIMIT 10;`
    - `SELECT * FROM my1.sakila.actor LIMIT 10;`
    - both succeed without manual identifier rewriting.
+8. Open table in single-source SQL console, then add second source:
+   - existing SQL stays unchanged (no hidden rewrite),
+   - `Rewrite starter SQL to federated naming` appears for starter table query.
 
 Quick regression command (unit scope):
 

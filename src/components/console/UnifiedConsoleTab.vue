@@ -27,12 +27,14 @@
           >
             Templates &amp; autocomplete follow selected source
           </span>
-          <span
-            v-if="fileScopeWarning && !hideToolbarLabels"
-            class="execution-context-hint mt-1 text-[11px] leading-4 text-amber-600 dark:text-amber-400"
+          <button
+            v-if="showFederatedRewriteAction && !hideToolbarLabels"
+            type="button"
+            class="mt-1 text-[11px] leading-4 text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 underline underline-offset-2"
+            @click="rewriteStarterQueryToFederated"
           >
-            {{ fileScopeWarning }}
-          </span>
+            Rewrite starter SQL to federated naming
+          </button>
         </div>
 
         <div
@@ -152,6 +154,7 @@
         :show-hints="true"
         :show-header="false"
         :show-create-connection-link="true"
+        :file-scope-warning="fileScopeWarning"
         @update:modelValue="handleUpdateSelectedConnections"
       />
     </SlideOverPanel>
@@ -209,6 +212,7 @@ const props = defineProps<{
   // File mode props
   connectionType?: FileConnectionType
   basePath?: string
+  initialFileScope?: string
 }>()
 
 const connectionsStore = useConnectionsStore()
@@ -314,6 +318,7 @@ const {
   connectionId: connectionIdRef,
   mode: modeRef,
   database: databaseRef,
+  initialFileScope: computed(() => props.initialFileScope),
   consoleKey
 })
 
@@ -495,6 +500,101 @@ const {
   historyKey,
   dialect: currentDialect
 })
+
+function stripIdentifierQuotes(identifier: string): string {
+  const trimmed = identifier.trim()
+  if (trimmed.length >= 2) {
+    const first = trimmed[0]
+    const last = trimmed[trimmed.length - 1]
+    if ((first === '"' && last === '"') || (first === '`' && last === '`')) {
+      return trimmed.slice(1, -1)
+    }
+  }
+  return trimmed
+}
+
+function parseRelationSegments(relation: string): string[] {
+  return relation
+    .split('.')
+    .map((segment) => stripIdentifierQuotes(segment))
+    .map((segment) => segment.trim())
+    .filter(Boolean)
+}
+
+function isSafeIdentifier(identifier: string): boolean {
+  return /^[A-Za-z_][A-Za-z0-9_]*$/.test(identifier)
+}
+
+function quoteFederatedIdentifier(identifier: string): string {
+  if (isSafeIdentifier(identifier)) return identifier
+  return `"${identifier.replace(/"/g, '""')}"`
+}
+
+function buildFederatedRelationName(parts: string[]): string {
+  return parts.map((part) => quoteFederatedIdentifier(part)).join('.')
+}
+
+const starterQueryPattern = /^select\s+\*\s+from\s+(.+?)\s+limit\s+100\s*;?\s*$/i
+
+const originDatabaseMapping = computed(() => {
+  const expectedDatabase = props.database?.trim() || ''
+  return (
+    selectedConnections.value.find(
+      (mapping) =>
+        mapping.connectionId === props.connectionId &&
+        (mapping.database?.trim() || '') === expectedDatabase &&
+        isDatabaseMapping(mapping)
+    ) ||
+    selectedConnections.value.find(
+      (mapping) => mapping.connectionId === props.connectionId && isDatabaseMapping(mapping)
+    ) ||
+    null
+  )
+})
+
+const rewrittenFederatedStarterQuery = computed(() => {
+  if (props.mode !== 'database') return null
+  if (!useFederatedEngine.value) return null
+
+  const tab = activeQueryTab.value
+  const tableName = tab?.tableContext?.tableName?.trim()
+  if (!tab || !tableName) return null
+
+  const queryMatch = tab.query.match(starterQueryPattern)
+  if (!queryMatch) return null
+  const relationSegments = parseRelationSegments(queryMatch[1])
+  if (relationSegments.length === 0) return null
+  const relationTable = relationSegments[relationSegments.length - 1]?.toLowerCase()
+  if (relationTable !== tableName.toLowerCase()) return null
+
+  const mapping = originDatabaseMapping.value
+  const alias = mapping?.alias?.trim() || ''
+  if (!alias) return null
+
+  const originDialect = getSqlDialectFromConnection(connection.value?.spec, connection.value?.type)
+
+  if (originDialect === 'mysql') {
+    const databaseName = (mapping?.database?.trim() || props.database?.trim() || '').trim()
+    if (!databaseName) return null
+    return `SELECT * FROM ${buildFederatedRelationName([alias, databaseName, tableName])} LIMIT 100;`
+  }
+
+  if (originDialect === 'pgsql') {
+    const schemaName = tab.tableContext?.schema?.trim() || ''
+    if (!schemaName) return null
+    return `SELECT * FROM ${buildFederatedRelationName([alias, schemaName, tableName])} LIMIT 100;`
+  }
+
+  return null
+})
+
+const showFederatedRewriteAction = computed(() => Boolean(rewrittenFederatedStarterQuery.value))
+
+function rewriteStarterQueryToFederated() {
+  const rewritten = rewrittenFederatedStarterQuery.value
+  if (!rewritten) return
+  sqlQuery.value = rewritten
+}
 
 // ========== Query Execution Composable ==========
 const { isExecuting, executeQuery } = useQueryExecution({
@@ -678,7 +778,9 @@ const { paneTabName } = useSqlConsoleTabName({
   effectiveSelectedConnections,
   singleSourceMapping,
   databaseSourceMappings,
+  primaryConnectionId: connectionIdRef,
   federatedScopeConnectionId,
+  isDatabaseMapping,
   getConnectionName: (connectionId) => connectionsStore.connectionByID(connectionId)?.name || null,
   currentConnectionName: computed(() => connection.value?.name || null)
 })

@@ -83,7 +83,14 @@ function createDefaultTab(name?: string): SqlQueryTab {
   }
 }
 
-function createEmptyConsoleState(): SqlConsoleState {
+function createEmptyConsoleState(withDefaultTab: boolean = true): SqlConsoleState {
+  if (!withDefaultTab) {
+    return {
+      tabs: [],
+      activeTabId: null
+    }
+  }
+
   const defaultTab = createDefaultTab()
   return {
     tabs: [defaultTab],
@@ -179,14 +186,38 @@ export const useSqlConsoleStore = defineStore('sqlConsole', () => {
   }
 
   // Get or create console state
-  function getConsoleState(connectionId: string, database?: string): SqlConsoleState {
+  function getConsoleState(
+    connectionId: string,
+    database?: string,
+    options?: { ensureDefaultTab?: boolean }
+  ): SqlConsoleState {
+    const ensureDefaultTab = options?.ensureDefaultTab !== false
     const key = generateConsoleKey(connectionId, database)
     let state = consoles.value.get(key)
     if (!state) {
-      state = createEmptyConsoleState()
+      state = createEmptyConsoleState(ensureDefaultTab)
       consoles.value.set(key, state)
       saveState()
+      return state
     }
+
+    let changed = false
+    if (ensureDefaultTab && state.tabs.length === 0) {
+      const defaultTab = createDefaultTab()
+      state.tabs = [defaultTab]
+      state.activeTabId = defaultTab.id
+      changed = true
+    }
+
+    if (state.tabs.length > 0 && !state.tabs.some((t) => t.id === state.activeTabId)) {
+      state.activeTabId = state.tabs[0].id
+      changed = true
+    }
+
+    if (changed) {
+      saveState()
+    }
+
     return state
   }
 
@@ -481,7 +512,38 @@ export const useSqlConsoleStore = defineStore('sqlConsole', () => {
     tableContext?: { tableName: string; schema?: string },
     fileContext?: { path: string; format?: string; isS3?: boolean }
   ): SqlQueryTab {
-    const state = getConsoleState(connectionId, database)
+    const state = getConsoleState(connectionId, database, { ensureDefaultTab: false })
+    const placeholder = state.tabs.length === 1 ? state.tabs[0] : null
+    const canReplacePlaceholder = Boolean(
+      placeholder &&
+        !placeholder.query.trim() &&
+        !placeholder.tableContext &&
+        !placeholder.fileContext &&
+        /^Query\s+\d+$/i.test(placeholder.name.trim())
+    )
+
+    if (canReplacePlaceholder && placeholder) {
+      const normalizedName = name?.trim()
+      if (normalizedName) {
+        placeholder.name = normalizedName
+      }
+      placeholder.query = query
+      placeholder.updatedAt = Date.now()
+      if (tableContext) {
+        placeholder.tableContext = tableContext
+      } else {
+        delete placeholder.tableContext
+      }
+      if (fileContext) {
+        placeholder.fileContext = fileContext
+      } else {
+        delete placeholder.fileContext
+      }
+      state.activeTabId = placeholder.id
+      saveState()
+      return placeholder
+    }
+
     const tabNumber = state.tabs.length + 1
     const newTab = createDefaultTab(name || `Query ${tabNumber}`)
     newTab.query = query
