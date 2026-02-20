@@ -277,7 +277,7 @@ function cleanupToolbarResizeObserver() {
 // ========== Console Key Computation ==========
 const generatedConsoleSessionId = createConsoleSessionId()
 const consoleKey = computed(
-  () => props.paneTabId?.trim() || props.consoleSessionId?.trim() || generatedConsoleSessionId
+  () => props.consoleSessionId?.trim() || props.paneTabId?.trim() || generatedConsoleSessionId
 )
 
 const historyKey = computed(() => {
@@ -488,7 +488,7 @@ const {
   initialize,
   cleanup
 } = useConsoleTab({
-  // SQL console tabs in Pinia are keyed by connectionId + optional database.
+  // SQL console tabs are keyed by console session id (legacy fallback: pane tab id).
   // Keep this aligned with addTabWithQuery/open actions.
   consoleKey,
   database: databaseRef,
