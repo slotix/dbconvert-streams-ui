@@ -413,7 +413,12 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
     const startTime = Date.now()
 
     try {
-      const result = await executeFileQuery(query, connectionIdValue.value)
+      const fileScopePath =
+        selectedConnections.value.find(
+          (mapping) => mapping.connectionId === connectionIdValue.value
+        )?.database || undefined
+
+      const result = await executeFileQuery(query, connectionIdValue.value, fileScopePath)
       await handleSuccessResult(result, query, startTime, {
         connectionId: connectionIdValue.value,
         database: '',

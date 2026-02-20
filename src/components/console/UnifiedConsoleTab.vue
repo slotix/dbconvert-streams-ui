@@ -558,7 +558,7 @@ const sqlLspContext = computed<SqlLspConnectionContext | undefined>(() => {
       database?: string
     }> = []
 
-    effectiveSelectedConnections.value.forEach((mapping) => {
+    selectedConnections.value.forEach((mapping) => {
       const conn = connectionsStore.connectionByID(mapping.connectionId)
       const kind = getConnectionKindFromSpec(conn?.spec)
       if (isFileBasedKind(kind)) {

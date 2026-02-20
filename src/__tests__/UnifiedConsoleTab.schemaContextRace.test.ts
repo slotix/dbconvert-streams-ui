@@ -62,7 +62,10 @@ vi.mock('@/composables/useConsoleTab', async () => {
       setExecutionError: vi.fn(),
       initialize: vi.fn(),
       cleanup: vi.fn()
-    })
+    }),
+    __mockConsoleTabState: {
+      activeQueryTab
+    }
   }
 })
 vi.mock('@/composables/useQueryExecution', async () => {
@@ -230,11 +233,22 @@ interface MockConsoleSourcesState {
   singleSourceConnectionId: { value: string }
 }
 
+interface MockConsoleTabState {
+  activeQueryTab: { value: any }
+}
+
 async function getMockConsoleSourcesState(): Promise<MockConsoleSourcesState> {
   const module = (await import('@/composables/useConsoleSources')) as unknown as {
     __mockConsoleSourcesState: MockConsoleSourcesState
   }
   return module.__mockConsoleSourcesState
+}
+
+async function getMockConsoleTabState(): Promise<MockConsoleTabState> {
+  const module = (await import('@/composables/useConsoleTab')) as unknown as {
+    __mockConsoleTabState: MockConsoleTabState
+  }
+  return module.__mockConsoleTabState
 }
 
 describe('UnifiedConsoleTab SQL LSP context isolation in multisource switching', () => {
@@ -307,11 +321,13 @@ describe('UnifiedConsoleTab SQL LSP context isolation in multisource switching',
 
     const sqlEditorPane = wrapper.findComponent({ name: 'SqlEditorPane' })
     const lspContext = sqlEditorPane.props('lspContext') as {
+      provider: string
       connectionId: string
       database: string
     }
 
     expect(lspContext).toEqual({
+      provider: 'sqls',
       connectionId: 'pg-1',
       database: 'pg_db'
     })
@@ -376,11 +392,13 @@ describe('UnifiedConsoleTab SQL LSP context isolation in multisource switching',
 
     const sqlEditorPane = wrapper.findComponent({ name: 'SqlEditorPane' })
     const lspContext = sqlEditorPane.props('lspContext') as {
+      provider: string
       connectionId: string
       database: string
     }
 
     expect(lspContext).toEqual({
+      provider: 'sqls',
       connectionId: 'my-1',
       database: 'my_db'
     })
@@ -433,7 +451,49 @@ describe('UnifiedConsoleTab SQL LSP context isolation in multisource switching',
     wrapper.unmount()
   })
 
-  it('does not show multi-source context for a single file source', async () => {
+  it('keeps DuckDB federated LSP context when execution scope is switched to files', async () => {
+    const __mockConsoleSourcesState = await getMockConsoleSourcesState()
+
+    __mockConsoleSourcesState.runMode.value = 'federated'
+    __mockConsoleSourcesState.selectedConnections.value = [
+      { connectionId: 'files-1', alias: 'files1', database: '' },
+      { connectionId: 'my-1', alias: 'my1', database: 'my_db' },
+      { connectionId: 'pg-1', alias: 'pg1', database: 'pg_db' }
+    ]
+
+    const wrapper = shallowMount(UnifiedConsoleTab, {
+      props: {
+        connectionId: 'pg-1',
+        mode: 'database'
+      }
+    })
+
+    await nextTick()
+
+    const executionSelect = wrapper.findComponent({ name: 'FormSelect' })
+    executionSelect.vm.$emit('update:modelValue', 'scoped:files-1')
+
+    await nextTick()
+    await nextTick()
+
+    const sqlEditorPane = wrapper.findComponent({ name: 'SqlEditorPane' })
+    const lspContext = sqlEditorPane.props('lspContext') as {
+      provider: string
+      federatedConnections: Array<{ connectionId: string; alias?: string; database?: string }>
+    }
+
+    expect(lspContext).toEqual({
+      provider: 'duckdb',
+      federatedConnections: [
+        { connectionId: 'my-1', alias: 'my1', database: 'my_db' },
+        { connectionId: 'pg-1', alias: 'pg1', database: 'pg_db' }
+      ]
+    })
+
+    wrapper.unmount()
+  })
+
+  it('shows file execution context for a single file source', async () => {
     const __mockConsoleSourcesState = await getMockConsoleSourcesState()
 
     __mockConsoleSourcesState.runMode.value = 'single'
@@ -452,9 +512,54 @@ describe('UnifiedConsoleTab SQL LSP context isolation in multisource switching',
     await nextTick()
 
     expect(wrapper.text()).toContain('Executing: Files: files1')
-    expect(wrapper.text()).not.toContain('Multi-source')
+    expect(wrapper.text()).toContain('Sources:files1')
 
     wrapper.unmount()
+  })
+
+  it('passes file tab path to DuckDB LSP context for file completions', async () => {
+    const __mockConsoleSourcesState = await getMockConsoleSourcesState()
+    const __mockConsoleTabState = await getMockConsoleTabState()
+
+    __mockConsoleSourcesState.runMode.value = 'single'
+    __mockConsoleSourcesState.selectedConnections.value = [
+      { connectionId: 'files-1', alias: 'files1', database: '' }
+    ]
+    __mockConsoleSourcesState.singleSourceConnectionId.value = ''
+
+    __mockConsoleTabState.activeQueryTab.value = {
+      fileContext: {
+        path: '/tmp/sales/orders.csv',
+        format: 'csv'
+      }
+    }
+
+    const wrapper = shallowMount(UnifiedConsoleTab, {
+      props: {
+        connectionId: 'files-1',
+        mode: 'file'
+      }
+    })
+
+    await nextTick()
+
+    const sqlEditorPane = wrapper.findComponent({ name: 'SqlEditorPane' })
+    const lspContext = sqlEditorPane.props('lspContext') as {
+      provider: string
+      connectionId: string
+      filePath?: string
+      fileFormat?: string
+    }
+
+    expect(lspContext).toEqual({
+      provider: 'duckdb',
+      connectionId: 'files-1',
+      filePath: '/tmp/sales/orders.csv',
+      fileFormat: 'csv'
+    })
+
+    wrapper.unmount()
+    __mockConsoleTabState.activeQueryTab.value = null
   })
 
   it('shows unified execution selector for mixed targets in file mode', async () => {

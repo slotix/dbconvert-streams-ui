@@ -175,6 +175,8 @@ export async function readS3Manifest(path: string): Promise<S3ManifestResponse> 
 
 export interface FileQueryRequest {
   query: string
+  connectionId?: string
+  scopePath?: string
 }
 
 export interface FileQueryResponse {
@@ -226,13 +228,15 @@ export interface ApplyFileRowChangesResponse {
  */
 export async function executeFileQuery(
   query: string,
-  connectionId?: string
+  connectionId?: string,
+  scopePath?: string
 ): Promise<FileQueryResponse> {
   try {
-    const response = await apiClient.post<FileQueryResponse>('/files/query', {
-      query,
-      connectionId
-    })
+    const payload: FileQueryRequest = { query }
+    if (connectionId) payload.connectionId = connectionId
+    if (scopePath?.trim()) payload.scopePath = scopePath.trim()
+
+    const response = await apiClient.post<FileQueryResponse>('/files/query', payload)
     return response.data
   } catch (error) {
     throw handleApiError(error)

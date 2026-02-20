@@ -80,7 +80,14 @@ export function getSqlLspConnectionContextSignature(context?: SqlLspConnectionCo
     return ''
   }
 
-  return `${provider}::${connectionId}::${database}::${filePath}::${fileFormat}::${federated}`
+  const parts = [provider]
+  if (connectionId) parts.push(`conn=${connectionId}`)
+  if (database) parts.push(`db=${database}`)
+  if (filePath) parts.push(`file=${filePath}`)
+  if (fileFormat) parts.push(`format=${fileFormat}`)
+  if (federated) parts.push(`federated=${federated}`)
+
+  return parts.join('::')
 }
 
 export function buildSqlLspWebSocketUrl(params: {

@@ -148,7 +148,7 @@ describe('getSqlLspConnectionContextSignature', () => {
         provider: 'duckdb',
         filePath: ' /tmp/data.parquet '
       })
-    ).toContain('duckdb::::/tmp/data.parquet')
+    ).toContain('duckdb::file=/tmp/data.parquet')
 
     expect(
       getSqlLspConnectionContextSignature({
@@ -167,6 +167,6 @@ describe('getSqlLspConnectionContextSignature', () => {
         provider: 'duckdb',
         connectionId: 'duck_conn'
       })
-    ).toContain('duckdb::duck_conn')
+    ).toContain('duckdb::conn=duck_conn')
   })
 })

@@ -822,12 +822,17 @@ function updateAliasForMapping(targetMapping: ConnectionMapping, alias: string) 
 }
 
 function updateDatabaseForMapping(targetMapping: ConnectionMapping, database: string) {
-  if (!database.trim()) return
+  const connection = connectionsStore.connectionByID(targetMapping.connectionId)
+  const kind = getConnectionKindFromSpec(connection?.spec)
+  const isFileScopeMapping = isFileBasedKind(kind)
+  const normalizedDatabase = database.trim()
+
+  if (!isFileScopeMapping && !normalizedDatabase) return
 
   const duplicateExists = props.modelValue.some(
     (m) =>
       m.connectionId === targetMapping.connectionId &&
-      (m.database?.trim() || '') === database.trim() &&
+      (m.database?.trim() || '') === normalizedDatabase &&
       !isSameMapping(m, targetMapping)
   )
 
@@ -835,7 +840,10 @@ function updateDatabaseForMapping(targetMapping: ConnectionMapping, database: st
 
   const newMappings = props.modelValue.map((m) => {
     if (isSameMapping(m, targetMapping)) {
-      return { ...m, database }
+      return {
+        ...m,
+        database: normalizedDatabase || undefined
+      }
     }
     return m
   })

@@ -1074,6 +1074,62 @@ function flushPendingDidChangeNotification() {
   })
 }
 
+function shouldAllowClauseCompletion(state: CompletionContext['state'], pos: number): boolean {
+  if (pos <= 0) {
+    return false
+  }
+
+  const beforeCursor = state.sliceDoc(0, pos)
+  const tail = beforeCursor.slice(Math.max(0, beforeCursor.length - 200))
+  return /\b(from|join|into|update|table)\s+$/i.test(tail)
+}
+
+function getDuckDBReadPathCompletionRange(
+  state: CompletionContext['state'],
+  pos: number
+): { from: number; to: number } | null {
+  if (pos <= 0) {
+    return null
+  }
+
+  const beforeCursor = state.sliceDoc(0, pos)
+  const tail = beforeCursor.slice(Math.max(0, beforeCursor.length - 500))
+  const match = tail.match(/read_(csv_auto|csv|parquet|json_auto|json)\s*\(\s*['"]([^'"]*)$/i)
+  if (!match) {
+    return null
+  }
+
+  const typedPathPrefix = match[2] || ''
+  return {
+    from: pos - typedPathPrefix.length,
+    to: pos
+  }
+}
+
+function getDuckDBReadOptionCompletionRange(
+  state: CompletionContext['state'],
+  pos: number
+): { from: number; to: number } | null {
+  if (pos <= 0) {
+    return null
+  }
+
+  const beforeCursor = state.sliceDoc(0, pos)
+  const tail = beforeCursor.slice(Math.max(0, beforeCursor.length - 700))
+  const match = tail.match(
+    /read_(csv_auto|csv|parquet|json_auto|json)\s*\(\s*['"][^'"]*['"]\s*,\s*([a-zA-Z_]*)$/i
+  )
+  if (!match) {
+    return null
+  }
+
+  const typedOptionPrefix = match[2] || ''
+  return {
+    from: pos - typedOptionPrefix.length,
+    to: pos
+  }
+}
+
 async function provideLspCompletions(context: CompletionContext): Promise<CompletionResult | null> {
   if (!shouldEnableLsp.value) {
     return null
@@ -1081,10 +1137,23 @@ async function provideLspCompletions(context: CompletionContext): Promise<Comple
 
   const prefix = context.matchBefore(/[\w$]+/)
   const prevChar = context.pos > 0 ? context.state.sliceDoc(context.pos - 1, context.pos) : ''
+  const duckdbPathRange = getDuckDBReadPathCompletionRange(context.state, context.pos)
+  const duckdbOptionRange = getDuckDBReadOptionCompletionRange(context.state, context.pos)
   const hasWordPrefix = Boolean(prefix?.text?.length)
   const allowBroadCompletion = prevChar === '.' || prevChar === '"' || prevChar === '`'
+  const allowDuckDBPathCompletion = Boolean(duckdbPathRange)
+  const allowDuckDBOptionCompletion = Boolean(duckdbOptionRange)
+  const allowClauseCompletion =
+    /\s/.test(prevChar) && shouldAllowClauseCompletion(context.state, context.pos)
   const allowExplicitCompletion = context.explicit
-  if (!hasWordPrefix && !allowBroadCompletion && !allowExplicitCompletion) {
+  if (
+    !hasWordPrefix &&
+    !allowBroadCompletion &&
+    !allowDuckDBPathCompletion &&
+    !allowDuckDBOptionCompletion &&
+    !allowClauseCompletion &&
+    !allowExplicitCompletion
+  ) {
     return null
   }
 
@@ -1112,10 +1181,13 @@ async function provideLspCompletions(context: CompletionContext): Promise<Comple
     return null
   }
 
-  const prefixText = prefix?.text || ''
+  const completionRange = duckdbOptionRange ?? duckdbPathRange
+  const prefixText = completionRange
+    ? context.state.sliceDoc(completionRange.from, completionRange.to)
+    : prefix?.text || ''
 
   return {
-    from: prefix?.from ?? context.pos,
+    from: completionRange?.from ?? prefix?.from ?? context.pos,
     options: items.slice(0, MAX_COMPLETION_ITEMS).map((item) => {
       const insertText = item.textEdit?.newText || item.insertText || item.label || ''
       const label = item.label || insertText
@@ -1423,6 +1495,83 @@ function getSignatureHelpTriggerCharacter(update: ViewUpdate): string | null {
   return insertedText
 }
 
+function shouldTriggerClauseCompletion(update: ViewUpdate): boolean {
+  if (!update.docChanged || !shouldEnableLsp.value || !lspReady || props.readOnly) {
+    return false
+  }
+
+  const hasTypingEvent = update.transactions.some((transaction) =>
+    transaction.isUserEvent('input.type')
+  )
+  if (!hasTypingEvent) {
+    return false
+  }
+
+  let insertedText = ''
+  let hasNonSimpleInsert = false
+  update.changes.iterChanges((fromA, toA, _fromB, _toB, inserted) => {
+    if (fromA !== toA) {
+      hasNonSimpleInsert = true
+      return
+    }
+    const text = inserted.toString()
+    if (text.length !== 1) {
+      hasNonSimpleInsert = true
+      return
+    }
+    insertedText += text
+  })
+
+  if (hasNonSimpleInsert || insertedText !== ' ') {
+    return false
+  }
+
+  const cursorPos = update.state.selection.main.to
+  return shouldAllowClauseCompletion(update.state, cursorPos)
+}
+
+function shouldTriggerDuckDBReadArgumentCompletion(update: ViewUpdate): boolean {
+  if (!update.docChanged || !shouldEnableLsp.value || !lspReady || props.readOnly) {
+    return false
+  }
+
+  const hasTypingEvent = update.transactions.some((transaction) =>
+    transaction.isUserEvent('input.type')
+  )
+  if (!hasTypingEvent) {
+    return false
+  }
+
+  let insertedText = ''
+  let hasNonSimpleInsert = false
+  update.changes.iterChanges((fromA, toA, _fromB, _toB, inserted) => {
+    if (fromA !== toA) {
+      hasNonSimpleInsert = true
+      return
+    }
+    const text = inserted.toString()
+    if (text.length !== 1) {
+      hasNonSimpleInsert = true
+      return
+    }
+    insertedText += text
+  })
+
+  if (hasNonSimpleInsert || insertedText.length !== 1) {
+    return false
+  }
+
+  if (insertedText !== ',' && insertedText !== ' ' && insertedText !== '=') {
+    return false
+  }
+
+  const cursorPos = update.state.selection.main.to
+  return (
+    Boolean(getDuckDBReadPathCompletionRange(update.state, cursorPos)) ||
+    Boolean(getDuckDBReadOptionCompletionRange(update.state, cursorPos))
+  )
+}
+
 function createEditorState() {
   const keymaps = keymap.of([
     { key: 'F12', run: handleDefinitionShortcut },
@@ -1453,6 +1602,8 @@ function createEditorState() {
       lspCompartment.of(getLspEditorExtensions()),
       EditorView.updateListener.of((update) => {
         const signatureTrigger = getSignatureHelpTriggerCharacter(update)
+        const shouldTriggerCompletion = shouldTriggerClauseCompletion(update)
+        const shouldTriggerReadArgCompletion = shouldTriggerDuckDBReadArgumentCompletion(update)
         if (update.docChanged && !suppressModelSync) {
           emit('update:modelValue', update.state.doc.toString())
         }
@@ -1473,6 +1624,12 @@ function createEditorState() {
             update.state.selection.main.to,
             signatureTrigger
           )
+        }
+        if (shouldTriggerCompletion) {
+          startCompletion(update.view)
+        }
+        if (shouldTriggerReadArgCompletion) {
+          startCompletion(update.view)
         }
         if (update.selectionSet || update.docChanged) {
           emitSelectionState(update.state)
