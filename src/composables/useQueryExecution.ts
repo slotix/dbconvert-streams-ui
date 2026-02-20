@@ -302,6 +302,13 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
       )
 
       if (conflictingAliases.length > 0) {
+        // Keep direct mode for normal queries, but allow alias-qualified SQL to run federated
+        // when multiple sources are already selected (common after adding sources in-session).
+        if (selectedConnections.value.length > 1) {
+          await executeFederated(query)
+          return
+        }
+
         setExecutionError(
           `This query references source aliases (${conflictingAliases.join(', ')}). Switch to Multi-source mode to run federated queries.`
         )
