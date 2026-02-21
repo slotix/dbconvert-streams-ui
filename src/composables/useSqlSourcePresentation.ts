@@ -9,7 +9,7 @@ export interface UseSqlSourcePresentationOptions {
 }
 
 export interface UseSqlSourcePresentationReturn {
-  sourcePills: ComputedRef<Array<{ connectionId: string; alias: string }>>
+  sourcePills: ComputedRef<Array<{ connectionId: string; key: string; label: string }>>
   isDatabaseMapping: (mapping: { connectionId: string }) => boolean
   getDatabaseTypeDisplay: (connectionId: string) => string | null
 }
@@ -19,12 +19,20 @@ export function useSqlSourcePresentation(
 ): UseSqlSourcePresentationReturn {
   const { selectedConnections, getConnectionById } = options
 
-  const sourcePills = computed(() =>
-    selectedConnections.value.map((mapping) => ({
-      connectionId: mapping.connectionId,
-      alias: mapping.alias || 'db'
-    }))
-  )
+  const sourcePills = computed(() => {
+    const singleSelected = selectedConnections.value.length === 1
+    return selectedConnections.value.map((mapping) => {
+      const connection = getConnectionById(mapping.connectionId)
+      const connectionName = connection?.name?.trim() || ''
+      const fallbackAlias = mapping.alias || 'db'
+
+      return {
+        connectionId: mapping.connectionId,
+        key: `${mapping.connectionId}:${mapping.database?.trim() || ''}:${mapping.alias?.trim() || ''}`,
+        label: singleSelected ? connectionName || fallbackAlias : fallbackAlias
+      }
+    })
+  })
 
   function isDatabaseMapping(mapping: { connectionId: string }): boolean {
     const connection = getConnectionById(mapping.connectionId)

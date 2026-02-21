@@ -548,8 +548,8 @@ describe('UnifiedConsoleTab SQL LSP context isolation in multisource switching',
 
     await nextTick()
 
-    expect(wrapper.text()).toContain('Executing: Files: files1')
-    expect(wrapper.text()).toContain('Sources:files1')
+    expect(wrapper.text()).toContain('Executing: Files: Local Files')
+    expect(wrapper.text()).toContain('Sources:Local Files')
 
     wrapper.unmount()
   })

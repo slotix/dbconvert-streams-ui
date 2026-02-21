@@ -8,16 +8,19 @@ const EXECUTION_CONTEXT_STORAGE_KEY = 'explorer.sqlExecutionContext'
 function createSelectorHarness(options?: {
   savedExecutionContext?: string
   directSourceReady?: boolean
+  selectedConnections?: ConnectionMapping[]
 }) {
   const mode = ref<'database' | 'file'>('database')
   const contextKey = ref('ctx-1')
   const runMode = ref<'single' | 'federated'>('federated')
   const federatedScopeConnectionId = ref('')
 
-  const selectedConnections = ref<ConnectionMapping[]>([
-    { connectionId: 'conn_pg', alias: 'pg1', database: 'postgres' },
-    { connectionId: 'conn_files', alias: 'files1' }
-  ])
+  const selectedConnections = ref<ConnectionMapping[]>(
+    options?.selectedConnections || [
+      { connectionId: 'conn_pg', alias: 'pg1', database: 'postgres' },
+      { connectionId: 'conn_files', alias: 'files1' }
+    ]
+  )
 
   const databaseSourceMappings = computed(() =>
     selectedConnections.value.filter(
@@ -101,16 +104,26 @@ describe('useSqlExecutionContextSelector', () => {
   it('restores persisted direct selection only when option is enabled', () => {
     const readyHarness = createSelectorHarness({
       savedExecutionContext: 'direct:conn_pg::postgres::pg1',
-      directSourceReady: true
+      directSourceReady: true,
+      selectedConnections: [{ connectionId: 'conn_pg', alias: 'pg1', database: 'postgres' }]
     })
     expect(readyHarness.selector.executionContextValue.value).toBe('direct:conn_pg::postgres::pg1')
 
     const disabledHarness = createSelectorHarness({
       savedExecutionContext: 'direct:conn_pg::postgres::pg1',
-      directSourceReady: false
+      directSourceReady: false,
+      selectedConnections: [{ connectionId: 'conn_pg', alias: 'pg1', database: 'postgres' }]
     })
     expect(disabledHarness.selector.executionContextValue.value).not.toBe(
       'direct:conn_pg::postgres::pg1'
     )
+  })
+
+  it('does not restore persisted direct target when multiple sources are selected', () => {
+    const harness = createSelectorHarness({
+      savedExecutionContext: 'direct:conn_pg::postgres::pg1'
+    })
+
+    expect(harness.selector.executionContextValue.value).toBe('federated')
   })
 })

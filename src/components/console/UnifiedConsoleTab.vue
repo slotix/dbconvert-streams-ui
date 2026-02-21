@@ -27,14 +27,6 @@
           >
             Templates &amp; autocomplete follow selected source
           </span>
-          <button
-            v-if="showFederatedRewriteAction && !hideToolbarLabels"
-            type="button"
-            class="mt-1 text-[11px] leading-4 text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 underline underline-offset-2"
-            @click="rewriteStarterQueryToFederated"
-          >
-            Rewrite starter SQL to federated naming
-          </button>
         </div>
 
         <div
@@ -58,10 +50,10 @@
         <div ref="sourcesPillsRef" class="sources-pills">
           <span
             v-for="pill in sourcePills"
-            :key="`${pill.connectionId}:${pill.alias}`"
+            :key="pill.key"
             class="inline-flex shrink-0 items-center max-w-[140px] px-2 py-0.5 text-[11px] rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700"
           >
-            <span class="truncate">{{ pill.alias }}</span>
+            <span class="truncate">{{ pill.label }}</span>
           </span>
           <span v-if="sourcePills.length === 0" class="text-xs text-gray-500 dark:text-gray-400">
             none
@@ -129,10 +121,12 @@
           :rows="queryResults"
           :result-sets="resultSets"
           :error="queryError"
+          :error-action-label="errorActionLabel"
           :has-executed="hasExecutedQuery"
           :current-page="currentPage"
           :page-size="pageSize"
           @update:current-page="currentPage = $event"
+          @error-action="rewriteStarterQueryToFederated"
         />
       </div>
     </div>
@@ -589,6 +583,13 @@ const rewrittenFederatedStarterQuery = computed(() => {
 })
 
 const showFederatedRewriteAction = computed(() => Boolean(rewrittenFederatedStarterQuery.value))
+
+const errorActionLabel = computed(() => {
+  if (!showFederatedRewriteAction.value) return null
+  if (!queryError.value) return null
+  if (!/^federated mode requires alias-qualified tables/i.test(queryError.value.trim())) return null
+  return 'Rewrite starter SQL to federated naming'
+})
 
 function rewriteStarterQueryToFederated() {
   const rewritten = rewrittenFederatedStarterQuery.value

@@ -236,6 +236,18 @@ export function useSqlExecutionContextSelector(
       return
     }
 
+    // When multiple sources are selected, default to federated mode on restore.
+    // Users can still explicitly choose a direct/scoped target in the current session.
+    if (selectedConnections.value.length > 1) {
+      if (saved === 'federated') {
+        executionContextValue.value = saved
+      } else {
+        executionContextValue.value = 'federated'
+      }
+      markRestoredCurrentKey()
+      return
+    }
+
     if (saved === 'federated') {
       executionContextValue.value = saved
       markRestoredCurrentKey()
@@ -334,17 +346,19 @@ export function useSqlExecutionContextSelector(
       const fileMapping =
         selectedConnections.value.find((selectedMapping) => !isDatabaseMapping(selectedMapping)) ||
         selectedConnections.value[0]
-      const alias = fileMapping?.alias || 'files'
-      return `Executing: Files: ${alias}`
+      const connectionName = fileMapping ? getConnectionName(fileMapping.connectionId) : null
+      const label = connectionName || fileMapping?.alias || 'files'
+      return `Executing: Files: ${label}`
     }
 
     const mapping = singleSourceMapping.value || databaseSourceMappings.value[0]
     if (!mapping) return 'Executing: Single source'
 
-    const alias = mapping.alias || 'db'
+    const connectionName = getConnectionName(mapping.connectionId)
+    const label = connectionName || mapping.alias || 'db'
     const databaseType = getDatabaseTypeDisplay(mapping.connectionId)
     const typePart = databaseType ? ` (${databaseType})` : ''
-    return `Executing: Database: ${alias}${typePart}`
+    return `Executing: Database: ${label}${typePart}`
   })
 
   return {

@@ -208,6 +208,7 @@ export function useConsoleSources(options: UseConsoleSourcesOptions): UseConsole
   const runMode = ref<SqlRunMode>('single')
   const hasExplicitRunMode = ref(false)
   const singleSourceConnectionId = ref('')
+  const previousSourceCount = ref(0)
 
   // ========== Computed ==========
   const connection = computed(() => connectionsStore.connectionByID(connectionIdValue.value))
@@ -363,6 +364,12 @@ export function useConsoleSources(options: UseConsoleSourcesOptions): UseConsole
   }
 
   function restoreRunMode() {
+    if (selectedConnections.value.length > 1) {
+      runMode.value = 'federated'
+      hasExplicitRunMode.value = false
+      return
+    }
+
     const saved = loadPersistedRunModes()
     const entry = saved[sourcesKey.value]
     if (!entry || !entry.explicit) {
@@ -504,9 +511,43 @@ export function useConsoleSources(options: UseConsoleSourcesOptions): UseConsole
   watch([selectedConnections, connectionIdValue], syncSingleSourceConnection, { deep: true })
   watch(selectedConnections, persistSelectedConnections, { deep: true })
   watch([selectedConnections, connectionIdValue], () => {
+    const sourceCount = selectedConnections.value.length
+    const transitionedToMulti = previousSourceCount.value <= 1 && sourceCount > 1
+
+    // Single-source selection cannot stay in federated mode.
+    if (sourceCount === 1) {
+      if (runMode.value !== 'single') {
+        runMode.value = 'single'
+      }
+      hasExplicitRunMode.value = false
+      previousSourceCount.value = sourceCount
+      return
+    }
+
+    // Empty selection defaults to federated mode (for file read_* queries).
+    if (sourceCount === 0) {
+      if (runMode.value !== 'federated') {
+        runMode.value = 'federated'
+      }
+      hasExplicitRunMode.value = false
+      previousSourceCount.value = sourceCount
+      return
+    }
+
+    // Moving from <=1 to multiple sources should auto-promote to federated mode.
+    if (transitionedToMulti) {
+      if (runMode.value !== 'federated') {
+        runMode.value = 'federated'
+      }
+      hasExplicitRunMode.value = false
+      previousSourceCount.value = sourceCount
+      return
+    }
+
     if (!hasExplicitRunMode.value) {
       runMode.value = deriveRunModeFromSources()
     }
+    previousSourceCount.value = sourceCount
   })
   watch(sourcesKey, () => {
     hasExplicitRunMode.value = false

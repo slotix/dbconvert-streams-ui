@@ -59,6 +59,14 @@
               class="mt-1 whitespace-pre-wrap font-mono text-xs text-red-700 dark:text-red-200/90"
               >{{ error }}</pre
             >
+            <button
+              v-if="errorActionLabel"
+              type="button"
+              class="mt-2 text-xs font-medium text-teal-700 dark:text-teal-300 hover:text-teal-800 dark:hover:text-teal-200 underline underline-offset-2"
+              @click="$emit('error-action')"
+            >
+              {{ errorActionLabel }}
+            </button>
           </div>
         </div>
       </div>
@@ -263,6 +271,7 @@ const props = defineProps<{
     rowsAffected?: number
   }>
   error: string | null
+  errorActionLabel?: string | null
   hasExecuted: boolean
   currentPage: number
   pageSize: number
@@ -270,6 +279,7 @@ const props = defineProps<{
 
 defineEmits<{
   'update:currentPage': [page: number]
+  'error-action': []
 }>()
 
 // Use the export composable

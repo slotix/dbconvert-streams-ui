@@ -28,10 +28,12 @@
             :key="item.connectionId"
             class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 max-w-[180px]"
           >
-            <span class="font-mono font-medium text-teal-600 dark:text-teal-400">{{
-              item.alias
-            }}</span>
-            <span class="text-gray-300 dark:text-gray-600">·</span>
+            <span
+              v-if="item.showAlias"
+              class="font-mono font-medium text-teal-600 dark:text-teal-400"
+              >{{ item.alias }}</span
+            >
+            <span v-if="item.showAlias" class="text-gray-300 dark:text-gray-600">·</span>
             <span class="truncate text-gray-500 dark:text-gray-400">{{ item.name }}</span>
           </span>
           <span
@@ -92,7 +94,7 @@
         'pt-2': !props.showHeader
       }"
     >
-      <div v-if="props.showHints" class="mt-2 mb-6">
+      <div v-if="props.showHints && shouldShowAliases" class="mt-2 mb-6">
         <button
           type="button"
           class="w-full inline-flex items-center justify-between px-0.5 py-1 text-[11px] text-gray-500 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400 transition-colors"
@@ -241,6 +243,7 @@
                         class="flex items-center gap-2 px-0.5 py-1.5"
                       >
                         <input
+                          v-if="shouldShowAliases"
                           type="text"
                           :value="mapping.alias || ''"
                           placeholder="alias"
@@ -254,7 +257,11 @@
                         />
 
                         <div class="flex items-center gap-2 min-w-0 flex-1">
-                          <span class="text-xs text-gray-400 dark:text-gray-500 shrink-0">→</span>
+                          <span
+                            v-if="shouldShowAliases"
+                            class="text-xs text-gray-400 dark:text-gray-500 shrink-0"
+                            >→</span
+                          >
                           <FormSelect
                             :model-value="mapping.database || ''"
                             :options="getDatabaseSelectOptionsForMapping(conn, mapping)"
@@ -321,6 +328,7 @@
                   <div
                     v-if="
                       isSelected(conn.id) &&
+                      shouldShowAliases &&
                       showAliasForConnection(conn) &&
                       getPrimaryMapping(conn.id)
                     "
@@ -530,6 +538,7 @@ const hasSelectedLocalFilesConnections = computed(() => {
 })
 
 const selectedCount = computed(() => props.modelValue.length)
+const shouldShowAliases = computed(() => selectedCount.value > 1)
 const collapsedCtaTitle = computed(() =>
   selectedCount.value > 0 ? 'Expand to add more sources' : 'Expand to select one or more sources'
 )
@@ -541,7 +550,8 @@ const selectedPreview = computed(() => {
     return {
       connectionId: m.connectionId,
       alias: m.alias,
-      name: conn?.name || conn?.host || 'Connection'
+      name: conn?.name || conn?.host || 'Connection',
+      showAlias: shouldShowAliases.value
     }
   })
 })
