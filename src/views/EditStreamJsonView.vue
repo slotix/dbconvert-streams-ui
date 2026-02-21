@@ -1,6 +1,8 @@
 <template>
   <div class="h-screen flex flex-col overflow-hidden">
-    <header class="sticky top-0 z-30 bg-white dark:bg-gray-900 border-b border-slate-200 dark:border-gray-700">
+    <header
+      class="sticky top-0 z-30 bg-white dark:bg-gray-900 border-b border-slate-200 dark:border-gray-700"
+    >
       <div class="px-4 py-2 flex items-center gap-3">
         <button
           type="button"
@@ -19,7 +21,9 @@
           <span class="sr-only">Back</span>
         </button>
         <h1 class="text-base font-semibold text-gray-900 dark:text-gray-100">Edit Stream JSON</h1>
-        <span v-if="stream" class="text-xs text-gray-500 dark:text-gray-400">— {{ stream.name }}</span>
+        <span v-if="stream" class="text-xs text-gray-500 dark:text-gray-400"
+          >— {{ stream.name }}</span
+        >
       </div>
     </header>
 

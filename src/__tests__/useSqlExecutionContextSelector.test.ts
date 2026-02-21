@@ -1,19 +1,16 @@
 import { computed, ref } from 'vue'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import type { ConnectionMapping } from '@/api/federated'
 import { useSqlExecutionContextSelector } from '@/composables/useSqlExecutionContextSelector'
 
-const EXECUTION_CONTEXT_STORAGE_KEY = 'explorer.sqlExecutionContext'
-
 function createSelectorHarness(options?: {
-  savedExecutionContext?: string
-  directSourceReady?: boolean
+  mode?: 'database' | 'file'
+  runMode?: 'single' | 'federated'
   selectedConnections?: ConnectionMapping[]
+  databaseSourceMappings?: ConnectionMapping[]
 }) {
-  const mode = ref<'database' | 'file'>('database')
-  const contextKey = ref('ctx-1')
-  const runMode = ref<'single' | 'federated'>('federated')
-  const federatedScopeConnectionId = ref('')
+  const mode = ref<'database' | 'file'>(options?.mode || 'database')
+  const runMode = ref<'single' | 'federated'>(options?.runMode || 'federated')
 
   const selectedConnections = ref<ConnectionMapping[]>(
     options?.selectedConnections || [
@@ -22,108 +19,51 @@ function createSelectorHarness(options?: {
     ]
   )
 
-  const databaseSourceMappings = computed(() =>
-    selectedConnections.value.filter(
-      (mapping) => mapping.connectionId.startsWith('conn_') && !!mapping.database
-    )
+  const databaseSourceMappings = computed(
+    () =>
+      options?.databaseSourceMappings ||
+      selectedConnections.value.filter((mapping) => Boolean(mapping.database))
   )
-  const singleSourceMapping = computed(() => databaseSourceMappings.value[0] || null)
-
-  const setRunMode = vi.fn((nextMode: 'single' | 'federated') => {
-    runMode.value = nextMode
-  })
-  const setSingleSourceConnectionId = vi.fn()
-
-  if (options?.savedExecutionContext) {
-    window.localStorage.setItem(
-      EXECUTION_CONTEXT_STORAGE_KEY,
-      JSON.stringify({
-        [contextKey.value]: options.savedExecutionContext
-      })
-    )
-  }
 
   const selector = useSqlExecutionContextSelector({
     mode,
-    contextKey,
     runMode,
     selectedConnections,
     databaseSourceMappings,
-    singleSourceMapping,
-    federatedScopeConnectionId,
-    setRunMode,
-    setSingleSourceConnectionId,
-    isDatabaseMapping: (mapping) =>
-      mapping.connectionId.startsWith('conn_') && !mapping.connectionId.includes('files'),
+    isDatabaseMapping: (mapping) => mapping.connectionId !== 'conn_files',
     getDatabaseTypeDisplay: () => 'PostgreSQL',
-    getConnectionName: () => 'test-conn',
-    getDirectSourceReadiness: () => ({
-      ready: options?.directSourceReady ?? true
-    }),
-    getScopedSourceReadiness: () => ({ ready: true })
+    getConnectionName: () => 'test-conn'
   })
 
   return {
-    selector,
-    setRunMode,
-    setSingleSourceConnectionId,
-    runMode,
-    federatedScopeConnectionId
+    selector
   }
 }
 
 describe('useSqlExecutionContextSelector', () => {
-  beforeEach(() => {
-    window.localStorage.clear()
-    vi.clearAllMocks()
+  it('shows multi-source execution label in federated mode', () => {
+    const { selector } = createSelectorHarness({ runMode: 'federated' })
+
+    expect(selector.singleExecutionLabel.value).toBe('Executing: Multi-source')
   })
 
-  it('handles direct selection token and switches to single mode', () => {
-    const { selector, setRunMode, setSingleSourceConnectionId } = createSelectorHarness()
-
-    setRunMode.mockClear()
-    setSingleSourceConnectionId.mockClear()
-
-    selector.executionContextValue.value = 'direct:conn_pg::postgres::pg1'
-
-    expect(setSingleSourceConnectionId).toHaveBeenCalledWith('conn_pg::postgres::pg1')
-    expect(setRunMode).toHaveBeenCalledWith('single')
-  })
-
-  it('handles scoped selection token and keeps federated mode', () => {
-    const { selector, setRunMode, federatedScopeConnectionId } = createSelectorHarness()
-
-    setRunMode.mockClear()
-
-    selector.executionContextValue.value = 'scoped:conn_files'
-
-    expect(federatedScopeConnectionId.value).toBe('conn_files')
-    expect(setRunMode).toHaveBeenCalledWith('federated')
-  })
-
-  it('restores persisted direct selection only when option is enabled', () => {
-    const readyHarness = createSelectorHarness({
-      savedExecutionContext: 'direct:conn_pg::postgres::pg1',
-      directSourceReady: true,
+  it('shows database execution label in single mode', () => {
+    const { selector } = createSelectorHarness({
+      runMode: 'single',
       selectedConnections: [{ connectionId: 'conn_pg', alias: 'pg1', database: 'postgres' }]
     })
-    expect(readyHarness.selector.executionContextValue.value).toBe('direct:conn_pg::postgres::pg1')
 
-    const disabledHarness = createSelectorHarness({
-      savedExecutionContext: 'direct:conn_pg::postgres::pg1',
-      directSourceReady: false,
-      selectedConnections: [{ connectionId: 'conn_pg', alias: 'pg1', database: 'postgres' }]
-    })
-    expect(disabledHarness.selector.executionContextValue.value).not.toBe(
-      'direct:conn_pg::postgres::pg1'
-    )
+    expect(selector.singleExecutionLabel.value).toBe('Executing: Database: test-conn (PostgreSQL)')
   })
 
-  it('does not restore persisted direct target when multiple sources are selected', () => {
-    const harness = createSelectorHarness({
-      savedExecutionContext: 'direct:conn_pg::postgres::pg1'
+  it('shows file execution label in single file mode', () => {
+    const { selector } = createSelectorHarness({
+      mode: 'file',
+      runMode: 'single',
+      selectedConnections: [{ connectionId: 'conn_files', alias: 'files1' }],
+      databaseSourceMappings: []
     })
 
-    expect(harness.selector.executionContextValue.value).toBe('federated')
+    expect(selector.singleExecutionLabel.value).toBe('Executing: Files: test-conn')
   })
 })

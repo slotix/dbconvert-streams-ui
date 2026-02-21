@@ -5,11 +5,8 @@ export interface UseSqlConsoleTabNameOptions {
   mode: Ref<'database' | 'file'> | ComputedRef<'database' | 'file'>
   runMode: Ref<'single' | 'federated'>
   selectedConnections: Ref<ConnectionMapping[]>
-  effectiveSelectedConnections: ComputedRef<ConnectionMapping[]>
-  singleSourceMapping: ComputedRef<ConnectionMapping | null>
   databaseSourceMappings: ComputedRef<ConnectionMapping[]>
   primaryConnectionId: Ref<string> | ComputedRef<string>
-  federatedScopeConnectionId: Ref<string>
   isDatabaseMapping: (mapping: { connectionId: string }) => boolean
   getConnectionName: (connectionId: string) => string | null
   currentConnectionName: Ref<string | null> | ComputedRef<string | null>
@@ -26,11 +23,8 @@ export function useSqlConsoleTabName(
     mode,
     runMode,
     selectedConnections,
-    effectiveSelectedConnections,
-    singleSourceMapping,
     databaseSourceMappings,
     primaryConnectionId,
-    federatedScopeConnectionId,
     isDatabaseMapping,
     getConnectionName,
     currentConnectionName
@@ -38,8 +32,14 @@ export function useSqlConsoleTabName(
 
   const singleExecutionMapping = computed(() => {
     if (mode.value === 'file') {
-      if (runMode.value === 'single' && singleSourceMapping.value) {
-        return singleSourceMapping.value
+      if (runMode.value === 'single') {
+        const fileMapping =
+          selectedConnections.value.find(
+            (selectedMapping) => !isDatabaseMapping(selectedMapping)
+          ) || selectedConnections.value[0]
+        if (fileMapping) {
+          return fileMapping
+        }
       }
 
       const fileMappings = selectedConnections.value.filter(
@@ -64,7 +64,7 @@ export function useSqlConsoleTabName(
 
       return null
     }
-    return singleSourceMapping.value || databaseSourceMappings.value[0] || null
+    return databaseSourceMappings.value[0] || null
   })
 
   const paneTabDefaultName = computed(() => {
@@ -91,19 +91,7 @@ export function useSqlConsoleTabName(
   })
 
   const paneTabFederatedName = computed(() => {
-    if (federatedScopeConnectionId.value) {
-      const mapping = selectedConnections.value.find(
-        (selectedMapping) => selectedMapping.connectionId === federatedScopeConnectionId.value
-      )
-      if (mapping) {
-        const connName = getConnectionName(mapping.connectionId) || mapping.connectionId
-        const db = mapping.database?.trim()
-        const target = db ? `${connName} → ${db}` : connName
-        return `Files • ${mapping.alias || 'files'} • ${target}`
-      }
-    }
-
-    const sourceCount = effectiveSelectedConnections.value.length
+    const sourceCount = selectedConnections.value.length
     const sourcePart = `${sourceCount} source${sourceCount === 1 ? '' : 's'}`
     return `Multi-source • ${sourcePart}`
   })

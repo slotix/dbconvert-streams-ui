@@ -80,7 +80,7 @@ function createHarness(params: {
     database: computed(() => 'sakila'),
     selectedConnections,
     singleSourceMapping: computed(() => selectedConnections.value[0] || null),
-    useFederatedEngine: computed(() => false),
+    useFederatedEngine: computed(() => selectedConnections.value.length > 1),
     sqlQuery,
     activeQueryTabId: ref(null),
     setExecutionResult,

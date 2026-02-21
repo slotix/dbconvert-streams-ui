@@ -20,12 +20,12 @@ Purpose: stable regression checklist for SQL completion behavior in current edit
 | `SELECT COUNT(` | `Ctrl+Space` | UI responsive; context suggestions may vary |
 | `SELECT * FROM actor WHERE ` | `Ctrl+Space` | UI responsive; suggestions available or empty, but no lock/freeze |
 
-## 3) Source/Database Switching
+## 3) Source/Mode Switching
 
 | Scenario | Expected |
 | --- | --- |
-| Switch `Run on` DB, then `SELECT * FROM ` + `Ctrl+Space` | Suggestions reflect newly selected DB |
-| Repeat tab switch + DB switch + completion 3-5 times | No dead UI/focus lock |
+| In Query Session, add/remove sources, then `SELECT * FROM ` + `Ctrl+Space` | Suggestions reflect active mode (`single`: DB tables, `multi-source`: aliases + `read_*`) |
+| Repeat tab switch + source changes + completion 3-5 times | No dead UI/focus lock |
 
 ## 4) Selection/Edit Behavior
 

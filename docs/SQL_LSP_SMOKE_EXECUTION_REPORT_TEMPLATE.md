@@ -29,8 +29,8 @@ Use this report for every pre-merge/pre-release SQL editor validation pass.
 | 5 | `SELECT COUNT(|) FROM actor` + `Ctrl+Space` | expression/context suggestions |  |  |
 | 6 | `SELECT * FROM actor JOIN address ON actor.address_id = |` + `Ctrl+Space` | join-condition suggestions |  |  |
 | 7 | `SELECT * fr|` + `Ctrl+Space` | no freeze; completion may be limited |  |  |
-| 8 | switch `Run on` DB, then `SELECT * FROM |` + `Ctrl+Space` | list reflects selected DB |  |  |
-| 9 | 3-5 cycles: tab switch + DB switch + `Ctrl+Space` | no dead UI/focus lock |  |  |
+| 8 | add/remove sources in Query Session, then `SELECT * FROM |` + `Ctrl+Space` | list reflects active mode context |  |  |
+| 9 | 3-5 cycles: tab switch + source changes + `Ctrl+Space` | no dead UI/focus lock |  |  |
 | 10 | `Ctrl+A`, mouse selection, backspace/edit | selection visible, editing works |  |  |
 | 11 | hover known token in valid query context | hover tooltip appears; no freeze |  |  |
 

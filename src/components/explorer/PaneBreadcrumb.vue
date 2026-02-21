@@ -1,5 +1,5 @@
 <template>
-  <div class="mb-3 px-2" :data-pane-id="paneId">
+  <div class="mt-2 mb-3 px-2" :data-pane-id="paneId">
     <!-- Database object breadcrumb (including SQL console tabs) -->
     <ExplorerBreadcrumb
       v-if="breadcrumbData.database || breadcrumbData.isSqlConsole"

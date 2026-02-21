@@ -137,6 +137,11 @@ Detailed end-to-end flow (single-source start, automatic promote on source add, 
 
 - `docs/SQL_MULTI_SOURCE_FLOW.md`
 
+Mode behavior notes:
+- Mode is source-count driven: `1` source -> single, `>1` sources -> multi-source.
+- In multi-source mode, UI does not show per-connection execution dropdown options.
+- Multi-source SQL view always uses DuckDB LSP context for selected sources.
+
 DuckDB references:
 
 - PostgreSQL extension: <https://duckdb.org/docs/stable/core_extensions/postgres>
@@ -153,9 +158,8 @@ DuckDB references:
 
 1. `SELECT * FROM ` + `Ctrl+Space` -> table list appears.
 2. `SELECT * FROM actor a WHERE a.` + `Ctrl+Space` -> column list appears.
-3. Switch `Run on` database and repeat #1 -> list reflects selected DB.
-4. Repeat completion + DB switching several times -> UI remains responsive.
-5. Confirm selection visibility and editing behavior in both light/dark themes.
+3. Change selected sources in Query Session and repeat #1 -> list reflects active mode context.
+4. Confirm selection visibility and editing behavior in both light/dark themes.
 
 Multi-source checklist:
 
@@ -172,6 +176,7 @@ Multi-source checklist:
 8. Open table in single-source SQL console, then add second source:
    - existing SQL stays unchanged (no hidden rewrite),
    - `Rewrite starter SQL to federated naming` appears for starter table query.
+9. In multi-source mode, run unqualified table SQL (for example `SELECT * FROM actor`) -> validation error about alias-qualified references.
 
 Quick regression command (unit scope):
 

@@ -35,43 +35,19 @@ export interface UseConsoleSourcesReturn {
   primaryMapping: ComputedRef<ConnectionMapping>
   runMode: Ref<SqlRunMode>
   databaseSourceMappings: ComputedRef<ConnectionMapping[]>
-  singleSourceConnectionId: Ref<string>
   singleSourceMapping: ComputedRef<ConnectionMapping | null>
 
   // Methods
   handleUpdateSelectedConnections: (value: ConnectionMapping[]) => void
   setRunMode: (mode: SqlRunMode) => void
-  setSingleSourceConnectionId: (connectionId: string) => void
   initializeDefaultSources: () => void
   syncPrimarySource: () => void
   restoreSelectedConnections: () => void
-  restoreRunMode: () => void
-  restoreSingleSourceConnection: () => void
   persistSelectedConnections: () => void
 
   // Helpers
   isDuckDbFileQuery: (query: string) => boolean
   escapeRegExp: (value: string) => string
-}
-
-function buildMappingSelectionKey(mapping: {
-  connectionId: string
-  alias?: string
-  database?: string
-}): string {
-  return `${mapping.connectionId}::${mapping.database?.trim() || ''}::${mapping.alias?.trim() || ''}`
-}
-
-function mappingMatchesSelectionToken(
-  mapping: {
-    connectionId: string
-    alias?: string
-    database?: string
-  },
-  token: string
-): boolean {
-  if (!token) return false
-  return token === buildMappingSelectionKey(mapping) || token === mapping.connectionId
 }
 
 // ========== Persistence ==========
@@ -83,8 +59,6 @@ interface PersistedConsoleSourcesEntry {
 type PersistedConsoleSourcesState = Record<string, PersistedConsoleSourcesEntry>
 
 const SOURCES_STORAGE_KEY = 'explorer.sqlConsoleSources'
-const RUN_MODE_STORAGE_KEY = 'explorer.sqlRunMode'
-const SINGLE_SOURCE_STORAGE_KEY = 'explorer.sqlSingleSourceConnection'
 
 function hasBrowserStorage(): boolean {
   return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
@@ -106,57 +80,6 @@ function persistSources(state: PersistedConsoleSourcesState) {
   if (!hasBrowserStorage()) return
   try {
     window.localStorage.setItem(SOURCES_STORAGE_KEY, JSON.stringify(state))
-  } catch {
-    // ignore
-  }
-}
-
-interface PersistedRunModeEntry {
-  mode: SqlRunMode
-  explicit: boolean
-}
-
-type PersistedRunModeState = Record<string, PersistedRunModeEntry>
-
-function loadPersistedRunModes(): PersistedRunModeState {
-  if (!hasBrowserStorage()) return {}
-  try {
-    const raw = window.localStorage.getItem(RUN_MODE_STORAGE_KEY)
-    if (!raw) return {}
-    const parsed = JSON.parse(raw) as PersistedRunModeState
-    return parsed && typeof parsed === 'object' ? parsed : {}
-  } catch {
-    return {}
-  }
-}
-
-function persistRunModes(state: PersistedRunModeState) {
-  if (!hasBrowserStorage()) return
-  try {
-    window.localStorage.setItem(RUN_MODE_STORAGE_KEY, JSON.stringify(state))
-  } catch {
-    // ignore
-  }
-}
-
-type PersistedSingleSourceState = Record<string, string>
-
-function loadPersistedSingleSources(): PersistedSingleSourceState {
-  if (!hasBrowserStorage()) return {}
-  try {
-    const raw = window.localStorage.getItem(SINGLE_SOURCE_STORAGE_KEY)
-    if (!raw) return {}
-    const parsed = JSON.parse(raw) as PersistedSingleSourceState
-    return parsed && typeof parsed === 'object' ? parsed : {}
-  } catch {
-    return {}
-  }
-}
-
-function persistSingleSources(state: PersistedSingleSourceState) {
-  if (!hasBrowserStorage()) return
-  try {
-    window.localStorage.setItem(SINGLE_SOURCE_STORAGE_KEY, JSON.stringify(state))
   } catch {
     // ignore
   }
@@ -206,8 +129,6 @@ export function useConsoleSources(options: UseConsoleSourcesOptions): UseConsole
   const selectedConnections = ref<ConnectionMapping[]>([])
   const userModifiedSources = ref(false)
   const runMode = ref<SqlRunMode>('single')
-  const hasExplicitRunMode = ref(false)
-  const singleSourceConnectionId = ref('')
   const previousSourceCount = ref(0)
 
   // ========== Computed ==========
@@ -269,11 +190,6 @@ export function useConsoleSources(options: UseConsoleSourcesOptions): UseConsole
   const singleSourceMapping = computed<ConnectionMapping | null>(() => {
     const dbMappings = databaseSourceMappings.value
     if (dbMappings.length === 0) return null
-
-    const selectedToken = singleSourceConnectionId.value
-    const selected = dbMappings.find((m) => mappingMatchesSelectionToken(m, selectedToken))
-    if (selected) return selected
-
     return dbMappings[0]
   })
 
@@ -354,78 +270,9 @@ export function useConsoleSources(options: UseConsoleSourcesOptions): UseConsole
     return 'federated'
   }
 
-  function setRunMode(mode: SqlRunMode) {
-    runMode.value = selectedConnections.value.length === 1 ? 'single' : mode
-    hasExplicitRunMode.value = true
-  }
-
-  function setSingleSourceConnectionId(connectionId: string) {
-    singleSourceConnectionId.value = connectionId
-  }
-
-  function restoreRunMode() {
-    if (selectedConnections.value.length > 1) {
-      runMode.value = 'federated'
-      hasExplicitRunMode.value = false
-      return
-    }
-
-    const saved = loadPersistedRunModes()
-    const entry = saved[sourcesKey.value]
-    if (!entry || !entry.explicit) {
-      runMode.value = deriveRunModeFromSources()
-      return
-    }
-
-    if (entry.mode === 'single' || entry.mode === 'federated') {
-      runMode.value = selectedConnections.value.length === 1 ? 'single' : entry.mode
-      hasExplicitRunMode.value = true
-      return
-    }
-
+  function setRunMode(_mode: SqlRunMode) {
+    void _mode
     runMode.value = deriveRunModeFromSources()
-  }
-
-  function persistRunMode() {
-    if (!hasExplicitRunMode.value) return
-
-    const saved = loadPersistedRunModes()
-    saved[sourcesKey.value] = {
-      mode: runMode.value,
-      explicit: true
-    }
-    persistRunModes(saved)
-  }
-
-  function syncSingleSourceConnection() {
-    const dbMappings = databaseSourceMappings.value
-    if (dbMappings.length === 0) {
-      singleSourceConnectionId.value = ''
-      return
-    }
-
-    if (dbMappings.some((m) => mappingMatchesSelectionToken(m, singleSourceConnectionId.value))) {
-      return
-    }
-
-    singleSourceConnectionId.value = buildMappingSelectionKey(dbMappings[0])
-  }
-
-  function restoreSingleSourceConnection() {
-    const saved = loadPersistedSingleSources()
-    const connectionId = saved[sourcesKey.value]
-    if (connectionId) {
-      singleSourceConnectionId.value = connectionId
-    }
-    syncSingleSourceConnection()
-  }
-
-  function persistSingleSourceConnection() {
-    if (!singleSourceConnectionId.value) return
-
-    const saved = loadPersistedSingleSources()
-    saved[sourcesKey.value] = singleSourceConnectionId.value
-    persistSingleSources(saved)
   }
 
   function restoreSelectedConnections() {
@@ -508,7 +355,6 @@ export function useConsoleSources(options: UseConsoleSourcesOptions): UseConsole
     ensureExplicitDatabaseMappings,
     { deep: true, immediate: true }
   )
-  watch([selectedConnections, connectionIdValue], syncSingleSourceConnection, { deep: true })
   watch(selectedConnections, persistSelectedConnections, { deep: true })
   watch([selectedConnections, connectionIdValue], () => {
     const sourceCount = selectedConnections.value.length
@@ -519,7 +365,6 @@ export function useConsoleSources(options: UseConsoleSourcesOptions): UseConsole
       if (runMode.value !== 'single') {
         runMode.value = 'single'
       }
-      hasExplicitRunMode.value = false
       previousSourceCount.value = sourceCount
       return
     }
@@ -529,7 +374,6 @@ export function useConsoleSources(options: UseConsoleSourcesOptions): UseConsole
       if (runMode.value !== 'federated') {
         runMode.value = 'federated'
       }
-      hasExplicitRunMode.value = false
       previousSourceCount.value = sourceCount
       return
     }
@@ -539,24 +383,16 @@ export function useConsoleSources(options: UseConsoleSourcesOptions): UseConsole
       if (runMode.value !== 'federated') {
         runMode.value = 'federated'
       }
-      hasExplicitRunMode.value = false
       previousSourceCount.value = sourceCount
       return
     }
 
-    if (!hasExplicitRunMode.value) {
-      runMode.value = deriveRunModeFromSources()
-    }
+    runMode.value = deriveRunModeFromSources()
     previousSourceCount.value = sourceCount
   })
   watch(sourcesKey, () => {
-    hasExplicitRunMode.value = false
     runMode.value = deriveRunModeFromSources()
-    restoreRunMode()
-    restoreSingleSourceConnection()
   })
-  watch(runMode, persistRunMode)
-  watch(singleSourceConnectionId, persistSingleSourceConnection)
 
   return {
     // State
@@ -568,18 +404,14 @@ export function useConsoleSources(options: UseConsoleSourcesOptions): UseConsole
     primaryMapping,
     runMode,
     databaseSourceMappings,
-    singleSourceConnectionId,
     singleSourceMapping,
 
     // Methods
     handleUpdateSelectedConnections,
     setRunMode,
-    setSingleSourceConnectionId,
     initializeDefaultSources,
     syncPrimarySource,
     restoreSelectedConnections,
-    restoreRunMode,
-    restoreSingleSourceConnection,
     persistSelectedConnections,
 
     // Helpers

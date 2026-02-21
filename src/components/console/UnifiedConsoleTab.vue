@@ -6,31 +6,7 @@
       class="px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex items-start gap-3"
     >
       <div class="shrink-0 w-auto">
-        <div v-if="showUnifiedExecutionSelector" class="inline-flex flex-col items-start">
-          <div class="inline-flex items-center" :class="hideToolbarLabels ? 'gap-0' : 'gap-2'">
-            <span
-              v-show="!hideToolbarLabels"
-              class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap"
-            >
-              Run on:
-            </span>
-            <FormSelect
-              v-model="executionContextValue"
-              :options="executionContextOptions"
-              class="execution-context-select w-[280px] min-w-[280px] max-w-[280px]"
-              placeholder="Select execution mode"
-            />
-          </div>
-          <span
-            v-show="!hideToolbarLabels"
-            class="execution-context-hint mt-1 text-[11px] leading-4 text-gray-500 dark:text-gray-400"
-          >
-            Templates &amp; autocomplete follow selected source
-          </span>
-        </div>
-
         <div
-          v-else
           class="px-2.5 py-1.5 text-xs rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-850 text-gray-700 dark:text-gray-300 max-w-[320px] truncate"
         >
           {{ singleExecutionLabel }}
@@ -163,7 +139,6 @@ import { useConnectionsStore } from '@/stores/connections'
 import { useConfirmDialogStore } from '@/stores/confirmDialog'
 import { usePaneTabsStore, createConsoleSessionId } from '@/stores/paneTabs'
 import { SqlQueryTabs, SqlEditorPane, SqlResultsPane } from '@/components/database/sql-console'
-import FormSelect from '@/components/base/FormSelect.vue'
 import SlideOverPanel from '@/components/common/SlideOverPanel.vue'
 import ConnectionAliasPanel from './ConnectionAliasPanel.vue'
 import { useConsoleTab, type FormatMode, type QueryHistoryItem } from '@/composables/useConsoleTab'
@@ -302,12 +277,9 @@ const {
   singleSourceMapping,
   handleUpdateSelectedConnections,
   setRunMode,
-  setSingleSourceConnectionId,
   initializeDefaultSources,
   syncPrimarySource,
-  restoreSelectedConnections,
-  restoreRunMode,
-  restoreSingleSourceConnection
+  restoreSelectedConnections
 } = useConsoleSources({
   connectionId: connectionIdRef,
   mode: modeRef,
@@ -320,8 +292,6 @@ const { sourcePills, isDatabaseMapping, getDatabaseTypeDisplay } = useSqlSourceP
   selectedConnections,
   getConnectionById: (connectionId) => connectionsStore.connectionByID(connectionId)
 })
-
-const federatedScopeConnectionId = ref('')
 
 function getDirectSourceReadiness(mapping: {
   connectionId: string
@@ -384,42 +354,14 @@ const fileScopeWarning = computed(() => {
   return 'Folder scope is optional, but selecting one improves autocomplete for file sources.'
 })
 
-const effectiveSelectedConnections = computed(() => {
-  if (runMode.value !== 'federated') {
-    return selectedConnections.value
-  }
-
-  if (!federatedScopeConnectionId.value) {
-    return selectedConnections.value
-  }
-
-  const scoped = selectedConnections.value.find(
-    (mapping) =>
-      mapping.connectionId === federatedScopeConnectionId.value && !isDatabaseMapping(mapping)
-  )
-  return scoped ? [scoped] : selectedConnections.value
-})
-
-const {
-  showUnifiedExecutionSelector,
-  executionContextOptions,
-  executionContextValue,
-  singleExecutionLabel
-} = useSqlExecutionContextSelector({
+const { singleExecutionLabel } = useSqlExecutionContextSelector({
   mode: modeRef,
-  contextKey: consoleKey,
   runMode,
   selectedConnections,
   databaseSourceMappings,
-  singleSourceMapping,
-  federatedScopeConnectionId,
-  setRunMode,
-  setSingleSourceConnectionId,
   isDatabaseMapping,
   getDatabaseTypeDisplay,
-  getConnectionName: (connectionId) => connectionsStore.connectionByID(connectionId)?.name || null,
-  getDirectSourceReadiness,
-  getScopedSourceReadiness
+  getConnectionName: (connectionId) => connectionsStore.connectionByID(connectionId)?.name || null
 })
 
 // ========== SQL Dialect ==========
@@ -602,7 +544,7 @@ const { isExecuting, executeQuery } = useQueryExecution({
   mode: modeRef,
   connectionId: connectionIdRef,
   database: databaseRef,
-  selectedConnections: effectiveSelectedConnections,
+  selectedConnections,
   singleSourceMapping,
   useFederatedEngine,
   sqlQuery,
@@ -736,7 +678,7 @@ const sqlLspContext = computed<SqlLspConnectionContext | undefined>(() => {
 // ========== Query Templates ==========
 const queryTemplates = computed(() => {
   if (useFederatedEngine.value) {
-    const sources = effectiveSelectedConnections.value
+    const sources = selectedConnections.value
       .map((mapping) => {
         const conn = connectionsStore.connectionByID(mapping.connectionId)
         const kind = getConnectionKindFromSpec(conn?.spec)
@@ -776,11 +718,8 @@ const { paneTabName } = useSqlConsoleTabName({
   mode: modeRef,
   runMode,
   selectedConnections,
-  effectiveSelectedConnections,
-  singleSourceMapping,
   databaseSourceMappings,
   primaryConnectionId: connectionIdRef,
-  federatedScopeConnectionId,
   isDatabaseMapping,
   getConnectionName: (connectionId) => connectionsStore.connectionByID(connectionId)?.name || null,
   currentConnectionName: computed(() => connection.value?.name || null)
@@ -812,8 +751,6 @@ onMounted(async () => {
   restoreSelectedConnections()
   initializeDefaultSources()
   syncPrimarySource()
-  restoreRunMode()
-  restoreSingleSourceConnection()
 
   setupToolbarResizeObserver()
   await nextTick()
@@ -836,21 +773,6 @@ watch(
 )
 
 watch(
-  selectedConnections,
-  (mappings) => {
-    if (!federatedScopeConnectionId.value) return
-    const stillExists = mappings.some(
-      (mapping) =>
-        mapping.connectionId === federatedScopeConnectionId.value && !isDatabaseMapping(mapping)
-    )
-    if (!stillExists) {
-      federatedScopeConnectionId.value = ''
-    }
-  },
-  { deep: true }
-)
-
-watch(
   databaseSourceMappings,
   (mappings) => {
     if (props.mode !== 'database') return
@@ -861,7 +783,7 @@ watch(
   { immediate: true }
 )
 
-watch([selectedConnections, executionContextValue, showUnifiedExecutionSelector], async () => {
+watch(selectedConnections, async () => {
   await nextTick()
   updateToolbarLabelVisibility()
 })
@@ -959,39 +881,5 @@ defineExpose({
   color: #99f6e4;
   background: rgb(20 184 166 / 28%);
   border-color: rgb(153 246 228 / 55%);
-}
-
-.execution-context-select :deep(button) {
-  height: 2rem;
-  padding-top: 0.25rem;
-  padding-bottom: 0.25rem;
-  padding-left: 0.75rem;
-  padding-right: 2rem;
-  font-size: 0.75rem;
-  line-height: 1rem;
-  overflow: hidden;
-}
-
-.execution-context-select :deep(ul) {
-  left: auto;
-  right: 0;
-  width: max-content;
-  min-width: max(100%, 340px);
-  max-width: min(78vw, 520px);
-  font-size: 0.75rem;
-  background-color: #f9fafb;
-}
-
-:global(.dark) .execution-context-select :deep(ul) {
-  background-color: #374151;
-}
-
-.execution-context-select :deep(li span) {
-  overflow: visible;
-  text-overflow: clip;
-}
-
-.execution-context-hint {
-  margin-left: 3.25rem;
 }
 </style>

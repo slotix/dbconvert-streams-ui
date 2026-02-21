@@ -35,16 +35,20 @@ Note: this is already the promote step. There is no separate manual `Promote` co
 
 ### 3) Execution context
 
-`Run on` selector supports:
-- `Multi-source` (federated execution)
-- direct/scoped targets when applicable
+Execution mode is determined only by selected source count:
+- exactly `1` source -> `single` mode
+- more than `1` source -> `Multi-source` mode
 
-User can explicitly choose direct target or federated target from the selector.
+No per-connection execution dropdown is shown in `Multi-source` mode.
+When multiple sources are selected, SQL view always uses DuckDB LSP context for the active session.
 
 ### 4) SQL stays unchanged on promote
 
 - Existing SQL is not rewritten when additional sources are enabled.
 - This prevents hidden query mutation during mode transitions.
+
+Demote rule:
+- if selected sources drop from `2` to `1`, mode demotes automatically back to `single`.
 
 ### 5) Optional explicit rewrite
 
@@ -85,6 +89,7 @@ Dot-navigation expectations:
 - File sources: use DuckDB file functions and/or file alias conventions from current session
 
 Suggestions and execution must use the same naming model.
+In multi-source mode, alias-qualified references are required for table relations.
 
 ## Real examples (`my1`, `pg1`, `files1`)
 

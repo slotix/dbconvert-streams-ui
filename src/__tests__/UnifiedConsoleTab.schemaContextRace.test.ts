@@ -130,7 +130,6 @@ vi.mock('@/composables/useConsoleSources', async () => {
 
   const selectedConnections = ref([{ connectionId: 'pg-1', alias: 'pg1', database: 'pg_db' }])
   const runMode = ref<'single' | 'federated'>('single')
-  const singleSourceConnectionId = ref('pg-1')
 
   const databaseSourceMappings = computed(() =>
     selectedConnections.value
@@ -150,12 +149,7 @@ vi.mock('@/composables/useConsoleSources', async () => {
       })
   )
 
-  const singleSourceMapping = computed(() => {
-    const selected = databaseSourceMappings.value.find(
-      (mapping) => mapping.connectionId === singleSourceConnectionId.value
-    )
-    return selected || databaseSourceMappings.value[0] || null
-  })
+  const singleSourceMapping = computed(() => databaseSourceMappings.value[0] || null)
 
   return {
     useConsoleSources: () => ({
@@ -170,20 +164,14 @@ vi.mock('@/composables/useConsoleSources', async () => {
       setRunMode: (mode: 'single' | 'federated') => {
         runMode.value = mode
       },
-      setSingleSourceConnectionId: (connectionId: string) => {
-        singleSourceConnectionId.value = connectionId
-      },
       initializeDefaultSources: vi.fn(),
       syncPrimarySource: vi.fn(),
       restoreSelectedConnections: vi.fn(),
-      restoreRunMode: vi.fn(),
-      restoreSingleSourceConnection: vi.fn(),
       persistSelectedConnections: vi.fn()
     }),
     __mockConsoleSourcesState: {
       selectedConnections,
-      runMode,
-      singleSourceConnectionId
+      runMode
     }
   }
 })
@@ -230,7 +218,6 @@ type MockConnectionMapping = { connectionId: string; alias: string; database: st
 interface MockConsoleSourcesState {
   selectedConnections: { value: MockConnectionMapping[] }
   runMode: { value: 'single' | 'federated' }
-  singleSourceConnectionId: { value: string }
 }
 
 interface MockConsoleTabState {
@@ -270,7 +257,6 @@ describe('UnifiedConsoleTab SQL LSP context isolation in multisource switching',
     __mockConsoleSourcesState.selectedConnections.value = [
       { connectionId: 'pg-1', alias: 'pg1', database: 'pg_db' }
     ]
-    __mockConsoleSourcesState.singleSourceConnectionId.value = 'pg-1'
 
     let callIndex = 0
     vi.mocked(connections.getMetadata).mockImplementation(() => {
@@ -306,13 +292,11 @@ describe('UnifiedConsoleTab SQL LSP context isolation in multisource switching',
     __mockConsoleSourcesState.selectedConnections.value = [
       { connectionId: 'my-1', alias: 'my1', database: 'my_db' }
     ]
-    __mockConsoleSourcesState.singleSourceConnectionId.value = 'my-1'
     await nextTick()
 
     __mockConsoleSourcesState.selectedConnections.value = [
       { connectionId: 'pg-1', alias: 'pg1', database: 'pg_db' }
     ]
-    __mockConsoleSourcesState.singleSourceConnectionId.value = 'pg-1'
     await nextTick()
 
     await vi.runAllTimersAsync()
@@ -341,7 +325,6 @@ describe('UnifiedConsoleTab SQL LSP context isolation in multisource switching',
     __mockConsoleSourcesState.selectedConnections.value = [
       { connectionId: 'my-1', alias: 'my1', database: 'my_db' }
     ]
-    __mockConsoleSourcesState.singleSourceConnectionId.value = 'my-1'
 
     let callIndex = 0
     vi.mocked(connections.getMetadata).mockImplementation(() => {
@@ -377,13 +360,11 @@ describe('UnifiedConsoleTab SQL LSP context isolation in multisource switching',
     __mockConsoleSourcesState.selectedConnections.value = [
       { connectionId: 'pg-1', alias: 'pg1', database: 'pg_db' }
     ]
-    __mockConsoleSourcesState.singleSourceConnectionId.value = 'pg-1'
     await nextTick()
 
     __mockConsoleSourcesState.selectedConnections.value = [
       { connectionId: 'my-1', alias: 'my1', database: 'my_db' }
     ]
-    __mockConsoleSourcesState.singleSourceConnectionId.value = 'my-1'
     await nextTick()
 
     await vi.runAllTimersAsync()
@@ -451,7 +432,7 @@ describe('UnifiedConsoleTab SQL LSP context isolation in multisource switching',
     wrapper.unmount()
   })
 
-  it('keeps DuckDB federated LSP context when execution scope is switched to files', async () => {
+  it('keeps DuckDB federated LSP context with mixed file and database sources', async () => {
     const __mockConsoleSourcesState = await getMockConsoleSourcesState()
 
     __mockConsoleSourcesState.runMode.value = 'federated'
@@ -468,12 +449,6 @@ describe('UnifiedConsoleTab SQL LSP context isolation in multisource switching',
       }
     })
 
-    await nextTick()
-
-    const executionSelect = wrapper.findComponent({ name: 'FormSelect' })
-    executionSelect.vm.$emit('update:modelValue', 'scoped:files-1')
-
-    await nextTick()
     await nextTick()
 
     const sqlEditorPane = wrapper.findComponent({ name: 'SqlEditorPane' })
@@ -502,7 +477,6 @@ describe('UnifiedConsoleTab SQL LSP context isolation in multisource switching',
       { connectionId: 'my-1', alias: 'my1', database: 'my_db' },
       { connectionId: 'pg-1', alias: 'pg1', database: 'pg_db' }
     ]
-    __mockConsoleSourcesState.singleSourceConnectionId.value = 'my-1'
 
     const wrapper = shallowMount(UnifiedConsoleTab, {
       props: {
@@ -537,7 +511,6 @@ describe('UnifiedConsoleTab SQL LSP context isolation in multisource switching',
     __mockConsoleSourcesState.selectedConnections.value = [
       { connectionId: 'files-1', alias: 'files1', database: '' }
     ]
-    __mockConsoleSourcesState.singleSourceConnectionId.value = ''
 
     const wrapper = shallowMount(UnifiedConsoleTab, {
       props: {
@@ -562,7 +535,6 @@ describe('UnifiedConsoleTab SQL LSP context isolation in multisource switching',
     __mockConsoleSourcesState.selectedConnections.value = [
       { connectionId: 'files-1', alias: 'files1', database: '' }
     ]
-    __mockConsoleSourcesState.singleSourceConnectionId.value = ''
 
     __mockConsoleTabState.activeQueryTab.value = {
       fileContext: {
@@ -609,7 +581,6 @@ describe('UnifiedConsoleTab SQL LSP context isolation in multisource switching',
       { connectionId: 'my-1', alias: 'my1', database: 'my_db' },
       { connectionId: 'pg-1', alias: 'pg1', database: 'pg_db' }
     ]
-    __mockConsoleSourcesState.singleSourceConnectionId.value = 'my-1'
 
     __mockConsoleTabState.activeQueryTab.value = {
       fileContext: {
@@ -651,7 +622,7 @@ describe('UnifiedConsoleTab SQL LSP context isolation in multisource switching',
     __mockConsoleTabState.activeQueryTab.value = null
   })
 
-  it('shows unified execution selector for mixed targets in file mode', async () => {
+  it('shows multi-source execution label for mixed targets in file mode', async () => {
     const __mockConsoleSourcesState = await getMockConsoleSourcesState()
 
     __mockConsoleSourcesState.runMode.value = 'federated'
@@ -659,7 +630,6 @@ describe('UnifiedConsoleTab SQL LSP context isolation in multisource switching',
       { connectionId: 'files-1', alias: 'files1', database: '' },
       { connectionId: 'my-1', alias: 'my1', database: 'my_db' }
     ]
-    __mockConsoleSourcesState.singleSourceConnectionId.value = 'my-1'
 
     const wrapper = shallowMount(UnifiedConsoleTab, {
       props: {
@@ -670,33 +640,20 @@ describe('UnifiedConsoleTab SQL LSP context isolation in multisource switching',
 
     await nextTick()
 
-    expect(wrapper.text()).toContain('Run on:')
-    expect(wrapper.text()).not.toContain('Executing: Files: files1')
-
-    const executionSelect = wrapper.findComponent({ name: 'FormSelect' })
-    const options = executionSelect.props('options') as Array<{
-      value?: string
-      label?: string
-      disabled?: boolean
-    }>
-
-    const fileOption = options.find((option) => option.value === 'scoped:files-1')
-    expect(fileOption).toBeDefined()
-    expect(fileOption?.disabled).not.toBe(true)
-    expect(fileOption?.label).toContain('no folder scope')
+    expect(wrapper.text()).not.toContain('Run on:')
+    expect(wrapper.text()).toContain('Executing: Multi-source')
 
     wrapper.unmount()
   })
 
-  it('marks direct run option as needs setup when selected database no longer exists', async () => {
+  it('does not render execution selector options when multiple sources are selected', async () => {
     const __mockConsoleSourcesState = await getMockConsoleSourcesState()
 
-    __mockConsoleSourcesState.runMode.value = 'single'
+    __mockConsoleSourcesState.runMode.value = 'federated'
     __mockConsoleSourcesState.selectedConnections.value = [
       { connectionId: 'pg-1', alias: 'pg1', database: 'pg_db' },
       { connectionId: 'my-1', alias: 'my1', database: 'removed_db' }
     ]
-    __mockConsoleSourcesState.singleSourceConnectionId.value = 'my-1'
 
     const wrapper = shallowMount(UnifiedConsoleTab, {
       props: {
@@ -708,19 +665,8 @@ describe('UnifiedConsoleTab SQL LSP context isolation in multisource switching',
     await nextTick()
 
     const executionSelect = wrapper.findComponent({ name: 'FormSelect' })
-    const options = executionSelect.props('options') as Array<{
-      value?: string
-      label?: string
-      disabled?: boolean
-    }>
-
-    const mysqlOption = options.find(
-      (option) => option.label?.includes('my1') && option.label?.includes('removed_db')
-    )
-
-    expect(mysqlOption).toBeDefined()
-    expect(mysqlOption?.disabled).toBe(true)
-    expect(mysqlOption?.label).toContain('needs setup')
+    expect(executionSelect.exists()).toBe(false)
+    expect(wrapper.text()).toContain('Executing: Multi-source')
 
     wrapper.unmount()
   })
