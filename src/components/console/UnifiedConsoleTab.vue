@@ -1,43 +1,42 @@
 <template>
   <div class="console-tab h-full flex flex-col bg-gray-50 dark:bg-gray-900 pb-2">
-    <!-- Execution Context Toolbar -->
+    <!-- Unified header: breadcrumb + pills + settings -->
     <div
-      ref="executionToolbarRef"
-      class="px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex items-start gap-3"
+      class="px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2 min-w-0"
     >
-      <div class="shrink-0 w-auto">
-        <div
-          class="px-2.5 py-1.5 text-xs rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-850 text-gray-700 dark:text-gray-300 max-w-[320px] truncate"
+      <!-- Breadcrumb text -->
+      <span class="shrink-0 text-sm font-medium text-gray-700 dark:text-gray-300">{{
+        paneTabName
+      }}</span>
+
+      <!-- Pills (overflow hidden, clipped at right) -->
+      <div ref="pillsContainerRef" class="flex-1 min-w-0 flex items-center gap-1 overflow-hidden">
+        <span
+          v-for="pill in sourcePills"
+          :key="pill.key"
+          data-source-pill
+          class="inline-flex shrink-0 items-center max-w-[140px] px-2 py-0.5 text-[11px] rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700"
         >
-          {{ singleExecutionLabel }}
-        </div>
+          <span class="truncate">{{ pill.label }}</span>
+        </span>
       </div>
 
+      <!-- Overflow count -->
+      <span
+        v-if="overflowCount > 0"
+        class="shrink-0 text-xs font-medium text-gray-500 dark:text-gray-400"
+        >+{{ overflowCount }}</span
+      >
+
+      <!-- Settings gear (always visible) -->
       <button
         type="button"
-        class="sources-inline-trigger group self-start mt-0.5 min-w-0 flex-1 inline-flex items-center gap-2 text-sm text-left px-0 py-1"
+        class="sources-inline-trigger group shrink-0 inline-flex items-center p-0.5"
         title="Edit sources"
         aria-label="Edit sources"
         @click="isSourceDrawerOpen = true"
       >
-        <span v-show="!hideToolbarLabels" class="text-gray-500 dark:text-gray-400 shrink-0 text-xs"
-          >Sources:</span
-        >
-        <div ref="sourcesPillsRef" class="sources-pills">
-          <span
-            v-for="pill in sourcePills"
-            :key="pill.key"
-            class="inline-flex shrink-0 items-center max-w-[140px] px-2 py-0.5 text-[11px] rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700"
-          >
-            <span class="truncate">{{ pill.label }}</span>
-          </span>
-          <span v-if="sourcePills.length === 0" class="text-xs text-gray-500 dark:text-gray-400">
-            none
-          </span>
-        </div>
-        <span class="sources-inline-chevron-hit shrink-0">
-          <ChevronRight class="sources-inline-chevron shrink-0" />
-        </span>
+        <Settings class="sources-settings-icon" />
       </button>
     </div>
 
@@ -133,7 +132,7 @@
 
 <script setup lang="ts">
 import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue'
-import { ChevronRight } from 'lucide-vue-next'
+import { Settings } from 'lucide-vue-next'
 import type { SqlLspConnectionContext } from '@/composables/useSqlLspProviders'
 import { useConnectionsStore } from '@/stores/connections'
 import { useConfirmDialogStore } from '@/stores/confirmDialog'
@@ -144,7 +143,6 @@ import ConnectionAliasPanel from './ConnectionAliasPanel.vue'
 import { useConsoleTab, type FormatMode, type QueryHistoryItem } from '@/composables/useConsoleTab'
 import { useConsoleSources } from '@/composables/useConsoleSources'
 import { useQueryExecution } from '@/composables/useQueryExecution'
-import { useSqlExecutionContextSelector } from '@/composables/useSqlExecutionContextSelector'
 import { useSqlConsoleTabName } from '@/composables/useSqlConsoleTabName'
 import { useSqlSourcePresentation } from '@/composables/useSqlSourcePresentation'
 import type { ConsoleMode, DatabaseScope, FileConnectionType } from './types'
@@ -188,63 +186,36 @@ const connectionsStore = useConnectionsStore()
 const confirmDialogStore = useConfirmDialogStore()
 const paneTabsStore = usePaneTabsStore()
 const isSourceDrawerOpen = ref(false)
-const executionToolbarRef = ref<HTMLElement | null>(null)
-const sourcesPillsRef = ref<HTMLElement | null>(null)
-const hideToolbarLabels = ref(false)
-const TOOLBAR_LABEL_RECOVERY_SPACE = 120
-const TOOLBAR_KEEP_LABELS_MIN_WIDTH = 980
+const pillsContainerRef = ref<HTMLElement | null>(null)
+const overflowCount = ref(0)
 
-let executionToolbarResizeObserver: ResizeObserver | null = null
+let pillsResizeObserver: ResizeObserver | null = null
 
-function updateToolbarLabelVisibility() {
-  const toolbar = executionToolbarRef.value
-  if (!toolbar) return
-
-  // Keep labels visible on wide layouts; compact mode is for constrained widths only.
-  if (toolbar.clientWidth >= TOOLBAR_KEEP_LABELS_MIN_WIDTH) {
-    hideToolbarLabels.value = false
+function recomputePillOverflow() {
+  const container = pillsContainerRef.value
+  if (!container) {
+    overflowCount.value = 0
     return
   }
-
-  const overflows = toolbar.scrollWidth > toolbar.clientWidth + 1
-  const pills = sourcesPillsRef.value
-  const pillsOverflow = pills ? pills.scrollWidth > pills.clientWidth + 1 : false
-  const needsCompact = overflows || pillsOverflow
-
-  if (!hideToolbarLabels.value) {
-    if (needsCompact) hideToolbarLabels.value = true
-    return
+  const containerRight = container.getBoundingClientRect().right
+  const pillEls = container.querySelectorAll('[data-source-pill]')
+  let hidden = 0
+  for (const pill of pillEls) {
+    if (pill.getBoundingClientRect().right > containerRight + 2) hidden++
   }
-
-  if (needsCompact) return
-
-  const spareSpace = toolbar.clientWidth - toolbar.scrollWidth
-  if (spareSpace < TOOLBAR_LABEL_RECOVERY_SPACE) return
-
-  hideToolbarLabels.value = false
-
-  nextTick(() => {
-    const currentToolbar = executionToolbarRef.value
-    if (!currentToolbar) return
-    if (currentToolbar.scrollWidth > currentToolbar.clientWidth + 1) {
-      hideToolbarLabels.value = true
-    }
-  })
+  overflowCount.value = hidden
 }
 
-function setupToolbarResizeObserver() {
-  const toolbar = executionToolbarRef.value
-  if (!toolbar || typeof ResizeObserver === 'undefined') return
-
-  executionToolbarResizeObserver = new ResizeObserver(() => {
-    updateToolbarLabelVisibility()
-  })
-  executionToolbarResizeObserver.observe(toolbar)
+function setupPillsObserver() {
+  const container = pillsContainerRef.value
+  if (!container || typeof ResizeObserver === 'undefined') return
+  pillsResizeObserver = new ResizeObserver(() => recomputePillOverflow())
+  pillsResizeObserver.observe(container)
 }
 
-function cleanupToolbarResizeObserver() {
-  executionToolbarResizeObserver?.disconnect()
-  executionToolbarResizeObserver = null
+function cleanupPillsObserver() {
+  pillsResizeObserver?.disconnect()
+  pillsResizeObserver = null
 }
 
 // ========== Console Key Computation ==========
@@ -352,16 +323,6 @@ const hasUnscopedFileSources = computed(() => {
 const fileScopeWarning = computed(() => {
   if (!hasUnscopedFileSources.value) return ''
   return 'Folder scope is optional, but selecting one improves autocomplete for file sources.'
-})
-
-const { singleExecutionLabel } = useSqlExecutionContextSelector({
-  mode: modeRef,
-  runMode,
-  selectedConnections,
-  databaseSourceMappings,
-  isDatabaseMapping,
-  getDatabaseTypeDisplay,
-  getConnectionName: (connectionId) => connectionsStore.connectionByID(connectionId)?.name || null
 })
 
 // ========== SQL Dialect ==========
@@ -752,13 +713,13 @@ onMounted(async () => {
   initializeDefaultSources()
   syncPrimarySource()
 
-  setupToolbarResizeObserver()
+  setupPillsObserver()
   await nextTick()
-  updateToolbarLabelVisibility()
+  recomputePillOverflow()
 })
 
 onUnmounted(() => {
-  cleanupToolbarResizeObserver()
+  cleanupPillsObserver()
   cleanup()
 })
 
@@ -783,9 +744,9 @@ watch(
   { immediate: true }
 )
 
-watch(selectedConnections, async () => {
+watch(sourcePills, async () => {
   await nextTick()
-  updateToolbarLabelVisibility()
+  recomputePillOverflow()
 })
 
 // ========== Public API ==========
@@ -803,23 +764,6 @@ defineExpose({
   min-height: 400px;
 }
 
-.sources-pills {
-  display: flex;
-  flex: 1;
-  min-width: 0;
-  flex-wrap: nowrap;
-  align-items: center;
-  gap: 0.25rem;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.sources-pills::-webkit-scrollbar {
-  display: none;
-}
-
 .sources-inline-trigger {
   border: 0;
   background: transparent;
@@ -832,54 +776,25 @@ defineExpose({
   border-radius: 0.375rem;
 }
 
-.sources-inline-chevron-hit {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.125rem;
-  border-radius: 9999px;
-  cursor: pointer;
-  transition: background-color 140ms ease;
-}
-
-.sources-inline-chevron {
-  width: 1.125rem;
-  height: 1.125rem;
+.sources-settings-icon {
+  width: 1rem;
+  height: 1rem;
   color: #0f766e;
-  background: rgb(20 184 166 / 14%);
-  border: 1px solid rgb(20 184 166 / 35%);
-  border-radius: 9999px;
   transition:
     color 140ms ease,
-    background-color 140ms ease,
-    border-color 140ms ease,
     transform 140ms ease;
 }
 
-:global(.dark) .sources-inline-chevron {
+:global(.dark) .sources-settings-icon {
   color: #5eead4;
-  background: rgb(20 184 166 / 22%);
-  border-color: rgb(94 234 212 / 40%);
 }
 
-.sources-inline-trigger:hover .sources-inline-chevron-hit {
-  background: rgb(20 184 166 / 12%);
+.sources-inline-trigger:hover .sources-settings-icon {
+  color: #0d9488;
+  transform: rotate(30deg);
 }
 
-:global(.dark) .sources-inline-trigger:hover .sources-inline-chevron-hit {
-  background: rgb(20 184 166 / 22%);
-}
-
-.sources-inline-trigger:hover .sources-inline-chevron {
-  color: #0f766e;
-  background: rgb(20 184 166 / 20%);
-  border-color: rgb(20 184 166 / 50%);
-  transform: translateX(1px);
-}
-
-:global(.dark) .sources-inline-trigger:hover .sources-inline-chevron {
+:global(.dark) .sources-inline-trigger:hover .sources-settings-icon {
   color: #99f6e4;
-  background: rgb(20 184 166 / 28%);
-  border-color: rgb(153 246 228 / 55%);
 }
 </style>
