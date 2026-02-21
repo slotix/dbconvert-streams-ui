@@ -2,8 +2,9 @@
 import { computed, ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useLogsStore, type SystemLog } from '@/stores/logs'
 import { TransitionRoot, TransitionChild } from '@headlessui/vue'
-import { ArrowDown, ArrowUp, ChevronDown, Filter, Info, Search, Trash, X } from 'lucide-vue-next'
+import { ArrowDown, ArrowUp, ChevronDown, Filter, FolderOpen, Info, Search, Trash, X } from 'lucide-vue-next'
 import { LOG_LEVELS, STREAM_PROGRESS_CATEGORIES } from '@/constants'
+import { useSystemStatus } from '@/composables/useSystemStatus'
 import SqlConsoleView from './SqlConsoleView.vue'
 import LogRow from './LogRow.vue'
 import { getCategoryIcon, formatLogTimestamp } from '@/utils/sqlLogHelpers'
@@ -15,6 +16,12 @@ import {
 } from '@/utils/formats'
 
 const store = useLogsStore()
+const {
+  canOpenLogsFolder,
+  openLogsFolder,
+  meta: systemStatusMeta,
+  refresh: refreshSystemStatus
+} = useSystemStatus()
 const isOpen = computed(() => store.isLogsPanelOpen)
 const panelHeight = computed({
   get: () => store.panelHeight,
@@ -392,6 +399,8 @@ function handleDocumentClick(event: MouseEvent) {
 }
 
 onMounted(() => {
+  refreshSystemStatus()
+
   // Load preferences from localStorage
   const savedMessageTypes = localStorage.getItem('systemLogMessageTypes')
   if (savedMessageTypes) {
@@ -648,6 +657,18 @@ onBeforeUnmount(() => {
                   class="w-full text-xs border border-gray-300 dark:border-gray-600 rounded pl-9 pr-3 py-1.5 bg-white dark:bg-gray-800 dark:text-gray-200 dark:placeholder-gray-500 hover:border-gray-400 dark:hover:border-gray-500 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-1 focus:ring-blue-500 dark:focus:ring-blue-400 transition-colors"
                 />
               </div>
+
+              <!-- Open Logs Folder (desktop only) -->
+              <button
+                v-if="canOpenLogsFolder"
+                type="button"
+                :title="systemStatusMeta.join('\n')"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-200"
+                @click="openLogsFolder()"
+              >
+                <FolderOpen class="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
+                <span class="hidden sm:inline">Logs Folder</span>
+              </button>
 
               <!-- Clear Button -->
               <button
