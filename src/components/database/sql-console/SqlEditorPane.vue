@@ -6,6 +6,7 @@
     >
       <button
         :disabled="isExecuting"
+        :title="`Run query (${runShortcutHint})`"
         class="inline-flex items-center whitespace-nowrap px-3 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed"
         @click="handleRunClick"
       >
@@ -452,22 +453,9 @@
         </div>
       </Teleport>
 
-      <span class="text-xs text-gray-400 dark:text-gray-500 ml-2 hidden @[620px]/toolbar:inline"
-        >Ctrl+Enter</span
-      >
 
       <div class="flex-1"></div>
 
-      <!-- Query Stats -->
-      <div v-if="stats" class="flex items-center gap-3 text-xs">
-        <span class="text-gray-500 dark:text-gray-400">
-          <span class="font-medium text-gray-700 dark:text-gray-300">{{ stats.rowCount }}</span>
-          rows
-        </span>
-        <span class="text-gray-500 dark:text-gray-400">
-          <span class="font-medium text-gray-700 dark:text-gray-300">{{ stats.duration }}ms</span>
-        </span>
-      </div>
     </div>
 
     <!-- SQL Editor -->
@@ -543,7 +531,6 @@ const props = defineProps<{
   lspContext?: SqlLspConnectionContext
   isExecuting: boolean
   formatState?: 'formatted' | 'compacted'
-  stats: { rowCount: number; duration: number } | null
   templates?: Template[]
   history?: HistoryItem[]
 }>()
@@ -589,6 +576,7 @@ const isMacPlatform = computed(
     /mac|iphone|ipad|ipod/i.test(navigator.platform || navigator.userAgent || '')
 )
 const shortcutHint = computed(() => (isMacPlatform.value ? '⌘K' : 'Ctrl+K'))
+const runShortcutHint = computed(() => (isMacPlatform.value ? '⌘Enter' : 'Ctrl+Enter'))
 const historyButtonTitle = computed(() =>
   history.value.length > 0 ? `History (${history.value.length})` : 'History'
 )

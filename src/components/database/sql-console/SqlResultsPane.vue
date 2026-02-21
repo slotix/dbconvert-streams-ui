@@ -7,6 +7,22 @@
     >
       <span class="text-xs font-medium text-gray-600 dark:text-gray-400">Results</span>
 
+      <!-- Query stats: row count + duration -->
+      <div v-if="props.stats" class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+        <span
+          ><span class="font-medium text-gray-700 dark:text-gray-300">{{
+            props.stats.rowCount
+          }}</span>
+          rows</span
+        >
+        <span
+          ><span class="font-medium text-gray-700 dark:text-gray-300">{{
+            props.stats.duration
+          }}</span
+          >ms</span
+        >
+      </div>
+
       <div class="flex-1"></div>
 
       <span
@@ -275,6 +291,7 @@ const props = defineProps<{
   hasExecuted: boolean
   currentPage: number
   pageSize: number
+  stats?: { rowCount: number; duration: number } | null
 }>()
 
 defineEmits<{
