@@ -616,12 +616,8 @@ function getPrimaryMapping(connectionId: string): ConnectionMapping | null {
   return mapping || null
 }
 
-function getMappingTargetId(mapping: {
-  connectionId: string
-  database?: string
-  alias?: string
-}): string {
-  return `${mapping.connectionId}::${mapping.database?.trim() || ''}::${mapping.alias?.trim() || ''}`
+function getMappingTargetId(mapping: { connectionId: string; database?: string }): string {
+  return `${mapping.connectionId}::${mapping.database?.trim() || ''}`
 }
 
 function setAliasInputRef(targetId: string, inputEl: HTMLInputElement | null) {
@@ -671,11 +667,10 @@ function getMappingsByConnection(connectionId: string): ConnectionMapping[] {
   return props.modelValue.filter((m) => m.connectionId === connectionId)
 }
 
-function isSameMapping(left: ConnectionMapping, right: ConnectionMapping): boolean {
+function isSameMappingTarget(left: ConnectionMapping, right: ConnectionMapping): boolean {
   return (
     left.connectionId === right.connectionId &&
-    (left.database?.trim() || '') === (right.database?.trim() || '') &&
-    (left.alias?.trim() || '') === (right.alias?.trim() || '')
+    (left.database?.trim() || '') === (right.database?.trim() || '')
   )
 }
 
@@ -689,7 +684,7 @@ function getDatabaseOptionsForMapping(
   const currentDatabase = mapping.database?.trim() || ''
   const usedByOther = new Set(
     getMappingsByConnection(conn.id)
-      .filter((current) => !isSameMapping(current, mapping))
+      .filter((current) => !isSameMappingTarget(current, mapping))
       .map((current) => current.database?.trim() || '')
       .filter(Boolean)
   )
@@ -852,7 +847,7 @@ function updateAliasForMapping(targetMapping: ConnectionMapping, alias: string) 
   const sanitized = alias.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase()
 
   const newMappings = props.modelValue.map((m) => {
-    if (isSameMapping(m, targetMapping)) {
+    if (isSameMappingTarget(m, targetMapping)) {
       return { ...m, alias: sanitized }
     }
     return m
@@ -873,13 +868,13 @@ function updateDatabaseForMapping(targetMapping: ConnectionMapping, database: st
     (m) =>
       m.connectionId === targetMapping.connectionId &&
       (m.database?.trim() || '') === normalizedDatabase &&
-      !isSameMapping(m, targetMapping)
+      !isSameMappingTarget(m, targetMapping)
   )
 
   if (duplicateExists) return
 
   const newMappings = props.modelValue.map((m) => {
-    if (isSameMapping(m, targetMapping)) {
+    if (isSameMappingTarget(m, targetMapping)) {
       return {
         ...m,
         database: normalizedDatabase || undefined
@@ -898,7 +893,7 @@ function updateDatabase(connectionId: string, database: string) {
 }
 
 function removeMapping(targetMapping: ConnectionMapping) {
-  const filtered = props.modelValue.filter((m) => !isSameMapping(m, targetMapping))
+  const filtered = props.modelValue.filter((m) => !isSameMappingTarget(m, targetMapping))
   emit('update:modelValue', filtered)
 }
 
