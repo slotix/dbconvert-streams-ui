@@ -8,7 +8,7 @@
     <div
       ref="leftPaneRef"
       :style="{ flexBasis: `${splitGrow}%`, flexGrow: 0, flexShrink: 0 }"
-      class="relative min-w-[300px] pr-2 flex flex-col min-h-0"
+      class="relative min-w-[300px] flex flex-col min-h-0"
       @mousedown="$emit('set-active-pane', 'left')"
       @dragover="onPaneDragOver"
       @drop="onPaneDrop($event, 'left')"
@@ -23,36 +23,24 @@
       <slot name="left-content" />
     </div>
 
-    <!-- Divider between panes with visual handle -->
+    <!-- VS Code-style sash between panes -->
     <div
       role="separator"
       aria-orientation="vertical"
-      class="relative z-20 mx-1.5 w-3 shrink-0 cursor-col-resize select-none pointer-events-auto group"
+      class="relative z-20 w-[8px] shrink-0 cursor-col-resize select-none group"
       title="Drag to resize • Double-click to reset"
       @mousedown.prevent="onDividerMouseDown"
       @dblclick="onDividerDoubleClick"
     >
-      <!-- Vertical divider line -->
       <div
-        class="absolute inset-y-0 left-1/2 -translate-x-1/2 w-[3px] rounded bg-gray-200 dark:bg-gray-700 group-hover:bg-gray-300 dark:group-hover:bg-gray-600 transition-colors"
+        class="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px group-hover:w-[3px] bg-gray-200 dark:bg-gray-700 group-hover:bg-teal-400 dark:group-hover:bg-teal-500 transition-all duration-150"
       />
-
-      <!-- Centered handle with grip indicator -->
-      <div
-        class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-5 h-12 bg-gray-200 dark:bg-gray-700 group-hover:bg-gray-300 dark:group-hover:bg-gray-600 rounded flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer"
-        @click.stop="onDividerDoubleClick"
-      >
-        <!-- Three horizontal grip dots -->
-        <div class="w-2 h-0.5 bg-gray-400 rounded-full"></div>
-        <div class="w-2 h-0.5 bg-gray-400 rounded-full"></div>
-        <div class="w-2 h-0.5 bg-gray-400 rounded-full"></div>
-      </div>
     </div>
 
     <!-- Right pane (conditional) -->
     <div
       :style="{ flexBasis: '0px' }"
-      class="relative grow pl-2 min-w-[300px] flex flex-col min-h-0"
+      class="relative grow min-w-[300px] flex flex-col min-h-0"
       @mousedown="$emit('set-active-pane', 'right')"
       @dragover="onPaneDragOver"
       @drop="onPaneDrop($event, 'right')"
@@ -120,10 +108,6 @@ const { isObjectKeyDirty, confirmDiscardUnsavedChanges } = useUnsavedChangesGuar
 
 // Check if we have right pane content
 const hasRightPane = computed(() => paneTabsStore.isRightPaneVisible)
-
-// Computed properties for pane active state
-const isLeftActive = computed(() => props.activePane === 'left')
-const isRightActive = computed(() => props.activePane === 'right')
 
 // Drag-and-drop for pane-level drops (empty space, adds to end)
 const DRAG_MIME = 'application/x-dbconvert-pane-tab'

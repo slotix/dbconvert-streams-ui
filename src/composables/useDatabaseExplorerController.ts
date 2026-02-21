@@ -165,11 +165,16 @@ export function useDatabaseExplorerController({
 
   const lacksExplorerContent = computed(() => !hasPaneContent.value)
 
+  // Sidebar toggle handler (used by both Ctrl+B keyboard shortcut and desktop menu event)
+  function handleToggleSidebar() {
+    sidebar.toggleSidebar()
+  }
+
   // Keyboard shortcuts handler
   function handleKeyboardShortcut(e: KeyboardEvent) {
     if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
       e.preventDefault()
-      sidebar.toggleSidebar()
+      handleToggleSidebar()
     }
 
     // Check if user is typing in an input field or editor
@@ -346,6 +351,7 @@ export function useDatabaseExplorerController({
     }
 
     window.addEventListener('keydown', handleKeyboardShortcut)
+    window.addEventListener('wails:toggle-explorer-sidebar', handleToggleSidebar)
 
     if (
       explorerState.currentConnection.value &&
@@ -373,6 +379,7 @@ export function useDatabaseExplorerController({
 
   onUnmounted(() => {
     window.removeEventListener('keydown', handleKeyboardShortcut)
+    window.removeEventListener('wails:toggle-explorer-sidebar', handleToggleSidebar)
   })
 
   return {

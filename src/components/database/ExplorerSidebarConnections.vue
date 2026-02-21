@@ -1510,11 +1510,7 @@ watch(
 </script>
 
 <template>
-  <!-- Enhanced sidebar with gradient background and floating effect -->
-  <div
-    ref="sidebarCardRef"
-    class="overflow-hidden h-full flex flex-col border-r border-slate-200 dark:border-gray-700"
-  >
+  <div ref="sidebarCardRef" class="overflow-hidden h-full flex flex-col">
     <div
       class="px-3 pt-3 pb-2 border-b border-slate-200/70 dark:border-gray-700/80 flex items-center gap-2"
     >

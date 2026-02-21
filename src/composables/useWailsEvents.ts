@@ -113,6 +113,13 @@ export function useWailsMenuEvents() {
       })
     )
 
+    // Toggle explorer sidebar - dispatch custom event for DatabaseExplorerView to handle
+    cleanupFns.push(
+      eventsOn('menu:toggle-explorer-sidebar', () => {
+        window.dispatchEvent(new CustomEvent('wails:toggle-explorer-sidebar'))
+      })
+    )
+
     // About dialog - dispatch custom event for App.vue to handle
     cleanupFns.push(
       eventsOn('menu:show-about', () => {

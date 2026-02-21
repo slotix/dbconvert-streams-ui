@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { useLucideIcons } from '@/composables/useLucideIcons'
-import { ChevronsLeft, ChevronsRight, Database, Menu, Plus } from 'lucide-vue-next'
+import { Database, Menu, Plus } from 'lucide-vue-next'
 import { useCommonStore } from '@/stores/common'
 import { useConnectionsStore } from '@/stores/connections'
 import { usePaneTabsStore, createConsoleSessionId } from '@/stores/paneTabs'
@@ -390,11 +390,11 @@ function handleOpenFileConsole(payload: {
             v-if="sidebar.sidebarVisible.value"
             :ref="(el) => (sidebar.sidebarRef.value = el as HTMLElement)"
             :style="{
-              flexBasis: `calc(${sidebar.sidebarWidthPct.value}% - 8px)`,
+              flexBasis: `${sidebar.sidebarWidthPct.value}%`,
               flexGrow: 0,
               flexShrink: 0
             }"
-            class="min-w-[220px] pr-2 min-h-0"
+            class="min-w-[220px] min-h-0"
           >
             <ExplorerSidebarConnections
               :initial-expanded-connection-id="explorerState.currentConnectionId.value || undefined"
@@ -413,56 +413,39 @@ function handleOpenFileConsole(payload: {
             />
           </div>
 
-          <!-- Sidebar divider with handle -->
+          <!-- Sidebar sash: drag to resize, double-click to collapse/restore -->
           <div
             v-if="sidebar.sidebarVisible.value"
             role="separator"
             aria-orientation="vertical"
-            class="relative z-20 mx-1.5 w-3 shrink-0 cursor-col-resize select-none pointer-events-auto group"
-            title="Drag to resize • Double-click to hide"
+            class="relative z-20 w-[8px] shrink-0 cursor-col-resize select-none group"
+            title="Drag to resize • Double-click to collapse"
             @mousedown.prevent="sidebar.onSidebarDividerMouseDown"
-            @dblclick="sidebar.onSidebarDividerDoubleClick"
+            @dblclick="sidebar.toggleSidebar"
           >
-            <!-- Vertical divider line -->
             <div
-              class="absolute inset-y-0 left-1/2 -translate-x-1/2 w-[3px] rounded bg-gray-200 dark:bg-gray-700 group-hover:bg-gray-300 dark:group-hover:bg-gray-600 transition-colors"
+              class="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px group-hover:w-[3px] bg-gray-200 dark:bg-gray-700 group-hover:bg-teal-400 dark:group-hover:bg-teal-500 transition-all duration-150"
             />
-
-            <!-- Centered handle with chevron indicator -->
-            <div
-              class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-5 h-12 bg-gray-200 dark:bg-gray-700 group-hover:bg-gray-300 dark:group-hover:bg-gray-600 rounded flex items-center justify-center transition-all cursor-pointer"
-              @click.stop="sidebar.toggleSidebar"
-            >
-              <!-- Double chevron left icon -->
-              <ChevronsLeft class="w-3 h-3 text-gray-500 dark:text-gray-400" />
-            </div>
           </div>
 
-          <!-- Show sidebar button (when hidden) - positioned at vertical center -->
-          <div v-if="!sidebar.sidebarVisible.value" class="relative shrink-0 w-5 mr-2">
-            <button
-              type="button"
-              class="absolute top-1/2 -translate-y-1/2 w-5 h-12 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded flex items-center justify-center transition-all shadow-sm dark:shadow-gray-900/30"
-              title="Show Sidebar (Ctrl+B)"
-              @click="sidebar.toggleSidebar"
-            >
-              <!-- Double chevron right icon -->
-              <ChevronsRight class="w-3 h-3 text-gray-500 dark:text-gray-400" />
-            </button>
+          <!-- Collapsed sash edge — click or double-click to restore sidebar -->
+          <div
+            v-if="!sidebar.sidebarVisible.value"
+            role="separator"
+            aria-orientation="vertical"
+            class="relative z-20 w-[8px] shrink-0 cursor-col-resize select-none group"
+            title="Click to restore sidebar"
+            @click="sidebar.toggleSidebar"
+          >
+            <div
+              class="absolute inset-y-0 left-0 w-px group-hover:w-[3px] bg-gray-200 dark:bg-gray-700 group-hover:bg-teal-400 dark:group-hover:bg-teal-500 transition-all duration-150"
+            />
           </div>
 
           <!-- Right panel -->
           <div
             :style="{ flexBasis: '0px' }"
-            :class="[
-              'grow',
-              'min-w-0',
-              'min-h-0',
-              'overflow-x-hidden',
-              'flex',
-              'flex-col',
-              sidebar.sidebarVisible.value ? 'pl-2' : 'pl-0'
-            ]"
+            class="grow min-w-0 min-h-0 overflow-x-hidden flex flex-col"
           >
             <!-- Content area with dual pane tabs -->
             <ExplorerContentArea
