@@ -1551,7 +1551,7 @@ defineExpose({ focus: () => internalSearchInputRef.value?.focus() })
       </span>
       <BaseButton variant="primary" size="sm" @click="$emit('add-connection')">
         <Plus class="h-3.5 w-3.5" />
-        <span>New</span>
+        <span>New Connection</span>
       </BaseButton>
     </div>
 

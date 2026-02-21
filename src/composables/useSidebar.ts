@@ -1,13 +1,15 @@
 import { ref, onUnmounted } from 'vue'
 import { usePersistedBoolean, usePersistedNumber } from './usePersistedState'
 
-export function useSidebar() {
-  // Sidebar visibility + resizer state (persisted)
-  const sidebarVisible = usePersistedBoolean('explorer.sidebarVisible', true)
-  const sidebarWidthPct = usePersistedNumber('explorer.sidebarWidthPct', 25)
-  const lastSidebarWidthPct = usePersistedNumber('explorer.lastSidebarWidthPct', 25)
+const MIN_PCT = 15
+const MAX_PCT = 65
+const DEFAULT_PCT = 25
 
-  // Non-persisted UI state
+export function useSidebar() {
+  const sidebarVisible = usePersistedBoolean('explorer.sidebarVisible', true)
+  const sidebarWidthPct = usePersistedNumber('explorer.sidebarWidthPct', DEFAULT_PCT)
+  const lastSidebarWidthPct = usePersistedNumber('explorer.lastSidebarWidthPct', DEFAULT_PCT)
+
   const isSidebarResizing = ref(false)
   const sidebarContainerRef = ref<HTMLElement | null>(null)
   const sidebarRef = ref<HTMLElement | null>(null)
@@ -19,12 +21,6 @@ export function useSidebar() {
 
   function clamp(n: number, min: number, max: number) {
     return Math.max(min, Math.min(max, n))
-  }
-
-  function onSidebarDividerDoubleClick() {
-    // Reset sidebar width to default 25% (auto-persisted by usePersistedNumber)
-    sidebarWidthPct.value = 25
-    lastSidebarWidthPct.value = 25
   }
 
   function onSidebarDividerMouseDown(e: MouseEvent) {
@@ -44,28 +40,25 @@ export function useSidebar() {
   function onSidebarDividerMouseMove(e: MouseEvent) {
     if (!isSidebarResizing.value || !sbContainerWidth) return
     const dx = e.clientX - sbStartX
-    const newLeft = sbStartLeftWidth + dx
-    const pct = Math.max(15, Math.min(50, (newLeft / sbContainerWidth) * 100))
-    sidebarWidthPct.value = pct
+    const pct = ((sbStartLeftWidth + dx) / sbContainerWidth) * 100
+    sidebarWidthPct.value = clamp(pct, MIN_PCT, MAX_PCT)
   }
 
   function onSidebarDividerMouseUp() {
     isSidebarResizing.value = false
     document.body.style.userSelect = prevBodySelect || ''
     window.removeEventListener('mousemove', onSidebarDividerMouseMove)
-    // Auto-persisted by usePersistedNumber watcher
     lastSidebarWidthPct.value = sidebarWidthPct.value
   }
 
+  // Double-click divider or click collapsed edge: toggle visibility
   function toggleSidebar() {
     if (sidebarVisible.value) {
-      // Hide and remember width (auto-persisted)
       lastSidebarWidthPct.value = sidebarWidthPct.value
       sidebarVisible.value = false
     } else {
-      // Show and restore last width (auto-persisted)
       sidebarVisible.value = true
-      sidebarWidthPct.value = clamp(lastSidebarWidthPct.value, 15, 50)
+      sidebarWidthPct.value = clamp(lastSidebarWidthPct.value, MIN_PCT, MAX_PCT)
     }
   }
 
@@ -79,17 +72,14 @@ export function useSidebar() {
   })
 
   return {
-    // State
     sidebarVisible,
     sidebarWidthPct,
     lastSidebarWidthPct,
     isSidebarResizing,
     sidebarContainerRef,
     sidebarRef,
-
-    // Methods
-    onSidebarDividerDoubleClick,
     onSidebarDividerMouseDown,
-    toggleSidebar
+    toggleSidebar,
+    onSidebarDividerDoubleClick: toggleSidebar,
   }
 }

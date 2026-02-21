@@ -336,7 +336,7 @@ function handleOpenFileConsole(payload: {
               flexGrow: 0,
               flexShrink: 0
             }"
-            class="min-w-[220px] min-h-0"
+            class="min-w-[80px] min-h-0"
           >
             <ExplorerSidebarConnections
               ref="sidebarConnectionsRef"
