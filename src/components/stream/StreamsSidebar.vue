@@ -1,7 +1,21 @@
 <template>
-  <div
-    class="flex flex-col h-[calc(100vh-140px)] bg-linear-to-br from-white via-slate-50/50 to-white dark:from-gray-850 dark:via-gray-900/50 dark:to-gray-850 shadow-xl dark:shadow-gray-900/30 rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-2xl dark:hover:shadow-gray-900/50 border border-slate-200/50 dark:border-gray-700"
-  >
+  <div class="overflow-hidden h-full flex flex-col">
+    <!-- Toolbar row 1: count + New Stream Config -->
+    <div class="px-3 pt-2.5 pb-1 flex items-center gap-2">
+      <span class="text-xs font-medium text-gray-500 dark:text-gray-400 truncate flex-1">
+        {{ streamCountLabel }}
+      </span>
+      <BaseButton variant="primary" size="sm" @click="router.push({ name: 'CreateStream' })">
+        <Plus class="h-3.5 w-3.5" />
+        <span>New Stream Config</span>
+      </BaseButton>
+    </div>
+
+    <!-- Toolbar row 2: search -->
+    <div class="px-2 pb-2 border-b border-slate-200/70 dark:border-gray-700/80">
+      <SearchInput v-model="searchQuery" placeholder="Filter..." size="xs" class="w-full" />
+    </div>
+
     <!-- Streams List -->
     <div class="flex-1 overflow-y-auto p-2 scrollbar-thin">
       <!-- Enhanced loading state with gradient spinner -->
@@ -90,7 +104,7 @@ export default {
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { RefreshCw } from 'lucide-vue-next'
+import { Plus, RefreshCw } from 'lucide-vue-next'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
 import { useStreamActions } from '@/composables/useStreamActions'
@@ -98,12 +112,13 @@ import { useStreamContextMenu } from '@/composables/useStreamContextMenu'
 import StreamListItem from './StreamListItem.vue'
 import StreamContextMenu from './StreamContextMenu.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
+import SearchInput from '@/components/common/SearchInput.vue'
+import BaseButton from '@/components/base/BaseButton.vue'
 import type { StreamConfig } from '@/types/streamConfig'
 import type { Connection } from '@/types/connections'
 
 const props = defineProps<{
   selectedStreamId?: string
-  searchQuery?: string
 }>()
 
 const emit = defineEmits<{
@@ -120,9 +135,9 @@ const contextMenu = useStreamContextMenu()
 const isLoading = ref(false)
 const showDeleteConfirm = ref(false)
 const pendingDeleteStream = ref<StreamConfig | null>(null)
+const searchQuery = ref('')
 
 const selectedStreamId = computed(() => props.selectedStreamId || '')
-const searchQuery = computed(() => props.searchQuery || '')
 
 const filteredStreams = computed<StreamConfig[]>(() => {
   const query = searchQuery.value.toLowerCase()
@@ -141,6 +156,15 @@ const filteredStreams = computed<StreamConfig[]>(() => {
     const timeB = b.created || 0
     return timeB - timeA // Descending order (newest first)
   })
+})
+
+const streamCountLabel = computed(() => {
+  const filtered = filteredStreams.value.length
+  const total = streamsStore.countStreams
+  if (searchQuery.value && filtered !== total) {
+    return `${filtered} of ${total} stream config${total === 1 ? '' : 's'}`
+  }
+  return `${total} stream config${total === 1 ? '' : 's'}`
 })
 
 function connectionByID(id?: string): Connection | undefined {

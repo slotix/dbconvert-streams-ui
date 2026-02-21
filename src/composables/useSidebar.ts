@@ -80,6 +80,6 @@ export function useSidebar() {
     sidebarRef,
     onSidebarDividerMouseDown,
     toggleSidebar,
-    onSidebarDividerDoubleClick: toggleSidebar,
+    onSidebarDividerDoubleClick: toggleSidebar
   }
 }
