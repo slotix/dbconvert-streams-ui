@@ -1,63 +1,26 @@
 <template>
-  <div class="min-h-full">
-    <!-- Header - matches DatabaseExplorerView/StreamsView style -->
+  <div class="h-screen flex flex-col overflow-hidden">
+    <!-- Header -->
     <header
-      class="sticky top-0 z-30 bg-linear-to-r from-slate-50 via-white to-slate-50 dark:from-gray-900 dark:via-gray-850 dark:to-gray-900 border-b border-slate-200 dark:border-gray-700 shadow-sm dark:shadow-gray-900/30 lg:-ml-[var(--sidebar-width)] lg:w-[calc(100%+var(--sidebar-width))]"
+      class="sticky top-0 z-30 bg-white dark:bg-gray-900 border-b border-slate-200 dark:border-gray-700"
     >
-      <div class="px-6 py-4 flex items-center gap-4">
-        <div class="flex items-center gap-3">
-          <!-- Mobile sidebar toggle -->
-          <button
-            v-if="sidebarMenuToggle"
-            type="button"
-            class="group flex items-center justify-center p-2 -ml-1 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700 lg:hidden"
-            @click="sidebarMenuToggle.openSidebar"
-          >
-            <Menu class="h-5 w-5" :stroke-width="iconStroke" aria-hidden="true" />
-            <span class="sr-only">Open sidebar</span>
-          </button>
-          <!-- Desktop sidebar toggle -->
-          <button
-            v-if="sidebarWidthToggle"
-            type="button"
-            class="group hidden lg:flex items-center justify-center p-2 -ml-1 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700"
-            @click="sidebarWidthToggle.toggleSidebarWidth"
-          >
-            <Menu class="h-5 w-5" :stroke-width="iconStroke" aria-hidden="true" />
-            <span class="sr-only">Toggle sidebar width</span>
-          </button>
-          <img
-            v-if="!isDesktop"
-            class="h-5 w-5 shrink-0"
-            src="/images/logo.svg"
-            alt="DBConvert Streams"
-          />
-          <!-- Title -->
-          <h1 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
-            {{ isEditMode ? 'Edit Stream Configuration ' : 'New Stream Configuration' }}
-          </h1>
-        </div>
-
-        <!-- Spacer -->
+      <div class="px-4 py-2 flex items-center gap-3">
+        <h1 class="text-base font-semibold text-gray-900 dark:text-gray-100">
+          {{ isEditMode ? 'Edit Stream Configuration' : 'New Stream Configuration' }}
+        </h1>
         <div class="flex-1"></div>
-
-        <!-- Right side - Cancel button -->
-        <div class="flex items-center gap-4">
-          <button
-            type="button"
-            class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
-            @click="goBack"
-          >
-            Cancel
-          </button>
-        </div>
+        <button
+          type="button"
+          class="px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
+          @click="goBack"
+        >
+          Cancel
+        </button>
       </div>
     </header>
 
-    <!-- Main Content - full dark background -->
-    <div
-      class="bg-linear-to-br from-slate-50 via-white to-slate-50 dark:from-gray-900 dark:via-gray-850 dark:to-gray-900 flex flex-col min-h-[calc(100vh-65px)]"
-    >
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col min-h-0">
       <div
         class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-6 flex-1 flex flex-col min-h-0 w-full"
       >
@@ -143,11 +106,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, nextTick, inject } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { useLucideIcons } from '@/composables/useLucideIcons'
-import { Menu } from 'lucide-vue-next'
-import { useDesktopMode } from '@/composables/useDesktopMode'
 import { useStreamWizard } from '@/composables/useStreamWizard'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
@@ -162,8 +122,6 @@ import StreamConfigurationStep from '@/components/stream/wizard/steps/StreamConf
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import { setSelectedStreamInViewState } from '@/utils/streamsViewState'
 
-const { strokeWidth: iconStroke } = useLucideIcons()
-
 // Props for stream ID (when in edit mode)
 interface Props {
   id?: string
@@ -177,13 +135,6 @@ const wizard = useStreamWizard()
 const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
 const commonStore = useCommonStore()
-const { isDesktop } = useDesktopMode()
-const sidebarMenuToggle = inject<{ openSidebar: () => void }>('sidebarMenuToggle')
-const sidebarWidthToggle = inject<{
-  isSidebarExpanded: { value: boolean }
-  toggleSidebarWidth: () => void
-}>('sidebarWidthToggle')
-
 const isProcessing = ref(false)
 const canProceedOverride = ref(true)
 const showExitConfirm = ref(false)

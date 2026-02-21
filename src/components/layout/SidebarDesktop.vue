@@ -1,11 +1,29 @@
 <template>
   <div
     :class="[
-      'hidden lg:fixed lg:top-16 lg:bottom-0 lg:left-0 lg:z-20 lg:block lg:bg-gray-50 dark:lg:bg-gray-900 lg:pb-10 lg:border-r lg:border-gray-200 dark:lg:border-gray-800/80',
+      'hidden lg:fixed lg:top-0 lg:bottom-0 lg:left-0 lg:z-20 lg:block lg:bg-gray-50 dark:lg:bg-gray-900 lg:pb-10 lg:border-r lg:border-gray-200 dark:lg:border-gray-800/80',
       isSidebarExpanded ? 'lg:w-64' : 'lg:w-20'
     ]"
   >
-    <nav class="mt-8 overflow-visible">
+    <!-- Sidebar width toggle -->
+    <div
+      :class="[
+        'flex items-center pt-2 pb-1',
+        isSidebarExpanded ? 'justify-start px-3' : 'justify-center'
+      ]"
+    >
+      <button
+        type="button"
+        class="flex items-center justify-center p-1.5 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700"
+        :title="isSidebarExpanded ? 'Collapse sidebar' : 'Expand sidebar'"
+        @click="toggleSidebarWidth()"
+      >
+        <Menu class="h-5 w-5" :stroke-width="iconStroke" aria-hidden="true" />
+        <span class="sr-only">{{ isSidebarExpanded ? 'Collapse sidebar' : 'Expand sidebar' }}</span>
+      </button>
+    </div>
+
+    <nav class="mt-4 overflow-visible">
       <ul
         role="list"
         :class="[
@@ -327,7 +345,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
-import { AlertCircle, CircleUser, FileText, Moon, Settings, Sun } from 'lucide-vue-next'
+import { AlertCircle, CircleUser, FileText, Menu, Moon, Settings, Sun } from 'lucide-vue-next'
 import { useCommonStore } from '@/stores/common'
 import { useLogsStore } from '@/stores/logs'
 import { useThemeStore } from '@/stores/theme'
@@ -342,6 +360,7 @@ import SidebarExternalLinks from '@/components/layout/SidebarExternalLinks.vue'
 
 const props = defineProps<{
   isSidebarExpanded: boolean
+  toggleSidebarWidth: () => void
   statusText: string
   showStatusDot: boolean
 }>()

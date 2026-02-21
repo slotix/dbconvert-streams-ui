@@ -22,6 +22,7 @@
 
     <SidebarDesktop
       :is-sidebar-expanded="isSidebarExpanded"
+      :toggle-sidebar-width="toggleSidebarWidth"
       :status-text="statusText"
       :show-status-dot="showStatusDot"
     />

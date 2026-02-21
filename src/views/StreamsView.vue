@@ -3,39 +3,6 @@
     <!-- Disconnected Overlay -->
     <DisconnectedOverlay />
 
-    <!-- App navigation header (mobile/desktop nav toggles + logo) -->
-    <header
-      v-if="sidebarMenuToggle || sidebarWidthToggle || !isDesktop"
-      class="sticky top-0 z-30 bg-white dark:bg-gray-900 border-b border-slate-200 dark:border-gray-700 lg:-ml-(--sidebar-width) lg:w-[calc(100%+var(--sidebar-width))]"
-    >
-      <div class="px-4 py-2 flex items-center gap-3">
-        <button
-          v-if="sidebarMenuToggle"
-          type="button"
-          class="flex items-center justify-center p-1.5 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700 lg:hidden"
-          @click="sidebarMenuToggle.openSidebar"
-        >
-          <Menu class="h-5 w-5" :stroke-width="iconStroke" aria-hidden="true" />
-          <span class="sr-only">Open sidebar</span>
-        </button>
-        <button
-          v-if="sidebarWidthToggle"
-          type="button"
-          class="hidden lg:flex items-center justify-center p-1.5 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700"
-          @click="sidebarWidthToggle.toggleSidebarWidth"
-        >
-          <Menu class="h-5 w-5" :stroke-width="iconStroke" aria-hidden="true" />
-          <span class="sr-only">Toggle sidebar width</span>
-        </button>
-        <img
-          v-if="!isDesktop"
-          class="h-5 w-5 shrink-0"
-          src="/images/logo.svg"
-          alt="DBConvert Streams"
-        />
-      </div>
-    </header>
-
     <main class="flex-1 flex flex-col min-h-0 overflow-x-hidden">
       <!-- No streams (show regardless of backend connection status) -->
       <div
@@ -159,15 +126,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, inject } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useLucideIcons } from '@/composables/useLucideIcons'
-import { Menu, Plus, RefreshCw } from 'lucide-vue-next'
+import { Plus, RefreshCw } from 'lucide-vue-next'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
 import { useMonitoringStore } from '@/stores/monitoring'
 import { useCommonStore } from '@/stores/common'
 import { useSidebar } from '@/composables/useSidebar'
-import { useDesktopMode } from '@/composables/useDesktopMode'
 import StreamsSidebar from '@/components/stream/StreamsSidebar.vue'
 import StreamDetailsPanel from '@/components/stream/StreamDetailsPanel.vue'
 import DisconnectedOverlay from '@/components/common/DisconnectedOverlay.vue'
@@ -182,13 +148,6 @@ const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
 const monitoringStore = useMonitoringStore()
 const commonStore = useCommonStore()
-const { isDesktop } = useDesktopMode()
-const sidebarWidthToggle = inject<{
-  isSidebarExpanded: { value: boolean }
-  toggleSidebarWidth: () => void
-}>('sidebarWidthToggle')
-const sidebarMenuToggle = inject<{ openSidebar: () => void }>('sidebarMenuToggle')
-
 // Use sidebar composable for resize and toggle functionality
 const sidebar = useSidebar()
 

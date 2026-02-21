@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, inject } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useLucideIcons } from '@/composables/useLucideIcons'
-import { Database, Menu, Plus } from 'lucide-vue-next'
+import { Database, Plus } from 'lucide-vue-next'
 import { useCommonStore } from '@/stores/common'
 import { useConnectionsStore } from '@/stores/connections'
 import { usePaneTabsStore, createConsoleSessionId } from '@/stores/paneTabs'
@@ -20,7 +20,6 @@ import { useSidebar } from '@/composables/useSidebar'
 import { usePersistedState } from '@/composables/usePersistedState'
 import { useRecentConnections } from '@/composables/useRecentConnections'
 import { useConnectionActions } from '@/composables/useConnectionActions'
-import { useDesktopMode } from '@/composables/useDesktopMode'
 import { getSqlDialectFromConnection } from '@/types/specs'
 import DisconnectedOverlay from '@/components/common/DisconnectedOverlay.vue'
 import EmptyStateMessage from '@/components/explorer/EmptyStateMessage.vue'
@@ -35,13 +34,6 @@ const paneTabsStore = usePaneTabsStore()
 const navigationStore = useExplorerNavigationStore()
 const viewStateStore = useExplorerViewStateStore()
 const sqlConsoleStore = useSqlConsoleStore()
-const { isDesktop } = useDesktopMode()
-const sidebarWidthToggle = inject<{
-  isSidebarExpanded: { value: boolean }
-  toggleSidebarWidth: () => void
-}>('sidebarWidthToggle')
-const sidebarMenuToggle = inject<{ openSidebar: () => void }>('sidebarMenuToggle')
-
 // Explorer state is persisted; the URL is intentionally kept minimal (/explorer).
 
 // Use composables and stores for state management
@@ -260,39 +252,6 @@ function handleOpenFileConsole(payload: {
   <div class="h-screen flex flex-col overflow-hidden">
     <!-- Disconnected Overlay -->
     <DisconnectedOverlay />
-
-    <!-- App navigation header (mobile/desktop nav toggles + logo) -->
-    <header
-      v-if="sidebarMenuToggle || sidebarWidthToggle || !isDesktop"
-      class="sticky top-0 z-30 bg-white dark:bg-gray-900 border-b border-slate-200 dark:border-gray-700 lg:-ml-(--sidebar-width) lg:w-[calc(100%+var(--sidebar-width))]"
-    >
-      <div class="px-4 py-2 flex items-center gap-3">
-        <button
-          v-if="sidebarMenuToggle"
-          type="button"
-          class="flex items-center justify-center p-1.5 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700 lg:hidden"
-          @click="sidebarMenuToggle.openSidebar"
-        >
-          <Menu class="h-5 w-5" :stroke-width="iconStroke" aria-hidden="true" />
-          <span class="sr-only">Open sidebar</span>
-        </button>
-        <button
-          v-if="sidebarWidthToggle"
-          type="button"
-          class="hidden lg:flex items-center justify-center p-1.5 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700"
-          @click="sidebarWidthToggle.toggleSidebarWidth"
-        >
-          <Menu class="h-5 w-5" :stroke-width="iconStroke" aria-hidden="true" />
-          <span class="sr-only">Toggle sidebar width</span>
-        </button>
-        <img
-          v-if="!isDesktop"
-          class="h-5 w-5 shrink-0"
-          src="/images/logo.svg"
-          alt="DBConvert Streams"
-        />
-      </div>
-    </header>
 
     <main class="flex-1 flex flex-col min-h-0 overflow-x-hidden">
       <!-- No connections at all -->
