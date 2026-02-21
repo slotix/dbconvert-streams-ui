@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, nextTick, provide } from 'vue'
 import { useDebounceFn, useResizeObserver } from '@vueuse/core'
-import { Boxes, ChevronsDown, ChevronsUp, Loader2 } from 'lucide-vue-next'
+import { Boxes, ChevronsDown, ChevronsUp, Loader2, Plus } from 'lucide-vue-next'
 import { useConnectionsStore } from '@/stores/connections'
+import ConnectionTypeFilter from '@/components/common/ConnectionTypeFilter.vue'
+import SearchInput from '@/components/common/SearchInput.vue'
+import BaseButton from '@/components/base/BaseButton.vue'
 import { useExplorerNavigationStore, type ObjectType } from '@/stores/explorerNavigation'
 import { useFileExplorerStore } from '@/stores/fileExplorer'
 import { useConnectionTreeLogic } from '@/composables/useConnectionTreeLogic'
@@ -94,6 +97,9 @@ const emit = defineEmits<{
   ): void
   (e: 'select-file', payload: { connectionId: string; path: string; entry?: FileSystemEntry }): void
   (e: 'request-file-entries', payload: { connectionId: string }): void
+  (e: 'update:searchQuery', value: string): void
+  (e: 'update:typeFilters', value: string[]): void
+  (e: 'add-connection'): void
 }>()
 
 const MIN_SEARCH_LENGTH = 2
@@ -1334,6 +1340,15 @@ async function expandForSearch(query: string, runId: number) {
     }
     return
   }
+
+  // Yield to the event loop before collapsing so drag/resize handlers are not blocked
+  await Promise.resolve()
+  if (runId !== searchRunId.value) return
+
+  // Collapse non-matching branches; expandForSearch will re-open matching ones below
+  navigationStore.collapseAllExpansions()
+  fileExplorerStore.collapseAllFolders()
+
   const conns =
     props.typeFilters && props.typeFilters.length
       ? connectionsStore.connections.filter((conn) =>
@@ -1507,16 +1522,70 @@ watch(
     syncTreeTabStop(findSelectedNodeElement())
   }
 )
+
+// Search input ref for keyboard shortcut focus (exposed to parent)
+const internalSearchInputRef = ref<InstanceType<typeof SearchInput> | null>(null)
+
+// Count label for sidebar toolbar
+const connectionCountLabel = computed(() => {
+  const filtered = filteredConnections.value.length
+  const total = connectionsStore.connections.length
+  if (
+    (props.searchQuery || (props.typeFilters && props.typeFilters.length > 0)) &&
+    filtered !== total
+  ) {
+    return `${filtered} of ${total}`
+  }
+  return `${total} connection${total === 1 ? '' : 's'}`
+})
+
+defineExpose({ focus: () => internalSearchInputRef.value?.focus() })
 </script>
 
 <template>
   <div ref="sidebarCardRef" class="overflow-hidden h-full flex flex-col">
+    <!-- Toolbar row 1: count + New Connection -->
+    <div class="px-3 pt-2.5 pb-1 flex items-center gap-2">
+      <span class="text-xs font-medium text-gray-500 dark:text-gray-400 truncate flex-1">
+        {{ connectionCountLabel }}
+      </span>
+      <BaseButton variant="primary" size="sm" @click="$emit('add-connection')">
+        <Plus class="h-3.5 w-3.5" />
+        <span>New</span>
+      </BaseButton>
+    </div>
+
+    <!-- Toolbar row 2: type filter + search + expand/collapse -->
     <div
-      class="px-3 pt-3 pb-2 border-b border-slate-200/70 dark:border-gray-700/80 flex items-center gap-2"
+      class="px-2 pb-2 border-b border-slate-200/70 dark:border-gray-700/80 flex items-center gap-1"
     >
+      <ConnectionTypeFilter
+        :selected-types="typeFilters ?? []"
+        :persistent="false"
+        @update:selected-types="$emit('update:typeFilters', $event)"
+      />
+      <SearchInput
+        ref="internalSearchInputRef"
+        :model-value="searchQuery"
+        placeholder="Filter..."
+        size="xs"
+        class="flex-1 min-w-0"
+        @update:model-value="$emit('update:searchQuery', $event as string)"
+      />
+      <!-- Match count (shown while searching) -->
+      <Loader2
+        v-if="isSearchExpanding"
+        class="h-3 w-3 text-gray-400 dark:text-gray-500 animate-spin shrink-0"
+      />
+      <span
+        v-else-if="effectiveSearchQuery"
+        class="text-[10px] tabular-nums text-gray-400 dark:text-gray-500 shrink-0 select-none"
+        :title="`${filteredConnections.length} matching connection${filteredConnections.length === 1 ? '' : 's'}`"
+        >{{ filteredConnections.length }}</span
+      >
       <button
         type="button"
-        class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-300 dark:border-gray-600 bg-white/90 dark:bg-gray-800/90 text-slate-700 dark:text-gray-200 transition-colors hover:bg-slate-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded text-slate-500 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700 hover:text-slate-700 dark:hover:text-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         title="Expand first level"
         aria-label="Expand first level"
         :disabled="!canExpandFirstLevel"
@@ -1526,7 +1595,7 @@ watch(
       </button>
       <button
         type="button"
-        class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-300 dark:border-gray-600 bg-white/90 dark:bg-gray-800/90 text-slate-700 dark:text-gray-200 transition-colors hover:bg-slate-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded text-slate-500 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700 hover:text-slate-700 dark:hover:text-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         title="Collapse all"
         aria-label="Collapse all"
         :disabled="!hasExpandedTreeState"

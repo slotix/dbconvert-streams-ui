@@ -11,9 +11,6 @@ import { useExplorerViewStateStore } from '@/stores/explorerViewState'
 import { useSqlConsoleStore } from '@/stores/sqlConsole'
 import ExplorerSidebarConnections from '@/components/database/ExplorerSidebarConnections.vue'
 import ExplorerContentArea from '@/components/explorer/ExplorerContentArea.vue'
-import ConnectionTypeFilter from '@/components/common/ConnectionTypeFilter.vue'
-import SearchInput from '@/components/common/SearchInput.vue'
-import BaseButton from '@/components/base/BaseButton.vue'
 
 // Use our composables and stores
 import { useExplorerState } from '@/composables/useExplorerState'
@@ -22,7 +19,6 @@ import { useSplitPaneResize } from '@/composables/useSplitPaneResize'
 import { useSidebar } from '@/composables/useSidebar'
 import { usePersistedState } from '@/composables/usePersistedState'
 import { useRecentConnections } from '@/composables/useRecentConnections'
-import { useTreeSearch } from '@/composables/useTreeSearch'
 import { useConnectionActions } from '@/composables/useConnectionActions'
 import { useDesktopMode } from '@/composables/useDesktopMode'
 import { getSqlDialectFromConnection } from '@/types/specs'
@@ -67,36 +63,14 @@ const selectedConnectionTypes = usePersistedState<string[]>('explorer.connection
   }
 })
 
-const searchInputRef = ref<InstanceType<typeof SearchInput> | null>(null)
+// Sidebar connections component ref (exposes focus() for keyboard shortcut)
+const sidebarConnectionsRef = ref<InstanceType<typeof ExplorerSidebarConnections> | null>(null)
 
 // Recent connections management
 const recentConnectionsManager = useRecentConnections(explorerState.currentConnectionId)
 const alwaysOpenNewTab = usePersistedState<boolean>('explorer.alwaysOpenNewTab', false, {
   serializer: (v) => String(v),
   deserializer: (v) => v === 'true'
-})
-
-// Computed properties
-const connectionsCount = computed(() => connectionsStore.connections.length || 0)
-
-// Single treeSearch instance for connection count (called once, reactive via getters)
-const treeSearchForCount = useTreeSearch(() => connectionSearch.value, {
-  typeFilters: () => selectedConnectionTypes.value
-})
-
-// Use the same filtering logic as the sidebar tree
-const filteredConnectionsCount = computed(() => {
-  const filtered = treeSearchForCount.filterConnections(connectionsStore.connections)
-  return filtered.length
-})
-
-const connectionCountLabel = computed(() => {
-  const filtered = filteredConnectionsCount.value
-  const total = connectionsCount.value
-  if ((connectionSearch.value || selectedConnectionTypes.value.length > 0) && filtered !== total) {
-    return `${filtered} of ${total} connections`
-  }
-  return `${total} connection${total === 1 ? '' : 's'}`
 })
 
 const selectedDatabase = computed(() => explorerState.selectedDatabaseName.value)
@@ -145,7 +119,7 @@ const {
   fileExplorerStore,
   commonStore,
   sidebar,
-  searchInputRef,
+  searchInputRef: sidebarConnectionsRef,
   recentConnectionsManager,
   alwaysOpenNewTab
 })
@@ -287,68 +261,36 @@ function handleOpenFileConsole(payload: {
     <!-- Disconnected Overlay -->
     <DisconnectedOverlay />
 
-    <!-- Enhanced Functional Toolbar with gradient background -->
+    <!-- App navigation header (mobile/desktop nav toggles + logo) -->
     <header
-      class="sticky top-0 z-30 bg-linear-to-r from-slate-50 via-white to-slate-50 dark:from-gray-900 dark:via-gray-850 dark:to-gray-900 border-b border-slate-200 dark:border-gray-700 shadow-sm dark:shadow-gray-900/30 lg:-ml-(--sidebar-width) lg:w-[calc(100%+var(--sidebar-width))]"
+      v-if="sidebarMenuToggle || sidebarWidthToggle || !isDesktop"
+      class="sticky top-0 z-30 bg-white dark:bg-gray-900 border-b border-slate-200 dark:border-gray-700 lg:-ml-(--sidebar-width) lg:w-[calc(100%+var(--sidebar-width))]"
     >
-      <div class="px-6 py-4 flex items-center gap-4">
-        <div class="flex items-center gap-3">
-          <button
-            v-if="sidebarMenuToggle"
-            type="button"
-            class="group flex items-center justify-center p-2 -ml-1 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700 lg:hidden"
-            @click="sidebarMenuToggle.openSidebar"
-          >
-            <Menu class="h-5 w-5" :stroke-width="iconStroke" aria-hidden="true" />
-            <span class="sr-only">Open sidebar</span>
-          </button>
-          <button
-            v-if="sidebarWidthToggle"
-            type="button"
-            class="group hidden lg:flex items-center justify-center p-2 -ml-1 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700"
-            @click="sidebarWidthToggle.toggleSidebarWidth"
-          >
-            <Menu class="h-5 w-5" :stroke-width="iconStroke" aria-hidden="true" />
-            <span class="sr-only">Toggle sidebar width</span>
-          </button>
-          <img
-            v-if="!isDesktop"
-            class="h-5 w-5 shrink-0"
-            src="/images/logo.svg"
-            alt="DBConvert Streams"
-          />
-          <!-- Connections Count Header -->
-          <h1 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
-            {{ connectionCountLabel }}
-          </h1>
-        </div>
-
-        <div class="shrink-0">
-          <ConnectionTypeFilter
-            :selected-types="selectedConnectionTypes"
-            :persistent="true"
-            @update:selected-types="selectedConnectionTypes = $event"
-          />
-        </div>
-
-        <!-- Search Input with enhanced styling -->
-        <div class="flex-1 max-w-sm md:max-w-md">
-          <SearchInput
-            ref="searchInputRef"
-            v-model="connectionSearch"
-            placeholder="Filter connections... (Press / to focus)"
-            size="xs"
-          />
-        </div>
-
-        <!-- Right side group -->
-        <div class="flex items-center gap-4 ml-auto">
-          <!-- Primary CTA Button with vibrant blue-green gradient -->
-          <BaseButton variant="primary" @click="onAddConnection">
-            <Plus class="h-5 w-5" :stroke-width="iconStroke" />
-            <span>New Connection</span>
-          </BaseButton>
-        </div>
+      <div class="px-4 py-2 flex items-center gap-3">
+        <button
+          v-if="sidebarMenuToggle"
+          type="button"
+          class="flex items-center justify-center p-1.5 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700 lg:hidden"
+          @click="sidebarMenuToggle.openSidebar"
+        >
+          <Menu class="h-5 w-5" :stroke-width="iconStroke" aria-hidden="true" />
+          <span class="sr-only">Open sidebar</span>
+        </button>
+        <button
+          v-if="sidebarWidthToggle"
+          type="button"
+          class="hidden lg:flex items-center justify-center p-1.5 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700"
+          @click="sidebarWidthToggle.toggleSidebarWidth"
+        >
+          <Menu class="h-5 w-5" :stroke-width="iconStroke" aria-hidden="true" />
+          <span class="sr-only">Toggle sidebar width</span>
+        </button>
+        <img
+          v-if="!isDesktop"
+          class="h-5 w-5 shrink-0"
+          src="/images/logo.svg"
+          alt="DBConvert Streams"
+        />
       </div>
     </header>
 
@@ -397,10 +339,14 @@ function handleOpenFileConsole(payload: {
             class="min-w-[220px] min-h-0"
           >
             <ExplorerSidebarConnections
+              ref="sidebarConnectionsRef"
               :initial-expanded-connection-id="explorerState.currentConnectionId.value || undefined"
               :search-query="connectionSearch"
               :type-filters="selectedConnectionTypes"
               :selected="treeSelection || undefined"
+              @update:search-query="connectionSearch = $event"
+              @update:type-filters="selectedConnectionTypes = $event"
+              @add-connection="onAddConnection"
               @open="handleOpenFromTree"
               @show-diagram="handleShowDiagram"
               @select-connection="handleSelectConnection"
