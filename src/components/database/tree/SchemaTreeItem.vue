@@ -140,9 +140,7 @@ function handleObjectContextMenu(payload: {
     <div
       :class="[
         'flex items-center px-2 py-1 text-sm text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer select-none',
-        isSelected
-          ? 'bg-teal-50/70 dark:bg-teal-900/20 border border-teal-300/80 dark:border-teal-500/50 ring-1 ring-teal-300/60 dark:ring-teal-500/30'
-          : ''
+        isSelected ? 'bg-teal-100/80 dark:bg-teal-900/40' : ''
       ]"
       :data-explorer-schema="`${connectionId}:${database}:${schema.name}`"
       data-tree-node="true"
