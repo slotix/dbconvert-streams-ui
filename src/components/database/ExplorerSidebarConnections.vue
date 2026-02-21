@@ -1595,22 +1595,13 @@ defineExpose({ focus: () => internalSearchInputRef.value?.focus() })
       <button
         type="button"
         class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded text-slate-500 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700 hover:text-slate-700 dark:hover:text-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        title="Expand first level"
-        aria-label="Expand first level"
-        :disabled="!canExpandFirstLevel"
-        @click="expandFirstLevel"
+        :title="hasExpandedTreeState ? 'Collapse all' : 'Expand first level'"
+        :aria-label="hasExpandedTreeState ? 'Collapse all' : 'Expand first level'"
+        :disabled="!hasExpandedTreeState && !canExpandFirstLevel"
+        @click="hasExpandedTreeState ? collapseAllTreeNodes() : expandFirstLevel()"
       >
-        <ChevronsDown class="h-4 w-4" />
-      </button>
-      <button
-        type="button"
-        class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded text-slate-500 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700 hover:text-slate-700 dark:hover:text-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        title="Collapse all"
-        aria-label="Collapse all"
-        :disabled="!hasExpandedTreeState"
-        @click="collapseAllTreeNodes"
-      >
-        <ChevronsUp class="h-4 w-4" />
+        <ChevronsUp v-if="hasExpandedTreeState" class="h-4 w-4" />
+        <ChevronsDown v-else class="h-4 w-4" />
       </button>
     </div>
     <!-- Scrollable tree content area with smooth scrolling and custom scrollbar -->
