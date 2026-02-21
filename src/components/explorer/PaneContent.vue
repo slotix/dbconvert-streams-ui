@@ -224,7 +224,7 @@ const resolvedDatabaseMeta = computed<
 })
 
 const wrapperClass = computed(() => {
-  const base = 'h-[calc(100vh-220px)]'
+  const base = 'flex-1 min-h-0'
   const tabType = props.activeTab?.tabType
   if (tabType === 'connection-details' || tabType === 'database-overview') {
     return `${base} overflow-y-auto overflow-x-hidden`

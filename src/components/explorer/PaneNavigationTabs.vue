@@ -1,11 +1,14 @@
 <template>
-  <div class="mb-2 flex items-center gap-2" :data-pane-id="paneId">
+  <div
+    class="flex items-center border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-850 shrink-0"
+    :data-pane-id="paneId"
+  >
     <div
       ref="tabsContainerRef"
       class="flex-1 min-w-0 overflow-x-auto overflow-y-hidden tabs-scrollbar"
       @wheel="onWheel"
     >
-      <div class="flex items-center gap-1 flex-nowrap min-w-max">
+      <div class="flex items-center flex-nowrap min-w-max">
         <template v-for="(tab, i) in tabs" :key="tab.id">
           <!-- Drop indicator before tab -->
           <div
@@ -17,16 +20,12 @@
             type="button"
             draggable="true"
             :class="[
-              'group flex items-center gap-2 rounded border bg-white dark:bg-gray-850 px-2 py-1 text-xs transition shrink-0',
-              'focus:outline-none focus:ring-1 focus:ring-slate-400 dark:focus:ring-slate-500',
-              isPreviewTab(i) ? 'border border-dashed italic' : 'border border-solid',
+              'group flex items-center gap-2 px-3 py-2 text-xs transition shrink-0 border-b-2 border-t-2 border-t-transparent',
+              'focus:outline-none',
+              isPreviewTab(i) ? 'italic' : '',
               isActiveTab(i)
-                ? isPreviewTab(i)
-                  ? 'border-teal-400 dark:border-teal-300 text-gray-900 dark:text-gray-100 bg-teal-50/70 dark:bg-teal-900/20 ring-2 ring-teal-500/40 dark:ring-teal-400/40 shadow-[0_0_0_1px_rgba(20,184,166,0.35)]'
-                  : 'border-teal-500 dark:border-teal-400 ring-2 ring-teal-500/40 dark:ring-teal-400/40 bg-teal-50/70 dark:bg-teal-900/20 shadow-[0_0_0_1px_rgba(20,184,166,0.35)]'
-                : isPreviewTab(i)
-                  ? 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
-                  : 'border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800',
+                ? 'border-b-teal-500 dark:border-b-teal-400 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900'
+                : 'border-b-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-white/60 dark:hover:bg-gray-800/60',
               dragState.isDragging && dragState.draggedIndex === i && 'opacity-50'
             ]"
             @click="$emit('activate-tab', i)"
@@ -57,7 +56,7 @@
             <span
               role="button"
               tabindex="0"
-              class="flex h-4 w-4 items-center justify-center rounded transition hover:bg-slate-100 dark:hover:bg-slate-700 shrink-0"
+              class="flex h-4 w-4 items-center justify-center rounded transition hover:bg-gray-200 dark:hover:bg-gray-700 shrink-0"
               :aria-label="`Close tab ${tab.name}`"
               @click.stop="$emit('close-tab', i)"
               @keydown.enter.stop.prevent="$emit('close-tab', i)"
@@ -81,7 +80,7 @@
       v-if="hasAnyTabs"
       ref="overflowButtonRef"
       type="button"
-      class="shrink-0 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-850 p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+      class="shrink-0 px-2 py-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 border-b-2 border-transparent"
       aria-label="Show all tabs"
       @click="toggleOverflowMenu"
     >

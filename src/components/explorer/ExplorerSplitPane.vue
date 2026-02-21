@@ -1,33 +1,20 @@
 <template>
-  <div v-if="hasRightPane" ref="splitContainerRef" class="flex flex-row items-stretch min-w-0">
+  <div
+    v-if="hasRightPane"
+    ref="splitContainerRef"
+    class="flex flex-row items-stretch min-w-0 flex-1 min-h-0"
+  >
     <!-- Left pane (always visible) -->
     <div
       ref="leftPaneRef"
       :style="{ flexBasis: `${splitGrow}%`, flexGrow: 0, flexShrink: 0 }"
-      :class="[
-        'relative min-w-[300px] pr-2 min-h-[480px] transition-all rounded-lg bg-white dark:bg-gray-900',
-        hasRightPane &&
-          isLeftActive &&
-          'shadow-[0_0_0_0.5px_rgb(20_184_166),0_0_2px_rgba(20_184_166,0.1)] dark:shadow-[0_0_0_0.5px_rgb(20_184_166),0_0_3px_rgba(20_184_166,0.15)]'
-      ]"
+      class="relative min-w-[300px] pr-2 flex flex-col min-h-0"
       @mousedown="$emit('set-active-pane', 'left')"
       @dragover="onPaneDragOver"
       @drop="onPaneDrop($event, 'left')"
     >
-      <!-- Top accent border for active pane -->
-      <div
-        v-if="hasRightPane"
-        class="pointer-events-none absolute inset-x-4 top-0 rounded-b-md transition-all duration-200"
-        :class="[
-          isLeftActive
-            ? 'h-1 bg-teal-500 dark:bg-teal-500 opacity-100'
-            : 'h-0.5 bg-slate-300 dark:bg-gray-600 opacity-20'
-        ]"
-      />
       <!-- Left pane tabs -->
-      <div class="px-2 pt-2">
-        <slot name="left-tabs" />
-      </div>
+      <slot name="left-tabs" />
 
       <!-- Left pane breadcrumb -->
       <slot name="left-breadcrumb" />
@@ -65,28 +52,13 @@
     <!-- Right pane (conditional) -->
     <div
       :style="{ flexBasis: '0px' }"
-      :class="[
-        'relative grow pl-2 min-h-[480px] min-w-[300px] transition-all rounded-lg bg-white dark:bg-gray-900',
-        isRightActive &&
-          'shadow-[0_0_0_0.5px_rgb(20_184_166),0_0_2px_rgba(20_184_166,0.1)] dark:shadow-[0_0_0_0.5px_rgb(20_184_166),0_0_3px_rgba(20_184_166,0.15)]'
-      ]"
+      class="relative grow pl-2 min-w-[300px] flex flex-col min-h-0"
       @mousedown="$emit('set-active-pane', 'right')"
       @dragover="onPaneDragOver"
       @drop="onPaneDrop($event, 'right')"
     >
-      <!-- Top accent border for active pane -->
-      <div
-        class="pointer-events-none absolute inset-x-4 top-0 rounded-b-md transition-all duration-200"
-        :class="[
-          isRightActive
-            ? 'h-1 bg-teal-500 dark:bg-teal-500 opacity-100'
-            : 'h-0.5 bg-slate-300 dark:bg-gray-600 opacity-20'
-        ]"
-      />
       <!-- Right pane tabs -->
-      <div class="px-2 pt-2">
-        <slot name="right-tabs" />
-      </div>
+      <slot name="right-tabs" />
 
       <!-- Right pane breadcrumb -->
       <slot name="right-breadcrumb" />
@@ -97,17 +69,15 @@
   </div>
 
   <!-- Single pane view (left only) - reuse left-content slot -->
-  <div v-else>
+  <div v-else class="flex flex-col flex-1 min-h-0">
     <div
-      :class="['relative transition-all bg-white dark:bg-gray-900']"
+      class="flex flex-col flex-1 min-h-0"
       @mousedown="$emit('set-active-pane', 'left')"
       @dragover="onPaneDragOver"
       @drop="onPaneDrop($event, 'left')"
     >
       <!-- Left pane tabs -->
-      <div class="px-2 pt-2">
-        <slot name="left-tabs" />
-      </div>
+      <slot name="left-tabs" />
 
       <!-- Left pane breadcrumb -->
       <slot name="left-breadcrumb" />

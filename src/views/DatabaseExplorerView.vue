@@ -283,7 +283,7 @@ function handleOpenFileConsole(payload: {
 </script>
 
 <template>
-  <div class="min-h-full">
+  <div class="h-screen flex flex-col overflow-hidden">
     <!-- Disconnected Overlay -->
     <DisconnectedOverlay />
 
@@ -352,11 +352,11 @@ function handleOpenFileConsole(payload: {
       </div>
     </header>
 
-    <main class="mx-auto py-4 overflow-x-hidden">
+    <main class="flex-1 flex flex-col min-h-0 overflow-x-hidden">
       <!-- No connections at all -->
       <div
         v-if="connectionsStore.connections.length === 0"
-        class="flex flex-col items-center justify-center py-16 px-4"
+        class="flex-1 flex flex-col items-center justify-center py-16 px-4"
       >
         <div
           class="bg-linear-to-br from-blue-50 to-teal-50 dark:from-blue-900/20 dark:to-teal-900/20 rounded-full p-6 mb-6"
@@ -380,10 +380,10 @@ function handleOpenFileConsole(payload: {
       </div>
 
       <!-- Explorer content -->
-      <div v-else class="px-4 sm:px-6 lg:px-8">
+      <div v-else class="flex-1 flex flex-col min-h-0">
         <div
           :ref="(el) => (sidebar.sidebarContainerRef.value = el as HTMLElement)"
-          class="mt-6 flex flex-row items-stretch min-w-0 overflow-x-hidden"
+          class="flex-1 flex flex-row items-stretch min-w-0 overflow-x-hidden min-h-0"
         >
           <!-- Sidebar -->
           <div
@@ -394,7 +394,7 @@ function handleOpenFileConsole(payload: {
               flexGrow: 0,
               flexShrink: 0
             }"
-            class="min-w-[220px] pr-2"
+            class="min-w-[220px] pr-2 min-h-0"
           >
             <ExplorerSidebarConnections
               :initial-expanded-connection-id="explorerState.currentConnectionId.value || undefined"
@@ -457,7 +457,10 @@ function handleOpenFileConsole(payload: {
             :class="[
               'grow',
               'min-w-0',
+              'min-h-0',
               'overflow-x-hidden',
+              'flex',
+              'flex-col',
               sidebar.sidebarVisible.value ? 'pl-2' : 'pl-0'
             ]"
           >

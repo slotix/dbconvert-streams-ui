@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-[480px] min-w-0 overflow-x-hidden">
+  <div class="flex flex-col flex-1 min-h-0 min-w-0 overflow-x-hidden">
     <ExplorerSplitPane
       :active-pane="activePane"
       :split-pane-resize="props.splitPaneResize"

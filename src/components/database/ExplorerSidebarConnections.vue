@@ -1513,7 +1513,7 @@ watch(
   <!-- Enhanced sidebar with gradient background and floating effect -->
   <div
     ref="sidebarCardRef"
-    class="bg-linear-to-br from-white via-slate-50/50 to-white dark:from-gray-850 dark:via-gray-850 dark:to-gray-900 shadow-xl dark:shadow-gray-900/50 rounded-2xl overflow-hidden h-[calc(100vh-140px)] flex flex-col transition-all duration-300 hover:shadow-2xl dark:hover:shadow-gray-900/70 border border-slate-200/50 dark:border-gray-700"
+    class="overflow-hidden h-full flex flex-col border-r border-slate-200 dark:border-gray-700"
   >
     <div
       class="px-3 pt-3 pb-2 border-b border-slate-200/70 dark:border-gray-700/80 flex items-center gap-2"
