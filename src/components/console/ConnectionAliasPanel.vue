@@ -234,13 +234,13 @@
 
                   <div
                     v-if="isSelected(conn.id)"
-                    class="ml-7 mt-1 w-full max-w-[34rem] rounded-md bg-gray-100/45 dark:bg-gray-800/20 px-2 py-1.5"
+                    class="ml-7 mr-1 mt-1 rounded-md bg-gray-100/45 dark:bg-gray-800/20 px-2 py-1.5"
                   >
                     <div class="divide-y divide-gray-200/70 dark:divide-gray-700/50">
                       <div
                         v-for="mapping in getMappingsByConnection(conn.id)"
                         :key="getMappingTargetId(mapping)"
-                        class="flex items-center gap-2 px-0.5 py-1.5"
+                        class="group flex items-center gap-2 px-0.5 py-1.5"
                       >
                         <input
                           v-if="shouldShowAliases"
@@ -276,12 +276,14 @@
                         </div>
 
                         <button
+                          v-if="getMappingsByConnection(conn.id).length > 1"
                           type="button"
-                          class="text-sm leading-none text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 px-1"
+                          class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded text-gray-400 dark:text-gray-500 hover:bg-red-500/10 hover:text-red-500 dark:hover:text-red-400"
                           title="Remove database mapping"
-                          @click="removeMapping(mapping)"
+                          aria-label="Remove database mapping"
+                          @click.stop="removeMapping(mapping)"
                         >
-                          ✕
+                          <X class="h-3.5 w-3.5" />
                         </button>
                       </div>
                     </div>
@@ -332,7 +334,7 @@
                       showAliasForConnection(conn) &&
                       getPrimaryMapping(conn.id)
                     "
-                    class="ml-7 mt-1 w-full max-w-[34rem] rounded-md bg-gray-100/45 dark:bg-gray-800/20 px-2 py-1.5"
+                    class="ml-7 mr-1 mt-1 rounded-md bg-gray-100/45 dark:bg-gray-800/20 px-2 py-1.5"
                   >
                     <div class="flex items-center gap-2 px-0.5">
                       <button
@@ -423,7 +425,7 @@
 <script setup lang="ts">
 import { ref, computed, nextTick, watch } from 'vue'
 import { RouterLink } from 'vue-router'
-import { AlertCircle, ChevronDown, Cloud, Database, Folder, Plus } from 'lucide-vue-next'
+import { AlertCircle, ChevronDown, Cloud, Database, Folder, Plus, X } from 'lucide-vue-next'
 import { useConnectionsStore } from '@/stores/connections'
 import connectionsApi from '@/api/connections'
 import FormSelect from '@/components/base/FormSelect.vue'

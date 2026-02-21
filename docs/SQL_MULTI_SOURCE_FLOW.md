@@ -30,6 +30,9 @@ This document defines the SQL console flow for:
 - User opens `Query Session` drawer and enables additional sources.
 - Each enabled source has an alias (for example `my1`, `pg1`, `files1`).
 - When selected sources become `> 1`, behavior transitions to federated mode automatically.
+- A single physical DB connection can be represented by multiple alias mappings in one session
+  (for example `pgpg -> postgres` and `pgtest -> test`).
+  This is required for PostgreSQL multi-database workflows and supported for MySQL too for consistency.
 
 Note: this is already the promote step. There is no separate manual `Promote` control.
 
@@ -41,6 +44,7 @@ Execution mode is determined only by selected source count:
 
 No per-connection execution dropdown is shown in `Multi-source` mode.
 When multiple sources are selected, SQL view always uses DuckDB LSP context for the active session.
+Each alias mapping counts as an independent selected source for mode calculation and autocomplete scope.
 
 ### 4) SQL stays unchanged on promote
 
@@ -90,6 +94,22 @@ Dot-navigation expectations:
 
 Suggestions and execution must use the same naming model.
 In multi-source mode, alias-qualified references are required for table relations.
+
+## FAQ
+
+### Why allow multiple aliases for the same connection?
+
+Because one physical connection may need multiple logical database mappings in a single session.
+
+- PostgreSQL example: same host/credentials, but different databases:
+  - `pgpg -> postgres`
+  - `pgtest -> test`
+- MySQL example: same host/credentials, but different databases:
+  - `mysakila -> sakila`
+  - `mysrc -> source`
+
+This keeps one consistent multi-source model across providers.
+Autocomplete and execution both use alias-qualified names from the active mappings.
 
 ## Real examples (`my1`, `pg1`, `files1`)
 

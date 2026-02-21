@@ -97,6 +97,8 @@ Selection highlight and autocomplete colors are aligned to current app palette.
   - `file` + optional `format`
   - `connection_id` (can be repeated for federated metadata scope)
   - optional `connection_alias`
+  - repeated `connection_id` values are preserved so one physical connection can expose
+    multiple alias+database mappings in one multi-source session
 
 ### Multi-source SQL conventions (DuckDB-native)
 
@@ -130,6 +132,8 @@ Important:
 - Multi-source execution uses the same naming conventions as autocomplete.
 - No hidden query rewriting should be required to execute valid suggested identifiers.
 - If a suggestion is shown, its inserted form is expected to run as-is.
+- A single DB connection may appear multiple times with different aliases/databases.
+  This is expected behavior (especially for PostgreSQL multi-database use cases).
 
 ### Single-source -> Multi-source flow
 
