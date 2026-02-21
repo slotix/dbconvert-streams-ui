@@ -453,9 +453,7 @@
         </div>
       </Teleport>
 
-
       <div class="flex-1"></div>
-
     </div>
 
     <!-- SQL Editor -->

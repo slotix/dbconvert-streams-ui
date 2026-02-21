@@ -2,7 +2,17 @@
 import { computed, ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useLogsStore, type SystemLog } from '@/stores/logs'
 import { TransitionRoot, TransitionChild } from '@headlessui/vue'
-import { ArrowDown, ArrowUp, ChevronDown, Filter, FolderOpen, Info, Search, Trash, X } from 'lucide-vue-next'
+import {
+  ArrowDown,
+  ArrowUp,
+  ChevronDown,
+  Filter,
+  FolderOpen,
+  Info,
+  Search,
+  Trash,
+  X
+} from 'lucide-vue-next'
 import { LOG_LEVELS, STREAM_PROGRESS_CATEGORIES } from '@/constants'
 import { useSystemStatus } from '@/composables/useSystemStatus'
 import SqlConsoleView from './SqlConsoleView.vue'
