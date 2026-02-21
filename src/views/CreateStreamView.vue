@@ -5,6 +5,14 @@
       class="sticky top-0 z-30 bg-white dark:bg-gray-900 border-b border-slate-200 dark:border-gray-700"
     >
       <div class="px-4 py-2 flex items-center gap-3">
+        <button
+          type="button"
+          class="lg:hidden flex items-center justify-center p-1.5 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700"
+          @click="sidebarMenuToggle?.openSidebar()"
+        >
+          <Menu class="h-5 w-5" :stroke-width="iconStroke" aria-hidden="true" />
+          <span class="sr-only">Open sidebar</span>
+        </button>
         <h1 class="text-base font-semibold text-gray-900 dark:text-gray-100">
           {{ isEditMode ? 'Edit Stream Configuration' : 'New Stream Configuration' }}
         </h1>
@@ -106,8 +114,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { ref, computed, inject, onMounted, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { Menu } from 'lucide-vue-next'
+import { useLucideIcons } from '@/composables/useLucideIcons'
 import { useStreamWizard } from '@/composables/useStreamWizard'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
@@ -129,6 +139,8 @@ interface Props {
 
 const props = defineProps<Props>()
 
+const { strokeWidth: iconStroke } = useLucideIcons()
+const sidebarMenuToggle = inject<{ openSidebar: () => void }>('sidebarMenuToggle')
 const router = useRouter()
 const route = useRoute()
 const wizard = useStreamWizard()

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted, nextTick, provide } from 'vue'
+import { ref, computed, inject, watch, onMounted, onUnmounted, nextTick, provide } from 'vue'
 import { useDebounceFn, useResizeObserver } from '@vueuse/core'
-import { Boxes, ChevronsDown, ChevronsUp, Loader2, Plus } from 'lucide-vue-next'
+import { Boxes, ChevronsDown, ChevronsUp, Loader2, Menu, Plus } from 'lucide-vue-next'
 import { useConnectionsStore } from '@/stores/connections'
 import ConnectionTypeFilter from '@/components/common/ConnectionTypeFilter.vue'
 import SearchInput from '@/components/common/SearchInput.vue'
@@ -106,6 +106,7 @@ const MIN_SEARCH_LENGTH = 2
 const MAX_FILE_SUBTREE_EXPAND_FOLDERS = 250
 const FILE_SUBTREE_PROGRESS_STEP = 100
 
+const sidebarMenuToggle = inject<{ openSidebar: () => void }>('sidebarMenuToggle')
 const connectionsStore = useConnectionsStore()
 const navigationStore = useExplorerNavigationStore()
 const fileExplorerStore = useFileExplorerStore()
@@ -1546,6 +1547,14 @@ defineExpose({ focus: () => internalSearchInputRef.value?.focus() })
   <div ref="sidebarCardRef" class="overflow-hidden h-full flex flex-col">
     <!-- Toolbar row 1: count + New Connection -->
     <div class="px-3 pt-2.5 pb-1 flex items-center gap-2">
+      <button
+        type="button"
+        class="lg:hidden flex items-center justify-center p-1.5 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700"
+        @click="sidebarMenuToggle?.openSidebar()"
+      >
+        <Menu class="h-4 w-4" aria-hidden="true" />
+        <span class="sr-only">Open sidebar</span>
+      </button>
       <span class="text-xs font-medium text-gray-500 dark:text-gray-400 truncate flex-1">
         {{ connectionCountLabel }}
       </span>

@@ -2,6 +2,14 @@
   <div class="overflow-hidden h-full flex flex-col">
     <!-- Toolbar row 1: count + New Stream Config -->
     <div class="px-3 pt-2.5 pb-1 flex items-center gap-2">
+      <button
+        type="button"
+        class="lg:hidden flex items-center justify-center p-1.5 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700"
+        @click="sidebarMenuToggle?.openSidebar()"
+      >
+        <Menu class="h-4 w-4" aria-hidden="true" />
+        <span class="sr-only">Open sidebar</span>
+      </button>
       <span class="text-xs font-medium text-gray-500 dark:text-gray-400 truncate flex-1">
         {{ streamCountLabel }}
       </span>
@@ -102,9 +110,9 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, inject } from 'vue'
 import { useRouter } from 'vue-router'
-import { Plus, RefreshCw } from 'lucide-vue-next'
+import { Menu, Plus, RefreshCw } from 'lucide-vue-next'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
 import { useStreamActions } from '@/composables/useStreamActions'
@@ -126,6 +134,7 @@ const emit = defineEmits<{
   (e: 'delete-stream', payload: { streamId: string }): void
 }>()
 
+const sidebarMenuToggle = inject<{ openSidebar: () => void }>('sidebarMenuToggle')
 const router = useRouter()
 const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
