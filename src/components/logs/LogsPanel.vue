@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, onBeforeUnmount, watch } from 'vue'
+import { computed, ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useLogsStore, type SystemLog } from '@/stores/logs'
 import { TransitionRoot, TransitionChild } from '@headlessui/vue'
 import {
@@ -232,7 +232,6 @@ function computeLogBadge(log: SystemLog) {
   return getCategoryIcon(type, value)
 }
 
-const logsContainer = ref<HTMLElement | null>(null)
 const panelContainer = ref<HTMLElement | null>(null)
 
 // Height calculation breakdown:
@@ -248,33 +247,25 @@ function startResize(e: MouseEvent) {
   document.body.style.userSelect = 'none'
   document.body.style.cursor = 'ns-resize'
 
-  const startY = e.clientY
-  const container = panelContainer.value
-  if (!container) return
+  if (!panelContainer.value) return
 
-  // Get the actual current height in pixels at start of drag
-  const startHeight = container.getBoundingClientRect().height
-
-  // Define min and max heights
   const MIN_HEIGHT = 200
-  const MAX_HEIGHT = window.innerHeight * 0.8
+  const MAX_HEIGHT = Math.floor(window.innerHeight * 0.65)
+
+  const startY = e.clientY
+  const startHeight = panelContainer.value.getBoundingClientRect().height
 
   let lastUpdate = Date.now()
   const THROTTLE_MS = 16
 
-  function onMouseMove(e: MouseEvent) {
-    e.preventDefault()
+  function onMouseMove(moveEvent: MouseEvent) {
+    moveEvent.preventDefault()
 
     const now = Date.now()
     if (now - lastUpdate < THROTTLE_MS) return
 
-    // Calculate delta from the original start position
-    const delta = startY - e.clientY
-
-    // Calculate new height with constraints
+    const delta = startY - moveEvent.clientY
     const newHeight = Math.max(MIN_HEIGHT, Math.min(startHeight + delta, MAX_HEIGHT))
-
-    // Update the panel height
     store.updatePanelHeight(`${Math.round(newHeight)}px`)
     lastUpdate = now
   }
@@ -411,6 +402,18 @@ function handleDocumentClick(event: MouseEvent) {
 onMounted(() => {
   refreshSystemStatus()
 
+  // Clamp panel height to valid range on mount
+  nextTick(() => {
+    const MAX_HEIGHT = Math.floor(window.innerHeight * 0.65)
+    const MIN_HEIGHT = 200
+    const current = panelContainer.value?.getBoundingClientRect().height ?? 0
+    if (current > MAX_HEIGHT) {
+      store.updatePanelHeight(`${MAX_HEIGHT}px`)
+    } else if (current < MIN_HEIGHT && store.isLogsPanelOpen) {
+      store.updatePanelHeight(`${MIN_HEIGHT}px`)
+    }
+  })
+
   // Load preferences from localStorage
   const savedMessageTypes = localStorage.getItem('systemLogMessageTypes')
   if (savedMessageTypes) {
@@ -468,18 +471,15 @@ onBeforeUnmount(() => {
           >
             <!-- Resize Handle -->
             <div
-              class="absolute top-0 left-0 right-0 flex items-center justify-center select-none z-50 pointer-events-auto"
+              role="separator"
+              aria-orientation="horizontal"
+              class="absolute top-0 left-0 right-0 z-50 h-2 cursor-ns-resize select-none group pointer-events-auto"
+              title="Drag to resize"
+              @mousedown.prevent="startResize"
             >
               <div
-                class="w-full h-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 cursor-ns-resize transition-colors"
-                @mousedown.prevent="startResize"
-              ></div>
-              <div
-                class="absolute h-4 w-16 -top-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-t-md cursor-ns-resize transition-colors flex items-center justify-center"
-                @mousedown.prevent="startResize"
-              >
-                <div class="w-6 h-0.5 bg-gray-400 dark:bg-gray-500 rounded-full"></div>
-              </div>
+                class="absolute inset-x-0 top-1/2 -translate-y-1/2 h-px group-hover:h-[3px] bg-gray-200 dark:bg-gray-700 group-hover:bg-teal-400 dark:group-hover:bg-teal-500 transition-all duration-150"
+              />
             </div>
 
             <!-- View Tabs: System Logs vs SQL Logs -->
