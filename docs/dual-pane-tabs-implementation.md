@@ -16,10 +16,10 @@ Instead of creating separate components for left/right panes, we create **generi
 - Consistent behavior across all panes
 - Simpler maintenance and testing
 
-### 2. **No Backward Compatibility Required**
+### 2. **Simplified Implementation Scope**
 - Old code (`tabs.ts`, `ExplorerTabs.vue`) will be completely removed after implementation
-- Clean slate approach - no migration path needed
-- Simplified implementation without legacy support burden
+- Clean slate approach with no extra compatibility layer
+- Simplified implementation and maintenance
 
 ### 3. **Simplified Tab Icons**
 - Show only object type icon (table/view/file)

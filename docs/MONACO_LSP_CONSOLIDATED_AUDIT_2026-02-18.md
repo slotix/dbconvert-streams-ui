@@ -41,7 +41,7 @@ What remains true:
 - Monaco is fully removed from active UI editor/viewer paths.
 
 What changed from original audit:
-- Legacy custom SQL provider code was removed.
+- Custom SQL provider code was removed.
 - SQL editor surfaces were migrated to `SqlCodeMirror`.
 - Monaco SQL editor component was removed from active code path.
 - JSON editor/viewer surfaces were migrated off Monaco.
@@ -118,7 +118,7 @@ Phase 4 status snapshot (2026-02-19):
 - Completed: desktop freeze path moved away from Monaco SQL suggest flow by switching SQL surfaces to CodeMirror.
 - Completed: selection and focus behavior hardened after screenshot/debug iterations (`closeOnBlur` restored for normal UX).
 - Completed: editor/completion visuals aligned to current app light/dark palette.
-- Completed: legacy frontend metadata-refresh path for SQL autocomplete removed from `UnifiedConsoleTab` (LSP context-only flow).
+- Completed: frontend metadata-refresh path for SQL autocomplete removed from `UnifiedConsoleTab` (LSP context-only flow).
 - Completed: UI runtime LSP feature-toggle state removed from active SQL path.
 - Completed: formal pre-commit smoke/regression pass for SQL LSP behavior (`docs/SQL_LSP_SMOKE_EXECUTION_REPORT_2026-02-19.md`).
 - Completed: LSP diagnostics rendering in `SqlCodeMirror` via `textDocument/publishDiagnostics`.
@@ -133,7 +133,7 @@ Phase 4 status snapshot (2026-02-19):
 ### Phase 0: Cleanup before migration
 - Remove temporary debug probe controls/messages added only for diagnosis.
 - Keep only necessary production safeguards in LSP client/backend.
-- Reconfirm no legacy SQL provider files remain in active path.
+- Reconfirm no SQL provider files remain in active path.
 
 ### Phase 1: CodeMirror SQL foundation
 - Create `CodeMirrorSqlEditor` with:
