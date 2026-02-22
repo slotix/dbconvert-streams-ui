@@ -28,7 +28,7 @@ import { basicSetup } from 'codemirror'
 import { EditorState, Compartment } from '@codemirror/state'
 import { EditorView, keymap, type ViewUpdate } from '@codemirror/view'
 import { sql, MySQL, PostgreSQL } from '@codemirror/lang-sql'
-import { oneDark } from '@codemirror/theme-one-dark'
+import { sqlDarkThemeExtension, sqlLightThemeExtension } from './sqlHighlightStyle'
 import { type Diagnostic, setDiagnostics } from '@codemirror/lint'
 import {
   autocompletion,
@@ -197,7 +197,7 @@ function resolveDarkMode(): boolean {
 }
 
 function getThemeExtension(isDark: boolean) {
-  return isDark ? oneDark : []
+  return isDark ? sqlDarkThemeExtension : sqlLightThemeExtension
 }
 
 function applyLspDiagnostics(diagnostics: LspDiagnostic[]) {
@@ -1843,6 +1843,10 @@ defineExpose({
   caret-color: #2dd4bf;
   background: var(--sql-editor-bg);
   color: var(--sql-editor-text);
+}
+
+:deep(.cm-cursor, .cm-dropCursor) {
+  border-left-color: #2dd4bf !important;
 }
 
 :deep(.cm-content) {

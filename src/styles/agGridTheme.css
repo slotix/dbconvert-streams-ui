@@ -195,18 +195,37 @@
   --ag-range-selection-background-color-4: rgba(20, 184, 166, 0.45);
 }
 
+/* Scrollbars — thin IDE style */
+.ag-theme-alpine ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.ag-theme-alpine ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.ag-theme-alpine ::-webkit-scrollbar-thumb {
+  background-color: rgb(209 213 219); /* gray-300 */
+  border-radius: 3px;
+}
+
+.ag-theme-alpine ::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(156 163 175); /* gray-400 */
+}
+
 /* Dark mode scrollbars */
-.dark .ag-theme-alpine ::-webkit-scrollbar {
-  background-color: var(--tw-gray-800);
+.dark .ag-theme-alpine ::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .dark .ag-theme-alpine ::-webkit-scrollbar-thumb {
-  background-color: var(--tw-gray-600);
-  border-radius: 4px;
+  background-color: rgb(75 85 99); /* gray-600 */
+  border-radius: 3px;
 }
 
 .dark .ag-theme-alpine ::-webkit-scrollbar-thumb:hover {
-  background-color: var(--tw-gray-500);
+  background-color: rgb(107 114 128); /* gray-500 */
 }
 
 /* Dark mode header cell styling - pure gray, no blue tint */

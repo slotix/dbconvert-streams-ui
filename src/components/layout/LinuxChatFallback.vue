@@ -2,17 +2,18 @@
   <template v-if="showFallback">
     <section
       v-if="isPanelOpen"
-      class="fixed right-5 bottom-24 z-[121] h-[560px] w-[360px] overflow-hidden rounded-xl border border-cyan-900/60 bg-gray-950 shadow-2xl"
+      class="fixed right-5 bottom-24 z-[121] h-[560px] w-[360px] overflow-hidden rounded-xl border border-[#0b4f4a]/60 bg-gray-950 shadow-2xl"
     >
       <header
-        class="flex items-center justify-between border-b border-gray-800 bg-cyan-700 px-3 py-2"
+        class="flex items-center justify-between border-b border-gray-800 px-3 py-2"
+        style="background-color: #0b4f4a"
       >
         <p class="text-sm font-semibold text-white">Support Chat</p>
         <div class="flex items-center gap-2">
           <button
             type="button"
             aria-label="Close support chat"
-            class="grid h-7 w-7 place-items-center rounded-md text-white transition-colors hover:bg-cyan-600"
+            class="grid h-7 w-7 place-items-center rounded-md text-white transition-colors hover:bg-[#0d6b65]"
             @click="isPanelOpen = false"
           >
             ×
@@ -33,7 +34,7 @@
       type="button"
       :aria-label="isPanelOpen ? 'Close support chat' : 'Open support chat'"
       :title="isPanelOpen ? 'Close support chat' : 'Open support chat'"
-      class="fixed right-5 bottom-5 z-[122] grid h-16 w-16 place-items-center rounded-full bg-transparent text-white shadow-lg transition-all hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/80 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-950"
+      class="fixed right-5 bottom-5 z-[122] grid h-16 w-16 place-items-center rounded-full bg-transparent text-white shadow-lg transition-all hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0b4f4a]/80 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-950"
       @click="togglePanel"
     >
       <svg
@@ -43,14 +44,14 @@
         class="h-14 w-14"
         aria-hidden="true"
       >
-        <circle cx="32" cy="32" r="30" fill="#0E879E" stroke="#1788FF" stroke-width="2" />
+        <circle cx="32" cy="32" r="30" fill="#0b4f4a" stroke="#0d6b65" stroke-width="2" />
         <path
           d="M32 20c-7.18 0-13 5.37-13 12s5.82 12 13 12c1.28 0 2.51-.17 3.67-.5l6.16 2.98-1.95-5.21c3.31-2.26 5.35-5.66 5.35-9.27 0-6.63-5.82-12-13.23-12z"
           fill="#FFFFFF"
         />
         <path
           d="M28 35.5c1.4 2 6.6 2 8 0"
-          stroke="#0E879E"
+          stroke="#0b4f4a"
           stroke-width="2"
           stroke-linecap="round"
         />

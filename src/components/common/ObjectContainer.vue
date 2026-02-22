@@ -412,7 +412,7 @@ function onOpenDiagram() {
   <div
     :class="[
       'bg-white dark:bg-gray-850 h-full flex flex-col min-h-0',
-      $attrs.class ? $attrs.class : 'shadow-sm ring-1 ring-gray-900/5 dark:ring-gray-700 rounded-lg'
+      $attrs.class ? $attrs.class : 'ring-1 ring-gray-900/5 dark:ring-gray-700'
     ]"
   >
     <!-- Header with segmented control tabs, filter controls, and refresh button -->
@@ -421,7 +421,7 @@ function onOpenDiagram() {
         <!-- Left: Tabs + Filter Controls -->
         <div class="flex items-center gap-4">
           <!-- Data/Structure tabs -->
-          <div v-if="tabs.length > 1" class="inline-flex rounded-md shadow-sm" role="group">
+          <div v-if="tabs.length > 1" class="inline-flex rounded-sm shadow-sm" role="group">
             <button
               v-for="(tab, i) in tabs"
               :key="tab.name"
@@ -429,10 +429,8 @@ function onOpenDiagram() {
                 'px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-all duration-200',
                 'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 dark:focus:ring-teal-400 focus:z-10',
                 'border',
-                // Rounded corners only on first and last
-                i === 0 ? 'rounded-l-md' : '',
-                i === tabs.length - 1 ? 'rounded-r-md' : '',
-                // Remove left border from middle buttons to avoid double borders
+                i === 0 ? 'rounded-l-sm' : '',
+                i === tabs.length - 1 ? 'rounded-r-sm' : '',
                 i !== 0 ? '-ml-px' : '',
                 selectedIndex === i
                   ? 'bg-teal-600 dark:bg-teal-900 text-white border-teal-600 dark:border-teal-600 hover:bg-teal-700 dark:hover:bg-teal-800 z-10'

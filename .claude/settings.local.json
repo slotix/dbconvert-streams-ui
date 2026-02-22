@@ -40,7 +40,13 @@
       "Bash(go vet:*)",
       "Bash(yarn eslint:*)",
       "Bash(go get:*)",
-      "WebFetch(domain:discuss.codemirror.net)"
+      "WebFetch(domain:discuss.codemirror.net)",
+      "Bash(cd:*)",
+      "Bash(cwebp:*)",
+      "Bash(tail:*)",
+      "Bash(grep v2-explorer:*)",
+      "Bash(grep v2-create-stream\\\\|v2-streams:*)",
+      "Bash(grep v2-monitoring:*)"
     ],
     "deny": [],
     "ask": []
