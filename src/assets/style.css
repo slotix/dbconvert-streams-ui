@@ -271,3 +271,32 @@
 .dark .Vue-Toastification__progress-bar {
   background-color: rgba(255, 255, 255, 0.2) !important;
 }
+
+/* ===========================
+   CodeMirror Lint Tooltip (Dark)
+   =========================== */
+
+.dark .cm-tooltip-lint,
+.sql-cm-dark .cm-tooltip-lint {
+  background: var(--color-gray-850) !important;
+  color: var(--color-gray-100) !important;
+  border: 1px solid var(--color-gray-700) !important;
+}
+
+.dark .cm-tooltip-lint .cm-diagnostic,
+.sql-cm-dark .cm-tooltip-lint .cm-diagnostic {
+  background: transparent !important;
+  color: var(--color-gray-100) !important;
+}
+
+.dark .cm-tooltip-lint .cm-diagnosticText,
+.sql-cm-dark .cm-tooltip-lint .cm-diagnosticText {
+  color: var(--color-gray-100) !important;
+  opacity: 1 !important;
+}
+
+.dark .cm-tooltip-lint .cm-diagnosticSource,
+.sql-cm-dark .cm-tooltip-lint .cm-diagnosticSource {
+  color: var(--color-gray-400) !important;
+  opacity: 1 !important;
+}
