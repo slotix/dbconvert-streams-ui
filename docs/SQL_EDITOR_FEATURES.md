@@ -30,6 +30,18 @@ Context behavior:
   - other severities -> editor `info`
 - Diagnostics are cleared when LSP session is reconnected/disposed.
 
+Provider behavior in SQL Console:
+
+| Context / provider                                             | Runtime diagnostics behavior                                                                             |
+| -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| DuckDB file context (`/api/v1/lsp/duckdb/ws`)                  | ✅ Inline diagnostics are published on open/change and cleared on close.                                  |
+| DuckDB federated/attached DB context (`/api/v1/lsp/duckdb/ws`) | ✅ Same lifecycle behavior; parser/binder errors are shown inline.                                        |
+| Direct MySQL/PostgreSQL context via `sqls` (`/api/v1/lsp/ws`)  | ⚠️ Diagnostics depend only on upstream `sqls` notifications; no diagnostics are synthesized by DBConvert. |
+
+Current practical expectation:
+- DuckDB-backed contexts show runtime diagnostics consistently.
+- Direct `sqls` contexts may not show runtime diagnostics consistently, depending on what `sqls` emits.
+
 ### 1.2) SQL hover
 
 - Hover uses LSP `textDocument/hover`.
