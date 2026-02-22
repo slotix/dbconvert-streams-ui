@@ -727,6 +727,67 @@ function isWordCharacter(char: string): boolean {
   return /[\w$]/.test(char)
 }
 
+function isQuotedIdentifierDelimiter(char: string): boolean {
+  return char === '`' || char === '"'
+}
+
+function getQuotedIdentifierRangeAtPosition(state: EditorStateLike, pos: number) {
+  const docLength = state.doc.length
+  if (docLength === 0) {
+    return null
+  }
+
+  const clampedPos = Math.min(Math.max(pos, 0), docLength)
+  const delimiterCandidatePositions = [clampedPos, clampedPos - 1]
+
+  for (const delimiterIndex of delimiterCandidatePositions) {
+    if (delimiterIndex < 0 || delimiterIndex >= docLength) {
+      continue
+    }
+
+    const delimiter = state.doc.sliceString(delimiterIndex, delimiterIndex + 1)
+    if (!isQuotedIdentifierDelimiter(delimiter)) {
+      continue
+    }
+
+    let closingIndex = delimiterIndex + 1
+    while (closingIndex < docLength) {
+      const nextChar = state.doc.sliceString(closingIndex, closingIndex + 1)
+      if (nextChar === '\n') {
+        break
+      }
+      if (nextChar === delimiter) {
+        break
+      }
+      closingIndex += 1
+    }
+
+    if (closingIndex >= docLength) {
+      continue
+    }
+
+    const closingChar = state.doc.sliceString(closingIndex, closingIndex + 1)
+    if (closingChar !== delimiter) {
+      continue
+    }
+
+    const from = delimiterIndex + 1
+    const to = closingIndex
+    if (from >= to) {
+      continue
+    }
+
+    const text = state.doc.sliceString(from, to)
+    if (!text.trim()) {
+      continue
+    }
+
+    return { from, to, text }
+  }
+
+  return null
+}
+
 export function getWordRangeAtPosition(state: EditorStateLike, pos: number) {
   const docLength = state.doc.length
   if (docLength === 0) {
@@ -745,7 +806,7 @@ export function getWordRangeAtPosition(state: EditorStateLike, pos: number) {
   }
 
   if (from === to) {
-    return null
+    return getQuotedIdentifierRangeAtPosition(state, clampedPos)
   }
 
   return {

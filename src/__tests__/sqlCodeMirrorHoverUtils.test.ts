@@ -33,6 +33,24 @@ describe('sqlCodeMirrorHoverUtils', () => {
     expect(getWordRangeAtPosition(noWordState, betweenParensPos)).toBeNull()
   })
 
+  it('extracts quoted identifier when cursor is on quote delimiter', () => {
+    const mysqlQuoted = createState('SELECT * FROM `actor` LIMIT 100')
+    const openingBacktickPos = 'SELECT * FROM '.length
+    expect(getWordRangeAtPosition(mysqlQuoted, openingBacktickPos)).toEqual({
+      from: openingBacktickPos + 1,
+      to: openingBacktickPos + 6,
+      text: 'actor'
+    })
+
+    const postgresQuoted = createState('SELECT * FROM "customer" LIMIT 100')
+    const openingDoubleQuotePos = 'SELECT * FROM '.length
+    expect(getWordRangeAtPosition(postgresQuoted, openingDoubleQuotePos)).toEqual({
+      from: openingDoubleQuotePos + 1,
+      to: openingDoubleQuotePos + 9,
+      text: 'customer'
+    })
+  })
+
   it('renders markdown table hover content as structured DOM', () => {
     const container = document.createElement('div')
     renderHoverTooltipContent(
