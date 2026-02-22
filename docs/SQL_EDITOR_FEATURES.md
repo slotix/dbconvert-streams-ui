@@ -48,6 +48,18 @@ Current practical expectation:
 - Hover content is shown as a lightweight tooltip above the token/range.
 - Hover shares the editor light/dark popup palette and is disabled automatically when LSP is unavailable.
 
+### 1.3) Open in SQL Console starter query policy
+
+- Starter query for table open uses `SELECT * FROM ... LIMIT 100;`.
+- Identifier formatting is context-aware:
+  - Simple identifiers (`^[a-z_][a-z0-9_]*$`) are emitted unquoted.
+  - Complex/case-sensitive identifiers remain dialect-quoted.
+- Rationale: in direct sqls mode, unquoted simple identifiers improve projection-list autocomplete behavior after commas.
+
+Examples:
+- Now (safe simple identifiers): `SELECT * FROM private.city LIMIT 100;`
+- Still quoted when needed: ``SELECT * FROM "Order Items"."City Name" LIMIT 100;``
+
 ### 2) SQL dialect-aware syntax highlighting
 
 The editor configures SQL language mode by selected source dialect:

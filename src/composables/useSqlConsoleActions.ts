@@ -35,14 +35,29 @@ export function useSqlConsoleActions() {
     return name
   }
 
+  function isSafeUnquotedIdentifier(name: string): boolean {
+    const normalized = name.trim()
+    if (!normalized) {
+      return false
+    }
+    return /^[a-z_][a-z0-9_]*$/.test(normalized)
+  }
+
+  function formatIdentifierForStarterQuery(name: string, dialect: string | null): string {
+    if (isSafeUnquotedIdentifier(name)) {
+      return name.trim()
+    }
+    return quoteIdentifier(name, dialect)
+  }
+
   function generateSelectQuery(
     tableName: string,
     schema: string | undefined,
     dialect: string | null
   ): string {
     const quotedTable = schema
-      ? `${quoteIdentifier(schema, dialect)}.${quoteIdentifier(tableName, dialect)}`
-      : quoteIdentifier(tableName, dialect)
+      ? `${formatIdentifierForStarterQuery(schema, dialect)}.${formatIdentifierForStarterQuery(tableName, dialect)}`
+      : formatIdentifierForStarterQuery(tableName, dialect)
     return `SELECT * FROM ${quotedTable} LIMIT 100;`
   }
 
