@@ -218,9 +218,14 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
     if (top + popupHeight > window.innerHeight) top = window.innerHeight - popupHeight
     if (top < 0) top = 0
 
+    // WebKitGTK coordinate quirk: at zoom < 1, getBoundingClientRect() returns visual pixels
+    // and position:fixed needs CSS layout px (visual / zoom). At zoom >= 1, getBoundingClientRect()
+    // already returns CSS layout px and no division is needed.
+    const zoom = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--app-zoom')) || 1
+    const divisor = zoom < 1 ? zoom : 1
     params.ePopup.style.position = 'fixed'
-    params.ePopup.style.left = `${left}px`
-    params.ePopup.style.top = `${top}px`
+    params.ePopup.style.left = `${left / divisor}px`
+    params.ePopup.style.top = `${top / divisor}px`
   }
 
   const gridOptions = computed<GridOptions>(() => ({
