@@ -30,7 +30,7 @@ import { useAgGridRowChangeTracking } from '@/composables/useAgGridRowChangeTrac
 import { useExactRowCount } from '@/composables/useExactRowCount'
 import { useAgGridSelectionActions } from '@/composables/useAgGridSelectionActions'
 import { buildRowChangeRows } from '@/utils/rowChangeRows'
-import { Check, Pencil, Plus, Download, ChevronDown } from 'lucide-vue-next'
+import { Check, ClipboardList, Plus, Download, ChevronDown } from 'lucide-vue-next'
 import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/vue'
 import { useLucideIcons } from '@/composables/useLucideIcons'
 
@@ -800,19 +800,6 @@ defineExpose({
             <Check class="h-3 w-3" :stroke-width="iconStroke" />
             <span class="badge-text">Editable</span>
           </span>
-
-          <!-- Edited count -->
-          <button
-            v-if="hasUnsavedChanges"
-            type="button"
-            class="stat-badge stat-badge-teal stat-badge-clickable"
-            title="Open pending changes"
-            @click="openFirstEditedRowPanel"
-          >
-            <Pencil class="h-3 w-3" :stroke-width="iconStroke" />
-            {{ pendingInsertCount + pendingEditCount + pendingDeleteCount }}
-            <span class="badge-text">changes</span>
-          </button>
         </div>
 
         <!-- Right side: Actions -->
@@ -829,6 +816,15 @@ defineExpose({
           </button>
 
           <template v-if="hasUnsavedChanges">
+            <button
+              type="button"
+              class="text-xs rounded-md px-2.5 py-1 border border-teal-500 text-teal-700 bg-transparent hover:bg-teal-50 dark:border-teal-500/60 dark:text-teal-300 dark:hover:bg-teal-900/20 inline-flex items-center gap-1.5 transition-colors"
+              title="Review pending changes"
+              @click="openFirstEditedRowPanel"
+            >
+              <ClipboardList class="h-3.5 w-3.5 shrink-0" />
+              {{ pendingInsertCount + pendingEditCount + pendingDeleteCount }} changes
+            </button>
             <button
               type="button"
               class="text-xs rounded-md px-2.5 py-1 border border-teal-600 bg-teal-600 text-white hover:bg-teal-700 hover:border-teal-700 disabled:opacity-50 disabled:cursor-not-allowed dark:border-teal-500 dark:bg-teal-600 dark:hover:bg-teal-700"

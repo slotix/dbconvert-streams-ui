@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { Undo2 } from 'lucide-vue-next'
 import SlideOverPanel from '@/components/common/SlideOverPanel.vue'
 import type { RowChangeRow, RowChangeRowKind } from '@/utils/rowChangeRows'
 
@@ -317,11 +318,11 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeyDown))
                     <td class="px-3 py-2 text-right" @click.stop>
                       <button
                         type="button"
-                        class="text-[12px] rounded border border-gray-300 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-red-300 dark:hover:border-red-700 hover:text-red-600 dark:hover:text-red-400 w-6 h-6 inline-flex items-center justify-center transition-colors"
+                        class="w-7 h-7 inline-flex items-center justify-center rounded border border-gray-300 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-red-300 dark:hover:border-red-700 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                         title="Undo"
                         @click="emit('revert-row', row.rowId)"
                       >
-                        ↩
+                        <Undo2 class="h-3.5 w-3.5" />
                       </button>
                     </td>
                   </tr>
@@ -373,11 +374,11 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeyDown))
               }}</span>
               <button
                 type="button"
-                class="text-[11px] px-2 py-0.5 rounded border border-gray-300 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-red-300 dark:hover:border-red-700 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                class="w-7 h-7 inline-flex items-center justify-center rounded border border-gray-300 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-red-300 dark:hover:border-red-700 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                 title="Undo"
                 @click="emit('revert-row', row.rowId)"
               >
-                Undo
+                <Undo2 class="h-3.5 w-3.5" />
               </button>
             </li>
           </ul>
@@ -435,11 +436,11 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeyDown))
               <div class="flex items-center gap-2" @click.stop>
                 <button
                   type="button"
-                  class="text-[11px] px-2 py-0.5 rounded border border-gray-300 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-red-300 dark:hover:border-red-700 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                  class="w-7 h-7 inline-flex items-center justify-center rounded border border-gray-300 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-red-300 dark:hover:border-red-700 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                   title="Undo"
                   @click="emit('revert-row', row.rowId)"
                 >
-                  Undo
+                  <Undo2 class="h-3.5 w-3.5" />
                 </button>
               </div>
             </div>
