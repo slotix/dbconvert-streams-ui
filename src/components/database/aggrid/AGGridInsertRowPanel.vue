@@ -165,9 +165,11 @@ function inputTypeFor(col: SQLColumnMeta): string {
     :open="open"
     :title="`New row (${tableLabel})`"
     subtitle="Fill required fields, then stage the row. Save commits it."
+    :body-scrollable="false"
+    :body-padding="false"
     @close="emit('close')"
   >
-    <div class="space-y-4">
+    <div class="h-full overflow-y-auto px-4 py-4 space-y-4">
       <div
         v-if="missingRequired.length > 0"
         class="rounded-md border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-3"
@@ -183,40 +185,42 @@ function inputTypeFor(col: SQLColumnMeta): string {
       <div
         v-for="col in columns"
         :key="col.name"
-        class="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-900/40 p-3"
+        class="py-2.5 border-b border-gray-200/70 dark:border-gray-700/60 last:border-b-0"
       >
         <div class="flex items-start justify-between gap-3">
           <div class="min-w-0">
-            <div class="text-xs font-semibold text-gray-800 dark:text-gray-200 truncate">
-              {{ col.name }}
+            <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+              <span class="text-xs font-semibold text-gray-800 dark:text-gray-200 truncate">
+                {{ col.name }}
+              </span>
               <span
                 v-if="requiredColumns.includes(col.name)"
-                class="ml-2 text-[10px] font-semibold text-red-700 dark:text-red-300"
+                class="text-[10px] font-semibold text-red-700 dark:text-red-300"
               >
                 REQUIRED
               </span>
               <span
                 v-else-if="isGeneratedColumn(col)"
-                class="ml-2 text-[10px] font-semibold text-gray-500 dark:text-gray-400"
+                class="text-[10px] font-semibold text-gray-500 dark:text-gray-400"
               >
                 GENERATED
               </span>
               <span
                 v-else-if="col.defaultValue?.Valid || col.autoIncrement"
-                class="ml-2 text-[10px] font-semibold text-gray-500 dark:text-gray-400"
+                class="text-[10px] font-semibold text-gray-500 dark:text-gray-400"
               >
                 DEFAULT
               </span>
-            </div>
-            <div class="mt-1 text-[10px] text-gray-600 dark:text-gray-400">
-              {{ col.dataType }}
-              <span v-if="!col.isNullable"> · NOT NULL</span>
-              <span v-else> · NULLABLE</span>
+              <span class="text-[10px] text-gray-600 dark:text-gray-400">
+                {{ col.dataType }}
+                <span v-if="!col.isNullable"> · NOT NULL</span>
+                <span v-else> · NULLABLE</span>
+              </span>
             </div>
           </div>
         </div>
 
-        <div class="mt-2">
+        <div class="mt-1.5">
           <input
             :type="inputTypeFor(col)"
             class="w-full rounded-md border px-2.5 py-2 text-sm bg-white dark:bg-gray-850 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-teal-500/40"
