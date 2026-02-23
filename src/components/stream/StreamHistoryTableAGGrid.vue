@@ -280,14 +280,37 @@ const columnDefs = ref<ColDef[]>([
   }
 ])
 
-// Adjust popup position for CSS zoom (desktop app)
+// Fix AG Grid popup positioning in complex flex layouts with optional CSS zoom.
+// Use the trigger element's real viewport rect and fixed positioning instead of
+// relying on AG Grid's built-in calculation which is unreliable in nested containers.
 const postProcessPopup = (params: PostProcessPopupParams) => {
+  if (!params.ePopup) return
+
   const zoomValue = getComputedStyle(document.documentElement).getPropertyValue('--app-zoom')
   const zoom = parseFloat(zoomValue) || 1
-  if (zoom === 1 || !params.ePopup) return
 
-  // Apply inverse zoom to the popup to counteract the CSS zoom effect on positioning
-  params.ePopup.style.zoom = `${1 / zoom}`
+  if (zoom !== 1) {
+    params.ePopup.style.zoom = `${1 / zoom}`
+  }
+
+  if (!params.eventSource) return
+
+  const anchorRect = params.eventSource.getBoundingClientRect()
+  const popupHeight = params.ePopup.getBoundingClientRect().height
+  const popupWidth = params.ePopup.getBoundingClientRect().width
+
+  let top = anchorRect.top - popupHeight
+  if (top < 0) top = anchorRect.bottom
+
+  let left = anchorRect.left
+  if (left + popupWidth > window.innerWidth) left = window.innerWidth - popupWidth
+  if (left < 0) left = 0
+  if (top + popupHeight > window.innerHeight) top = window.innerHeight - popupHeight
+  if (top < 0) top = 0
+
+  params.ePopup.style.position = 'fixed'
+  params.ePopup.style.top = `${top / zoom}px`
+  params.ePopup.style.left = `${left / zoom}px`
 }
 
 const gridOptions = computed<GridOptions>(() => ({

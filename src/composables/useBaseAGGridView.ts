@@ -193,16 +193,46 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
 
   // AG Grid options for Infinite Row Model
   // Note: sortable and filter are disabled - Query Filter Panel is the single source of truth
-  // Adjust popup position for CSS zoom (desktop app)
-  // CSS zoom causes popups to be positioned incorrectly because coordinates are calculated
-  // in zoomed space but applied to elements that get zoomed again
+  // Fix AG Grid popup positioning in complex flex layouts with optional CSS zoom.
+  // AG Grid's built-in calculation is unreliable when the grid lives inside nested
+  // flex containers — use the trigger element's real viewport rect instead, and
+  // switch to position:fixed so the result is viewport-relative, not container-relative.
   const postProcessPopup = (params: PostProcessPopupParams) => {
+    if (!params.ePopup) return
+
     const zoomValue = getComputedStyle(document.documentElement).getPropertyValue('--app-zoom')
     const zoom = parseFloat(zoomValue) || 1
-    if (zoom === 1 || !params.ePopup) return
 
-    // Apply inverse zoom to the popup to counteract the CSS zoom effect on positioning
-    params.ePopup.style.zoom = `${1 / zoom}`
+    // Apply inverse zoom to popup content so it renders at 1× scale under CSS zoom.
+    if (zoom !== 1) {
+      params.ePopup.style.zoom = `${1 / zoom}`
+    }
+
+    // Without a known trigger element we cannot recalculate the position, bail out.
+    if (!params.eventSource) return
+
+    // getBoundingClientRect returns viewport (visual) pixels in WebKitGTK / Wails.
+    const anchorRect = params.eventSource.getBoundingClientRect()
+    // After zoom correction above, the popup's effective visual size equals its CSS size.
+    const popupHeight = params.ePopup.getBoundingClientRect().height
+    const popupWidth = params.ePopup.getBoundingClientRect().width
+
+    // Prefer opening above the anchor (page-size selector sits at the grid bottom).
+    let top = anchorRect.top - popupHeight
+    if (top < 0) top = anchorRect.bottom
+
+    let left = anchorRect.left
+    // Clamp to viewport edges.
+    if (left + popupWidth > window.innerWidth) left = window.innerWidth - popupWidth
+    if (left < 0) left = 0
+    if (top + popupHeight > window.innerHeight) top = window.innerHeight - popupHeight
+    if (top < 0) top = 0
+
+    // Use fixed positioning so placement is viewport-relative regardless of popup parent.
+    // Divide by zoom because html CSS zoom scales fixed-position coordinate space too.
+    params.ePopup.style.position = 'fixed'
+    params.ePopup.style.top = `${top / zoom}px`
+    params.ePopup.style.left = `${left / zoom}px`
   }
 
   const gridOptions = computed<GridOptions>(() => ({
