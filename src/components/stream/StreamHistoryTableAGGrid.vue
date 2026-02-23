@@ -280,20 +280,11 @@ const columnDefs = ref<ColDef[]>([
   }
 ])
 
-// Fix AG Grid popup positioning in complex flex layouts with optional CSS zoom.
-// Use the trigger element's real viewport rect and fixed positioning instead of
-// relying on AG Grid's built-in calculation which is unreliable in nested containers.
+// Fix AG Grid popup positioning. Same pattern as StreamContextMenu / ColumnContextMenu:
+// use position:fixed + coord/zoom. getBoundingClientRect() returns visual pixels;
+// dividing by zoom converts to CSS layout pixels for fixed positioning under html{zoom:N}.
 const postProcessPopup = (params: PostProcessPopupParams) => {
-  if (!params.ePopup) return
-
-  const zoomValue = getComputedStyle(document.documentElement).getPropertyValue('--app-zoom')
-  const zoom = parseFloat(zoomValue) || 1
-
-  if (zoom !== 1) {
-    params.ePopup.style.zoom = `${1 / zoom}`
-  }
-
-  if (!params.eventSource) return
+  if (!params.ePopup || !params.eventSource) return
 
   const anchorRect = params.eventSource.getBoundingClientRect()
   const popupHeight = params.ePopup.getBoundingClientRect().height
@@ -309,8 +300,8 @@ const postProcessPopup = (params: PostProcessPopupParams) => {
   if (top < 0) top = 0
 
   params.ePopup.style.position = 'fixed'
-  params.ePopup.style.top = `${top / zoom}px`
-  params.ePopup.style.left = `${left / zoom}px`
+  params.ePopup.style.left = `${left}px`
+  params.ePopup.style.top = `${top}px`
 }
 
 const gridOptions = computed<GridOptions>(() => ({
@@ -325,6 +316,7 @@ const gridOptions = computed<GridOptions>(() => ({
   pagination: true,
   paginationPageSize: DEFAULT_PAGE_SIZE,
   paginationPageSizeSelector: PAGE_SIZE_OPTIONS as unknown as number[],
+  popupParent: document.body,
   postProcessPopup,
   defaultColDef: {
     sortable: true,

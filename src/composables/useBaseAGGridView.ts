@@ -193,46 +193,34 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
 
   // AG Grid options for Infinite Row Model
   // Note: sortable and filter are disabled - Query Filter Panel is the single source of truth
-  // Fix AG Grid popup positioning in complex flex layouts with optional CSS zoom.
-  // AG Grid's built-in calculation is unreliable when the grid lives inside nested
-  // flex containers — use the trigger element's real viewport rect instead, and
-  // switch to position:fixed so the result is viewport-relative, not container-relative.
+  // Fix AG Grid popup positioning. Same pattern as StreamContextMenu / ColumnContextMenu:
+  // use position:fixed + coord/zoom. getBoundingClientRect() returns visual pixels;
+  // dividing by zoom converts to CSS layout pixels for fixed positioning under html{zoom:N}.
   const postProcessPopup = (params: PostProcessPopupParams) => {
-    if (!params.ePopup) return
+    if (!params.ePopup || !params.eventSource) return
 
-    const zoomValue = getComputedStyle(document.documentElement).getPropertyValue('--app-zoom')
-    const zoom = parseFloat(zoomValue) || 1
-
-    // Apply inverse zoom to popup content so it renders at 1× scale under CSS zoom.
-    if (zoom !== 1) {
-      params.ePopup.style.zoom = `${1 / zoom}`
-    }
-
-    // Without a known trigger element we cannot recalculate the position, bail out.
-    if (!params.eventSource) return
-
-    // getBoundingClientRect returns viewport (visual) pixels in WebKitGTK / Wails.
+    // In WebKitGTK, getBoundingClientRect() returns CSS layout pixels (not visual pixels)
+    // under html{zoom:N}. position:fixed also uses CSS layout pixel coordinates.
+    // So we use raw getBoundingClientRect() values directly — no zoom division needed.
+    // (contrast: MouseEvent.clientX returns visual pixels, requiring /zoom for menus)
     const anchorRect = params.eventSource.getBoundingClientRect()
-    // After zoom correction above, the popup's effective visual size equals its CSS size.
     const popupHeight = params.ePopup.getBoundingClientRect().height
     const popupWidth = params.ePopup.getBoundingClientRect().width
 
-    // Prefer opening above the anchor (page-size selector sits at the grid bottom).
+    // Prefer opening above the anchor; fall back to below if not enough room.
     let top = anchorRect.top - popupHeight
     if (top < 0) top = anchorRect.bottom
 
     let left = anchorRect.left
-    // Clamp to viewport edges.
+    // window.innerWidth/Height and getBoundingClientRect are both in CSS layout px.
     if (left + popupWidth > window.innerWidth) left = window.innerWidth - popupWidth
     if (left < 0) left = 0
     if (top + popupHeight > window.innerHeight) top = window.innerHeight - popupHeight
     if (top < 0) top = 0
 
-    // Use fixed positioning so placement is viewport-relative regardless of popup parent.
-    // Divide by zoom because html CSS zoom scales fixed-position coordinate space too.
     params.ePopup.style.position = 'fixed'
-    params.ePopup.style.top = `${top / zoom}px`
-    params.ePopup.style.left = `${left / zoom}px`
+    params.ePopup.style.left = `${left}px`
+    params.ePopup.style.top = `${top}px`
   }
 
   const gridOptions = computed<GridOptions>(() => ({
@@ -262,6 +250,9 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
     infiniteInitialRowCount: 100,
     maxBlocksInCache: 20,
     suppressMenuHide: true,
+    // Attach popups to document.body so AG Grid's coordinate math (sourceRect - parentRect)
+    // uses a 0,0 origin, making it correct regardless of the grid's nesting depth.
+    popupParent: document.body,
     postProcessPopup,
     defaultColDef: {
       // Disable native sorting/filtering - Query Filter Panel controls these

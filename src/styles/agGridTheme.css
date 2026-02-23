@@ -292,6 +292,12 @@
    Pagination Footer Styling
    =========================== */
 
+/* Align all pagination controls to the left so they don't overlap the chat button */
+.ag-theme-alpine .ag-paging-panel {
+  justify-content: flex-start;
+  gap: 1rem;
+}
+
 /* Prevent text wrapping in pagination elements */
 .ag-theme-alpine .ag-paging-row-summary-panel,
 .ag-theme-alpine .ag-paging-page-summary-panel {
