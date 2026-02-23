@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch, nextTick } from 'vue'
 
 // Get current zoom factor for position adjustment
 const getZoomFactor = () => {
@@ -27,13 +27,41 @@ const emit = defineEmits<{
   (e: 'revert-cell'): void
 }>()
 
-const menuStyle = computed(() => {
-  const zoom = getZoomFactor()
-  return {
-    left: `${props.x / zoom}px`,
-    top: `${props.y / zoom}px`
+const menuEl = ref<HTMLElement | null>(null)
+const menuLeft = ref(0)
+const menuTop = ref(0)
+
+// When the menu opens, set initial position then clamp to viewport after render
+watch(
+  () => [props.open, props.x, props.y] as const,
+  async ([isOpen, x, y]) => {
+    if (!isOpen) return
+    const zoom = getZoomFactor()
+    menuLeft.value = x / zoom
+    menuTop.value = y / zoom
+
+    await nextTick()
+
+    if (!menuEl.value) return
+    const rect = menuEl.value.getBoundingClientRect()
+
+    // Clamp in visual pixels (same coordinate space as clientX/Y and getBoundingClientRect)
+    let cx = x
+    let cy = y
+    if (cx + rect.width > window.innerWidth) cx = x - rect.width
+    if (cx < 0) cx = 0
+    if (cy + rect.height > window.innerHeight) cy = y - rect.height
+    if (cy < 0) cy = 0
+
+    menuLeft.value = cx / zoom
+    menuTop.value = cy / zoom
   }
-})
+)
+
+const menuStyle = computed(() => ({
+  left: `${menuLeft.value}px`,
+  top: `${menuTop.value}px`
+}))
 
 function onBackdropClick() {
   emit('close')
@@ -72,6 +100,7 @@ function revertCellAndClose() {
 <template>
   <div v-if="open" class="fixed inset-0 z-50" @click="onBackdropClick">
     <div
+      ref="menuEl"
       class="fixed min-w-48 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-850 shadow-lg dark:shadow-gray-900/50 text-sm py-1"
       :style="menuStyle"
       @click="onMenuClick"
