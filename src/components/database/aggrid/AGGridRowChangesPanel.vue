@@ -207,16 +207,18 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeyDown))
     <div v-else class="space-y-4">
       <div class="space-y-2 rounded-md border border-gray-200/80 dark:border-gray-700/60 p-3">
         <p class="text-xs text-gray-500 dark:text-gray-400">{{ summaryLine }}</p>
-        <div class="flex items-center gap-2 pt-1">
+        <div
+          class="flex items-center gap-1 pt-1 border-b border-gray-200/70 dark:border-gray-700/60"
+        >
           <button
             v-for="kind in ['all', 'insert', 'edit', 'delete'] as const"
             :key="kind"
             type="button"
-            class="text-xs rounded-md px-2 py-1 border transition-colors"
+            class="text-xs px-2 py-1.5 border-b-2 -mb-px transition-colors"
             :class="
               selectedKind === kind
-                ? 'border-teal-500/70 text-teal-700 dark:text-teal-300 bg-teal-50/80 dark:bg-teal-900/20'
-                : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+                ? 'border-teal-500 text-teal-700 dark:text-teal-300'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
             "
             @click="selectedKind = kind"
           >
@@ -243,7 +245,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeyDown))
           <div v-if="kind === 'insert'" class="flex items-center gap-2">
             <button
               type="button"
-              class="text-xs rounded-md px-2 py-1 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              class="text-xs rounded-md px-2 py-1 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-red-300 dark:hover:border-red-700 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
               @click="undoAllInserts"
             >
               Undo all
@@ -449,46 +451,48 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeyDown))
         <span class="text-xs text-gray-500 dark:text-gray-400">{{ footerStats }}</span>
 
         <div class="flex items-center gap-2">
-          <details class="relative">
-            <summary
-              class="list-none text-xs rounded-md px-2 py-1 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+          <div class="flex items-center">
+            <button
+              type="button"
+              class="text-xs rounded-l-md px-3 py-1.5 border border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 bg-white dark:bg-gray-900 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors whitespace-nowrap"
+              @click="onDiscardAll"
             >
-              ⋯
-            </summary>
-            <div
-              class="absolute right-0 bottom-8 min-w-[170px] rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm py-1 z-20"
-            >
-              <button
-                type="button"
-                class="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
-                @click="onDiscardKind('insert')"
-              >
-                Discard inserts
-              </button>
-              <button
-                type="button"
-                class="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
-                @click="onDiscardKind('edit')"
-              >
-                Discard updates
-              </button>
-              <button
-                type="button"
-                class="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
-                @click="onDiscardKind('delete')"
-              >
-                Discard deletes
-              </button>
-            </div>
-          </details>
+              Discard all
+            </button>
 
-          <button
-            type="button"
-            class="text-xs rounded-md px-3 py-1.5 border border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 bg-white dark:bg-gray-900 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-            @click="onDiscardAll"
-          >
-            Discard all
-          </button>
+            <details class="relative">
+              <summary
+                class="list-none text-xs rounded-r-md px-2 py-1.5 border border-l-0 border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 bg-white dark:bg-gray-900 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors cursor-pointer"
+              >
+                ▾
+              </summary>
+              <div
+                class="absolute right-0 bottom-8 min-w-[170px] rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm py-1 z-20"
+              >
+                <button
+                  type="button"
+                  class="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+                  @click="onDiscardKind('insert')"
+                >
+                  Discard inserts
+                </button>
+                <button
+                  type="button"
+                  class="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+                  @click="onDiscardKind('edit')"
+                >
+                  Discard updates
+                </button>
+                <button
+                  type="button"
+                  class="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+                  @click="onDiscardKind('delete')"
+                >
+                  Discard deletes
+                </button>
+              </div>
+            </details>
+          </div>
 
           <button
             type="button"
