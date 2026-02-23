@@ -8,6 +8,7 @@ const props = defineProps<{
   rows: RowChangeRow[]
   tableName?: string
   sourceName?: string
+  saving?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -188,6 +189,7 @@ function onDiscardKind(kind: RowChangeRowKind): void {
 
 function onKeyDown(event: KeyboardEvent): void {
   if (!props.open) return
+  if (props.saving) return
   if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
     event.preventDefault()
     emit('apply')
@@ -496,11 +498,12 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeyDown))
 
           <button
             type="button"
-            class="text-xs rounded-md px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white font-medium transition-colors"
+            class="text-xs rounded-md px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             title="Apply changes (Ctrl+Enter)"
-            @click="emit('apply')"
+            :disabled="saving"
+            @click="!saving && emit('apply')"
           >
-            Apply
+            {{ saving ? 'Applying…' : 'Apply' }}
           </button>
         </div>
       </div>

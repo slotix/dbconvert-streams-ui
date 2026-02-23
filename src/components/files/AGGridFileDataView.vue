@@ -306,6 +306,7 @@ const {
   pendingInsertCount,
   showChangesGutter,
   hasUnsavedChanges,
+  isSaving,
   rowClassRules,
   pinnedTopRowData,
   upsertPendingInsert,
@@ -794,14 +795,16 @@ defineExpose({
             type="button"
             class="text-xs rounded-md px-2.5 py-1 border border-teal-600 bg-teal-600 text-white hover:bg-teal-700 hover:border-teal-700 disabled:opacity-50 disabled:cursor-not-allowed dark:border-teal-500 dark:bg-teal-600 dark:hover:bg-teal-700"
             title="Save pending changes"
+            :disabled="isSaving"
             @click="saveChanges"
           >
-            Save
+            {{ isSaving ? 'Saving…' : 'Save' }}
           </button>
           <button
             type="button"
             class="text-xs rounded-md px-2.5 py-1 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
             title="Discard pending changes"
+            :disabled="isSaving"
             @click="cancelChanges"
           >
             Cancel
@@ -951,6 +954,7 @@ defineExpose({
       :rows="rowChangeRows"
       :table-name="entry.name"
       :source-name="connection?.name"
+      :saving="isSaving"
       @close="closeRowChangesPanel"
       @revert="(rowId, field) => revertRowField(rowId, field)"
       @revert-row="revertRow"
