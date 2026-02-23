@@ -86,9 +86,7 @@ export function useAgGridRowChangeTracking(options: UseAgGridRowChangeTrackingOp
   const pendingDeleteCount = computed(() => Object.keys(pendingDeletes.value).length)
   const pendingInsertCount = computed(() => Object.keys(pendingInserts.value).length)
 
-  const showChangesGutter = computed(
-    () => pendingEditCount.value > 0 || pendingInsertCount.value > 0
-  )
+  const showChangesGutter = computed(() => false)
   const hasUnsavedChanges = computed(
     () => pendingInsertCount.value > 0 || pendingEditCount.value > 0 || pendingDeleteCount.value > 0
   )
@@ -183,6 +181,13 @@ export function useAgGridRowChangeTracking(options: UseAgGridRowChangeTrackingOp
     }
 
     return rowId
+  }
+
+  function removePendingDelete(rowId: string) {
+    if (!pendingDeletes.value[rowId]) return
+    const next = { ...pendingDeletes.value }
+    delete next[rowId]
+    pendingDeletes.value = next
   }
 
   function revertRowField(rowId: string, field: string) {
@@ -517,6 +522,7 @@ export function useAgGridRowChangeTracking(options: UseAgGridRowChangeTrackingOp
 
     upsertPendingInsert,
     removePendingInsert,
+    removePendingDelete,
 
     stageDeleteRow,
     revertRowField,

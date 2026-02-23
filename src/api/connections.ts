@@ -327,6 +327,8 @@ const getTableData = async (
     order_by?: string
     order_dir?: string
     where?: string
+    tabId?: string
+    max_rows?: number
   }
 ): Promise<TableData> => {
   try {
@@ -350,6 +352,14 @@ const getTableData = async (
 
     if (params.where) {
       queryParams.append('where', params.where)
+    }
+
+    if (params.tabId) {
+      queryParams.append('tabId', params.tabId)
+    }
+
+    if (params.max_rows && params.max_rows > 0) {
+      queryParams.append('max_rows', params.max_rows.toString())
     }
 
     const url = `/connections/${connectionId}/databases/${encodeURIComponent(database)}/tables/${encodeURIComponent(tableName)}/data?${queryParams.toString()}`
@@ -451,6 +461,8 @@ const getViewData = async (
     order_by?: string
     order_dir?: string
     where?: string
+    tabId?: string
+    max_rows?: number
   }
 ): Promise<TableData> => {
   try {
@@ -473,6 +485,14 @@ const getViewData = async (
 
     if (params.where) {
       queryParams.append('where', params.where)
+    }
+
+    if (params.tabId) {
+      queryParams.append('tabId', params.tabId)
+    }
+
+    if (params.max_rows && params.max_rows > 0) {
+      queryParams.append('max_rows', params.max_rows.toString())
     }
 
     const url = `/connections/${connectionId}/databases/${encodeURIComponent(database)}/views/${encodeURIComponent(viewName)}/data?${queryParams.toString()}`

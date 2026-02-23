@@ -29,7 +29,8 @@ import AGGridRowCountControls from '@/components/database/aggrid/AGGridRowCountC
 import { useAgGridRowChangeTracking } from '@/composables/useAgGridRowChangeTracking'
 import { useExactRowCount } from '@/composables/useExactRowCount'
 import { useAgGridSelectionActions } from '@/composables/useAgGridSelectionActions'
-import { Check, Pencil, Plus, Trash2, Download, ChevronDown } from 'lucide-vue-next'
+import { buildRowChangeRows } from '@/utils/rowChangeRows'
+import { Check, Pencil, Plus, Download, ChevronDown } from 'lucide-vue-next'
 import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/vue'
 import { useLucideIcons } from '@/composables/useLucideIcons'
 
@@ -182,7 +183,7 @@ function openRowChangesPanel() {
 }
 
 function openFirstEditedRowPanel() {
-  if (Object.keys(pendingEdits.value).length > 0) {
+  if (hasUnsavedChanges.value) {
     openRowChangesPanel()
   }
 }
@@ -193,7 +194,19 @@ function closeRowChangesPanel() {
 
 function revertRow(rowId: string) {
   const row = rowChangeRows.value.find((r) => r.rowId === rowId)
-  row?.items.forEach((item) => revertRowField(rowId, item.field))
+  if (!row) return
+
+  if (row.kind === 'insert') {
+    removePendingInsert(rowId)
+    return
+  }
+
+  if (row.kind === 'delete') {
+    removePendingDelete(rowId)
+    return
+  }
+
+  row.items.forEach((item) => revertRowField(rowId, item.field))
 }
 
 async function applyAndClose() {
@@ -204,6 +217,30 @@ async function applyAndClose() {
 function discardAndClose() {
   cancelChanges()
   closeRowChangesPanel()
+}
+
+function discardChangesByKind(kind: 'insert' | 'edit' | 'delete') {
+  if (kind === 'insert') {
+    for (const rowId of Object.keys(pendingInserts.value)) {
+      removePendingInsert(rowId)
+    }
+    return
+  }
+
+  if (kind === 'delete') {
+    for (const rowId of Object.keys(pendingDeletes.value)) {
+      removePendingDelete(rowId)
+    }
+    return
+  }
+
+  for (const rowId of Object.keys(pendingEdits.value)) {
+    const edit = pendingEdits.value[rowId]
+    if (!edit) continue
+    for (const field of Object.keys(edit.changes)) {
+      revertRowField(rowId, field)
+    }
+  }
 }
 
 const columnsForDefs = computed(() => {
@@ -267,9 +304,10 @@ async function fetchData(params: FetchDataParams): Promise<FetchDataResult> {
   if (params.whereClause) {
     queryParams.where = params.whereClause
   }
-  // Add tabId for query grouping
-  if (objectName) {
-    queryParams.tabId = objectName
+  // Add tabId for query grouping.
+  // Use only objectKey (no fallback) to avoid cross-tab cache collisions.
+  if (props.objectKey) {
+    queryParams.tabId = props.objectKey
   }
   // Add max_rows limit if specified
   if (params.maxRows && params.maxRows > 0) {
@@ -362,6 +400,8 @@ const {
   rowClassRules,
   pinnedTopRowData,
   upsertPendingInsert,
+  removePendingInsert,
+  removePendingDelete,
   stageDeleteRow,
   revertRowField,
   onCellValueChanged,
@@ -472,22 +512,15 @@ function getEditedCellTooltip(rowId: string, field: string, dataType?: string): 
 }
 
 const rowChangeRows = computed(() =>
-  Object.entries(pendingEdits.value).map(([rowId, edit]) => ({
-    rowId,
-    label: Object.entries(edit.keys)
-      .map(([k, v]) => `${k}=${v}`)
-      .join(', '),
-    items: Object.keys(edit.changes)
-      .sort()
-      .map((field) => {
-        const dataType = columnMetaByName.value.get(field)?.dataType
-        return {
-          field,
-          oldValue: formatTableValue(edit.original?.[field], dataType),
-          newValue: formatTableValue(edit.changes[field], dataType)
-        }
-      })
-  }))
+  buildRowChangeRows({
+    pendingEdits: pendingEdits.value,
+    pendingInserts: pendingInserts.value,
+    pendingDeletes: pendingDeletes.value,
+    formatValue: (value, field) => {
+      const dataType = columnMetaByName.value.get(field)?.dataType
+      return formatTableValue(value, dataType)
+    }
+  })
 )
 
 function onCellClicked(event: { column?: { getColId: () => string }; node?: { id?: string } }) {
@@ -495,7 +528,7 @@ function onCellClicked(event: { column?: { getColId: () => string }; node?: { id
   if (colId !== '__changes__') return
   const rowId = event.node?.id
   if (!rowId) return
-  if (!pendingEdits.value[rowId]) return
+  if (!pendingEdits.value[rowId] && !pendingDeletes.value[rowId]) return
   openRowChangesPanel()
 }
 
@@ -769,38 +802,16 @@ defineExpose({
 
           <!-- Edited count -->
           <button
-            v-if="pendingEditCount > 0"
+            v-if="hasUnsavedChanges"
             type="button"
             class="stat-badge stat-badge-teal stat-badge-clickable"
-            title="Click to view edited rows"
+            title="Open pending changes"
             @click="openFirstEditedRowPanel"
           >
             <Pencil class="h-3 w-3" :stroke-width="iconStroke" />
-            {{ pendingEditCount }}
-            <span class="badge-text">edited</span>
+            {{ pendingInsertCount + pendingEditCount + pendingDeleteCount }}
+            <span class="badge-text">changes</span>
           </button>
-
-          <!-- New count -->
-          <span
-            v-if="pendingInsertCount > 0"
-            class="stat-badge stat-badge-sky"
-            title="Rows staged for insert until Save"
-          >
-            <Plus class="h-3 w-3" :stroke-width="iconStroke" />
-            {{ pendingInsertCount }}
-            <span class="badge-text">new</span>
-          </span>
-
-          <!-- Deleted count -->
-          <span
-            v-if="pendingDeleteCount > 0"
-            class="stat-badge stat-badge-red"
-            title="Rows staged for deletion until Save"
-          >
-            <Trash2 class="h-3 w-3" :stroke-width="iconStroke" />
-            {{ pendingDeleteCount }}
-            <span class="badge-text">deleted</span>
-          </span>
         </div>
 
         <!-- Right side: Actions -->
@@ -970,6 +981,7 @@ defineExpose({
       @revert-row="revertRow"
       @apply="applyAndClose"
       @discard="discardAndClose"
+      @discard-kind="discardChangesByKind"
     />
 
     <AGGridInsertRowPanel

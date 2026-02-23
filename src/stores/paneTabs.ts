@@ -108,7 +108,8 @@ function buildObjectKey(paneId: PaneId, tab: PaneTab): string | null {
   if (tab.tabType === 'database' && tab.database && tab.name) {
     const schema = tab.schema || 'default'
     const kind = tab.type || 'table'
-    return `${paneId}:db-${tab.database}-${schema}-${kind}-${tab.name}`
+    const connection = tab.connectionId || 'unknown-connection'
+    return `${paneId}:db-${connection}-${tab.database}-${schema}-${kind}-${tab.name}`
   }
   if (tab.tabType === 'file' && tab.filePath) {
     return `${paneId}:file-${tab.filePath}`
@@ -187,11 +188,15 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
 
   const ensureObjectKey = (paneId: PaneId, tab?: PaneTab | null): string | null => {
     if (!tab) return null
-    if (tab.objectKey) return tab.objectKey
+
+    // Dev-first behavior: always rebuild key for known tab kinds.
+    // This intentionally drops compatibility with previously persisted key formats.
     const key = buildObjectKey(paneId, tab)
     if (key) {
       tab.objectKey = key
+      return key
     }
+
     return tab.objectKey || null
   }
 

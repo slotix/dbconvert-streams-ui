@@ -254,7 +254,7 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
         error.value = undefined
 
         try {
-          const pageSize = params.endRow - params.startRow
+          const requestedBlockSize = params.endRow - params.startRow
           const startRow = params.startRow
 
           // Check if we have a user-specified max rows limit
@@ -268,10 +268,11 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
           }
 
           // Adjust the fetch limit if user's limit would be exceeded
-          let adjustedLimit = pageSize
+          let adjustedLimit = requestedBlockSize
+
           if (userLimit) {
             const remainingRows = userLimit - startRow
-            adjustedLimit = Math.min(pageSize, remainingRows)
+            adjustedLimit = Math.min(adjustedLimit, remainingRows)
           }
 
           // Call the injected fetch callback with panel filters
@@ -287,9 +288,8 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
 
           // Determine the effective total count
           // Priority order:
-          // 1. User-specified limit (intentional restriction - always highest priority)
-          // 2. Existing totalRowCount if we already have it (from exact count or previous fetch)
-          // 3. Backend's total_count from response
+          // 1. User-specified limit (intentional restriction)
+          // 2. Backend total_count from the current response
           let effectiveTotal = result.totalCount
 
           if (userLimit) {
@@ -305,12 +305,9 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
               // Use the user's limit as the total
               effectiveTotal = userLimit
             }
-          } else if (totalRowCount.value > 0) {
-            // No limit, but we already have a known total (e.g., from exact count calculation)
-            // Use that instead of the backend's response (which may be 0 due to skip_count)
-            effectiveTotal = totalRowCount.value
+          } else if (result.totalCount > 0) {
+            effectiveTotal = result.totalCount
           } else {
-            // Use backend's total count
             effectiveTotal = result.totalCount
           }
 
@@ -549,18 +546,8 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
         pageSize.value = savedState.pageSize
       }
 
-      // Restore panel filters from saved state
-      if (
-        savedState.panelWhereSQL ||
-        (savedState.sortModel && savedState.sortModel.length > 0) ||
-        savedState.panelLimit
-      ) {
-        setPanelFilters(
-          savedState.panelWhereSQL || '',
-          savedState.sortModel || [],
-          savedState.panelLimit
-        )
-      }
+      // Panel filters/limit are restored by DataFilterPanel (objectTabState.filterPanelState)
+      // to avoid hidden/stale limits from duplicate persisted sources.
     }
 
     // Set datasource for infinite row model

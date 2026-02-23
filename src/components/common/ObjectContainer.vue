@@ -247,9 +247,10 @@ function getObjectKey(): string {
   const panePrefix = props.paneId ? `${props.paneId}:` : ''
 
   if (props.objectType === 'database' && props.objectMeta) {
+    const connection = props.connectionId || 'unknown-connection'
     const schema = props.objectMeta.schema || 'default'
     const kind = props.objectKind || 'table'
-    return `${panePrefix}db-${props.objectMeta.database}-${schema}-${kind}-${props.objectMeta.name}`
+    return `${panePrefix}db-${connection}-${props.objectMeta.database}-${schema}-${kind}-${props.objectMeta.name}`
   } else if (props.objectType === 'file' && props.fileEntry) {
     return `${panePrefix}file-${props.fileEntry.path}`
   }
