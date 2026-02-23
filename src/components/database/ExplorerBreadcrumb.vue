@@ -28,6 +28,8 @@ const props = defineProps<{
   // File-specific
   pathSegments?: PathSegment[]
   files?: FileEntry[]
+  fileStatusLabel?: 'Editable' | 'Read-only' | null
+  fileStatusTooltip?: string | null
 
   // SQL Console without database - show console name instead
   consoleName?: string | null
@@ -201,6 +203,14 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
           </button>
           <span v-else class="text-gray-900 dark:text-gray-100 font-medium">
             {{ props.name }}
+          </span>
+
+          <span
+            v-if="props.fileStatusLabel"
+            class="inline-flex items-center rounded-full border border-gray-200 dark:border-gray-700 bg-gray-100/80 dark:bg-gray-800/70 px-2 py-0.5 text-[11px] font-medium text-gray-500 dark:text-gray-400"
+            :title="props.fileStatusTooltip || undefined"
+          >
+            {{ props.fileStatusLabel }}
           </span>
         </li>
       </template>

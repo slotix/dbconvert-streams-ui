@@ -2,7 +2,7 @@
 import { ref, watch, computed, onMounted, onBeforeUnmount } from 'vue'
 import { onBeforeRouteLeave } from 'vue-router'
 import { AgGridVue } from 'ag-grid-vue3'
-import { Check, Pencil, Plus } from 'lucide-vue-next'
+import { Pencil, Plus } from 'lucide-vue-next'
 import { type FileSystemEntry } from '@/api/fileSystem'
 import { type FileMetadata } from '@/types/files'
 import type { SQLColumnMeta } from '@/types/metadata'
@@ -75,13 +75,6 @@ const isTableFolder = computed(() => props.entry.type === 'dir' && props.entry.i
 const isTableEditable = computed(
   () => !props.readOnly && !isUnsupportedFile.value && !isTableFolder.value
 )
-
-const editDisabledReason = computed(() => {
-  if (props.readOnly) return 'Read-only in compare view'
-  if (isUnsupportedFile.value) return 'Unsupported file type'
-  if (isTableFolder.value) return 'Table folders are read-only. Edit a single file.'
-  return ''
-})
 
 const editKeyColumns = computed(() => (isTableEditable.value ? [ROW_ID_COLUMN] : []))
 
@@ -769,33 +762,6 @@ defineExpose({
         >
           {{ baseGrid.selectedRowCount.value }}
           <span class="badge-text">selected</span>
-        </span>
-
-        <span
-          v-if="!isTableEditable"
-          class="stat-badge stat-badge-amber"
-          :title="editDisabledReason"
-        >
-          <span class="badge-text">Read-only</span>
-          <span class="badge-text-short">RO</span>
-        </span>
-
-        <span
-          v-if="isTableFolder"
-          class="stat-badge stat-badge-gray"
-          title="Folder groups multiple files. Open a specific file to edit."
-        >
-          <span class="badge-text">Table folder</span>
-          <span class="badge-text-short">Folder</span>
-        </span>
-
-        <span
-          v-else-if="isTableEditable"
-          class="stat-badge stat-badge-teal"
-          title="Double-click a cell to edit. Changes require Save."
-        >
-          <Check class="h-3 w-3" :stroke-width="iconStroke" />
-          <span class="badge-text">Editable</span>
         </span>
 
         <button

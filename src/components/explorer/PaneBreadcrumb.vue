@@ -19,6 +19,8 @@
       :path-segments="breadcrumbData.pathSegments"
       :name="breadcrumbData.fileName"
       :files="breadcrumbData.siblingFiles"
+      :file-status-label="breadcrumbData.fileStatusLabel"
+      :file-status-tooltip="breadcrumbData.fileStatusTooltip"
       @pick-file="(payload) => $emit('pick-file', payload)"
     />
 
@@ -35,6 +37,7 @@ import { useFileExplorerStore } from '@/stores/fileExplorer'
 import type { DatabaseMetadata } from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import { getConnectionKindFromSpec, isFileBasedKind } from '@/types/specs'
+import { getFileFormat } from '@/utils/fileFormat'
 import { parsePathToSegments, getParentPath, type PathSegment } from '@/utils/pathUtils'
 import {
   buildSqlConsoleBreadcrumbData,
@@ -150,6 +153,8 @@ const breadcrumbData = computed(() => {
       objects: [],
       pathSegments: [] as PathSegment[],
       fileName: null,
+      fileStatusLabel: null,
+      fileStatusTooltip: null,
       siblingFiles: [] as Array<{ name: string; path: string; format?: string }>,
       isSqlConsole: false,
       isFileBreadcrumb: false,
@@ -174,6 +179,27 @@ const breadcrumbData = computed(() => {
     // Find sibling files for the picker
     const siblingFiles = findSiblingFiles(activeTab.connectionId, filePath)
 
+    const fileEntry = activeTab.fileEntry
+    const isTableFolder = fileEntry?.type === 'dir' && Boolean(fileEntry?.isTable)
+    const isSupportedFile =
+      fileEntry?.type === 'file'
+        ? Boolean(fileEntry.format || getFileFormat(fileEntry.name))
+        : false
+
+    let fileStatusLabel: 'Editable' | 'Read-only' = 'Editable'
+    let fileStatusTooltip = 'Double-click a cell to edit. Changes require Save.'
+
+    if (isTableFolder) {
+      fileStatusLabel = 'Read-only'
+      fileStatusTooltip = 'Table folders are read-only. Open a specific file to edit.'
+    } else if (fileEntry?.type !== 'file') {
+      fileStatusLabel = 'Read-only'
+      fileStatusTooltip = 'Only files are editable.'
+    } else if (!isSupportedFile) {
+      fileStatusLabel = 'Read-only'
+      fileStatusTooltip = 'Unsupported file type'
+    }
+
     return {
       connectionLabel: formatConnectionLabel(activeTab.connectionId),
       database: null,
@@ -182,6 +208,8 @@ const breadcrumbData = computed(() => {
       objects: [],
       pathSegments,
       fileName: activeTab.name || null,
+      fileStatusLabel,
+      fileStatusTooltip,
       siblingFiles,
       isSqlConsole: false,
       isFileBreadcrumb: true,
@@ -267,6 +295,8 @@ const breadcrumbData = computed(() => {
     objects,
     pathSegments: [] as PathSegment[],
     fileName: null,
+    fileStatusLabel: null,
+    fileStatusTooltip: null,
     siblingFiles: [] as Array<{ name: string; path: string; format?: string }>,
     isSqlConsole: false,
     isFileBreadcrumb: false,
