@@ -60,8 +60,8 @@
       <!-- Editor Pane -->
       <div
         ref="leftPaneRef"
-        class="border-r border-gray-200 dark:border-gray-700 min-h-0"
-        :style="{ width: `${editorWidth}%` }"
+        class="shrink-0 border-r border-gray-200 dark:border-gray-700 min-h-0"
+        :style="{ width: `calc(${editorWidth}% - 2px)` }"
       >
         <SqlEditorPane
           v-model="sqlQuery"
@@ -84,12 +84,12 @@
 
       <!-- Resizable Divider -->
       <div
-        class="w-1 bg-gray-200 dark:bg-gray-700 hover:bg-teal-500 dark:hover:bg-teal-500 cursor-col-resize transition-colors"
+        class="w-1 shrink-0 bg-gray-200 dark:bg-gray-700 hover:bg-teal-500 dark:hover:bg-teal-500 cursor-col-resize transition-colors"
         @mousedown="startResize"
       ></div>
 
       <!-- Results Pane -->
-      <div class="min-h-0" :style="{ width: `${100 - editorWidth}%` }">
+      <div class="shrink-0 min-h-0" :style="{ width: `calc(${100 - editorWidth}% - 2px)` }">
         <SqlResultsPane
           :columns="resultColumns"
           :rows="queryResults"
