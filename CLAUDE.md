@@ -15,6 +15,10 @@ Core repo preferences (simplicity-first, DRY, and no transitional compatibility 
 
 - `.github/skills/engineering-principles/SKILL.md`
 
+## AI Router
+
+Start each task from `.ai/router.md` and select exactly one primary skill before making changes.
+
 ---
 
 ## Project Overview

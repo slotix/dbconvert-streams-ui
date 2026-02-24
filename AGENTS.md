@@ -101,6 +101,10 @@ Testing rules are maintained as a skill doc to avoid duplication and drift:
 
 ## General Instructions
 - Prefer using ripgrep (rg) for searching the codebase
+- By default, exclude `.git`, `node_modules`, `dist`, and `coverage` from searches unless explicitly needed
+- Start each task by selecting a primary skill via `.ai/router.md`
+- Do not implement fallbacks by default; if one is truly needed, provide rationale and get explicit user approval first
+- Avoid overengineering; keep solutions simple and DRY, and ask clarifying questions before implementation when requirements are unclear
 - Avoid regex unless explicitly requested
 - Assume Go for backend, Vue + TypeScript for frontend
 - Follow existing project structure and naming
