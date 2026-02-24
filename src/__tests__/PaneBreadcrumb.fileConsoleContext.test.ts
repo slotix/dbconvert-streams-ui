@@ -43,7 +43,7 @@ describe('PaneBreadcrumb file console context switching', () => {
     activeTab = null
   })
 
-  it('uses console breadcrumb when file-console tab is retargeted to another source context', () => {
+  it('hides breadcrumb for file-console tab retargeted to another source context', () => {
     activeTab = {
       id: 'file-console-1',
       tabType: 'file-console',
@@ -60,13 +60,10 @@ describe('PaneBreadcrumb file console context switching', () => {
     })
 
     const breadcrumb = wrapper.findComponent({ name: 'ExplorerBreadcrumb' })
-    expect(breadcrumb.exists()).toBe(true)
-    expect(breadcrumb.props('consoleName')).toBe('mysql-localhost-root')
-    expect(breadcrumb.props('connectionLabel')).toBeNull()
-    expect(breadcrumb.props('pathSegments')).toBeUndefined()
+    expect(breadcrumb.exists()).toBe(false)
   })
 
-  it('uses console breadcrumb for file-console on its origin context', () => {
+  it('hides breadcrumb for file-console on its origin context', () => {
     activeTab = {
       id: 'file-console-1',
       tabType: 'file-console',
@@ -83,9 +80,6 @@ describe('PaneBreadcrumb file console context switching', () => {
     })
 
     const breadcrumb = wrapper.findComponent({ name: 'ExplorerBreadcrumb' })
-    expect(breadcrumb.exists()).toBe(true)
-    expect(breadcrumb.props('consoleName')).toBe('Data Explorer Exports')
-    expect(breadcrumb.props('connectionLabel')).toBeNull()
-    expect(breadcrumb.props('pathSegments')).toBeUndefined()
+    expect(breadcrumb.exists()).toBe(false)
   })
 })

@@ -521,8 +521,7 @@ describe('UnifiedConsoleTab SQL LSP context isolation in multisource switching',
 
     await nextTick()
 
-    expect(wrapper.text()).toContain('Executing: Files: Local Files')
-    expect(wrapper.text()).toContain('Sources:Local Files')
+    expect(wrapper.text()).toContain('Local Files')
 
     wrapper.unmount()
   })
@@ -641,7 +640,9 @@ describe('UnifiedConsoleTab SQL LSP context isolation in multisource switching',
     await nextTick()
 
     expect(wrapper.text()).not.toContain('Run on:')
-    expect(wrapper.text()).toContain('Executing: Multi-source')
+    expect(wrapper.text()).toContain('Multi-source • 2 sources')
+    expect(wrapper.text()).toContain('files1')
+    expect(wrapper.text()).toContain('my1')
 
     wrapper.unmount()
   })
@@ -666,7 +667,9 @@ describe('UnifiedConsoleTab SQL LSP context isolation in multisource switching',
 
     const executionSelect = wrapper.findComponent({ name: 'FormSelect' })
     expect(executionSelect.exists()).toBe(false)
-    expect(wrapper.text()).toContain('Executing: Multi-source')
+    expect(wrapper.text()).toContain('Multi-source • 2 sources')
+    expect(wrapper.text()).toContain('pg1')
+    expect(wrapper.text()).toContain('my1')
 
     wrapper.unmount()
   })

@@ -479,6 +479,10 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import SqlCodeMirror from '@/components/codemirror/SqlCodeMirror.vue'
+import type {
+  SqlCodeMirrorExpose,
+  SqlCodeMirrorSelectionRange
+} from '@/components/codemirror/sqlCodeMirrorTypes'
 import type { SqlLspConnectionContext } from '@/composables/useSqlLspProviders'
 import type { QueryTemplate } from '@/components/console/queryTemplates'
 import type { FormatMode, QueryHistoryItem } from '@/composables/useConsoleTab'
@@ -506,18 +510,7 @@ import {
 type HistoryItem = QueryHistoryItem
 
 type Template = QueryTemplate
-type SqlEditorSelectionRange = {
-  startLineNumber: number
-  startColumn: number
-  endLineNumber: number
-  endColumn: number
-}
-type SqlEditorExpose = {
-  getCachedSelectionRange?: () => SqlEditorSelectionRange | null
-  hasSelection?: () => boolean
-  getSelectedSql?: () => string
-  formatDocumentWithLsp?: () => Promise<boolean> | boolean
-}
+type SqlEditorExpose = SqlCodeMirrorExpose & { hasSelection?: () => boolean }
 type TemplateSection = 'Session' | 'Databases' | 'Files' | 'S3' | 'Joins' | 'Snippets'
 type TemplateIcon = 'session' | 'database' | 'file' | 's3' | 'join'
 const MYSQL_LOGO = '/images/db-logos/mysql.svg'
@@ -1139,12 +1132,7 @@ function extractSqlFromRange(
 function handleRunClick() {
   const cachedSelectionRange =
     hasSelectedSql.value && typeof sqlEditorRef.value?.getCachedSelectionRange === 'function'
-      ? (sqlEditorRef.value.getCachedSelectionRange() as {
-          startLineNumber: number
-          startColumn: number
-          endLineNumber: number
-          endColumn: number
-        } | null)
+      ? (sqlEditorRef.value.getCachedSelectionRange() as SqlCodeMirrorSelectionRange | null)
       : null
 
   const cachedSelection = extractSqlFromRange(props.modelValue, cachedSelectionRange)

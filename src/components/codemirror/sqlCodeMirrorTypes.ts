@@ -146,3 +146,17 @@ export interface PendingRequest {
   reject: (error: Error) => void
   timeoutId: ReturnType<typeof setTimeout>
 }
+
+export interface SqlCodeMirrorSelectionRange {
+  startLineNumber: number
+  startColumn: number
+  endLineNumber: number
+  endColumn: number
+}
+
+export interface SqlCodeMirrorExpose {
+  getCachedSelectionRange?: () => SqlCodeMirrorSelectionRange | null
+  getSelectedSql?: () => string
+  formatDocumentWithLsp?: () => Promise<boolean> | boolean
+  goToDefinitionAtPosition?: (pos: number) => Promise<boolean> | boolean
+}
