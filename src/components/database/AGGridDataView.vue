@@ -30,7 +30,7 @@ import { useAgGridRowChangeTracking } from '@/composables/useAgGridRowChangeTrac
 import { useExactRowCount } from '@/composables/useExactRowCount'
 import { useAgGridSelectionActions } from '@/composables/useAgGridSelectionActions'
 import { buildRowChangeRows } from '@/utils/rowChangeRows'
-import { Check, ClipboardList, Plus, Download, ChevronDown } from 'lucide-vue-next'
+import { ClipboardList, Plus, Download, ChevronDown } from 'lucide-vue-next'
 import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/vue'
 import { useLucideIcons } from '@/composables/useLucideIcons'
 
@@ -112,14 +112,6 @@ const editKeyColumns = computed<string[]>(() => {
   if (Array.isArray(meta.primaryKeys) && meta.primaryKeys.length > 0) return meta.primaryKeys
   const unique = (meta.indexes || []).find((i) => i.isUnique && i.columns?.length)
   return unique?.columns || []
-})
-
-const editDisabledReason = computed(() => {
-  if (props.readOnly) return 'Read-only in compare view'
-  if (props.isView) return 'Views are read-only'
-  const meta = props.tableMeta as SQLTableMeta
-  if (meta.isEditable) return ''
-  return meta.editabilityReason || 'Table has no primary key or unique index'
 })
 
 function makeRowId(row: Record<string, unknown>): string {
@@ -779,26 +771,6 @@ defineExpose({
           >
             {{ baseGrid.selectedRowCount.value }}
             <span class="badge-text">selected</span>
-          </span>
-
-          <!-- Read-only warning -->
-          <span
-            v-if="!isView && !isTableEditable"
-            class="stat-badge stat-badge-amber"
-            :title="editDisabledReason"
-          >
-            <span class="badge-text">Read-only</span>
-            <span class="badge-text-short">RO</span>
-          </span>
-
-          <!-- Editable indicator -->
-          <span
-            v-else-if="!isView && isTableEditable"
-            class="stat-badge stat-badge-teal"
-            title="Double-click a cell to edit. Changes require Save."
-          >
-            <Check class="h-3 w-3" :stroke-width="iconStroke" />
-            <span class="badge-text">Editable</span>
           </span>
         </div>
 

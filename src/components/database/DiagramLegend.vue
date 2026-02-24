@@ -137,10 +137,10 @@ onBeforeUnmount(() => {
   <div
     ref="panelRef"
     :style="panelStyle"
-    class="absolute z-10 w-[180px] rounded-xl border border-slate-200/80 dark:border-slate-700/70 bg-white/90 dark:bg-slate-900/80 shadow-[0_16px_32px_-20px_rgba(15,23,42,0.45)] backdrop-blur-md"
+    class="absolute z-10 w-[180px] rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg"
   >
     <div
-      class="flex items-center justify-between px-2.5 py-1.5 border-b border-slate-200/70 dark:border-slate-700/70 bg-gradient-to-r from-slate-50 via-white to-slate-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 select-none touch-none"
+      class="flex items-center justify-between px-2.5 py-1.5 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 select-none touch-none"
       :class="[isDragging ? 'cursor-grabbing' : 'cursor-grab', isCollapsed ? 'border-b-0' : '']"
       @pointerdown="handlePointerDown"
     >
@@ -164,35 +164,25 @@ onBeforeUnmount(() => {
     </div>
 
     <div v-show="!isCollapsed" class="px-2.5 py-2 space-y-1.5 text-xs">
-      <div
-        class="flex items-center gap-2 rounded-md border border-slate-200/70 dark:border-slate-700/60 bg-slate-50/80 dark:bg-slate-800/50 px-2 py-1"
-      >
+      <div class="flex items-center gap-2 px-1 py-0.5">
         <div
           class="w-3.5 h-3.5 rounded bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700"
         ></div>
         <span class="font-medium text-slate-700 dark:text-slate-200">Table</span>
       </div>
-      <div
-        class="flex items-center gap-2 rounded-md border border-slate-200/70 dark:border-slate-700/60 bg-slate-50/80 dark:bg-slate-800/50 px-2 py-1"
-      >
+      <div class="flex items-center gap-2 px-1 py-0.5">
         <Focus class="w-3.5 h-3.5 text-purple-500 dark:text-purple-300" />
         <span class="font-medium italic text-slate-700 dark:text-slate-200">View</span>
       </div>
-      <div
-        class="flex items-center gap-2 rounded-md border border-slate-200/70 dark:border-slate-700/60 bg-slate-50/80 dark:bg-slate-800/50 px-2 py-1"
-      >
+      <div class="flex items-center gap-2 px-1 py-0.5">
         <div class="w-4 h-0.5 bg-teal-500 rounded-full"></div>
         <span class="font-medium text-slate-700 dark:text-slate-200">Foreign Key</span>
       </div>
-      <div
-        class="flex items-center gap-2 rounded-md border border-slate-200/70 dark:border-slate-700/60 bg-slate-50/80 dark:bg-slate-800/50 px-2 py-1"
-      >
+      <div class="flex items-center gap-2 px-1 py-0.5">
         <div class="w-4 h-0.5 bg-orange-500 rounded-full"></div>
         <span class="font-medium text-slate-700 dark:text-slate-200">Junction Table</span>
       </div>
-      <div
-        class="flex items-center gap-2 rounded-md border border-slate-200/70 dark:border-slate-700/60 bg-slate-50/80 dark:bg-slate-800/50 px-2 py-1"
-      >
+      <div class="flex items-center gap-2 px-1 py-0.5">
         <div class="w-4 h-0.5 border-t border-dashed border-slate-400 dark:border-slate-500"></div>
         <span class="font-medium text-slate-700 dark:text-slate-200">View Dependency</span>
       </div>

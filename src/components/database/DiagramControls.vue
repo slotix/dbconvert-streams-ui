@@ -178,10 +178,10 @@ onBeforeUnmount(() => {
   <div
     ref="panelRef"
     :style="panelStyle"
-    class="absolute z-10 min-w-[210px] rounded-xl border border-slate-200/80 dark:border-slate-700/70 bg-white/90 dark:bg-slate-900/80 shadow-[0_18px_36px_-22px_rgba(15,23,42,0.5)] backdrop-blur-md"
+    class="absolute z-10 min-w-[210px] rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg"
   >
     <div
-      class="flex items-center justify-between px-2.5 py-1.5 border-b border-slate-200/70 dark:border-slate-700/70 bg-gradient-to-r from-slate-50 via-white to-slate-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 select-none touch-none"
+      class="flex items-center justify-between px-2.5 py-1.5 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 select-none touch-none"
       :class="[isDragging ? 'cursor-grabbing' : 'cursor-grab', isCollapsed ? 'border-b-0' : '']"
       @pointerdown="handlePointerDown"
     >
@@ -216,7 +216,7 @@ onBeforeUnmount(() => {
             <Minus class="w-3.5 h-3.5" />
           </button>
           <span
-            class="text-xs text-slate-600 dark:text-slate-400 min-w-[40px] text-center tabular-nums"
+            class="text-xs text-slate-600 dark:text-slate-400 min-w-10 text-center tabular-nums"
           >
             {{ Math.round(currentZoom * 100) }}%
           </span>
@@ -246,7 +246,7 @@ onBeforeUnmount(() => {
       <!-- Export Options Panel -->
       <div
         v-if="exportOptions"
-        class="p-1.5 rounded-lg border border-slate-200/70 dark:border-slate-700/70 bg-slate-50/80 dark:bg-slate-800/60"
+        class="p-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/70"
       >
         <div class="flex items-center mb-1.5">
           <span class="text-xs font-semibold text-slate-700 dark:text-slate-200 mr-auto"
@@ -373,17 +373,36 @@ onBeforeUnmount(() => {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: rgb(107 114 128);
+  background: rgb(75 85 99);
   cursor: pointer;
+  margin-top: -4px;
+}
+
+.slider-gray::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 9999px;
+  background: rgb(75 85 99 / 0.45);
 }
 
 .slider-gray::-moz-range-thumb {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: rgb(107 114 128);
+  background: rgb(75 85 99);
   cursor: pointer;
   border: none;
+}
+
+.slider-gray::-moz-range-track {
+  height: 6px;
+  border-radius: 9999px;
+  background: rgb(75 85 99 / 0.45);
+}
+
+.slider-gray::-moz-range-progress {
+  height: 6px;
+  border-radius: 9999px;
+  background: rgb(75 85 99 / 0.45);
 }
 
 .slider-gray:focus {
@@ -391,26 +410,38 @@ onBeforeUnmount(() => {
 }
 
 .slider-gray:focus::-webkit-slider-thumb {
-  box-shadow: 0 0 0 2px rgb(107 114 128 / 0.25);
+  box-shadow: 0 0 0 2px rgb(75 85 99 / 0.25);
 }
 
 .slider-gray:focus::-moz-range-thumb {
-  box-shadow: 0 0 0 2px rgb(107 114 128 / 0.25);
+  box-shadow: 0 0 0 2px rgb(75 85 99 / 0.25);
 }
 
 :global(.dark) .slider-gray::-webkit-slider-thumb {
-  background: rgb(156 163 175);
+  background: rgb(113 113 122);
+}
+
+:global(.dark) .slider-gray::-webkit-slider-runnable-track {
+  background: rgb(113 113 122 / 0.45);
 }
 
 :global(.dark) .slider-gray::-moz-range-thumb {
-  background: rgb(156 163 175);
+  background: rgb(113 113 122);
+}
+
+:global(.dark) .slider-gray::-moz-range-track {
+  background: rgb(113 113 122 / 0.45);
+}
+
+:global(.dark) .slider-gray::-moz-range-progress {
+  background: rgb(113 113 122 / 0.45);
 }
 
 :global(.dark) .slider-gray:focus::-webkit-slider-thumb {
-  box-shadow: 0 0 0 2px rgb(156 163 175 / 0.25);
+  box-shadow: 0 0 0 2px rgb(113 113 122 / 0.25);
 }
 
 :global(.dark) .slider-gray:focus::-moz-range-thumb {
-  box-shadow: 0 0 0 2px rgb(156 163 175 / 0.25);
+  box-shadow: 0 0 0 2px rgb(113 113 122 / 0.25);
 }
 </style>

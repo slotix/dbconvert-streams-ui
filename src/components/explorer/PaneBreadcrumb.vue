@@ -8,6 +8,8 @@
       :schema="breadcrumbData.schema"
       :name="breadcrumbData.name"
       :objects="breadcrumbData.objects"
+      :database-status-label="breadcrumbData.databaseStatusLabel"
+      :database-status-tooltip="breadcrumbData.databaseStatusTooltip"
       :console-name="breadcrumbData.consoleName"
       @pick-name="(payload) => $emit('pick-name', payload)"
     />
@@ -153,6 +155,8 @@ const breadcrumbData = computed(() => {
       objects: [],
       pathSegments: [] as PathSegment[],
       fileName: null,
+      databaseStatusLabel: null,
+      databaseStatusTooltip: null,
       fileStatusLabel: null,
       fileStatusTooltip: null,
       siblingFiles: [] as Array<{ name: string; path: string; format?: string }>,
@@ -208,6 +212,8 @@ const breadcrumbData = computed(() => {
       objects: [],
       pathSegments,
       fileName: activeTab.name || null,
+      databaseStatusLabel: null,
+      databaseStatusTooltip: null,
       fileStatusLabel,
       fileStatusTooltip,
       siblingFiles,
@@ -287,6 +293,33 @@ const breadcrumbData = computed(() => {
     }
   }
 
+  let databaseStatusLabel: 'Editable' | 'Read-only' | null = null
+  let databaseStatusTooltip: string | null = null
+
+  if (activeTab.tabType === 'database') {
+    if (activeTab.type === 'view') {
+      databaseStatusLabel = 'Read-only'
+      databaseStatusTooltip = 'Views are read-only'
+    } else if (activeTab.type === 'table') {
+      const tableMeta =
+        props.metadata?.tables &&
+        Object.values(props.metadata.tables).find(
+          (table) =>
+            table.name === activeTab.name &&
+            (activeTab.schema ? table.schema === activeTab.schema : true)
+        )
+
+      if (tableMeta?.isEditable) {
+        databaseStatusLabel = 'Editable'
+        databaseStatusTooltip = 'Double-click a cell to edit. Changes require Save.'
+      } else if (tableMeta) {
+        databaseStatusLabel = 'Read-only'
+        databaseStatusTooltip =
+          tableMeta.editabilityReason || 'Table has no primary key or unique index'
+      }
+    }
+  }
+
   return {
     connectionLabel: formatConnectionLabel(activeTab.connectionId),
     database: activeTab.database || null,
@@ -295,6 +328,8 @@ const breadcrumbData = computed(() => {
     objects,
     pathSegments: [] as PathSegment[],
     fileName: null,
+    databaseStatusLabel,
+    databaseStatusTooltip,
     fileStatusLabel: null,
     fileStatusTooltip: null,
     siblingFiles: [] as Array<{ name: string; path: string; format?: string }>,

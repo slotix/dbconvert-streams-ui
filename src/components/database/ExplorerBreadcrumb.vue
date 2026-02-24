@@ -24,6 +24,8 @@ const props = defineProps<{
   database?: string | null
   schema?: string | null
   objects?: Array<{ name: string; type: ObjectType; schema?: string }>
+  databaseStatusLabel?: 'Editable' | 'Read-only' | null
+  databaseStatusTooltip?: string | null
 
   // File-specific
   pathSegments?: PathSegment[]
@@ -153,6 +155,22 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
           <span v-else class="text-gray-900 dark:text-gray-100 font-medium">
             {{ props.name }}
           </span>
+
+          <span
+            v-if="props.databaseStatusLabel === 'Read-only'"
+            class="inline-flex items-center gap-1 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-100/80 dark:bg-gray-800/70 px-2 py-0.5 text-[11px] font-medium text-gray-500 dark:text-gray-400"
+            :title="props.databaseStatusTooltip || undefined"
+          >
+            <Lock class="h-3 w-3 shrink-0" />
+            Read-only
+          </span>
+          <span
+            v-else-if="props.databaseStatusLabel === 'Editable'"
+            class="inline-flex items-center rounded-full border border-gray-200 dark:border-gray-700 bg-gray-100/80 dark:bg-gray-800/70 px-2 py-0.5 text-[11px] font-medium text-gray-500 dark:text-gray-400"
+            :title="props.databaseStatusTooltip || undefined"
+          >
+            Editable
+          </span>
         </li>
       </template>
 
@@ -207,7 +225,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
 
           <span
             v-if="props.fileStatusLabel === 'Read-only'"
-            class="inline-flex items-center gap-1 rounded-full border border-amber-300 dark:border-amber-600/60 bg-amber-50 dark:bg-amber-900/30 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:text-amber-300"
+            class="inline-flex items-center gap-1 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-100/80 dark:bg-gray-800/70 px-2 py-0.5 text-[11px] font-medium text-gray-500 dark:text-gray-400"
             :title="props.fileStatusTooltip || undefined"
           >
             <Lock class="h-3 w-3 shrink-0" />
