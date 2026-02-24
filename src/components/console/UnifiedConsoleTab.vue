@@ -133,7 +133,6 @@
 <script setup lang="ts">
 import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue'
 import { Settings } from 'lucide-vue-next'
-import type { SqlLspConnectionContext } from '@/composables/useSqlLspProviders'
 import { useConnectionsStore } from '@/stores/connections'
 import { useConfirmDialogStore } from '@/stores/confirmDialog'
 import { usePaneTabsStore, createConsoleSessionId } from '@/stores/paneTabs'
@@ -146,19 +145,12 @@ import { useQueryExecution } from '@/composables/useQueryExecution'
 import { useSqlConsoleTabName } from '@/composables/useSqlConsoleTabName'
 import { useSqlSourcePresentation } from '@/composables/useSqlSourcePresentation'
 import { useConsoleQueryHelpers } from '@/composables/useConsoleQueryHelpers'
+import { useConsoleExecutionGuards } from '@/composables/useConsoleExecutionGuards'
+import { useConsoleLspContext } from '@/composables/useConsoleLspContext'
+import { useConsoleQueryTemplates } from '@/composables/useConsoleQueryTemplates'
 import { useSourcePillsOverflow } from '@/composables/useSourcePillsOverflow'
 import type { ConsoleMode, DatabaseScope, FileConnectionType } from './types'
-import {
-  getConnectionKindFromSpec,
-  getSqlDialectFromConnection,
-  isFileBasedKind
-} from '@/types/specs'
-import {
-  getFederatedTemplates,
-  getFileTemplates,
-  getDatabaseTemplates,
-  computeFileTemplatePrefix
-} from './queryTemplates'
+import { getSqlDialectFromConnection } from '@/types/specs'
 
 const props = defineProps<{
   connectionId: string
@@ -210,7 +202,6 @@ const {
   databaseSourceMappings,
   singleSourceMapping,
   handleUpdateSelectedConnections,
-  setRunMode,
   initializeDefaultSources,
   syncPrimarySource,
   restoreSelectedConnections
@@ -318,11 +309,12 @@ const {
   isDatabaseMapping
 })
 
-function rewriteStarterQueryToFederated() {
-  const rewritten = rewrittenFederatedStarterQuery.value
-  if (!rewritten) return
-  sqlQuery.value = rewritten
-}
+const { rewriteStarterQueryToFederated, validateDatabaseTarget } = useConsoleExecutionGuards({
+  sqlQuery,
+  selectedConnections,
+  rewrittenFederatedStarterQuery,
+  getDirectSourceReadiness
+})
 
 // ========== Query Execution Composable ==========
 const { isExecuting, executeQuery } = useQueryExecution({
@@ -347,155 +339,30 @@ const { isExecuting, executeQuery } = useQueryExecution({
       danger: true
     })
   },
-  validateDatabaseTarget: (target) => {
-    const selected = selectedConnections.value.find(
-      (mapping) => mapping.connectionId === target.connectionId
-    )
-    const readiness = getDirectSourceReadiness({
-      connectionId: target.connectionId,
-      database: target.database || selected?.database
-    })
-
-    if (readiness.reason === 'missing-database') {
-      return 'Select database in Query Session before running direct database queries.'
-    }
-
-    if (readiness.reason === 'database-not-found') {
-      return 'Selected database is no longer available for this connection. Choose another database in Query Session.'
-    }
-
-    return null
-  }
+  validateDatabaseTarget
 })
 
-function collectDatabaseLspMappings(): Array<{
-  connectionId: string
-  alias?: string
-  database?: string
-}> {
-  const federatedConnections: Array<{
-    connectionId: string
-    alias?: string
-    database?: string
-  }> = []
-
-  selectedConnections.value.forEach((mapping) => {
-    const conn = connectionsStore.connectionByID(mapping.connectionId)
-    const kind = getConnectionKindFromSpec(conn?.spec)
-    if (isFileBasedKind(kind)) {
-      return
-    }
-    federatedConnections.push({
-      connectionId: mapping.connectionId,
-      alias: mapping.alias,
-      database: mapping.database
-    })
-  })
-
-  return federatedConnections
-}
-
-const sqlLspContext = computed<SqlLspConnectionContext | undefined>(() => {
-  if (props.mode === 'file') {
-    const filePath = activeQueryTab.value?.fileContext?.path?.trim() || ''
-    const fileFormat = activeQueryTab.value?.fileContext?.format?.trim() || undefined
-    const hasMultipleSelectedSources = selectedConnections.value.length > 1
-    if (hasMultipleSelectedSources) {
-      const federatedConnections = collectDatabaseLspMappings()
-      return {
-        provider: 'duckdb',
-        filePath: filePath || undefined,
-        fileFormat,
-        federatedConnections: federatedConnections.length > 0 ? federatedConnections : undefined
-      }
-    }
-
-    return {
-      provider: 'duckdb',
-      connectionId: props.connectionId,
-      filePath: filePath || undefined,
-      fileFormat
-    }
-  }
-
-  const hasMultipleSelectedSources = selectedConnections.value.length > 1
-  if (runMode.value !== 'single' || hasMultipleSelectedSources) {
-    const federatedConnections = collectDatabaseLspMappings()
-    if (federatedConnections.length === 0) {
-      return undefined
-    }
-
-    return {
-      provider: 'duckdb',
-      federatedConnections
-    }
-  }
-
-  if (props.mode !== 'database') {
-    return undefined
-  }
-
-  const direct = singleSourceMapping.value
-  if (!direct) {
-    return undefined
-  }
-
-  const directConnection = connectionsStore.connectionByID(direct.connectionId)
-  const directConnectionType = directConnection?.type?.trim().toLowerCase() || ''
-  const useDuckDBLsp = directConnectionType.includes('duckdb')
-
-  if (!useDuckDBLsp && !getDirectSourceReadiness(direct).ready) {
-    return undefined
-  }
-
-  const database = direct.database?.trim() || ''
-  if (!useDuckDBLsp && !database) {
-    return undefined
-  }
-
-  return {
-    provider: useDuckDBLsp ? 'duckdb' : 'sqls',
-    connectionId: direct.connectionId,
-    database: database || undefined
-  }
+const { sqlLspContext } = useConsoleLspContext({
+  mode: modeRef,
+  connectionId: connectionIdRef,
+  runMode,
+  selectedConnections,
+  singleSourceMapping,
+  activeQueryTab,
+  getConnectionById: (connectionId) => connectionsStore.connectionByID(connectionId),
+  getDirectSourceReadiness
 })
 
-// ========== Query Templates ==========
-const queryTemplates = computed(() => {
-  if (useFederatedEngine.value) {
-    const sources = selectedConnections.value
-      .map((mapping) => {
-        const conn = connectionsStore.connectionByID(mapping.connectionId)
-        const kind = getConnectionKindFromSpec(conn?.spec)
-        if (!kind || !mapping.alias) return null
-        return {
-          alias: mapping.alias,
-          kind
-        }
-      })
-      .filter(
-        (
-          source
-        ): source is {
-          alias: string
-          kind: NonNullable<ReturnType<typeof getConnectionKindFromSpec>>
-        } => Boolean(source)
-      )
-    return getFederatedTemplates(sources)
-  }
-  if (props.mode === 'file') {
-    const prefix = computeFileTemplatePrefix({
-      fileContext: activeQueryTab.value?.fileContext,
-      basePath: props.basePath,
-      connectionType: props.connectionType
-    })
-    return getFileTemplates({ prefix })
-  }
-  return getDatabaseTemplates({
-    dialect: currentDialect.value,
-    database: props.database,
-    tableContext: activeQueryTab.value?.tableContext
-  })
+const { queryTemplates } = useConsoleQueryTemplates({
+  mode: modeRef,
+  database: databaseRef,
+  basePath: computed(() => props.basePath),
+  connectionType: computed(() => props.connectionType),
+  currentDialect,
+  useFederatedEngine,
+  selectedConnections,
+  activeQueryTab,
+  getConnectionById: (connectionId) => connectionsStore.connectionByID(connectionId)
 })
 
 // ========== UI Computed ==========
@@ -552,17 +419,6 @@ watch(
     const paneTabId = props.paneTabId?.trim()
     if (!paneTabId) return
     paneTabsStore.renameConsoleTab(paneTabId, name)
-  },
-  { immediate: true }
-)
-
-watch(
-  databaseSourceMappings,
-  (mappings) => {
-    if (props.mode !== 'database') return
-    if (runMode.value === 'single' && mappings.length === 0) {
-      setRunMode('federated')
-    }
   },
   { immediate: true }
 )

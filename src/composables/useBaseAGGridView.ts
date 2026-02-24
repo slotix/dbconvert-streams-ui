@@ -89,6 +89,47 @@ export interface BaseAGGridViewOptions {
   getRowId?: GridOptions['getRowId']
 }
 
+function resolveEffectiveTotalCount(params: {
+  userLimit?: number
+  resultTotalCount: number
+  currentTotalRowCount: number
+}): number {
+  const { userLimit, resultTotalCount, currentTotalRowCount } = params
+
+  if (!userLimit) {
+    return resultTotalCount
+  }
+
+  if (resultTotalCount > 0 && resultTotalCount < userLimit) {
+    return resultTotalCount
+  }
+
+  if (currentTotalRowCount > 0 && currentTotalRowCount < userLimit) {
+    return currentTotalRowCount
+  }
+
+  return userLimit
+}
+
+function resolveLastRow(params: {
+  startRow: number
+  rowsFetched: number
+  adjustedLimit: number
+  effectiveTotal: number
+}): number | undefined {
+  const { startRow, rowsFetched, adjustedLimit, effectiveTotal } = params
+
+  if (rowsFetched < adjustedLimit) {
+    return startRow + rowsFetched
+  }
+
+  if (effectiveTotal > 0) {
+    return effectiveTotal
+  }
+
+  return undefined
+}
+
 /**
  * Base AG Grid view composable
  * Handles all shared logic between database and file data grids
@@ -320,26 +361,11 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
           // Priority order:
           // 1. User-specified limit (intentional restriction)
           // 2. Backend total_count from the current response
-          let effectiveTotal = result.totalCount
-
-          if (userLimit) {
-            // User-specified limit takes highest priority (intentional restriction)
-            // Cap to actual count if we know it's smaller
-            if (result.totalCount > 0 && result.totalCount < userLimit) {
-              // Actual data is less than limit - use actual count
-              effectiveTotal = result.totalCount
-            } else if (totalRowCount.value > 0 && totalRowCount.value < userLimit) {
-              // We have an exact count that's less than the limit
-              effectiveTotal = totalRowCount.value
-            } else {
-              // Use the user's limit as the total
-              effectiveTotal = userLimit
-            }
-          } else if (result.totalCount > 0) {
-            effectiveTotal = result.totalCount
-          } else {
-            effectiveTotal = result.totalCount
-          }
+          let effectiveTotal = resolveEffectiveTotalCount({
+            userLimit,
+            resultTotalCount: result.totalCount,
+            currentTotalRowCount: totalRowCount.value
+          })
 
           // Update total count for display only if we got a new valid count
           if (effectiveTotal > 0 && result.totalCount > 0) {
@@ -358,20 +384,14 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
             effectiveTotal = rowsThisPage.length
           }
 
-          // Calculate lastRow for AG-Grid pagination
           // lastRow = undefined means "more rows available"
           // lastRow = N means "total is exactly N rows"
-          let lastRow: number | undefined = undefined
-
-          const fetchedUpTo = startRow + rowsThisPage.length
-
-          if (rowsThisPage.length < adjustedLimit) {
-            // We got fewer rows than requested - this is the last page
-            lastRow = fetchedUpTo
-          } else if (effectiveTotal > 0) {
-            // We have a known total count - tell AG-Grid so pagination works
-            lastRow = effectiveTotal
-          }
+          const lastRow = resolveLastRow({
+            startRow,
+            rowsFetched: rowsThisPage.length,
+            adjustedLimit,
+            effectiveTotal
+          })
 
           // console.log('[AG-Grid Datasource]', {
           //   userLimit,
@@ -385,9 +405,6 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
           // })
 
           params.successCallback(rowsThisPage, lastRow)
-
-          // Update visible rows immediately after data loads
-          setTimeout(() => updateVisibleRows(), 100)
 
           error.value = undefined
         } catch (err) {

@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, computed, onMounted, onBeforeUnmount } from 'vue'
-import { onBeforeRouteLeave } from 'vue-router'
+import { ref, watch, computed, onMounted } from 'vue'
 import { AgGridVue } from 'ag-grid-vue3'
 import { ClipboardList, Plus } from 'lucide-vue-next'
 import { type FileSystemEntry } from '@/api/fileSystem'
@@ -28,8 +27,8 @@ import { buildRowChangeRows } from '@/utils/rowChangeRows'
 import AGGridRowChangesPanel from '@/components/database/aggrid/AGGridRowChangesPanel.vue'
 import AGGridInsertRowPanel from '@/components/database/aggrid/AGGridInsertRowPanel.vue'
 import { useLucideIcons } from '@/composables/useLucideIcons'
-import { isWailsContext } from '@/composables/useWailsEvents'
-import { useUnsavedChangesGuard } from '@/composables/useUnsavedChangesGuard'
+import { useAgGridChangesGutter } from '@/composables/useAgGridChangesGutter'
+import { useAgGridUnsavedChangesLifecycle } from '@/composables/useAgGridUnsavedChangesLifecycle'
 
 const props = withDefaults(
   defineProps<{
@@ -69,7 +68,6 @@ const isUnsupportedFile = computed(() => fileFormat.value === null)
 
 const ROW_ID_COLUMN = '__rowid'
 const { strokeWidth: iconStroke } = useLucideIcons()
-const { confirmDiscardUnsavedChanges } = useUnsavedChangesGuard()
 
 const isTableFolder = computed(() => props.entry.type === 'dir' && props.entry.isTable)
 const isTableEditable = computed(
@@ -516,45 +514,15 @@ watch(
   { immediate: true }
 )
 
-watch(
-  () => ({ api: baseGrid.gridApi.value, visible: showChangesGutter.value }),
-  ({ api, visible }) => {
-    if (!api) return
-    api.setColumnsVisible(['__changes__'], visible)
-  },
-  { immediate: true }
-)
+useAgGridChangesGutter({
+  gridApi: baseGrid.gridApi,
+  visible: showChangesGutter
+})
 
-function onBeforeUnload(event: BeforeUnloadEvent) {
-  if (!hasUnsavedChanges.value) return
-  event.preventDefault()
-  event.returnValue = ''
-}
-
-watch(
+useAgGridUnsavedChangesLifecycle({
   hasUnsavedChanges,
-  (dirty) => {
-    tabStateStore.setHasUnsavedChanges(props.objectKey, dirty)
-  },
-  { immediate: true }
-)
-
-onMounted(() => {
-  if (!isWailsContext()) {
-    window.addEventListener('beforeunload', onBeforeUnload)
-  }
-})
-
-onBeforeUnmount(() => {
-  window.removeEventListener('beforeunload', onBeforeUnload)
-  tabStateStore.setHasUnsavedChanges(props.objectKey, false)
-})
-
-onBeforeRouteLeave(() => {
-  if (!hasUnsavedChanges.value) return true
-  return confirmDiscardUnsavedChanges({
-    description: 'You have unsaved changes. Discard them and leave?'
-  })
+  objectKey: computed(() => props.objectKey),
+  setHasUnsavedChanges: (objectKey, dirty) => tabStateStore.setHasUnsavedChanges(objectKey, dirty)
 })
 
 // Sync grid state from store on mount

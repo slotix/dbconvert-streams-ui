@@ -61,9 +61,6 @@ describe('useConsoleSources run mode transitions', () => {
       { connectionId: 'conn-pg', alias: 'pg1', database: 'postgres' }
     ])
     await nextTick()
-
-    harness.setRunMode('federated')
-    await nextTick()
     expect(harness.runMode.value).toBe('federated')
 
     harness.handleUpdateSelectedConnections([
@@ -87,9 +84,6 @@ describe('useConsoleSources run mode transitions', () => {
     ])
     await nextTick()
     expect(harness.runMode.value).toBe('single')
-
-    harness.setRunMode('single')
-    await nextTick()
 
     harness.handleUpdateSelectedConnections([
       { connectionId: 'conn-my', alias: 'my1', database: 'sakila' },

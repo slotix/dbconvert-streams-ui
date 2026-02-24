@@ -39,7 +39,6 @@ export interface UseConsoleSourcesReturn {
 
   // Methods
   handleUpdateSelectedConnections: (value: ConnectionMapping[]) => void
-  setRunMode: (mode: SqlRunMode) => void
   initializeDefaultSources: () => void
   syncPrimarySource: () => void
   restoreSelectedConnections: () => void
@@ -47,7 +46,6 @@ export interface UseConsoleSourcesReturn {
 
   // Helpers
   isDuckDbFileQuery: (query: string) => boolean
-  escapeRegExp: (value: string) => string
 }
 
 // ========== Persistence ==========
@@ -108,10 +106,6 @@ export function isDuckDbFileQuery(query: string): boolean {
   )
 }
 
-export function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-}
-
 // ========== Composable ==========
 export function useConsoleSources(options: UseConsoleSourcesOptions): UseConsoleSourcesReturn {
   const { connectionId, mode, database, initialFileScope, consoleKey } = options
@@ -129,7 +123,6 @@ export function useConsoleSources(options: UseConsoleSourcesOptions): UseConsole
   const selectedConnections = ref<ConnectionMapping[]>([])
   const userModifiedSources = ref(false)
   const runMode = ref<SqlRunMode>('single')
-  const previousSourceCount = ref(0)
 
   // ========== Computed ==========
   const connection = computed(() => connectionsStore.connectionByID(connectionIdValue.value))
@@ -270,11 +263,6 @@ export function useConsoleSources(options: UseConsoleSourcesOptions): UseConsole
     return 'federated'
   }
 
-  function setRunMode(_mode: SqlRunMode) {
-    void _mode
-    runMode.value = deriveRunModeFromSources()
-  }
-
   function restoreSelectedConnections() {
     const saved = loadPersistedSources()
     const entry = saved[sourcesKey.value]
@@ -356,40 +344,13 @@ export function useConsoleSources(options: UseConsoleSourcesOptions): UseConsole
     { deep: true, immediate: true }
   )
   watch(selectedConnections, persistSelectedConnections, { deep: true })
-  watch([selectedConnections, connectionIdValue], () => {
-    const sourceCount = selectedConnections.value.length
-    const transitionedToMulti = previousSourceCount.value <= 1 && sourceCount > 1
-
-    // Single-source selection cannot stay in federated mode.
-    if (sourceCount === 1) {
-      if (runMode.value !== 'single') {
-        runMode.value = 'single'
-      }
-      previousSourceCount.value = sourceCount
-      return
-    }
-
-    // Empty selection defaults to federated mode (for file read_* queries).
-    if (sourceCount === 0) {
-      if (runMode.value !== 'federated') {
-        runMode.value = 'federated'
-      }
-      previousSourceCount.value = sourceCount
-      return
-    }
-
-    // Moving from <=1 to multiple sources should auto-promote to federated mode.
-    if (transitionedToMulti) {
-      if (runMode.value !== 'federated') {
-        runMode.value = 'federated'
-      }
-      previousSourceCount.value = sourceCount
-      return
-    }
-
-    runMode.value = deriveRunModeFromSources()
-    previousSourceCount.value = sourceCount
-  })
+  watch(
+    selectedConnections,
+    () => {
+      runMode.value = deriveRunModeFromSources()
+    },
+    { deep: true, immediate: true }
+  )
   watch(sourcesKey, () => {
     runMode.value = deriveRunModeFromSources()
   })
@@ -408,15 +369,13 @@ export function useConsoleSources(options: UseConsoleSourcesOptions): UseConsole
 
     // Methods
     handleUpdateSelectedConnections,
-    setRunMode,
     initializeDefaultSources,
     syncPrimarySource,
     restoreSelectedConnections,
     persistSelectedConnections,
 
     // Helpers
-    isDuckDbFileQuery,
-    escapeRegExp
+    isDuckDbFileQuery
   }
 }
 

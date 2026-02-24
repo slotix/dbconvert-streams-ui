@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, computed, onMounted, onBeforeUnmount } from 'vue'
-import { onBeforeRouteLeave } from 'vue-router'
+import { ref, watch, computed } from 'vue'
 import { AgGridVue } from 'ag-grid-vue3'
 import { type SQLTableMeta, type SQLViewMeta } from '@/types/metadata'
 import connections from '@/api/connections'
@@ -9,8 +8,8 @@ import { useCopyToClipboard } from '@/composables/useCopyToClipboard'
 import { useToast } from 'vue-toastification'
 import { useObjectTabStateStore } from '@/stores/objectTabState'
 import { useConnectionsStore } from '@/stores/connections'
-import { isWailsContext } from '@/composables/useWailsEvents'
-import { useUnsavedChangesGuard } from '@/composables/useUnsavedChangesGuard'
+import { useAgGridChangesGutter } from '@/composables/useAgGridChangesGutter'
+import { useAgGridUnsavedChangesLifecycle } from '@/composables/useAgGridUnsavedChangesLifecycle'
 import ColumnContextMenu from './ColumnContextMenu.vue'
 import DataFilterPanel from './DataFilterPanel.vue'
 import SelectionContextMenu from '@/components/common/SelectionContextMenu.vue'
@@ -67,7 +66,6 @@ const connectionDialect = computed(() =>
 
 const toast = useToast()
 const { copy: copyToClipboard } = useCopyToClipboard()
-const { confirmDiscardUnsavedChanges } = useUnsavedChangesGuard()
 const { strokeWidth: iconStroke } = useLucideIcons()
 
 const rowChangesPanelOpen = ref(false)
@@ -525,41 +523,10 @@ function onCellClicked(event: { column?: { getColId: () => string }; node?: { id
   openRowChangesPanel()
 }
 
-function onBeforeUnload(event: BeforeUnloadEvent) {
-  if (!hasUnsavedChanges.value) return
-  event.preventDefault()
-  event.returnValue = ''
-}
-
-onMounted(() => {
-  // In browsers, custom dialogs can't reliably replace the native beforeunload prompt.
-  // In Wails desktop mode, we use a styled confirm dialog via the backend close hook.
-  if (!isWailsContext()) {
-    window.addEventListener('beforeunload', onBeforeUnload)
-  }
-})
-
-onBeforeUnmount(() => {
-  window.removeEventListener('beforeunload', onBeforeUnload)
-
-  // Clear shared dirty state when this tab unmounts
-  tabStateStore.setHasUnsavedChanges(props.objectKey, false)
-})
-
-// Publish dirty state for pane-tab switching guards
-watch(
+useAgGridUnsavedChangesLifecycle({
   hasUnsavedChanges,
-  (dirty) => {
-    tabStateStore.setHasUnsavedChanges(props.objectKey, dirty)
-  },
-  { immediate: true }
-)
-
-onBeforeRouteLeave(() => {
-  if (!hasUnsavedChanges.value) return true
-  return confirmDiscardUnsavedChanges({
-    description: 'You have unsaved changes. Discard them and leave?'
-  })
+  objectKey: computed(() => props.objectKey),
+  setHasUnsavedChanges: (objectKey, dirty) => tabStateStore.setHasUnsavedChanges(objectKey, dirty)
 })
 
 const { columnDefs } = useAgGridDataViewColumnDefs({
@@ -573,14 +540,10 @@ const { columnDefs } = useAgGridDataViewColumnDefs({
   getEditedCellTooltip
 })
 
-watch(
-  () => ({ api: baseGrid.gridApi.value, visible: showChangesGutter.value }),
-  ({ api, visible }) => {
-    if (!api) return
-    api.setColumnsVisible(['__changes__'], visible)
-  },
-  { immediate: true }
-)
+useAgGridChangesGutter({
+  gridApi: baseGrid.gridApi,
+  visible: showChangesGutter
+})
 
 // Database-specific clear all filters wrapper
 function clearAllFilters() {

@@ -4,6 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import UnifiedConsoleTab from '@/components/console/UnifiedConsoleTab.vue'
 import connections from '@/api/connections'
 import type { DatabaseMetadata } from '@/types/metadata'
+import type { ExecuteQueryResult, QueryHistoryItem } from '@/composables/useConsoleTab'
+import type { SqlQueryTab } from '@/stores/sqlConsole'
 
 vi.mock('@/stores/paneTabs', () => ({
   usePaneTabsStore: () => ({
@@ -21,7 +23,7 @@ vi.mock('@/stores/confirmDialog', () => ({
 vi.mock('@/composables/useConsoleTab', async () => {
   const { ref, computed } = await import('vue')
 
-  const activeQueryTab = ref<any>(null)
+  const activeQueryTab = ref<SqlQueryTab | null>(null)
 
   return {
     useConsoleTab: () => ({
@@ -30,11 +32,11 @@ vi.mock('@/composables/useConsoleTab', async () => {
       queryError: ref<string | null>(null),
       queryResults: ref<Record<string, unknown>[]>([]),
       resultColumns: ref<string[]>([]),
-      resultSets: ref<any[]>([]),
+      resultSets: ref<NonNullable<ExecuteQueryResult['resultSets']>>([]),
       lastQueryStats: ref<{ rowCount: number; duration: number } | null>(null),
       currentPage: ref(1),
       pageSize: ref(100),
-      queryHistory: ref<any[]>([]),
+      queryHistory: ref<QueryHistoryItem[]>([]),
       editorWidth: ref(50),
       startResize: vi.fn(),
       splitContainerRef: ref(null),
@@ -161,9 +163,6 @@ vi.mock('@/composables/useConsoleSources', async () => {
       handleUpdateSelectedConnections: (value: typeof selectedConnections.value) => {
         selectedConnections.value = value
       },
-      setRunMode: (mode: 'single' | 'federated') => {
-        runMode.value = mode
-      },
       initializeDefaultSources: vi.fn(),
       syncPrimarySource: vi.fn(),
       restoreSelectedConnections: vi.fn(),
@@ -221,7 +220,7 @@ interface MockConsoleSourcesState {
 }
 
 interface MockConsoleTabState {
-  activeQueryTab: { value: any }
+  activeQueryTab: { value: SqlQueryTab | null }
 }
 
 async function getMockConsoleSourcesState(): Promise<MockConsoleSourcesState> {
@@ -536,6 +535,11 @@ describe('UnifiedConsoleTab SQL LSP context isolation in multisource switching',
     ]
 
     __mockConsoleTabState.activeQueryTab.value = {
+      id: 'file-tab-1',
+      name: 'Query 1',
+      query: '',
+      createdAt: 0,
+      updatedAt: 0,
       fileContext: {
         path: '/tmp/sales/orders.csv',
         format: 'csv'
@@ -582,6 +586,11 @@ describe('UnifiedConsoleTab SQL LSP context isolation in multisource switching',
     ]
 
     __mockConsoleTabState.activeQueryTab.value = {
+      id: 'file-tab-2',
+      name: 'Query 1',
+      query: '',
+      createdAt: 0,
+      updatedAt: 0,
       fileContext: {
         path: '/tmp/sales/orders.csv',
         format: 'csv'

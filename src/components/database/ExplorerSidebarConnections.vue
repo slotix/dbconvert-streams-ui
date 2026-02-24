@@ -9,15 +9,17 @@ import BaseButton from '@/components/base/BaseButton.vue'
 import { useExplorerNavigationStore, type ObjectType } from '@/stores/explorerNavigation'
 import { useFileExplorerStore } from '@/stores/fileExplorer'
 import { useConnectionTreeLogic } from '@/composables/useConnectionTreeLogic'
-import { useTreeContextMenu, type ContextTarget } from '@/composables/useTreeContextMenu'
+import { useTreeContextMenu } from '@/composables/useTreeContextMenu'
 import { useConnectionActions } from '@/composables/useConnectionActions'
 import { useDatabaseCapabilities } from '@/composables/useDatabaseCapabilities'
 import { useTreeSearch } from '@/composables/useTreeSearch'
 import { useSqlConsoleActions } from '@/composables/useSqlConsoleActions'
 import { useDesktopMode } from '@/composables/useDesktopMode'
+import { useExplorerContextMenuActions } from '@/composables/useExplorerContextMenuActions'
+import { useExplorerSearchExpansion } from '@/composables/useExplorerSearchExpansion'
 import { useToast } from 'vue-toastification'
 import type { Connection } from '@/types/connections'
-import type { DiagramFocusTarget, ShowDiagramPayload } from '@/types/diagram'
+import type { ShowDiagramPayload } from '@/types/diagram'
 import type { SQLRoutineMeta, SQLSequenceMeta, SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import { getConnectionKindFromSpec, getConnectionTypeLabel, isDatabaseKind } from '@/types/specs'
@@ -103,8 +105,6 @@ const emit = defineEmits<{
 }>()
 
 const MIN_SEARCH_LENGTH = 2
-const MAX_FILE_SUBTREE_EXPAND_FOLDERS = 250
-const FILE_SUBTREE_PROGRESS_STEP = 100
 
 const sidebarMenuToggle = inject<{ openSidebar: () => void }>('sidebarMenuToggle')
 const connectionsStore = useConnectionsStore()
@@ -828,319 +828,22 @@ function onOpen(
   })
 }
 
-async function expandContextSubtree(target: ContextTarget) {
-  async function expandFileSubtreeWithGuard(
-    run: (options: {
-      maxFolders: number
-      progressEvery: number
-      onProgress: (expandedFolders: number, maxFolders: number) => void
-    }) => Promise<{ expandedFolders: number; truncated: boolean; maxFolders: number }>,
-    label: string
-  ) {
-    let lastProgressToast = 0
-    toast.info(`Expanding ${label}...`)
-
-    try {
-      const result = await run({
-        maxFolders: MAX_FILE_SUBTREE_EXPAND_FOLDERS,
-        progressEvery: FILE_SUBTREE_PROGRESS_STEP,
-        onProgress: (expandedFolders, maxFolders) => {
-          if (
-            expandedFolders >= FILE_SUBTREE_PROGRESS_STEP &&
-            expandedFolders - lastProgressToast >= FILE_SUBTREE_PROGRESS_STEP &&
-            expandedFolders < maxFolders
-          ) {
-            lastProgressToast = expandedFolders
-            toast.info(`Expanding... ${expandedFolders}/${maxFolders} folders`)
-          }
-        }
-      })
-
-      if (result.truncated) {
-        toast.warning(
-          `Stopped after ${result.expandedFolders} folders (limit ${result.maxFolders}). Expand a deeper branch to continue.`
-        )
-      } else {
-        toast.success(`Expanded ${result.expandedFolders} folders`)
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to expand subtree'
-      toast.error(message)
-    }
-  }
-
-  if (target.kind === 'connection') {
-    if (treeLogic.isFileConnection(target.connectionId)) {
-      await expandFileSubtreeWithGuard(
-        (options) => fileExplorerStore.expandConnectionSubtree(target.connectionId, options),
-        'connection subtree'
-      )
-    } else {
-      await navigationStore.expandConnectionSubtree(target.connectionId)
-    }
-    return
-  }
-
-  if (target.kind === 'database') {
-    await navigationStore.expandDatabaseSubtree(target.connectionId, target.database)
-    return
-  }
-
-  if (target.kind === 'schema') {
-    await navigationStore.expandSchemaSubtree(target.connectionId, target.database, target.schema)
-    return
-  }
-
-  if (target.kind === 'file' && target.isDir) {
-    await expandFileSubtreeWithGuard(
-      (options) => fileExplorerStore.expandFolderSubtree(target.connectionId, target.path, options),
-      `folder "${target.name}"`
-    )
-  }
-}
-
-// Simplified menu action handler using composables
-function onMenuAction(payload: {
-  action: string
-  target: ContextTarget
-  openInRightSplit?: boolean
-}) {
-  const t = payload.target
-  contextMenu.close()
-  switch (payload.action) {
-    case 'sql-console':
-      // Open SQL console for connection or database scope
-      if (t.kind === 'connection') {
-        emit('open-sql-console', {
-          connectionId: t.connectionId,
-          sqlScope: 'connection'
-        })
-      } else if (t.kind === 'database') {
-        emit('open-sql-console', {
-          connectionId: t.connectionId,
-          database: t.database,
-          sqlScope: 'database'
-        })
-      }
-      break
-    case 'file-console':
-      // Open DuckDB console for file/S3 connections
-      if (t.kind === 'connection') {
-        const conn = connectionsStore.connectionByID(t.connectionId)
-        const kind = getConnectionKindFromSpec(conn?.spec)
-        if (kind !== 'files' && kind !== 's3') {
-          return
-        }
-        const isS3 = kind === 's3'
-        const basePath = isS3 ? conn?.spec?.s3?.scope?.bucket : conn?.spec?.files?.basePath
-        emit('open-file-console', {
-          connectionId: t.connectionId,
-          connectionType: isS3 ? 's3' : 'files',
-          basePath: basePath
-        })
-      }
-      break
-    case 'test-connection':
-      if (t.kind === 'connection') actions.testConnection(t.connectionId)
-      break
-    case 'refresh-databases':
-      if (t.kind === 'connection') actions.refreshDatabases(t.connectionId)
-      break
-    case 'toggle-system-databases':
-      if (t.kind === 'connection') {
-        navigationStore.toggleShowSystemDatabasesFor(t.connectionId)
-        // Connection-level toggle should affect database-level system objects too.
-        // Refresh metadata for any expanded databases under this connection.
-        const prefix = `${t.connectionId}:`
-        for (const dbKey of navigationStore.expandedDatabases) {
-          if (!dbKey.startsWith(prefix)) continue
-          const dbName = dbKey.slice(prefix.length)
-          if (!dbName) continue
-          navigationStore.invalidateMetadata(t.connectionId, dbName)
-          navigationStore.ensureMetadata(t.connectionId, dbName).catch(() => {})
-        }
-      }
-      break
-    case 'create-database':
-      if (t.kind === 'connection') actions.createDatabase(t.connectionId)
-      break
-    case 'edit-connection':
-      if (t.kind === 'connection') actions.editConnection(t.connectionId)
-      break
-    case 'clone-connection':
-      if (t.kind === 'connection') actions.cloneConnection(t.connectionId)
-      break
-    case 'delete-connection':
-      if (t.kind === 'connection') actions.deleteConnection(t.connectionId)
-      break
-    case 'copy-base-path':
-      if (t.kind === 'connection') {
-        const conn = connectionsStore.connections.find((c) => c.id === t.connectionId)
-        const basePath = conn?.spec?.files?.basePath || ''
-        if (basePath) {
-          actions.copyToClipboard(basePath, 'Path copied')
-        }
-      }
-      break
-    case 'open-base-folder':
-      if (t.kind === 'connection' && isDesktop.value) {
-        const conn = connectionsStore.connections.find((c) => c.id === t.connectionId)
-        const basePath = conn?.spec?.files?.basePath || ''
-        if (basePath) {
-          const wailsGo = (
-            window as unknown as {
-              go?: { main?: { App?: { OpenContainingFolder?: (path: string) => Promise<void> } } }
-            }
-          ).go
-          if (wailsGo?.main?.App?.OpenContainingFolder) {
-            wailsGo.main.App.OpenContainingFolder(basePath).catch((err: unknown) =>
-              toast.error(`Failed to open folder: ${err}`)
-            )
-          }
-        }
-      }
-      break
-    case 'refresh-metadata':
-      if (t.kind === 'database' || t.kind === 'schema')
-        actions.refreshDatabase(t.connectionId, t.database)
-      break
-    case 'expand-subtree':
-      void expandContextSubtree(t)
-      break
-    case 'collapse-subtree':
-      if (t.kind === 'connection') {
-        navigationStore.collapseConnectionSubtree(t.connectionId)
-        if (treeLogic.isFileConnection(t.connectionId)) {
-          fileExplorerStore.collapseAllFolders(t.connectionId)
-        }
-      } else if (t.kind === 'database') {
-        navigationStore.collapseDatabaseSubtree(t.connectionId, t.database)
-      } else if (t.kind === 'schema') {
-        navigationStore.collapseSchemaSubtree(t.connectionId, t.database, t.schema)
-      } else if (t.kind === 'file' && t.isDir) {
-        fileExplorerStore.collapseFolderSubtree(t.connectionId, t.path)
-      }
-      break
-    case 'toggle-system-objects':
-      if (t.kind === 'database') {
-        navigationStore.toggleShowSystemObjectsFor(t.connectionId, t.database)
-        navigationStore.invalidateMetadata(t.connectionId, t.database)
-        const dbKey = `${t.connectionId}:${t.database}`
-        if (navigationStore.isDatabaseExpanded(dbKey)) {
-          navigationStore.ensureMetadata(t.connectionId, t.database).catch(() => {})
-        }
-      }
-      break
-    case 'create-schema':
-      if (t.kind === 'database') actions.createSchema(t.connectionId, t.database)
-      break
-    case 'show-diagram':
-      if (t.kind === 'database') actions.showDiagram(t.connectionId, t.database)
-      else if (t.kind === 'table' || t.kind === 'view') {
-        const focus: DiagramFocusTarget = { type: t.kind, name: t.name, schema: t.schema }
-        actions.showDiagram(t.connectionId, t.database, focus)
-      }
-      break
-    case 'copy-database-name':
-      if (t.kind === 'database') actions.copyToClipboard(t.database, 'Database name copied')
-      break
-    case 'copy-schema-name':
-      if (t.kind === 'schema') actions.copyToClipboard(t.schema, 'Schema name copied')
-      break
-    case 'open':
-      if (
-        t.kind === 'table' ||
-        t.kind === 'view' ||
-        t.kind === 'function' ||
-        t.kind === 'procedure'
-      )
-        actions.openObject(
-          t.connectionId,
-          t.database,
-          t.kind,
-          t.name,
-          'preview',
-          t.schema,
-          undefined,
-          payload.openInRightSplit
-        )
-      else if (t.kind === 'file')
-        actions.openFile(t.connectionId, t.path, 'preview', undefined, payload.openInRightSplit)
-      break
-    case 'copy-object-name':
-      if (
-        t.kind === 'table' ||
-        t.kind === 'view' ||
-        t.kind === 'function' ||
-        t.kind === 'procedure'
-      )
-        actions.copyToClipboard(t.name, 'Object name copied')
-      break
-    case 'copy-ddl':
-      if (
-        t.kind === 'table' ||
-        t.kind === 'view' ||
-        t.kind === 'function' ||
-        t.kind === 'procedure'
-      )
-        void actions.copyDDL(t.connectionId, t.database, t.name, t.kind, t.schema)
-      break
-    case 'copy-file-name':
-      if (t.kind === 'file') actions.copyToClipboard(t.name, 'File name copied')
-      break
-    case 'copy-file-path':
-      if (t.kind === 'file') actions.copyToClipboard(t.path, 'Path copied')
-      break
-    case 'copy-system-path':
-      if (t.kind === 'file') {
-        const conn = connectionsStore.connections.find((c) => c.id === t.connectionId)
-        const basePath = conn?.spec?.files?.basePath || ''
-        const systemPath = resolveSystemPath(t.path, basePath)
-        actions.copyToClipboard(systemPath, 'Path copied')
-      }
-      break
-    case 'open-in-explorer':
-      if (t.kind === 'file' && isDesktop.value) {
-        const conn = connectionsStore.connections.find((c) => c.id === t.connectionId)
-        const basePath = conn?.spec?.files?.basePath || ''
-        const systemPath = resolveSystemPath(t.path, basePath)
-        // Call Wails binding directly via window.go (available in desktop mode)
-        const wailsGo = (
-          window as unknown as {
-            go?: { main?: { App?: { OpenContainingFolder?: (path: string) => Promise<void> } } }
-          }
-        ).go
-        if (wailsGo?.main?.App?.OpenContainingFolder) {
-          wailsGo.main.App.OpenContainingFolder(systemPath).catch((err: unknown) =>
-            toast.error(`Failed to open folder: ${err}`)
-          )
-        }
-      }
-      break
-    case 'open-in-sql-console':
-      if (t.kind === 'table' || t.kind === 'view') {
-        openTableInSqlConsole({
-          connectionId: t.connectionId,
-          database: t.database,
-          tableName: t.name,
-          schema: t.schema
-        })
-      }
-      break
-    case 'insert-into-console':
-      if (t.kind === 'file') {
-        openFileInDuckDbConsole({
-          connectionId: t.connectionId,
-          filePath: t.path,
-          fileName: t.name,
-          isDir: t.isDir,
-          format: t.format
-        })
-      }
-      break
-  }
-  contextMenu.close()
-}
+const { onMenuAction } = useExplorerContextMenuActions({
+  closeContextMenu: () => contextMenu.close(),
+  isDesktop,
+  toast,
+  actions,
+  navigationStore,
+  fileExplorerStore,
+  isFileConnection: (connectionId) => treeLogic.isFileConnection(connectionId),
+  getConnectionById: (connectionId) => connectionsStore.connectionByID(connectionId),
+  listConnections: () => connectionsStore.connections,
+  resolveSystemPath,
+  emitOpenSqlConsole: (payload) => emit('open-sql-console', payload),
+  emitOpenFileConsole: (payload) => emit('open-file-console', payload),
+  openTableInSqlConsole,
+  openFileInDuckDbConsole
+})
 
 // Event handlers for ConnectionTreeItem
 function handleToggleConnection(conn: Connection) {
@@ -1329,192 +1032,28 @@ watch(
   { immediate: false }
 )
 
-// When searching, auto-expand connections and databases
-const searchRunId = ref(0)
-const isSearchExpanding = ref(false)
-
-async function expandForSearch(query: string, runId: number) {
-  const trimmed = query.trim()
-  if (!trimmed) {
-    if (runId === searchRunId.value) {
-      isSearchExpanding.value = false
-    }
-    return
-  }
-
-  // Yield to the event loop before collapsing so drag/resize handlers are not blocked
-  await Promise.resolve()
-  if (runId !== searchRunId.value) return
-
-  // Collapse non-matching branches; expandForSearch will re-open matching ones below
-  navigationStore.collapseAllExpansions()
-  fileExplorerStore.collapseAllFolders()
-
-  const conns =
-    props.typeFilters && props.typeFilters.length
-      ? connectionsStore.connections.filter((conn) =>
-          treeLogic.matchesTypeFilters(conn, props.typeFilters!)
-        )
-      : connectionsStore.connections
-  for (const c of conns) {
-    if (runId !== searchRunId.value) return
-    if (!navigationStore.isConnectionExpanded(c.id)) {
-      navigationStore.expandConnection(c.id)
-    }
-    if (treeLogic.isFileConnection(c.id)) {
-      emit('request-file-entries', { connectionId: c.id })
-    } else {
-      await navigationStore.ensureDatabases(c.id)
-      if (runId !== searchRunId.value) return
-      const dbs = navigationStore.databasesState[c.id] || []
-      for (const d of dbs) {
-        if (runId !== searchRunId.value) return
-
-        // IMPORTANT: Make search complete for DB objects.
-        // If metadata isn't loaded yet, table/view name searches cannot match.
-        // We load metadata best-effort for each database during an active search run.
-        if (
-          !navigationStore.isMetadataLoading(c.id, d.name) &&
-          !navigationStore.getMetadata(c.id, d.name)
-        ) {
-          try {
-            await navigationStore.ensureMetadata(c.id, d.name)
-          } catch {
-            // ignore; best-effort preloading for search
-          }
-        }
-        if (runId !== searchRunId.value) return
-
-        if (matchesDbFilter(c.id, d.name)) {
-          navigationStore.expandDatabase(`${c.id}:${d.name}`)
-
-          // For schema-based DBs (Postgres/Snowflake), expand schemas that contain matches
-          if (runId !== searchRunId.value) return
-          if (treeLogic.hasSchemas(c.id)) {
-            const meta = navigationStore.getMetadata(c.id, d.name)
-            const q = effectiveSearchQuery.value.trim().toLowerCase()
-            if (meta && q) {
-              const schemasToExpand = new Set<string>()
-
-              for (const table of Object.values(meta.tables || {})) {
-                if (
-                  (table.name || '').toLowerCase().includes(q) ||
-                  (table.schema || '').toLowerCase().includes(q)
-                ) {
-                  if (table.schema) schemasToExpand.add(table.schema)
-                }
-              }
-
-              for (const view of Object.values(meta.views || {})) {
-                if (
-                  (view.name || '').toLowerCase().includes(q) ||
-                  (view.schema || '').toLowerCase().includes(q)
-                ) {
-                  if (view.schema) schemasToExpand.add(view.schema)
-                }
-              }
-
-              for (const fn of Object.values(meta.functions || {})) {
-                const signature = fn.signature ? `(${fn.signature})` : ''
-                const label = `${fn.name || ''}${signature}`.toLowerCase()
-                if (label.includes(q) || (fn.schema || '').toLowerCase().includes(q)) {
-                  if (fn.schema) schemasToExpand.add(fn.schema)
-                }
-              }
-
-              for (const proc of Object.values(meta.procedures || {})) {
-                const signature = proc.signature ? `(${proc.signature})` : ''
-                const label = `${proc.name || ''}${signature}`.toLowerCase()
-                if (label.includes(q) || (proc.schema || '').toLowerCase().includes(q)) {
-                  if (proc.schema) schemasToExpand.add(proc.schema)
-                }
-              }
-
-              const schemasUnknown = (meta as { schemas?: unknown }).schemas
-              if (Array.isArray(schemasUnknown)) {
-                for (const s of schemasUnknown) {
-                  if (typeof s === 'string' && (s || '').toLowerCase().includes(q)) {
-                    schemasToExpand.add(s)
-                  }
-                }
-              }
-
-              for (const schema of schemasToExpand) {
-                if (runId !== searchRunId.value) return
-                navigationStore.expandSchema(`${c.id}:${d.name}:${schema}`)
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-  if (runId === searchRunId.value) {
-    isSearchExpanding.value = false
-  }
-}
-
-const scheduleSearchExpansion = (query: string) => {
-  const runId = ++searchRunId.value
-  if (!shouldExpandSearch(query)) {
-    isSearchExpanding.value = false
-    return
-  }
-  isSearchExpanding.value = true
-  void expandForSearch(query, runId)
-}
-
-const debouncedExpandForSearch = useDebounceFn((query: string) => {
-  scheduleSearchExpansion(query)
-}, 250)
-
-function shouldExpandSearch(query: string): boolean {
-  return query.trim().length >= MIN_SEARCH_LENGTH
-}
+const { isSearchExpanding } = useExplorerSearchExpansion({
+  searchQuery,
+  effectiveSearchQuery,
+  typeFilters: computed(() => props.typeFilters),
+  minSearchLength: MIN_SEARCH_LENGTH,
+  connections: computed(() => connectionsStore.connections),
+  matchesTypeFilters: (connection, filters) => treeLogic.matchesTypeFilters(connection, filters),
+  isFileConnection: (connectionId) => treeLogic.isFileConnection(connectionId),
+  hasSchemas: (connectionId) => treeLogic.hasSchemas(connectionId),
+  requestFileEntries: (connectionId) => emit('request-file-entries', { connectionId }),
+  matchesDatabaseFilter: (connectionId, database) =>
+    effectiveSearchQuery.value.trim().length === 0
+      ? true
+      : treeSearch.matchesDatabaseFilter(connectionId, database),
+  navigationStore,
+  fileExplorerStore
+})
 
 function matchesDbFilter(connId: string, dbName: string): boolean {
   if (!effectiveSearchQuery.value.trim()) return true
   return treeSearch.matchesDatabaseFilter(connId, dbName)
 }
-
-watch(
-  () => searchQuery.value,
-  (q) => {
-    if (shouldExpandSearch(q)) {
-      debouncedExpandForSearch(q)
-    } else {
-      searchRunId.value++
-      isSearchExpanding.value = false
-    }
-  },
-  { immediate: false }
-)
-
-// Track previous filter state to avoid unnecessary re-runs
-let previousTypeFilters: string[] = []
-
-watch(
-  () => props.typeFilters,
-  (filters, _oldFilters) => {
-    // Skip if filters haven't actually changed
-    if (
-      JSON.stringify(filters?.slice().sort()) ===
-      JSON.stringify(previousTypeFilters?.slice().sort())
-    ) {
-      return
-    }
-
-    previousTypeFilters = filters ? [...filters] : []
-
-    // Only expand if query meets minimum length
-    if (shouldExpandSearch(searchQuery.value)) {
-      debouncedExpandForSearch(searchQuery.value)
-    } else {
-      searchRunId.value++
-      isSearchExpanding.value = false
-    }
-  }
-)
 
 watch(
   () => filteredConnections.value.map((conn) => conn.id).join('|'),
