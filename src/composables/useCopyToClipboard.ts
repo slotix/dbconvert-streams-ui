@@ -1,4 +1,5 @@
 import { ref } from 'vue'
+import { useManagedTimeout } from '@/composables/useManagedTimeout'
 
 /**
  * Composable for clipboard copy operations with visual feedback state.
@@ -16,6 +17,7 @@ import { ref } from 'vue'
  */
 export function useCopyToClipboard(feedbackDuration = 1200) {
   const isCopied = ref(false)
+  const { setManagedTimeout, clearManagedTimeout } = useManagedTimeout()
   let timeoutId: ReturnType<typeof setTimeout> | null = null
 
   /**
@@ -27,11 +29,11 @@ export function useCopyToClipboard(feedbackDuration = 1200) {
 
       // Clear any existing timeout
       if (timeoutId) {
-        clearTimeout(timeoutId)
+        clearManagedTimeout(timeoutId)
       }
 
       isCopied.value = true
-      timeoutId = setTimeout(() => {
+      timeoutId = setManagedTimeout(() => {
         isCopied.value = false
         timeoutId = null
       }, feedbackDuration)
@@ -46,10 +48,8 @@ export function useCopyToClipboard(feedbackDuration = 1200) {
    * Reset the copied state manually
    */
   function reset() {
-    if (timeoutId) {
-      clearTimeout(timeoutId)
-      timeoutId = null
-    }
+    clearManagedTimeout(timeoutId)
+    timeoutId = null
     isCopied.value = false
   }
 

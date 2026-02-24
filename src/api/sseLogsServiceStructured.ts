@@ -1,7 +1,117 @@
 import { useLogsStore } from '@/stores/logs'
 import { getBackendUrl } from '@/utils/environment'
 import type { StandardLogEntry } from '@/types/logs'
-import type { Store } from 'pinia'
+import type { SQLQueryLog } from '@/stores/logs'
+import { LOG_CATEGORIES, LOG_LEVELS, NODE_TYPES } from '@/constants'
+
+type LogsStoreActions = Pick<
+  ReturnType<typeof useLogsStore>,
+  'addSQLLog' | 'addStreamLog' | 'addSystemLog'
+>
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
+function isString(value: unknown): value is string {
+  return typeof value === 'string'
+}
+
+function isNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value)
+}
+
+function isLogLevel(value: unknown): value is StandardLogEntry['level'] {
+  return (
+    value === LOG_LEVELS.DEBUG ||
+    value === LOG_LEVELS.INFO ||
+    value === LOG_LEVELS.WARN ||
+    value === LOG_LEVELS.ERROR
+  )
+}
+
+function isNodeType(value: unknown): value is StandardLogEntry['type'] {
+  return value === NODE_TYPES.API || value === NODE_TYPES.SOURCE || value === NODE_TYPES.TARGET
+}
+
+function isLogCategory(value: unknown): value is NonNullable<StandardLogEntry['category']> {
+  return (
+    value === LOG_CATEGORIES.GENERAL ||
+    value === LOG_CATEGORIES.PROGRESS ||
+    value === LOG_CATEGORIES.STAT ||
+    value === LOG_CATEGORIES.TABLE_METADATA ||
+    value === LOG_CATEGORIES.SQL ||
+    value === LOG_CATEGORIES.ERROR ||
+    value === LOG_CATEGORIES.DEBUG ||
+    value === LOG_CATEGORIES.S3_UPLOAD
+  )
+}
+
+function parseSQLLog(payload: unknown): SQLQueryLog | null {
+  if (!isRecord(payload)) {
+    return null
+  }
+
+  const id = payload.id
+  const connectionId = payload.connectionId
+  const database = payload.database
+  const query = payload.query
+  const purpose = payload.purpose
+  const startedAt = payload.startedAt
+  const durationMs = payload.durationMs
+  const rowCount = payload.rowCount
+
+  if (
+    !isString(id) ||
+    !isString(connectionId) ||
+    !isString(database) ||
+    !isString(query) ||
+    !isString(purpose) ||
+    !isString(startedAt) ||
+    !isNumber(durationMs) ||
+    !isNumber(rowCount)
+  ) {
+    return null
+  }
+
+  return {
+    id,
+    connectionId,
+    database,
+    query,
+    purpose: purpose as SQLQueryLog['purpose'],
+    startedAt,
+    durationMs,
+    rowCount,
+    tabId: isString(payload.tabId) ? payload.tabId : undefined,
+    schema: isString(payload.schema) ? payload.schema : undefined,
+    tableName: isString(payload.tableName) ? payload.tableName : undefined,
+    params: Array.isArray(payload.params) ? payload.params : undefined,
+    error: isString(payload.error) ? payload.error : undefined,
+    redacted: typeof payload.redacted === 'boolean' ? payload.redacted : undefined
+  }
+}
+
+function isStandardLogEntry(payload: unknown): payload is StandardLogEntry {
+  if (!isRecord(payload)) {
+    return false
+  }
+
+  const level = payload.level
+  const timestamp = payload.timestamp
+  const message = payload.message
+  const type = payload.type
+
+  if (!isLogLevel(level) || !isString(timestamp) || !isString(message) || !isNodeType(type)) {
+    return false
+  }
+
+  if (payload.category !== undefined && !isLogCategory(payload.category)) {
+    return false
+  }
+
+  return true
+}
 
 class SSELogsService {
   private eventSource: EventSource | null = null
@@ -42,7 +152,11 @@ class SSELogsService {
     }
   }
 
-  private setupEventHandlers(eventSource: EventSource, logsStore: Store, sseUrl: string) {
+  private setupEventHandlers(
+    eventSource: EventSource,
+    logsStore: LogsStoreActions,
+    sseUrl: string
+  ) {
     eventSource.addEventListener('open', () => {
       // Only log if this is a new connection or reconnection after failure
       if (!this.isConnected) {
@@ -55,37 +169,21 @@ class SSELogsService {
 
     eventSource.addEventListener('message', (event: MessageEvent) => {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const data: any = JSON.parse(event.data)
+        const data: unknown = JSON.parse(event.data)
 
-        // Check if this is a SQL log (has connectionId, query, purpose)
-        if (data.connectionId && data.query && data.purpose) {
-          // Route SQL log directly
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          ;(logsStore as any).addSQLLog(data)
+        const sqlLog = parseSQLLog(data)
+        if (sqlLog) {
+          logsStore.addSQLLog(sqlLog)
           return
         }
 
-        // Otherwise, treat as structured log entry
-        const log: StandardLogEntry = data
-
-        // Validate required fields for structured logs
-        if (!log.level || !log.type || !log.message) {
-          console.warn('Incomplete log entry received:', {
-            hasLevel: !!log.level,
-            hasType: !!log.type,
-            hasMessage: !!log.message
-          })
+        if (!isStandardLogEntry(data)) {
+          console.warn('Incomplete structured log entry received:', data)
           return
-        }
-
-        // Ensure timestamp is present
-        if (!log.timestamp) {
-          log.timestamp = new Date().toISOString()
         }
 
         // Route log based on category
-        this.routeLog(log, logsStore)
+        this.routeLog(data, logsStore)
       } catch (error) {
         console.error('Failed to parse structured log:', error, event.data)
       }
@@ -105,32 +203,35 @@ class SSELogsService {
     })
   }
 
-  private routeLog(log: StandardLogEntry, logsStore: Store) {
+  private routeLog(log: StandardLogEntry, logsStore: LogsStoreActions) {
     // Route to appropriate store method based on category
     switch (log.category) {
       case 'sql':
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ;(logsStore as any).addSQLLog(log)
+        {
+          const sqlLog = parseSQLLog(log)
+          if (!sqlLog) {
+            console.warn('Incomplete SQL log entry received:', log)
+            return
+          }
+          logsStore.addSQLLog(sqlLog)
+        }
         break
 
       case 'stat':
       case 'progress':
       case 'table_metadata':
       case 's3_upload':
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ;(logsStore as any).addStreamLog(log)
+        logsStore.addStreamLog(log)
         break
 
       case 'error':
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ;(logsStore as any).addSystemLog(log)
+        logsStore.addSystemLog(log)
         // Also log errors to console for visibility
         console.error(`[${log.type}] ${log.message}`, log)
         break
 
       default:
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ;(logsStore as any).addSystemLog(log)
+        logsStore.addSystemLog(log)
     }
   }
 

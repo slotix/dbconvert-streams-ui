@@ -145,6 +145,8 @@ import { useConsoleSources } from '@/composables/useConsoleSources'
 import { useQueryExecution } from '@/composables/useQueryExecution'
 import { useSqlConsoleTabName } from '@/composables/useSqlConsoleTabName'
 import { useSqlSourcePresentation } from '@/composables/useSqlSourcePresentation'
+import { useConsoleQueryHelpers } from '@/composables/useConsoleQueryHelpers'
+import { useSourcePillsOverflow } from '@/composables/useSourcePillsOverflow'
 import type { ConsoleMode, DatabaseScope, FileConnectionType } from './types'
 import {
   getConnectionKindFromSpec,
@@ -157,16 +159,6 @@ import {
   getDatabaseTemplates,
   computeFileTemplatePrefix
 } from './queryTemplates'
-
-type DirectSourceReadiness = {
-  ready: boolean
-  reason?: 'missing-database' | 'database-not-found'
-}
-
-type ScopedSourceReadiness = {
-  ready: boolean
-  reason?: 'missing-folder-scope'
-}
 
 const props = defineProps<{
   connectionId: string
@@ -186,37 +178,8 @@ const connectionsStore = useConnectionsStore()
 const confirmDialogStore = useConfirmDialogStore()
 const paneTabsStore = usePaneTabsStore()
 const isSourceDrawerOpen = ref(false)
-const pillsContainerRef = ref<HTMLElement | null>(null)
-const overflowCount = ref(0)
-
-let pillsResizeObserver: ResizeObserver | null = null
-
-function recomputePillOverflow() {
-  const container = pillsContainerRef.value
-  if (!container) {
-    overflowCount.value = 0
-    return
-  }
-  const containerRight = container.getBoundingClientRect().right
-  const pillEls = container.querySelectorAll('[data-source-pill]')
-  let hidden = 0
-  for (const pill of pillEls) {
-    if (pill.getBoundingClientRect().right > containerRight + 2) hidden++
-  }
-  overflowCount.value = hidden
-}
-
-function setupPillsObserver() {
-  const container = pillsContainerRef.value
-  if (!container || typeof ResizeObserver === 'undefined') return
-  pillsResizeObserver = new ResizeObserver(() => recomputePillOverflow())
-  pillsResizeObserver.observe(container)
-}
-
-function cleanupPillsObserver() {
-  pillsResizeObserver?.disconnect()
-  pillsResizeObserver = null
-}
+const { pillsContainerRef, overflowCount, recomputePillOverflow, setupPillsObserver } =
+  useSourcePillsOverflow()
 
 // ========== Console Key Computation ==========
 const generatedConsoleSessionId = createConsoleSessionId()
@@ -262,67 +225,6 @@ const {
 const { sourcePills, isDatabaseMapping } = useSqlSourcePresentation({
   selectedConnections,
   getConnectionById: (connectionId) => connectionsStore.connectionByID(connectionId)
-})
-
-function getDirectSourceReadiness(mapping: {
-  connectionId: string
-  database?: string
-}): DirectSourceReadiness {
-  const selectedDatabase = mapping.database?.trim() || ''
-  if (!selectedDatabase) {
-    return { ready: false, reason: 'missing-database' }
-  }
-
-  const conn = connectionsStore.connectionByID(mapping.connectionId)
-  const availableDatabases =
-    conn?.databasesInfo
-      ?.filter((db) => !db.isSystem)
-      .map((db) => db.name)
-      .filter((name): name is string => Boolean(name?.trim())) || []
-
-  // If DB list is unavailable, avoid false negatives and treat current selection as usable.
-  if (availableDatabases.length === 0) {
-    return { ready: true }
-  }
-
-  const exists = availableDatabases.some((dbName) => dbName === selectedDatabase)
-  if (!exists) {
-    return { ready: false, reason: 'database-not-found' }
-  }
-
-  return { ready: true }
-}
-
-function getScopedSourceReadiness(mapping: {
-  connectionId: string
-  database?: string
-}): ScopedSourceReadiness {
-  const conn = connectionsStore.connectionByID(mapping.connectionId)
-  const kind = getConnectionKindFromSpec(conn?.spec)
-  if (!isFileBasedKind(kind)) {
-    return { ready: true }
-  }
-
-  const folderScope = mapping.database?.trim() || ''
-  if (!folderScope) {
-    return { ready: false, reason: 'missing-folder-scope' }
-  }
-
-  return { ready: true }
-}
-
-const hasUnscopedFileSources = computed(() => {
-  if (props.mode !== 'file') return false
-
-  return selectedConnections.value.some((mapping) => {
-    const readiness = getScopedSourceReadiness(mapping)
-    return readiness.reason === 'missing-folder-scope'
-  })
-})
-
-const fileScopeWarning = computed(() => {
-  if (!hasUnscopedFileSources.value) return ''
-  return 'Folder scope is optional, but selecting one improves autocomplete for file sources.'
 })
 
 // ========== SQL Dialect ==========
@@ -398,100 +300,22 @@ const {
   dialect: currentDialect
 })
 
-function stripIdentifierQuotes(identifier: string): string {
-  const trimmed = identifier.trim()
-  if (trimmed.length >= 2) {
-    const first = trimmed[0]
-    const last = trimmed[trimmed.length - 1]
-    if ((first === '"' && last === '"') || (first === '`' && last === '`')) {
-      return trimmed.slice(1, -1)
-    }
-  }
-  return trimmed
-}
-
-function parseRelationSegments(relation: string): string[] {
-  return relation
-    .split('.')
-    .map((segment) => stripIdentifierQuotes(segment))
-    .map((segment) => segment.trim())
-    .filter(Boolean)
-}
-
-function isSafeIdentifier(identifier: string): boolean {
-  return /^[A-Za-z_][A-Za-z0-9_]*$/.test(identifier)
-}
-
-function quoteFederatedIdentifier(identifier: string): string {
-  if (isSafeIdentifier(identifier)) return identifier
-  return `"${identifier.replace(/"/g, '""')}"`
-}
-
-function buildFederatedRelationName(parts: string[]): string {
-  return parts.map((part) => quoteFederatedIdentifier(part)).join('.')
-}
-
-const starterQueryPattern = /^select\s+\*\s+from\s+(.+?)\s+limit\s+100\s*;?\s*$/i
-
-const originDatabaseMapping = computed(() => {
-  const expectedDatabase = props.database?.trim() || ''
-  return (
-    selectedConnections.value.find(
-      (mapping) =>
-        mapping.connectionId === props.connectionId &&
-        (mapping.database?.trim() || '') === expectedDatabase &&
-        isDatabaseMapping(mapping)
-    ) ||
-    selectedConnections.value.find(
-      (mapping) => mapping.connectionId === props.connectionId && isDatabaseMapping(mapping)
-    ) ||
-    null
-  )
-})
-
-const rewrittenFederatedStarterQuery = computed(() => {
-  if (props.mode !== 'database') return null
-  if (!useFederatedEngine.value) return null
-
-  const tab = activeQueryTab.value
-  const tableName = tab?.tableContext?.tableName?.trim()
-  if (!tab || !tableName) return null
-
-  const queryMatch = tab.query.match(starterQueryPattern)
-  if (!queryMatch) return null
-  const relationSegments = parseRelationSegments(queryMatch[1])
-  if (relationSegments.length === 0) return null
-  const relationTable = relationSegments[relationSegments.length - 1]?.toLowerCase()
-  if (relationTable !== tableName.toLowerCase()) return null
-
-  const mapping = originDatabaseMapping.value
-  const alias = mapping?.alias?.trim() || ''
-  if (!alias) return null
-
-  const originDialect = getSqlDialectFromConnection(connection.value?.spec, connection.value?.type)
-
-  if (originDialect === 'mysql') {
-    const databaseName = (mapping?.database?.trim() || props.database?.trim() || '').trim()
-    if (!databaseName) return null
-    return `SELECT * FROM ${buildFederatedRelationName([alias, databaseName, tableName])} LIMIT 100;`
-  }
-
-  if (originDialect === 'pgsql') {
-    const schemaName = tab.tableContext?.schema?.trim() || ''
-    if (!schemaName) return null
-    return `SELECT * FROM ${buildFederatedRelationName([alias, schemaName, tableName])} LIMIT 100;`
-  }
-
-  return null
-})
-
-const showFederatedRewriteAction = computed(() => Boolean(rewrittenFederatedStarterQuery.value))
-
-const errorActionLabel = computed(() => {
-  if (!showFederatedRewriteAction.value) return null
-  if (!queryError.value) return null
-  if (!/^federated mode requires alias-qualified tables/i.test(queryError.value.trim())) return null
-  return 'Rewrite starter SQL to federated naming'
+const {
+  getDirectSourceReadiness,
+  fileScopeWarning,
+  rewrittenFederatedStarterQuery,
+  errorActionLabel
+} = useConsoleQueryHelpers({
+  mode: modeRef,
+  connectionId: connectionIdRef,
+  database: databaseRef,
+  selectedConnections,
+  useFederatedEngine,
+  activeQueryTab,
+  queryError,
+  connection,
+  getConnectionById: (connectionId) => connectionsStore.connectionByID(connectionId),
+  isDatabaseMapping
 })
 
 function rewriteStarterQueryToFederated() {
@@ -719,7 +543,6 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-  cleanupPillsObserver()
   cleanup()
 })
 

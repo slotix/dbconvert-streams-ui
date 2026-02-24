@@ -322,8 +322,8 @@ import StreamConfigurationView from '@/components/stream/StreamConfigurationView
 import { useStreamControls } from '@/composables/useStreamControls'
 import { useStreamHistory, type StreamDetailsTab } from '@/composables/useStreamHistory'
 import { useStreamExplorerNavigation } from '@/composables/useStreamExplorerNavigation'
+import { useStreamEvaluationBanner } from '@/composables/useStreamEvaluationBanner'
 import { updateStreamsViewState, setSelectedStreamInViewState } from '@/utils/streamsViewState'
-import { formatDataSize, formatElapsedTimeWithUnit } from '@/utils/formats'
 
 // Lazy load heavy components that use ag-grid
 const StreamHistoryTableAGGrid = defineAsyncComponent(
@@ -410,78 +410,16 @@ const hasActiveRun = computed(() => {
   return monitoringStore.streamConfig?.id === props.stream.id && monitoringStore.streamID !== ''
 })
 
-const evaluationBanner = computed(() => {
-  const mode = props.stream.mode
-
-  const subscriptionStatus = (commonStore.userData?.subscriptionStatus || '').toLowerCase()
-  if (subscriptionStatus === 'active') return null
-
-  const streamID = monitoringStore.streamID
-
-  const liveWarning = monitoringStore.evaluationWarning
-  if (
-    isStreamRunning.value &&
-    liveWarning &&
-    liveWarning.streamId === streamID &&
-    liveWarning.mode === mode &&
-    liveWarning.threshold >= 90
-  ) {
-    return liveWarning
+const { evaluationBanner, evaluationBannerTitle, evaluationBannerBody } = useStreamEvaluationBanner(
+  {
+    stream: streamRef,
+    isStreamRunning,
+    streamID: computed(() => monitoringStore.streamID),
+    liveWarning: computed(() => monitoringStore.evaluationWarning),
+    subscriptionStatus: computed(() => commonStore.userData?.subscriptionStatus),
+    evaluation: computed(() => commonStore.userData?.evaluation)
   }
-
-  const evaluation = commonStore.userData?.evaluation
-  if (!evaluation) return null
-
-  const warnedPercent =
-    mode === 'convert' ? evaluation.convert_warned_percent || 0 : evaluation.cdc_warned_percent || 0
-  if (warnedPercent < 90) return null
-
-  const used = mode === 'convert' ? evaluation.convert_bytes : evaluation.cdc_seconds
-  const limit = mode === 'convert' ? evaluation.convert_limit_bytes : evaluation.cdc_limit_seconds
-  if (!limit) return null
-
-  const percent = Math.min(100, Math.floor((used / limit) * 100))
-  return {
-    streamId: streamID,
-    mode,
-    threshold: warnedPercent,
-    percent,
-    used,
-    limit,
-    message: '',
-    updatedAt: Date.now()
-  }
-})
-
-const evaluationBannerTitle = computed(() => {
-  if (!evaluationBanner.value) return ''
-  return evaluationBanner.value.percent >= 100
-    ? 'Evaluation limit reached'
-    : 'Evaluation limit almost reached'
-})
-
-const evaluationBannerBody = computed(() => {
-  const warning = evaluationBanner.value
-  if (!warning) return ''
-  const modeLabel = warning.mode === 'convert' ? 'Convert usage' : 'CDC runtime'
-  const usedLabel =
-    warning.mode === 'convert' ? formatDataSize(warning.used) : formatDurationSeconds(warning.used)
-  const limitLabel =
-    warning.mode === 'convert'
-      ? formatDataSize(warning.limit)
-      : formatDurationSeconds(warning.limit)
-  const percent = warning.percent || warning.threshold
-  const suffix =
-    percent >= 100
-      ? 'New streams will not start until you subscribe.'
-      : 'Subscribe soon to continue without interruption.'
-  return `${modeLabel} at ${percent}% (${usedLabel} of ${limitLabel}). ${suffix}`
-})
-
-function formatDurationSeconds(seconds: number) {
-  const formatted = formatElapsedTimeWithUnit(seconds * 1e9)
-  return `${formatted.value}${formatted.unit}`
-}
+)
 
 const { historyRuns, handleDeleteRun, handleClearAll } = useStreamHistory({
   streamId: streamIdRef,

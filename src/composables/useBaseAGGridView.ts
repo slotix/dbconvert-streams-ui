@@ -19,6 +19,7 @@ import type {
   PostProcessPopupParams
 } from 'ag-grid-community'
 import { useAGGridFiltering } from '@/composables/useAGGridFiltering'
+import { useManagedTimeout } from '@/composables/useManagedTimeout'
 import { useObjectTabStateStore } from '@/stores/objectTabState'
 import { getSqlDialectFromType } from '@/types/specs'
 import 'ag-grid-community/styles/ag-grid.css'
@@ -148,6 +149,7 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
 
   // Grid container ref for scoped event listeners
   const gridContainerRef = ref<HTMLElement | null>(null)
+  const { setManagedTimeout, clearManagedTimeout, clearAllManagedTimeouts } = useManagedTimeout()
   let contextMenuListenerAttachTimer: ReturnType<typeof setTimeout> | null = null
 
   // SQL banner dimensions
@@ -551,7 +553,7 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
     params.api.addEventListener('firstDataRendered', updateVisibleRows)
 
     // Add context menu listener for column headers
-    contextMenuListenerAttachTimer = setTimeout(() => {
+    contextMenuListenerAttachTimer = setManagedTimeout(() => {
       contextMenuListenerAttachTimer = null
       if (gridContainerRef.value) {
         gridContainerRef.value.addEventListener('contextmenu', handleContextMenu)
@@ -645,10 +647,9 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
    * Cleanup on unmount
    */
   onBeforeUnmount(() => {
-    if (contextMenuListenerAttachTimer) {
-      clearTimeout(contextMenuListenerAttachTimer)
-      contextMenuListenerAttachTimer = null
-    }
+    clearManagedTimeout(contextMenuListenerAttachTimer)
+    contextMenuListenerAttachTimer = null
+    clearAllManagedTimeouts()
     if (gridContainerRef.value) {
       gridContainerRef.value.removeEventListener('contextmenu', handleContextMenu)
     }

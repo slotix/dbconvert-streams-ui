@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import type { GridApi, Column } from 'ag-grid-community'
 import { useContextualIconSizes } from '@/composables/useIconSizes'
+import { useManagedTimeout } from '@/composables/useManagedTimeout'
 import { Ban, MapPin, Maximize2, RefreshCw } from 'lucide-vue-next'
 
 // Get current zoom factor for position adjustment
@@ -22,6 +23,7 @@ const emit = defineEmits<{
 }>()
 
 const menuRef = ref<HTMLElement | null>(null)
+const { setManagedTimeout, clearManagedTimeout } = useManagedTimeout()
 let listenerAttachTimer: ReturnType<typeof setTimeout> | null = null
 
 // Icon sizes
@@ -48,7 +50,7 @@ const handleClickOutside = (event: MouseEvent) => {
 
 onMounted(() => {
   // Delay adding listeners to avoid closing immediately on the same click that opened it
-  listenerAttachTimer = setTimeout(() => {
+  listenerAttachTimer = setManagedTimeout(() => {
     listenerAttachTimer = null
     document.addEventListener('click', handleClickOutside)
     document.addEventListener('contextmenu', handleClickOutside)
@@ -56,10 +58,8 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  if (listenerAttachTimer) {
-    clearTimeout(listenerAttachTimer)
-    listenerAttachTimer = null
-  }
+  clearManagedTimeout(listenerAttachTimer)
+  listenerAttachTimer = null
   document.removeEventListener('click', handleClickOutside)
   document.removeEventListener('contextmenu', handleClickOutside)
 })
