@@ -1,13 +1,11 @@
 # DBConvert Streams UI Design System
 
-**Version:** 1.0  
-**Status:** Phases 1‑3 complete; dark mode infrastructure live.  
 **Scope:** Consolidated reference for implementation status, patterns, quick lookups, migration steps, and dark mode (supersedes previous design docs).
 
 ---
 
 ## 1. Implementation Snapshot
-- **Component library:** Use `src/components/base/*` (`BaseButton`, `StatusBadge`, `FormInput`, `FormSelect`, `FormCheckbox`, `FormSwitch`, `SelectionButtonGroup`). Monitoring still runs the legacy badge until the transition bug is fixed.
+- **Component library:** Use `src/components/base/*` (`BaseButton`, `FormInput`, `FormSelect`, `FormCheckbox`, `FormSwitch`, `SelectionButtonGroup`). `StatusBadge` currently lives in `src/components/common/StatusBadge.vue`. Monitoring still runs the legacy badge until the transition bug is fixed.
 - **Coverage:** 21 components (12 buttons, 9 forms) already consume the shared primitives.
 - **Rollout progress:**
   | Phase | Scope | Outcome |
@@ -150,7 +148,7 @@ Standard statuses map to semantic colors (see table above). Use `StatusBadge` to
 ---
 
 ## 6. Dark Mode Reference
-- **Status:** Fully implemented. Theme state lives in `src/stores/theme.ts`; `ThemeToggle.vue` controls the UI; Tailwind uses `darkMode: 'class'`; `src/assets/style.css` imports the config with `@config`.
+- Theme state lives in `src/stores/theme.ts`; `ThemeToggle.vue` controls the UI; Tailwind uses `darkMode: 'class'`; `src/assets/style.css` imports the config with `@config`.
 - **Coverage:** Database explorer views, tree items, metadata panes, AG Grid, pagination, BaseButton, toasts, and search inputs already include `dark:` variants. Database icon colors are safelisted.
 
 ### Palette translation (light → dark)
@@ -188,7 +186,7 @@ Standard statuses map to semantic colors (see table above). Use `StatusBadge` to
 
 ## 7. References & Ownership
 - **Primary reference:** this document (`DESIGN_SYSTEM.md`).
-- **Component source of truth:** `src/components/base/`.
+- **Component source of truth:** `src/components/base/` (with `StatusBadge` currently in `src/components/common/StatusBadge.vue`).
 - **Theme assets:** `src/stores/theme.ts`, `src/components/ThemeToggle.vue`, `src/assets/style.css`, `src/styles/agGridTheme.css`, `tailwind.config.mjs`.
 - **Maintainers:** Design System team (update this doc when patterns or exceptions change).
 
