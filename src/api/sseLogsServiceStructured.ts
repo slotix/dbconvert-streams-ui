@@ -5,13 +5,23 @@ import type { Store } from 'pinia'
 
 class SSELogsService {
   private eventSource: EventSource | null = null
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null
   private reconnectAttempts = 0
   private maxReconnectAttempts = 5
   private reconnectDelay = 2000
   private isConnected = false
   private backendAvailable = true // Track backend availability
 
+  private clearReconnectTimer() {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer)
+      this.reconnectTimer = null
+    }
+  }
+
   connect(sseUrl?: string) {
+    this.clearReconnectTimer()
+
     if (this.eventSource) {
       this.disconnect()
     }
@@ -139,12 +149,16 @@ class SSELogsService {
       console.log(`Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`)
     }
 
-    setTimeout(() => {
+    this.clearReconnectTimer()
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = null
       this.connect(sseUrl)
     }, delay)
   }
 
   disconnect() {
+    this.clearReconnectTimer()
+
     if (this.eventSource) {
       this.eventSource.close()
       this.eventSource = null

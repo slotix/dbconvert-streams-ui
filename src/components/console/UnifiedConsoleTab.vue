@@ -259,7 +259,7 @@ const {
   consoleKey
 })
 
-const { sourcePills, isDatabaseMapping, getDatabaseTypeDisplay } = useSqlSourcePresentation({
+const { sourcePills, isDatabaseMapping } = useSqlSourcePresentation({
   selectedConnections,
   getConnectionById: (connectionId) => connectionsStore.connectionByID(connectionId)
 })

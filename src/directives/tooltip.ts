@@ -1,5 +1,16 @@
 import type { Directive } from 'vue'
 
+type TooltipHandlers = {
+  onMouseEnter: () => void
+  onMouseLeave: () => void
+  onClick: () => void
+}
+
+type TooltipElement = HTMLElement & {
+  _tooltip?: HTMLElement
+  _tooltipHandlers?: TooltipHandlers
+}
+
 function createTooltip(text: string): HTMLElement {
   const tooltip = document.createElement('div')
   tooltip.className =
@@ -16,40 +27,67 @@ function positionTooltip(tooltip: HTMLElement, el: HTMLElement) {
   tooltip.style.top = `${rect.top - tooltipRect.height - 5}px`
 }
 
+function cleanupTooltip(el: TooltipElement) {
+  if (el._tooltipHandlers) {
+    el.removeEventListener('mouseenter', el._tooltipHandlers.onMouseEnter)
+    el.removeEventListener('mouseleave', el._tooltipHandlers.onMouseLeave)
+    el.removeEventListener('click', el._tooltipHandlers.onClick)
+    delete el._tooltipHandlers
+  }
+
+  if (el._tooltip) {
+    el._tooltip.remove()
+    delete el._tooltip
+  }
+}
+
+function attachTooltip(el: TooltipElement, text: string) {
+  const tooltip = createTooltip(text)
+  document.body.appendChild(tooltip)
+
+  const onMouseEnter = () => {
+    positionTooltip(tooltip, el)
+    tooltip.style.opacity = '1'
+  }
+
+  const onMouseLeave = () => {
+    tooltip.style.opacity = '0'
+  }
+
+  const onClick = () => {
+    tooltip.style.opacity = '0'
+  }
+
+  el.addEventListener('mouseenter', onMouseEnter)
+  el.addEventListener('mouseleave', onMouseLeave)
+  el.addEventListener('click', onClick)
+
+  el._tooltip = tooltip
+  el._tooltipHandlers = { onMouseEnter, onMouseLeave, onClick }
+}
+
 export const vTooltip: Directive = {
-  mounted(el, binding) {
+  mounted(el: TooltipElement, binding) {
     if (!binding.value) return
-
-    const tooltip = createTooltip(binding.value)
-    document.body.appendChild(tooltip)
-
-    el.addEventListener('mouseenter', () => {
-      positionTooltip(tooltip, el)
-      tooltip.style.opacity = '1'
-    })
-
-    el.addEventListener('mouseleave', () => {
-      tooltip.style.opacity = '0'
-    })
-
-    el.addEventListener('click', () => {
-      tooltip.style.opacity = '0'
-    })
-
-    // Store tooltip reference for cleanup
-    el._tooltip = tooltip
+    attachTooltip(el, binding.value)
   },
 
-  updated(el, binding) {
+  updated(el: TooltipElement, binding) {
+    if (!binding.value) {
+      cleanupTooltip(el)
+      return
+    }
+
+    if (!el._tooltip) {
+      attachTooltip(el, binding.value)
+    }
+
     if (el._tooltip) {
       el._tooltip.textContent = binding.value
     }
   },
 
-  unmounted(el) {
-    if (el._tooltip) {
-      el._tooltip.remove()
-      delete el._tooltip
-    }
+  unmounted(el: TooltipElement) {
+    cleanupTooltip(el)
   }
 }

@@ -22,6 +22,7 @@ const emit = defineEmits<{
 }>()
 
 const menuRef = ref<HTMLElement | null>(null)
+let listenerAttachTimer: ReturnType<typeof setTimeout> | null = null
 
 // Icon sizes
 const iconSizes = useContextualIconSizes()
@@ -47,13 +48,18 @@ const handleClickOutside = (event: MouseEvent) => {
 
 onMounted(() => {
   // Delay adding listeners to avoid closing immediately on the same click that opened it
-  setTimeout(() => {
+  listenerAttachTimer = setTimeout(() => {
+    listenerAttachTimer = null
     document.addEventListener('click', handleClickOutside)
     document.addEventListener('contextmenu', handleClickOutside)
   }, 100)
 })
 
 onUnmounted(() => {
+  if (listenerAttachTimer) {
+    clearTimeout(listenerAttachTimer)
+    listenerAttachTimer = null
+  }
   document.removeEventListener('click', handleClickOutside)
   document.removeEventListener('contextmenu', handleClickOutside)
 })

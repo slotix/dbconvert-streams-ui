@@ -383,20 +383,12 @@ const {
   isPaused,
   isStreamFinished,
   isStopped,
-  canValidateConstraints,
   streamStatus,
   startStream,
   pauseStream,
   resumeStream,
-  stopStream,
-  runConstraints
+  stopStream
 } = useStreamControls(streamRef)
-
-const targetType = computed(() => (props.target?.type || '').toLowerCase())
-const isPostgresTarget = computed(() =>
-  ['postgres', 'postgresql', 'pgx'].includes(targetType.value)
-)
-const isMySQLTarget = computed(() => targetType.value === 'mysql')
 
 const dbTypes = computed(() => connectionsStore.dbTypes)
 const allConnections = computed(() => connectionsStore.connections)

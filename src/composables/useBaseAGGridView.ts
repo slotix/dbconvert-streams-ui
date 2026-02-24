@@ -148,6 +148,7 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
 
   // Grid container ref for scoped event listeners
   const gridContainerRef = ref<HTMLElement | null>(null)
+  let contextMenuListenerAttachTimer: ReturnType<typeof setTimeout> | null = null
 
   // SQL banner dimensions
   const sqlBannerHeight = computed(() =>
@@ -550,7 +551,8 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
     params.api.addEventListener('firstDataRendered', updateVisibleRows)
 
     // Add context menu listener for column headers
-    setTimeout(() => {
+    contextMenuListenerAttachTimer = setTimeout(() => {
+      contextMenuListenerAttachTimer = null
       if (gridContainerRef.value) {
         gridContainerRef.value.addEventListener('contextmenu', handleContextMenu)
       }
@@ -643,6 +645,10 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
    * Cleanup on unmount
    */
   onBeforeUnmount(() => {
+    if (contextMenuListenerAttachTimer) {
+      clearTimeout(contextMenuListenerAttachTimer)
+      contextMenuListenerAttachTimer = null
+    }
     if (gridContainerRef.value) {
       gridContainerRef.value.removeEventListener('contextmenu', handleContextMenu)
     }
