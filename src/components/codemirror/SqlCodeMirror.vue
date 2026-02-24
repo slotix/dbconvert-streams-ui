@@ -1,7 +1,8 @@
 <template>
   <div
     :class="[
-      'relative rounded-lg border codemirror-editor-container',
+      'relative border codemirror-editor-container',
+      props.rounded ? 'rounded-lg' : 'rounded-none',
       isDarkTheme ? 'sql-cm-dark' : 'sql-cm-light',
       props.readOnly
         ? 'border-gray-200 dark:border-gray-700'
@@ -92,6 +93,7 @@ interface Props {
   height?: string
   lspContext?: SqlLspConnectionContext
   enableSqlProviders?: boolean
+  rounded?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -103,7 +105,8 @@ const props = withDefaults(defineProps<Props>(), {
   fillParent: false,
   height: '200px',
   lspContext: undefined,
-  enableSqlProviders: true
+  enableSqlProviders: true,
+  rounded: true
 })
 
 const emit = defineEmits<{
@@ -156,6 +159,7 @@ let hoverMouseOverListener: ((event: MouseEvent) => void) | null = null
 let hoverMouseLeaveListener: (() => void) | null = null
 let hoverMouseDownListener: (() => void) | null = null
 let definitionMouseDownListener: ((event: MouseEvent) => void) | null = null
+let selectionResetClickListener: ((event: MouseEvent) => void) | null = null
 let signatureTooltipEl: HTMLDivElement | null = null
 let signatureHideTimer: ReturnType<typeof setTimeout> | null = null
 const pendingRequests = new Map<number | string, PendingRequest>()
@@ -732,6 +736,10 @@ function detachHoverDomListeners(view: EditorView | null) {
     view.dom.removeEventListener('mousedown', definitionMouseDownListener)
     definitionMouseDownListener = null
   }
+  if (selectionResetClickListener) {
+    view.dom.removeEventListener('click', selectionResetClickListener)
+    selectionResetClickListener = null
+  }
 }
 
 function attachHoverDomListeners(view: EditorView) {
@@ -766,10 +774,26 @@ function attachHoverDomListeners(view: EditorView) {
     void goToDefinitionAtPosition(pos)
   }
 
+  selectionResetClickListener = (event: MouseEvent) => {
+    if (!props.readOnly) return
+    if (event.button !== 0 || event.defaultPrevented) return
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+    if (view.state.selection.main.empty) return
+
+    const pos = view.posAtCoords({ x: event.clientX, y: event.clientY })
+    if (pos === null) return
+
+    view.dispatch({
+      selection: { anchor: pos },
+      effects: EditorView.scrollIntoView(pos, { y: 'nearest' })
+    })
+  }
+
   view.dom.addEventListener('mouseover', hoverMouseOverListener, { passive: true })
   view.dom.addEventListener('mouseleave', hoverMouseLeaveListener)
   view.dom.addEventListener('mousedown', hoverMouseDownListener)
   view.dom.addEventListener('mousedown', definitionMouseDownListener)
+  view.dom.addEventListener('click', selectionResetClickListener)
 }
 
 function getHasSelection(state: EditorStateLike): boolean {
@@ -824,6 +848,16 @@ function handleExecuteShortcut() {
     return false
   }
   emit('execute', getSelectedSqlIfAny())
+  return true
+}
+
+function handleClearSelectionShortcut(view: EditorView) {
+  const selection = view.state.selection.main
+  if (selection.empty) {
+    return false
+  }
+
+  view.dispatch({ selection: { anchor: selection.to } })
   return true
 }
 
@@ -1574,6 +1608,7 @@ function shouldTriggerDuckDBReadArgumentCompletion(update: ViewUpdate): boolean 
 
 function createEditorState() {
   const keymaps = keymap.of([
+    { key: 'Escape', run: handleClearSelectionShortcut },
     { key: 'F12', run: handleDefinitionShortcut },
     { key: 'Mod-Enter', run: handleExecuteShortcut },
     { key: 'Shift-Enter', run: handleExecuteShortcut },
@@ -1774,6 +1809,9 @@ defineExpose({
   --sql-editor-selection-bg: rgba(13, 148, 136, 0.24);
   --sql-editor-text: #0f172a;
   --sql-editor-detail: #64748b;
+  --sql-editor-gutter-text: #64748b;
+  --sql-editor-active-gutter-text: #0f766e;
+  --sql-editor-active-gutter-bg: rgba(20, 184, 166, 0.16);
   --sql-hover-card-bg: var(--sql-editor-popup-bg);
   --sql-hover-card-border: transparent;
   --sql-hover-heading: #0f172a;
@@ -1810,6 +1848,9 @@ defineExpose({
   --sql-editor-selection-bg: rgba(20, 184, 166, 0.34);
   --sql-editor-text: #e5e7eb;
   --sql-editor-detail: #9ca3af;
+  --sql-editor-gutter-text: #6b7280;
+  --sql-editor-active-gutter-text: #5eead4;
+  --sql-editor-active-gutter-bg: rgba(20, 184, 166, 0.18);
   --sql-hover-card-bg: var(--sql-editor-popup-bg);
   --sql-hover-card-border: transparent;
   --sql-hover-heading: #f3f4f6;
@@ -1863,8 +1904,17 @@ defineExpose({
   background: var(--sql-editor-gutter-bg);
 }
 
+:deep(.cm-lineNumbers .cm-gutterElement) {
+  color: var(--sql-editor-gutter-text);
+}
+
 :deep(.cm-activeLine) {
   background: var(--sql-editor-active-line);
+}
+
+:deep(.cm-activeLineGutter) {
+  color: var(--sql-editor-active-gutter-text) !important;
+  background: var(--sql-editor-active-gutter-bg) !important;
 }
 
 :deep(.cm-tooltip.cm-tooltip-autocomplete) {

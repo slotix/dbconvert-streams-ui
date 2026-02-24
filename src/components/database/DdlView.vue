@@ -32,6 +32,9 @@ const indexesSql = computed(() => {
       :code="ddl.createTable"
       title="SQL Definition"
       :dialect="dialect"
+      :rounded="false"
+      show-copy-button
+      resizable
       compact
       auto-resize
       :max-height="800"
@@ -41,6 +44,9 @@ const indexesSql = computed(() => {
       :code="indexesSql"
       title="Indexes"
       :dialect="dialect"
+      :rounded="false"
+      show-copy-button
+      resizable
       compact
       auto-resize
       :max-height="400"

@@ -459,12 +459,7 @@ function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
 </script>
 
 <template>
-  <div
-    :class="[
-      'bg-white dark:bg-gray-850',
-      $attrs.class ? $attrs.class : 'shadow-sm ring-1 ring-gray-900/5 dark:ring-gray-700 rounded-lg'
-    ]"
-  >
+  <div :class="['bg-white dark:bg-gray-850', $attrs.class || '']">
     <!-- Header removed; DatabaseObjectContainer renders tabs, title, and actions -->
 
     <!-- HeadlessUI Tab Implementation with Store Integration - Underline Style -->
@@ -533,7 +528,7 @@ function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
 
           <div class="overflow-x-auto">
             <div class="min-w-[640px]">
-              <div class="ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg">
+              <div class="ring-1 ring-gray-200 dark:ring-gray-700">
                 <table class="min-w-full divide-y divide-gray-300 dark:divide-gray-700">
                   <thead>
                     <tr class="bg-gray-50 dark:bg-gray-900">
@@ -760,7 +755,7 @@ function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
         <TabPanel>
           <div class="overflow-x-auto">
             <div class="inline-block min-w-full align-middle">
-              <div class="overflow-hidden ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg">
+              <div class="overflow-hidden ring-1 ring-gray-200 dark:ring-gray-700">
                 <table class="min-w-full divide-y divide-gray-300 dark:divide-gray-700">
                   <thead>
                     <tr class="bg-gray-50 dark:bg-gray-900">
@@ -818,7 +813,7 @@ function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
             <div
               v-for="trigger in tableTriggers"
               :key="`${trigger.schema || 'default'}:${trigger.name}`"
-              class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-850 overflow-hidden shadow-sm"
+              class="border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-850 overflow-hidden"
             >
               <TriggerDefinitionView
                 :trigger-meta="trigger"
@@ -867,7 +862,7 @@ function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
 
           <div class="overflow-x-auto">
             <div class="inline-block min-w-full align-middle">
-              <div class="overflow-hidden ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg">
+              <div class="overflow-hidden ring-1 ring-gray-200 dark:ring-gray-700">
                 <table class="min-w-full divide-y divide-gray-300 dark:divide-gray-700">
                   <thead>
                     <tr class="bg-gray-50 dark:bg-gray-900">

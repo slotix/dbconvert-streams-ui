@@ -81,7 +81,7 @@
 
     <!-- Wizard Content -->
     <div
-      class="bg-white dark:bg-gray-850 rounded-2xl p-6 shadow-lg dark:shadow-gray-900/30 border border-gray-100 dark:border-gray-700 flex flex-col flex-1 min-h-0"
+      class="bg-white dark:bg-gray-850 rounded-lg p-6 shadow-lg dark:shadow-gray-900/30 flex flex-col flex-1 min-h-0"
     >
       <!-- Step Content Slot -->
       <div class="flex-1 mb-6 overflow-y-auto">

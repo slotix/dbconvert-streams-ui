@@ -99,6 +99,20 @@
     --sql-editor-font-scale: var(--app-zoom, 1);
   }
 
+  /* Keep SqlCodeBlock overlay controls (copy/grip) visually consistent with CodeMirror
+     under desktop zoom, since they sit outside .codemirror-editor-container. */
+  html.desktop-zoom .sql-code-overlay-control {
+    zoom: calc(1 / var(--app-zoom, 1));
+  }
+
+  html.desktop-zoom .sql-code-copy-control {
+    transform-origin: top right;
+  }
+
+  html.desktop-zoom .sql-code-resize-grip {
+    transform-origin: bottom right;
+  }
+
   /* Improve SVG icon rendering at non-100% zoom levels in WebKitGTK. */
   html.desktop-zoom svg {
     shape-rendering: geometricPrecision;

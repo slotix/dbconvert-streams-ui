@@ -57,12 +57,6 @@ const routes = [
     props: true
   },
   {
-    path: '/streams/edit-json/:id',
-    name: 'EditStreamJson',
-    component: () => import('@/views/EditStreamJsonView.vue'),
-    props: true
-  },
-  {
     path: '/:catchAll(.*)',
     component: NotFound
   }

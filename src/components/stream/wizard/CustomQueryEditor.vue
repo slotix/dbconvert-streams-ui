@@ -1,41 +1,5 @@
 <template>
   <div class="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
-    <!-- Header -->
-    <div
-      class="flex items-center justify-between px-4 py-2.5 bg-white dark:bg-gray-850 border-b border-gray-200 dark:border-gray-700"
-    >
-      <div class="flex items-center gap-2">
-        <Code class="w-5 h-5 text-teal-600 dark:text-teal-400" />
-        <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100">SQL Queries</h3>
-        <span
-          v-if="queries.length > 0"
-          class="px-2 py-0.5 text-xs rounded-full bg-teal-100 dark:bg-teal-900/50 text-teal-700 dark:text-teal-300"
-        >
-          {{ queries.length }}
-        </span>
-      </div>
-      <div class="flex items-center gap-2">
-        <!-- Template Selector - hide for federated mode (templates don't apply to DuckDB syntax) -->
-        <FormSelect
-          v-if="activeQuery && !needsFederatedExecution"
-          class="w-[220px]"
-          :model-value="selectedTemplate"
-          :options="templateOptions"
-          compact
-          button-class="bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600"
-          placeholder="Templates"
-          @update:model-value="applyTemplateSelection($event, activeQuery)"
-        />
-        <!-- Source count badge -->
-        <span
-          v-if="sourceConnections.length > 1"
-          class="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded"
-        >
-          {{ sourceConnections.length }} sources
-        </span>
-      </div>
-    </div>
-
     <!-- Empty State -->
     <div
       v-if="queries.length === 0"
@@ -76,73 +40,68 @@
 
       <!-- Query Content -->
       <div v-if="activeQuery" class="flex-1 flex flex-col min-h-0 bg-white dark:bg-gray-850">
-        <!-- Query Info Bar -->
+        <!-- Query Controls Row -->
         <div
-          class="flex items-center justify-between px-4 py-2 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
-        >
-          <!-- Table Name Input -->
-          <div class="flex items-center gap-3 flex-1">
-            <span class="text-xs text-gray-500 dark:text-gray-400">Result table name:</span>
-            <input
-              v-model="activeQuery.name"
-              type="text"
-              placeholder="target_table_name"
-              class="px-3 py-1 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-              @blur="validateTableName(activeQuery, activeQueryIndex)"
-            />
-          </div>
-
-          <!-- Actions -->
-          <div class="flex items-center gap-2">
-            <button
-              type="button"
-              class="inline-flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 dark:bg-teal-700 dark:hover:bg-teal-600 rounded-md transition-colors shadow-sm"
-              title="Run query and preview results"
-              :disabled="isRunning === activeQueryIndex || !activeQuery.query?.trim()"
-              @click="runPreview(activeQuery, activeQueryIndex)"
-            >
-              <Play v-if="isRunning !== activeQueryIndex" class="w-4 h-4" />
-              <RefreshCw v-else class="w-4 h-4 animate-spin" />
-              <span>{{ isRunning === activeQueryIndex ? 'Running...' : 'Run' }}</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Connected Sources Reference Panel (shown when 2+ sources for alias reference) -->
-        <div
-          v-if="sourceConnections.length > 1"
           class="px-4 py-2 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700"
         >
-          <div class="flex items-start gap-3">
-            <span class="text-xs font-medium text-gray-600 dark:text-gray-400 shrink-0 pt-0.5"
-              >Source Aliases:</span
-            >
-            <div class="flex flex-wrap gap-2">
-              <div
-                v-for="conn in sourceConnections"
-                :key="`${conn.connectionId}:${conn.alias}`"
-                class="inline-flex items-center gap-1.5 px-2 py-1 text-xs bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded"
-              >
-                <span class="font-mono font-semibold text-teal-600 dark:text-teal-400">{{
-                  conn.alias
-                }}</span>
-                <span class="text-gray-400 dark:text-gray-500">→</span>
-                <span class="text-gray-600 dark:text-gray-400">{{
-                  getConnectionLabel(conn.connectionId)
-                }}</span>
-                <span
-                  v-if="isFileConnection(conn.connectionId)"
-                  class="ml-1 px-1.5 py-0.5 text-[10px] bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded"
-                  title="File sources are read directly using DuckDB functions"
-                  >file</span
+          <div class="flex items-start justify-between gap-4">
+            <div class="min-w-0 flex-1">
+              <div v-if="sourceConnections.length > 1" class="flex items-start gap-3">
+                <span class="text-xs font-medium text-gray-600 dark:text-gray-400 shrink-0 pt-0.5"
+                  >Source Aliases:</span
                 >
-                <span
-                  v-else
-                  class="ml-1 px-1.5 py-0.5 text-[10px] bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded"
-                  title="Use alias.table syntax to reference tables"
-                  >{{ conn.alias }}.table</span
-                >
+                <div class="flex flex-wrap gap-2 min-w-0">
+                  <div
+                    v-for="conn in sourceConnections"
+                    :key="`${conn.connectionId}:${conn.alias}`"
+                    class="inline-flex items-center gap-1.5 px-2 py-1 text-xs bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded"
+                  >
+                    <span class="font-mono font-semibold text-teal-600 dark:text-teal-400">{{
+                      conn.alias
+                    }}</span>
+                    <span class="text-gray-400 dark:text-gray-500">→</span>
+                    <span class="text-gray-600 dark:text-gray-400">{{
+                      getConnectionLabel(conn.connectionId)
+                    }}</span>
+                    <span
+                      v-if="isFileConnection(conn.connectionId)"
+                      class="ml-1 px-1.5 py-0.5 text-[10px] bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded"
+                      title="File sources are read directly using DuckDB functions"
+                      >file</span
+                    >
+                    <span
+                      v-else
+                      class="ml-1 px-1.5 py-0.5 text-[10px] bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded"
+                      title="Use alias.table syntax to reference tables"
+                      >{{ conn.alias }}.table</span
+                    >
+                  </div>
+                </div>
               </div>
+            </div>
+
+            <div class="flex items-center gap-2 shrink-0">
+              <FormSelect
+                v-if="!needsFederatedExecution"
+                class="w-[220px]"
+                :model-value="selectedTemplate"
+                :options="templateOptions"
+                compact
+                button-class="bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600"
+                placeholder="Templates"
+                @update:model-value="applyTemplateSelection($event, activeQuery)"
+              />
+              <button
+                type="button"
+                class="inline-flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 dark:bg-teal-700 dark:hover:bg-teal-600 rounded-md transition-colors shadow-sm"
+                title="Preview query results"
+                :disabled="isRunning === activeQueryIndex || !activeQuery.query?.trim()"
+                @click="runPreview(activeQuery, activeQueryIndex)"
+              >
+                <Play v-if="isRunning !== activeQueryIndex" class="w-4 h-4" />
+                <RefreshCw v-else class="w-4 h-4 animate-spin" />
+                <span>{{ isRunning === activeQueryIndex ? 'Previewing...' : 'Preview' }}</span>
+              </button>
             </div>
           </div>
         </div>
@@ -258,7 +217,7 @@
               <div v-else class="flex flex-col items-center justify-center h-full p-8 text-center">
                 <Play class="w-12 h-12 text-gray-300 dark:text-gray-600 mb-3" />
                 <p class="text-sm text-gray-500 dark:text-gray-400">
-                  Run the query to preview results
+                  Preview the query to see results
                 </p>
               </div>
             </div>
@@ -294,16 +253,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
-import {
-  AlertTriangle,
-  CheckCircle,
-  Code,
-  FileText,
-  Play,
-  Plus,
-  RefreshCw,
-  Sheet
-} from 'lucide-vue-next'
+import { AlertTriangle, CheckCircle, FileText, Play, Plus, RefreshCw, Sheet } from 'lucide-vue-next'
 import SqlCodeMirror from '@/components/codemirror/SqlCodeMirror.vue'
 import { SqlQueryTabs } from '@/components/database/sql-console'
 import FormSelect from '@/components/base/FormSelect.vue'
@@ -579,17 +529,6 @@ const reorderQuery = (fromIndex: number, toIndex: number) => {
   // Update active tab to follow the moved query
   if (activeTabId.value === `query-${fromIndex}`) {
     activeTabId.value = `query-${adjustedToIndex}`
-  }
-}
-
-const validateTableName = (query: QuerySource, index: number) => {
-  // Sanitize table name: lowercase, no spaces, alphanumeric + underscore only
-  const sanitized = query.name
-    .toLowerCase()
-    .replace(/\s+/g, '_')
-    .replace(/[^a-z0-9_]/g, '')
-  if (sanitized !== query.name) {
-    query.name = sanitized || `query_result_${index + 1}`
   }
 }
 

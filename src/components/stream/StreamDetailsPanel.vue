@@ -31,28 +31,14 @@
           </h2>
         </div>
         <div class="flex items-center gap-2 ml-4">
-          <div
+          <BaseButton
             v-if="!isStreamRunning || isStreamFinished"
-            class="inline-flex rounded-md shadow-sm"
-            role="group"
+            v-tooltip="'Edit using step-by-step wizard'"
+            variant="secondary"
+            @click="navigateToEdit"
           >
-            <BaseButton
-              v-tooltip="'Edit using step-by-step wizard'"
-              class="rounded-none rounded-l-md"
-              variant="secondary"
-              @click="navigateToEdit"
-            >
-              Edit
-            </BaseButton>
-            <BaseButton
-              v-tooltip="'Edit raw JSON configuration'"
-              class="rounded-none rounded-r-md -ml-px"
-              variant="secondary"
-              @click="navigateToEditJson"
-            >
-              Edit JSON
-            </BaseButton>
-          </div>
+            Edit
+          </BaseButton>
           <BaseButton
             v-if="!isStreamRunning || isStreamFinished"
             v-tooltip="'Clone stream configuration'"
@@ -213,7 +199,7 @@
     <!-- Content -->
     <div class="flex-1 overflow-y-auto">
       <!-- Configuration Tab -->
-      <div v-if="activeTab === 'configuration'" class="p-6">
+      <div v-if="activeTab === 'configuration'" class="p-6 space-y-6">
         <StreamConfigurationView
           :stream="stream"
           :source="source"
@@ -225,6 +211,21 @@
           @navigate-target="navigateToTargetExplorer"
           @navigate-federated="navigateToConnectionExplorer"
         />
+        <div class="pt-6 border-t border-gray-100 dark:border-gray-800">
+          <StreamConfigJsonEditor
+            v-if="!isStreamRunning || isStreamFinished"
+            ref="jsonEditorRef"
+            :config="stream"
+            height="600px"
+            @save="handleSaveConfig"
+          />
+          <div
+            v-else
+            class="rounded-lg border border-amber-200/80 dark:border-amber-700/60 bg-amber-50/70 dark:bg-amber-900/20 p-4 text-sm text-amber-800 dark:text-amber-200"
+          >
+            JSON configuration editing is disabled while the stream is running.
+          </div>
+        </div>
       </div>
 
       <!-- Monitor Tab -->
@@ -314,6 +315,7 @@ import { useMonitoringStore } from '@/stores/monitoring'
 import BaseButton from '@/components/base/BaseButton.vue'
 import StatContainer from '@/components/monitoring/StatContainer.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
+import StreamConfigJsonEditor from '@/components/stream/StreamConfigJsonEditor.vue'
 import type { StreamConfig } from '@/types/streamConfig'
 import type { Connection } from '@/types/connections'
 import StreamConfigurationView from '@/components/stream/StreamConfigurationView.vue'
@@ -348,6 +350,7 @@ const monitoringStore = useMonitoringStore()
 const { strokeWidth: iconStroke } = useLucideIcons()
 
 const showDeleteConfirm = ref(false)
+const jsonEditorRef = ref<InstanceType<typeof StreamConfigJsonEditor> | null>(null)
 const activeTab = ref<StreamDetailsTab>(props.initialTab || 'configuration')
 
 // Watch for initialTab prop changes (persisted in localStorage)
@@ -513,8 +516,20 @@ function navigateToEdit() {
   router.push({ name: 'EditStream', params: { id: props.stream.id } })
 }
 
-function navigateToEditJson() {
-  router.push({ name: 'EditStreamJson', params: { id: props.stream.id } })
+async function handleSaveConfig(config: StreamConfig) {
+  const configID = props.stream.id
+  if (!configID) {
+    jsonEditorRef.value?.onSaveError('Stream ID is missing')
+    return
+  }
+
+  try {
+    await streamsStore.updateStreamConfig(configID, config)
+    jsonEditorRef.value?.onSaveSuccess()
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to save configuration'
+    jsonEditorRef.value?.onSaveError(errorMessage)
+  }
 }
 
 function handleCompareTable(tableName: string) {

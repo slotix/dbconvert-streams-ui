@@ -13,6 +13,13 @@
 
       <div class="flex items-center gap-2">
         <button
+          v-tooltip="'Find in configuration (Ctrl+F)'"
+          class="p-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          @click="openSearch"
+        >
+          <Search class="h-4 w-4" />
+        </button>
+        <button
           v-tooltip="'Copy configuration'"
           class="p-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           @click="copyConfig"
@@ -59,7 +66,7 @@
     </div>
 
     <div
-      class="rounded-lg border overflow-hidden transition-colors border-teal-500 dark:border-teal-400"
+      class="rounded-lg border overflow-hidden transition-colors border-gray-300 dark:border-gray-700"
     >
       <JsonCodeMirror
         ref="editorRef"
@@ -105,7 +112,16 @@ export default {
 
 <script setup lang="ts">
 import { ref, computed, watch, onBeforeUnmount, onMounted } from 'vue'
-import { AlertTriangle, Check, Clipboard, Code, Loader2, SquarePen, Undo } from 'lucide-vue-next'
+import {
+  AlertTriangle,
+  Check,
+  Clipboard,
+  Code,
+  Loader2,
+  Search,
+  SquarePen,
+  Undo
+} from 'lucide-vue-next'
 import { useCommonStore } from '@/stores/common'
 import { debounce } from '@/utils/debounce'
 import JsonCodeMirror from '@/components/codemirror/JsonCodeMirror.vue'
@@ -202,6 +218,10 @@ const copyConfig = async () => {
   } catch {
     commonStore.showNotification('Failed to copy configuration', 'error')
   }
+}
+
+const openSearch = () => {
+  editorRef.value?.openSearch()
 }
 
 const formatJson = () => {
