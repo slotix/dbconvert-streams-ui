@@ -199,14 +199,15 @@ async function onCreateStream() {
     subtitle="Quick stream setup using current filters and columns"
     @close="emit('close')"
   >
-    <div class="space-y-5">
-      <div
-        class="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50/70 dark:bg-gray-900/40 p-3 border-l-2 border-l-teal-500/70"
-      >
-        <div class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase">
-          Source (read-only)
+    <div class="px-2 pt-1">
+      <!-- Source -->
+      <div>
+        <div
+          class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide"
+        >
+          Source
         </div>
-        <div class="mt-1 text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">
+        <div class="mt-2.5 text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">
           {{ sourceLabel }}
         </div>
         <div class="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
@@ -214,86 +215,83 @@ async function onCreateStream() {
         </div>
       </div>
 
-      <div class="space-y-2">
-        <div class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase">
-          Selected columns
-        </div>
+      <!-- Selected columns -->
+      <div class="mt-7">
         <div
-          class="flex flex-wrap gap-1 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/40 px-2 py-2 max-h-24 overflow-auto"
+          class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2.5"
         >
+          Columns
+        </div>
+        <div class="flex flex-wrap gap-1.5 max-h-24 overflow-auto">
           <span
             v-for="col in selectedColumns"
             :key="col"
-            class="px-2 py-0.5 text-[11px] rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+            class="px-2.5 py-1 text-[11px] rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
           >
             {{ col }}
           </span>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 gap-3">
-        <div
-          v-if="filters.length > 0"
-          class="rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/40 p-3"
-        >
-          <div class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase">
+      <!-- Filters / Sorts / Limit (conditional) -->
+      <div
+        v-if="filters.length > 0 || sorts.length > 0 || (limit !== null && limit > 0)"
+        class="mt-7 space-y-5"
+      >
+        <div v-if="filters.length > 0">
+          <div
+            class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2"
+          >
             Filters
           </div>
-          <ul class="mt-1 space-y-1 text-xs text-gray-700 dark:text-gray-300">
+          <ul class="space-y-1 text-xs text-gray-700 dark:text-gray-300">
             <li v-for="filter in filters" :key="filter.id">
-              <span class="font-semibold text-gray-800 dark:text-gray-200">
-                {{ filter.column }}
-              </span>
+              <span class="font-semibold text-gray-800 dark:text-gray-200">{{
+                filter.column
+              }}</span>
               <span class="mx-1 text-gray-500 dark:text-gray-400">{{ filter.operator }}</span>
-              <span class="text-gray-700 dark:text-gray-300">{{ filter.value }}</span>
+              <span>{{ filter.value }}</span>
             </li>
           </ul>
         </div>
 
-        <div
-          v-if="sorts.length > 0"
-          class="rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/40 p-3"
-        >
-          <div class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase">
+        <div v-if="sorts.length > 0">
+          <div
+            class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2"
+          >
             Sort
           </div>
-          <ul class="mt-1 space-y-1 text-xs text-gray-700 dark:text-gray-300">
+          <ul class="space-y-1 text-xs text-gray-700 dark:text-gray-300">
             <li v-for="sort in sorts" :key="`${sort.column}-${sort.direction}`">
-              <span class="font-semibold text-gray-800 dark:text-gray-200">
-                {{ sort.column }}
-              </span>
+              <span class="font-semibold text-gray-800 dark:text-gray-200">{{ sort.column }}</span>
               <span class="mx-1 text-gray-500 dark:text-gray-400">{{ sort.direction }}</span>
             </li>
           </ul>
         </div>
 
-        <div
-          v-if="limit !== null && limit > 0"
-          class="rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/40 p-3"
-        >
-          <div class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase">
+        <div v-if="limit !== null && limit > 0">
+          <div
+            class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2"
+          >
             Limit
           </div>
-          <div class="mt-1">
-            <span
-              class="inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-xs text-gray-700 dark:text-gray-300"
-            >
-              {{ limit }}
-            </span>
-          </div>
+          <span class="text-xs text-gray-700 dark:text-gray-300">{{ limit }}</span>
         </div>
       </div>
 
-      <div
-        class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3 space-y-3"
-      >
-        <div class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase">
+      <hr class="my-7 -mx-2 border-gray-200 dark:border-gray-700" />
+
+      <!-- Target -->
+      <div class="space-y-5">
+        <div
+          class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide"
+        >
           Target
         </div>
         <label class="block">
           <span class="text-xs text-gray-700 dark:text-gray-300">Format</span>
           <FormSelect
-            class="mt-1"
+            class="mt-2"
             :model-value="format"
             :options="formatOptions"
             @update:model-value="format = String($event ?? 'csv') as StreamExportFormat"
@@ -303,7 +301,7 @@ async function onCreateStream() {
         <label class="block">
           <span class="text-xs text-gray-700 dark:text-gray-300">Compression</span>
           <FormSelect
-            class="mt-1"
+            class="mt-2"
             :model-value="compression"
             :options="compressionOptions"
             @update:model-value="
@@ -314,7 +312,7 @@ async function onCreateStream() {
 
         <label class="block">
           <span class="text-xs text-gray-700 dark:text-gray-300">Target path</span>
-          <div class="mt-1 flex items-stretch gap-2">
+          <div class="mt-2 flex items-stretch gap-2">
             <input
               v-model="targetBasePath"
               type="text"
@@ -329,7 +327,7 @@ async function onCreateStream() {
               Browse
             </button>
           </div>
-          <p v-if="defaultExportPath" class="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
+          <p v-if="defaultExportPath" class="mt-2 text-[11px] text-gray-500 dark:text-gray-400">
             Export folder (server default): {{ defaultExportPath }}
           </p>
           <FolderSelectionModal
@@ -340,10 +338,13 @@ async function onCreateStream() {
         </label>
       </div>
 
-      <div
-        class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3 space-y-3"
-      >
-        <div class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase">
+      <hr class="my-7 -mx-2 border-gray-200 dark:border-gray-700" />
+
+      <!-- Stream -->
+      <div class="space-y-5">
+        <div
+          class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide"
+        >
           Stream
         </div>
         <FormCheckbox v-model="runImmediately" label="Run immediately" />
@@ -353,7 +354,7 @@ async function onCreateStream() {
           <input
             v-model="streamName"
             type="text"
-            class="mt-1 w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-850 px-2.5 py-2 text-sm text-gray-900 dark:text-gray-100"
+            class="mt-2 w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-850 px-2.5 py-2 text-sm text-gray-900 dark:text-gray-100"
             @input="streamNameTouched = true"
           />
         </label>
