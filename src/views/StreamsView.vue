@@ -126,7 +126,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useLucideIcons } from '@/composables/useLucideIcons'
 import { Plus, RefreshCw } from 'lucide-vue-next'
 import { useStreamsStore } from '@/stores/streamConfig'
@@ -202,8 +202,14 @@ function handleStreamDeletedFromPanel() {
   setSelectedStreamInViewState()
 }
 
+function handleToggleSidebar() {
+  sidebar.toggleSidebar()
+}
+
 // Fetch connections and streams on mount
 onMounted(async () => {
+  window.addEventListener('wails:toggle-explorer-sidebar', handleToggleSidebar)
+
   const persistedStateAtInit = readStreamsViewState()
   if (persistedStateAtInit?.selectedStreamId) {
     selectedStreamId.value = persistedStateAtInit.selectedStreamId
@@ -240,6 +246,10 @@ onMounted(async () => {
       console.error('Failed to fetch data:', error)
     }
   }
+})
+
+onUnmounted(() => {
+  window.removeEventListener('wails:toggle-explorer-sidebar', handleToggleSidebar)
 })
 
 // Persist selected stream across navigation (e.g., Streams -> Explorer -> Streams)
