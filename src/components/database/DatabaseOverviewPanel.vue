@@ -2,6 +2,15 @@
 import { onMounted, watch, computed, ref } from 'vue'
 import { useToast } from 'vue-toastification'
 import { format as formatSql } from 'sql-formatter'
+import {
+  Menu,
+  MenuButton,
+  MenuItems,
+  MenuItem,
+  Popover,
+  PopoverButton,
+  PopoverPanel
+} from '@headlessui/vue'
 import { useDatabaseOverviewStore } from '@/stores/databaseOverview'
 import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
@@ -15,11 +24,13 @@ import {
   ArrowDown,
   ArrowUp,
   ChartBar,
+  ChevronDown,
   Clipboard,
   Database,
   Download,
   Info,
   Plus,
+  RefreshCw,
   Share2,
   Signal,
   Table2,
@@ -345,9 +356,11 @@ async function handleDownloadSchemaSql() {
     }
 
     const safeName = props.database.replaceAll(/[^a-zA-Z0-9._-]+/g, '_')
-    downloadTextFile(sql, `${safeName || 'schema'}.sql`, 'application/sql')
+    const filename = `${safeName || 'schema'}.sql`
+    downloadTextFile(sql, filename, 'application/sql')
+    toast.success(`Saved ${filename} to Downloads`)
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : 'Failed to download schema SQL'
+    const msg = e instanceof Error ? e.message : 'Failed to save schema SQL'
     toast.error(msg)
   } finally {
     isExportingSchemaSql.value = false
@@ -528,12 +541,145 @@ async function handleCreateSchema() {
 
 <template>
   <div class="p-4">
-    <div class="flex flex-wrap items-center gap-3 mb-4">
+    <div class="flex flex-wrap items-center gap-2 mb-4">
       <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100 min-w-0">
         Database Overview
       </h3>
-      <div class="ml-auto flex items-center gap-2">
-        <BaseButton variant="secondary" size="sm" @click="refresh()"> Refresh </BaseButton>
+      <div class="ml-auto flex flex-wrap items-center gap-1.5">
+        <BaseButton variant="secondary" size="sm" title="Refresh" @click="refresh()">
+          <RefreshCw class="w-3.5 h-3.5" />
+        </BaseButton>
+        <BaseButton
+          variant="secondary"
+          size="sm"
+          title="SQL Console"
+          @click="
+            emit('open-sql-console', {
+              connectionId: props.connectionId,
+              database: props.database
+            })
+          "
+        >
+          <Terminal class="w-3.5 h-3.5" />
+        </BaseButton>
+        <BaseButton
+          variant="secondary"
+          size="sm"
+          title="Schema Diagram"
+          @click="
+            emit('show-diagram', { connectionId: props.connectionId, database: props.database })
+          "
+        >
+          <Share2 class="w-3.5 h-3.5" />
+        </BaseButton>
+
+        <!-- Export SQL dropdown -->
+        <Menu as="div" class="relative">
+          <MenuButton as="template">
+            <BaseButton variant="secondary" size="sm" :loading="isExportingSchemaSql">
+              <Clipboard class="w-3.5 h-3.5 mr-1" />
+              Schema DDL
+              <ChevronDown class="w-3 h-3 ml-1" />
+            </BaseButton>
+          </MenuButton>
+          <transition
+            enter-active-class="transition duration-100 ease-out"
+            enter-from-class="transform scale-95 opacity-0"
+            enter-to-class="transform scale-100 opacity-100"
+            leave-active-class="transition duration-75 ease-in"
+            leave-from-class="transform scale-100 opacity-100"
+            leave-to-class="transform scale-95 opacity-0"
+          >
+            <MenuItems
+              class="absolute right-0 z-10 mt-1 w-52 origin-top-right rounded-lg bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black/5 dark:ring-white/10 focus:outline-none py-1"
+            >
+              <MenuItem v-slot="{ active }">
+                <button
+                  type="button"
+                  class="flex w-full items-center gap-2 px-3 py-2 text-sm"
+                  :class="
+                    active
+                      ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
+                      : 'text-gray-700 dark:text-gray-300'
+                  "
+                  @click="handleExportSchemaSql"
+                >
+                  <Clipboard class="w-3.5 h-3.5" />
+                  Copy DDL to clipboard
+                </button>
+              </MenuItem>
+              <MenuItem v-slot="{ active }">
+                <button
+                  type="button"
+                  class="flex w-full items-center gap-2 px-3 py-2 text-sm"
+                  :class="
+                    active
+                      ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
+                      : 'text-gray-700 dark:text-gray-300'
+                  "
+                  @click="handleDownloadSchemaSql"
+                >
+                  <Download class="w-3.5 h-3.5" />
+                  Save DDL as .sql file
+                </button>
+              </MenuItem>
+            </MenuItems>
+          </transition>
+        </Menu>
+
+        <!-- Create Schema (PostgreSQL only) -->
+        <Popover v-if="showCreateSchemaCard" v-slot="{ close }" as="div" class="relative">
+          <PopoverButton as="template">
+            <BaseButton variant="secondary" size="sm">
+              <Plus class="w-3.5 h-3.5 mr-1" />
+              Create Schema
+            </BaseButton>
+          </PopoverButton>
+          <transition
+            enter-active-class="transition duration-100 ease-out"
+            enter-from-class="transform scale-95 opacity-0"
+            enter-to-class="transform scale-100 opacity-100"
+            leave-active-class="transition duration-75 ease-in"
+            leave-from-class="transform scale-100 opacity-100"
+            leave-to-class="transform scale-95 opacity-0"
+          >
+            <PopoverPanel
+              class="absolute right-0 z-10 mt-1 w-64 origin-top-right rounded-lg bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black/5 dark:ring-white/10 p-3"
+            >
+              <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5"
+                >Schema name</label
+              >
+              <div class="flex gap-2">
+                <FormInput
+                  v-model="newSchemaName"
+                  placeholder="schema_name"
+                  class="flex-1"
+                  :disabled="isCreatingSchema"
+                  @keyup.enter="
+                    () => {
+                      handleCreateSchema()
+                      close()
+                    }
+                  "
+                />
+                <BaseButton
+                  variant="primary"
+                  size="sm"
+                  class="shrink-0"
+                  :disabled="!newSchemaName.trim() || isCreatingSchema"
+                  @click="
+                    () => {
+                      handleCreateSchema()
+                      close()
+                    }
+                  "
+                >
+                  Create
+                </BaseButton>
+              </div>
+            </PopoverPanel>
+          </transition>
+        </Popover>
       </div>
     </div>
 
@@ -976,161 +1122,6 @@ async function handleCreateSchema() {
             </div>
           </li>
         </ul>
-      </div>
-
-      <!-- Utility Blocks Row -->
-      <div
-        class="col-span-full grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(260px,1fr))]"
-      >
-        <!-- SQL Console - Utility Block -->
-        <div
-          class="bg-linear-to-br from-indigo-50 to-slate-50 dark:from-indigo-950/30 dark:to-gray-800/50 rounded-xl p-4 ring-1 ring-indigo-200/70 dark:ring-indigo-800/50"
-        >
-          <div class="flex items-start gap-4 mb-4">
-            <div
-              class="shrink-0 p-3 bg-indigo-100 dark:bg-indigo-900/50 rounded-xl ring-1 ring-indigo-200 dark:ring-indigo-700/50"
-            >
-              <Terminal class="h-7 w-7 text-indigo-600 dark:text-indigo-400" />
-            </div>
-            <div class="flex-1 min-w-0 pt-1">
-              <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200">SQL Console</h4>
-              <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                Execute SQL queries on this database
-              </p>
-            </div>
-          </div>
-
-          <BaseButton
-            variant="secondary"
-            size="sm"
-            class="w-full justify-center"
-            @click="
-              emit('open-sql-console', {
-                connectionId: props.connectionId,
-                database: props.database
-              })
-            "
-          >
-            <Terminal class="w-4 h-4 mr-1.5" />
-            Open SQL Console
-          </BaseButton>
-        </div>
-
-        <!-- Show Diagram - Utility Block -->
-        <div
-          class="bg-linear-to-br from-purple-50 to-slate-50 dark:from-purple-950/30 dark:to-gray-800/50 rounded-xl p-4 ring-1 ring-purple-200/70 dark:ring-purple-800/50"
-        >
-          <div class="flex items-start gap-4 mb-4">
-            <div
-              class="shrink-0 p-3 bg-purple-100 dark:bg-purple-900/50 rounded-xl ring-1 ring-purple-200 dark:ring-purple-700/50"
-            >
-              <Share2 class="h-7 w-7 text-purple-600 dark:text-purple-400" />
-            </div>
-            <div class="flex-1 min-w-0 pt-1">
-              <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Schema Diagram</h4>
-              <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                Visualize table relationships and structure
-              </p>
-            </div>
-          </div>
-
-          <BaseButton
-            variant="secondary"
-            size="sm"
-            class="w-full justify-center"
-            @click="
-              emit('show-diagram', { connectionId: props.connectionId, database: props.database })
-            "
-          >
-            <Share2 class="w-4 h-4 mr-1.5" />
-            Show Diagram
-          </BaseButton>
-        </div>
-
-        <!-- Export Schema SQL - Utility Block -->
-        <div
-          class="bg-linear-to-br from-teal-50 to-slate-50 dark:from-teal-950/30 dark:to-gray-800/50 rounded-xl p-4 ring-1 ring-teal-200/70 dark:ring-teal-800/50"
-        >
-          <div class="flex items-start gap-4 mb-4">
-            <div
-              class="shrink-0 p-3 bg-teal-100 dark:bg-teal-900/50 rounded-xl ring-1 ring-teal-200 dark:ring-teal-700/50"
-            >
-              <Clipboard class="h-7 w-7 text-teal-600 dark:text-teal-400" />
-            </div>
-            <div class="flex-1 min-w-0 pt-1">
-              <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200">
-                Export Schema SQL
-              </h4>
-              <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                Combine all table DDLs into one script for sharing
-              </p>
-            </div>
-          </div>
-
-          <div class="flex flex-col sm:flex-row gap-2">
-            <BaseButton
-              variant="secondary"
-              size="sm"
-              class="w-full justify-center"
-              :loading="isExportingSchemaSql"
-              @click="handleExportSchemaSql"
-            >
-              <Clipboard class="w-4 h-4 mr-1.5" />
-              Copy SQL
-            </BaseButton>
-
-            <BaseButton
-              variant="secondary"
-              size="sm"
-              class="w-full justify-center"
-              :loading="isExportingSchemaSql"
-              @click="handleDownloadSchemaSql"
-            >
-              <Download class="w-4 h-4 mr-1.5" />
-              Download .sql
-            </BaseButton>
-          </div>
-        </div>
-
-        <!-- Create Schema (PostgreSQL) - Utility Block -->
-        <div
-          v-if="showCreateSchemaCard"
-          class="bg-linear-to-br from-emerald-50 to-slate-50 dark:from-emerald-950/30 dark:to-gray-800/50 rounded-xl p-4 ring-1 ring-emerald-200/70 dark:ring-emerald-800/50"
-        >
-          <div class="flex items-start gap-4 mb-4">
-            <div
-              class="shrink-0 p-3 bg-emerald-100 dark:bg-emerald-900/50 rounded-xl ring-1 ring-emerald-200 dark:ring-emerald-700/50"
-            >
-              <Plus class="h-7 w-7 text-emerald-600 dark:text-emerald-400" />
-            </div>
-            <div class="flex-1 min-w-0 pt-1">
-              <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Create Schema</h4>
-              <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                Create a new schema in this database
-              </p>
-            </div>
-          </div>
-
-          <div class="flex flex-col sm:flex-row gap-2">
-            <FormInput
-              v-model="newSchemaName"
-              placeholder="schema_name"
-              class="flex-1"
-              :disabled="isCreatingSchema"
-              @keyup.enter="handleCreateSchema"
-            />
-            <BaseButton
-              variant="primary"
-              size="sm"
-              class="shrink-0 w-full sm:w-auto"
-              :disabled="!newSchemaName.trim() || isCreatingSchema"
-              @click="handleCreateSchema"
-            >
-              <Plus class="w-4 h-4 mr-1.5" />
-              Create Schema
-            </BaseButton>
-          </div>
-        </div>
       </div>
     </div>
   </div>

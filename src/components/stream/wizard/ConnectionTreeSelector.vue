@@ -757,7 +757,9 @@ async function loadDatabases(connectionId: string) {
     return
   }
 
-  await navigationStore.ensureDatabases(connectionId)
+  // Stream wizard should reflect recent schema/database changes immediately.
+  // Force refresh here to avoid reusing stale in-memory database cache.
+  await navigationStore.ensureDatabases(connectionId, true)
 }
 
 function getDatabases(connectionId: string) {
@@ -789,22 +791,23 @@ function isSchemasLoading(connectionId: string, database: string): boolean {
 
 function getSchemas(connectionId: string, database: string): string[] {
   const fromDatabaseList = navigationStore.getFilteredSchemas(connectionId, database)
+  const schemaNames = new Set<string>()
   if (fromDatabaseList?.length) {
-    return fromDatabaseList.map((schema) => schema.name)
+    fromDatabaseList.forEach((schema) => schemaNames.add(schema.name))
   }
+
   const meta = navigationStore.getMetadata(connectionId, database)
   if (meta?.schemas?.length) {
-    return meta.schemas
+    meta.schemas.forEach((schema) => schemaNames.add(schema))
   }
   if (meta?.tables) {
-    const names = new Set(
-      Object.values(meta.tables)
-        .map((table) => table.schema)
-        .filter((schema): schema is string => Boolean(schema))
-    )
-    return Array.from(names)
+    Object.values(meta.tables)
+      .map((table) => table.schema)
+      .filter((schema): schema is string => Boolean(schema))
+      .forEach((schema) => schemaNames.add(schema))
   }
-  return []
+
+  return Array.from(schemaNames)
 }
 
 function getTableCount(connectionId: string, database: string): number | null {
