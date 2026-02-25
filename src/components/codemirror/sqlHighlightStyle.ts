@@ -5,7 +5,7 @@ import { tags as t } from '@lezer/highlight'
 // oneDark palette — keywords/operators cyan, strings coral, identifiers ivory
 const cyan = '#4F8FC2'
 const coral = '#e06c75'
-const chalky = '#e5c07b'
+const chalky = '#86efac'
 const whiskey = '#d19a66'
 const malibu = '#61afef'
 const ivory = '#abb2bf'
