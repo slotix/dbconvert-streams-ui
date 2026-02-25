@@ -27,6 +27,7 @@
   --sql-search-panel-bg: var(--sql-editor-popup-bg);
   --sql-search-panel-border: rgba(148, 163, 184, 0.15);
   --sql-search-input-bg: #ffffff;
+  --sql-search-input-text: #0f172a;
   --sql-search-input-border: rgba(148, 163, 184, 0.35);
   --sql-search-input-focus: rgba(139, 92, 246, 0.7);
   --sql-search-input-focus-ring: rgba(139, 92, 246, 0.18);
@@ -65,8 +66,9 @@
   --sql-type-muted: #6b7280;
   --sql-search-panel-bg: var(--sql-editor-popup-bg);
   --sql-search-panel-border: rgba(148, 163, 184, 0.1);
-  --sql-search-input-bg: #101722;
-  --sql-search-input-border: rgba(148, 163, 184, 0.2);
+  --sql-search-input-bg: #1e293b;
+  --sql-search-input-text: #e5e7eb;
+  --sql-search-input-border: rgba(148, 163, 184, 0.25);
   --sql-search-input-focus: rgba(139, 92, 246, 0.7);
   --sql-search-input-focus-ring: rgba(139, 92, 246, 0.2);
   --sql-search-button-bg: rgba(255, 255, 255, 0.08);
@@ -143,6 +145,7 @@
 }
 
 :deep(.cm-panels) {
+  --sql-ui-scale: var(--sql-editor-font-scale, 1);
   background: var(--sql-search-panel-bg);
   color: var(--sql-editor-text);
   border-top: 1px solid var(--sql-search-panel-border);
@@ -187,16 +190,7 @@
   min-width: calc(160px * var(--sql-ui-scale));
   height: calc(27px * var(--sql-ui-scale));
   padding: 0 9px;
-  border-radius: 7px !important;
-  border: 1px solid var(--sql-search-input-border);
-  background: var(--sql-search-input-bg);
-  color: var(--sql-editor-text);
-  outline: none;
   font-size: calc(12px * var(--sql-ui-scale));
-  font-family: 'JetBrains Mono', 'Fira Code', 'SFMono-Regular', ui-monospace, Menlo, monospace;
-  transition:
-    border-color 0.15s,
-    box-shadow 0.15s;
 }
 
 :deep(.cm-panel.cm-search input[type='text']:focus) {

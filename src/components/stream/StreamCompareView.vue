@@ -406,10 +406,8 @@ async function loadTargetFile() {
       return
     }
 
-    const tableFolderPath = joinPaths(targetRootPath.value, streamId, selectedTable.value)
-
-    // Instead of loading individual files, we need to pass the FOLDER to DuckDB
-    // DuckDB will automatically query all part-*.ext files in the folder
+    // Instead of loading individual files, pass the table folder to DuckDB.
+    // File CDC output path is deterministic: <outputRoot>/<streamID>/<baseTableName>/
     const detectedFormat = targetFileFormat.value
 
     if (!detectedFormat) {
@@ -417,32 +415,50 @@ async function loadTargetFile() {
       return
     }
 
-    // Create a FileSystemEntry for the folder itself (not individual files)
-    // DuckDB will use wildcard patterns like "folder/*.csv.zst" to read all files
-    const folderEntry: FileSystemEntry = {
-      name: selectedTable.value,
-      path: tableFolderPath,
-      type: 'dir',
-      isTable: true,
-      format: detectedFormat
-    }
+    const tableFolderName = buildTargetTableFolderName()
+    const tableFolderPath = joinPaths(targetRootPath.value, streamId, tableFolderName)
 
-    targetFileEntry.value = folderEntry
-
-    // Get metadata for the entire folder (DuckDB aggregates across all files)
-    // Pass target connection ID for S3 credential configuration
+    // Get metadata for the entire folder (DuckDB aggregates across all files).
+    // Pass target connection ID for S3 credential configuration.
     const metadata = await files.getFileMetadata(
       tableFolderPath,
       detectedFormat,
       true,
       props.target.id
     )
+
+    // Create a FileSystemEntry for the folder itself (not individual files).
+    // DuckDB will use wildcard patterns like "folder/*.csv.zst" to read all files.
+    targetFileEntry.value = {
+      name: selectedTable.value,
+      path: tableFolderPath,
+      type: 'dir',
+      isTable: true,
+      format: detectedFormat
+    }
     targetFileMetadata.value = metadata
   } catch (error) {
     console.error('Failed to load target file:', error)
     targetFileError.value =
       error instanceof Error ? error.message : 'Failed to load target file metadata'
   }
+}
+
+function buildTargetTableFolderName(): string {
+  const tableName = selectedTableName.value?.trim() || selectedTable.value?.trim() || ''
+  const schema = selectedSchemaFromTable.value?.trim() || ''
+  const alias = parsedSelectedTable.value.alias?.trim() || ''
+
+  let outputName = tableName
+  if (schema && schema.toLowerCase() !== 'public') {
+    outputName = `${schema}.${tableName}`
+  }
+
+  if (alias && !outputName.startsWith(`${alias}_`)) {
+    outputName = `${alias}_${outputName}`
+  }
+
+  return outputName
 }
 
 function joinPaths(basePath: string, ...segments: (string | undefined)[]): string {
