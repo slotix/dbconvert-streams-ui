@@ -16,7 +16,7 @@
         </span>
         <span
           v-if="isFederatedMode"
-          class="inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium ring-1 ring-inset bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 ring-amber-600/20 dark:ring-amber-500/30"
+          class="inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium ring-1 ring-inset bg-sky-50 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400 ring-sky-600/20 dark:ring-sky-500/30"
         >
           FEDERATED
         </span>

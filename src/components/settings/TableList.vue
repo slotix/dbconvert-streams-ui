@@ -71,7 +71,7 @@
           >
             <!-- Connection Header -->
             <div
-              class="sticky top-0 z-20 flex items-center justify-between px-4 py-3 bg-linear-to-r from-amber-50 to-orange-50 dark:from-amber-900/30 dark:to-orange-900/30 border-b-2 border-amber-200 dark:border-amber-700 cursor-pointer backdrop-blur-sm"
+              class="sticky top-0 z-20 flex items-center justify-between px-4 py-3 bg-linear-to-r from-sky-50 to-cyan-50 dark:from-sky-900/30 dark:to-cyan-900/30 border-b-2 border-sky-200 dark:border-sky-700 cursor-pointer backdrop-blur-sm"
               @click="toggleConnectionGroup(connectionGroup.alias)"
             >
               <div class="flex items-center gap-3">
@@ -79,7 +79,7 @@
                   :is="
                     isConnectionGroupExpanded(connectionGroup.alias) ? ChevronDown : ChevronRight
                   "
-                  class="h-4 w-4 text-amber-600 dark:text-amber-400"
+                  class="h-4 w-4 text-sky-600 dark:text-sky-400"
                 />
                 <component
                   :is="getConnectionIcon(connectionGroup.connectionType)"
@@ -88,35 +88,35 @@
                 />
                 <div>
                   <div class="flex items-center gap-2">
-                    <span class="text-sm font-bold text-amber-900 dark:text-amber-100">
+                    <span class="text-sm font-bold text-sky-900 dark:text-sky-100">
                       {{ connectionGroup.alias }}
                     </span>
-                    <span class="text-xs text-amber-600 dark:text-amber-400 font-medium">
+                    <span class="text-xs text-sky-600 dark:text-sky-400 font-medium">
                       {{ connectionGroup.connectionName }}
                     </span>
                     <span
                       v-if="connectionGroup.database"
-                      class="text-xs text-amber-500 dark:text-amber-400"
+                      class="text-xs text-sky-500 dark:text-sky-400"
                     >
                       / {{ connectionGroup.database }}
                     </span>
                   </div>
                 </div>
                 <span
-                  class="text-xs text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/50 rounded px-2 py-0.5 font-medium"
+                  class="text-xs text-sky-700 dark:text-sky-300 bg-sky-100 dark:bg-sky-900/50 rounded px-2 py-0.5 font-medium"
                 >
                   {{ connectionGroup.tableCount }} tables
                 </span>
               </div>
               <div class="flex items-center gap-3">
                 <button
-                  class="text-xs text-amber-600 dark:text-amber-400 hover:underline font-medium"
+                  class="text-xs text-sky-600 dark:text-sky-400 hover:underline font-medium"
                   @click.stop="selectAllInConnection(connectionGroup.alias)"
                 >
                   Select All
                 </button>
                 <button
-                  class="text-xs text-amber-500 dark:text-amber-400 hover:underline"
+                  class="text-xs text-sky-500 dark:text-sky-400 hover:underline"
                   @click.stop="clearAllInConnection(connectionGroup.alias)"
                 >
                   Clear
@@ -166,7 +166,7 @@
                   class="grid grid-cols-1 lg:grid-cols-2"
                   :class="
                     schemaGroup.schema
-                      ? 'border-l-2 border-amber-200 dark:border-amber-700 ml-9'
+                      ? 'border-l-2 border-sky-200 dark:border-sky-700 ml-9'
                       : 'ml-6'
                   "
                 >
@@ -212,7 +212,7 @@
                           isTableSettingsOpen(table.name)
                             ? 'bg-teal-500/20 text-teal-600 dark:text-teal-400'
                             : hasTableFilter(table)
-                              ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
+                              ? 'bg-sky-500/20 text-sky-600 dark:text-sky-400'
                               : 'text-gray-400 opacity-0 group-hover:opacity-100 hover:bg-gray-200 dark:hover:bg-gray-700'
                         "
                         :title="hasTableFilter(table) ? 'Edit filter' : 'Add filter'"
@@ -244,7 +244,7 @@
                   :is="isSchemaExpanded(schemaGroup.schema) ? ChevronDown : ChevronRight"
                   class="h-4 w-4 text-gray-400"
                 />
-                <Grid2X2 class="w-4 h-4 text-amber-500 dark:text-amber-400 shrink-0" />
+                <Grid2X2 class="w-4 h-4 text-sky-500 dark:text-sky-400 shrink-0" />
                 <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">{{
                   schemaGroup.schema
                 }}</span>
@@ -332,7 +332,7 @@
                       isTableSettingsOpen(table.name)
                         ? 'bg-teal-500/20 text-teal-600 dark:text-teal-400'
                         : hasTableFilter(table)
-                          ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
+                          ? 'bg-sky-500/20 text-sky-600 dark:text-sky-400'
                           : 'text-gray-400 opacity-0 group-hover:opacity-100 hover:bg-gray-200 dark:hover:bg-gray-700'
                     "
                     :title="hasTableFilter(table) ? 'Edit filter' : 'Add filter'"
@@ -739,7 +739,7 @@ function getConnectionIcon(connectionType: string) {
 function getConnectionIconColor(connectionType: string) {
   // Map database types to color classes
   const colorMap: Record<string, string> = {
-    mysql: 'text-orange-500',
+    mysql: 'text-sky-500',
     postgresql: 'text-blue-500',
     postgres: 'text-blue-500',
     snowflake: 'text-cyan-500',

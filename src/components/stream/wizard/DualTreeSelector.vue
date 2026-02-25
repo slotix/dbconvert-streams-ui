@@ -134,24 +134,24 @@
     <!-- Source Aliases - shown when multiple sources selected -->
     <div
       v-if="showAliasUI"
-      class="shrink-0 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/60 rounded-lg p-3"
+      class="shrink-0 bg-sky-50 dark:bg-sky-900/20 border border-sky-200 dark:border-sky-700/60 rounded-lg p-3"
     >
       <div class="flex items-center gap-2 mb-2">
-        <span class="text-xs font-semibold uppercase text-amber-700 dark:text-amber-300"
+        <span class="text-xs font-semibold uppercase text-sky-700 dark:text-sky-300"
           >Source Aliases</span
         >
-        <span class="text-xs text-amber-600 dark:text-amber-400">(used in SQL queries)</span>
+        <span class="text-xs text-sky-600 dark:text-sky-400">(used in SQL queries)</span>
       </div>
       <div class="flex flex-wrap gap-2">
         <div
           v-for="conn in localSourceConnections"
           :key="`${conn.connectionId}-${getSelectionValue(conn)}`"
-          class="flex items-center gap-2 bg-white dark:bg-gray-800 border border-amber-300 dark:border-amber-600 rounded-md px-2 py-1.5"
+          class="flex items-center gap-2 bg-white dark:bg-gray-800 border border-sky-300 dark:border-sky-600 rounded-md px-2 py-1.5"
         >
           <input
             type="text"
             :value="conn.alias"
-            class="w-16 px-1.5 py-0.5 text-xs font-mono font-semibold bg-amber-100 dark:bg-amber-900/40 border border-amber-300 dark:border-amber-600 rounded text-amber-800 dark:text-amber-200 focus:outline-none focus:ring-1 focus:ring-amber-500"
+            class="w-16 px-1.5 py-0.5 text-xs font-mono font-semibold bg-sky-100 dark:bg-sky-900/40 border border-sky-300 dark:border-sky-600 rounded text-sky-800 dark:text-sky-200 focus:outline-none focus:ring-1 focus:ring-sky-500"
             @input="
               updateConnectionAlias(
                 conn.connectionId,

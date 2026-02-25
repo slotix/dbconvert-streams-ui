@@ -10,7 +10,7 @@
         <span
           v-for="query in queries"
           :key="query.name"
-          class="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded border border-amber-200 dark:border-amber-700"
+          class="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium bg-sky-50 dark:bg-sky-900/30 text-sky-700 dark:text-sky-300 rounded border border-sky-200 dark:border-sky-700"
         >
           <Code class="w-3.5 h-3.5" />
           {{ query.name }}
