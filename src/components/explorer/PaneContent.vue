@@ -6,7 +6,6 @@
       :connection="currentConnection"
       :file-entries="connectionFileEntries"
       @edit-wizard="$emit('edit-connection-wizard', activeTab.connectionId)"
-      @edit-json="$emit('edit-connection-json', activeTab.connectionId)"
       @clone="$emit('clone-connection', activeTab.connectionId)"
       @delete="$emit('delete-connection', activeTab.connectionId)"
       @create-database="
@@ -152,7 +151,6 @@ defineEmits<{
   'open-database-sql-console': [payload: { connectionId: string; database: string }]
   'show-diagram': [payload: ShowDiagramPayload]
   'edit-connection-wizard': [connectionId: string]
-  'edit-connection-json': [connectionId: string]
   'clone-connection': [connectionId: string]
   'delete-connection': [connectionId: string]
   'create-database': [payload: { connectionId: string; name: string }]

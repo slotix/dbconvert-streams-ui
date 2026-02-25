@@ -5,6 +5,8 @@ import type { Connection } from '@/types/connections'
 import BaseButton from '@/components/base/BaseButton.vue'
 import FormInput from '@/components/base/FormInput.vue'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
+import ConnectionConfigJsonEditor from '@/components/connection/ConnectionConfigJsonEditor.vue'
+import connectionsApi from '@/api/connections'
 import { generateConnectionString } from '@/utils/connectionStringGenerator'
 import { formatDateTime, formatDataSize } from '@/utils/formats'
 import { getConnectionHost, getConnectionPort, getConnectionDatabase } from '@/utils/specBuilder'
@@ -13,6 +15,8 @@ import { getConnectionKindFromSpec, getConnectionTypeLabel, isFileBasedKind } fr
 import { useCopyToClipboard } from '@/composables/useCopyToClipboard'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useDatabaseOverviewStore } from '@/stores/databaseOverview'
+import { useConnectionsStore } from '@/stores/connections'
+import { useCommonStore } from '@/stores/common'
 import {
   BarChart3,
   Calendar,
@@ -30,6 +34,8 @@ import {
 
 const navigationStore = useExplorerNavigationStore()
 const overviewStore = useDatabaseOverviewStore()
+const connectionsStore = useConnectionsStore()
+const commonStore = useCommonStore()
 
 const props = defineProps<{
   connection: Connection
@@ -37,7 +43,6 @@ const props = defineProps<{
 }>()
 const emit = defineEmits<{
   (e: 'edit-wizard'): void
-  (e: 'edit-json'): void
   (e: 'clone'): void
   (e: 'delete'): void
   (e: 'create-database', databaseName: string): void
@@ -46,6 +51,26 @@ const emit = defineEmits<{
   (e: 'open-file-console'): void
   (e: 'create-bucket', payload: { bucket: string; region?: string }): void
 }>()
+
+const jsonEditorRef = ref<InstanceType<typeof ConnectionConfigJsonEditor>>()
+
+async function handleSaveConfig(config: Connection) {
+  if (!props.connection?.id) {
+    jsonEditorRef.value?.onSaveError('Connection ID is missing')
+    return
+  }
+
+  try {
+    await connectionsApi.updateConnectionById(props.connection.id, config)
+    jsonEditorRef.value?.onSaveSuccess()
+    await connectionsStore.refreshConnections()
+    connectionsStore.setCurrentConnection(props.connection.id)
+    commonStore.showNotification('Connection updated successfully', 'success')
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to save connection'
+    jsonEditorRef.value?.onSaveError(errorMessage)
+  }
+}
 
 const showPassword = ref(false)
 const { isCopied, copy: copyToClipboard } = useCopyToClipboard()
@@ -525,24 +550,7 @@ const isLoadingDatabases = computed(() => {
         />
       </div>
       <div class="hidden sm:flex flex-wrap items-center justify-end gap-2">
-        <div class="inline-flex rounded-md shadow-sm" role="group">
-          <BaseButton
-            class="rounded-none rounded-l-md"
-            variant="secondary"
-            size="sm"
-            @click="emit('edit-wizard')"
-          >
-            Edit
-          </BaseButton>
-          <BaseButton
-            class="rounded-none rounded-r-md -ml-px"
-            variant="secondary"
-            size="sm"
-            @click="emit('edit-json')"
-          >
-            Edit JSON
-          </BaseButton>
-        </div>
+        <BaseButton variant="secondary" size="sm" @click="emit('edit-wizard')">Edit</BaseButton>
         <BaseButton variant="secondary" size="sm" @click="emit('clone')">Clone</BaseButton>
         <BaseButton variant="danger" size="sm" @click="emit('delete')">Delete</BaseButton>
 
@@ -1203,6 +1211,15 @@ const isLoadingDatabases = computed(() => {
         <span class="text-sm text-gray-500 dark:text-gray-400 truncate"
           >Created: {{ createdDisplay }}</span
         >
+      </div>
+
+      <div class="pt-6 border-t border-gray-100 dark:border-gray-800">
+        <ConnectionConfigJsonEditor
+          ref="jsonEditorRef"
+          :config="connection"
+          height="600px"
+          @save="handleSaveConfig"
+        />
       </div>
     </div>
   </div>

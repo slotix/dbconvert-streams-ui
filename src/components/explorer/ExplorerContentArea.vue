@@ -44,7 +44,6 @@
           @open-database-sql-console="handleOpenSqlConsole"
           @show-diagram="$emit('show-diagram', $event)"
           @edit-connection-wizard="$emit('edit-connection-wizard', $event)"
-          @edit-connection-json="$emit('edit-connection-json', $event)"
           @clone-connection="$emit('clone-connection', $event)"
           @delete-connection="$emit('delete-connection', $event)"
           @create-database="$emit('create-database', $event)"
@@ -93,7 +92,6 @@
           @open-database-sql-console="handleOpenSqlConsole"
           @show-diagram="$emit('show-diagram', $event)"
           @edit-connection-wizard="$emit('edit-connection-wizard', $event)"
-          @edit-connection-json="$emit('edit-connection-json', $event)"
           @clone-connection="$emit('clone-connection', $event)"
           @delete-connection="$emit('delete-connection', $event)"
           @create-database="$emit('create-database', $event)"
@@ -133,7 +131,6 @@ const props = withDefaults(defineProps<Props>(), {
 // Define emits
 const emit = defineEmits<{
   'edit-connection-wizard': [connectionId: string]
-  'edit-connection-json': [connectionId: string]
   'clone-connection': [connectionId: string]
   'delete-connection': [connectionId: string]
   'create-database': [payload: { connectionId: string; name: string }]

@@ -97,7 +97,6 @@ const {
   handlePickFileFromBreadcrumb,
   onAddConnection,
   onEditConnection,
-  onEditConnectionJson,
   onDeleteConnection,
   confirmDeleteConnection,
   cancelDeleteConnection,
@@ -358,7 +357,6 @@ function handleOpenFileConsole(payload: {
               :active-pane="paneTabsStore.activePane"
               :split-pane-resize="splitPaneResize"
               @edit-connection-wizard="onEditConnection"
-              @edit-connection-json="onEditConnectionJson"
               @clone-connection="onCloneConnection"
               @delete-connection="onDeleteConnection"
               @create-database="handleCreateDatabase"
