@@ -1,31 +1,7 @@
 <template>
   <div class="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
-    <!-- Empty State -->
-    <div
-      v-if="queries.length === 0"
-      class="flex flex-col items-center justify-center flex-1 py-12 px-4"
-    >
-      <FileText class="w-16 h-16 text-gray-400 dark:text-gray-500 mb-4" />
-      <h4 class="text-base font-medium text-gray-900 dark:text-gray-100 mb-2">No queries yet</h4>
-      <p class="text-sm text-gray-500 dark:text-gray-400 text-center max-w-md mb-6">
-        {{
-          needsFederatedExecution
-            ? 'Write SQL queries that join data across multiple sources. Use connection aliases to reference tables (e.g., src.tablename).'
-            : 'Add SQL queries with JOINs, CTEs, and aggregations to create derived datasets.'
-        }}
-      </p>
-      <button
-        type="button"
-        class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 dark:bg-teal-700 dark:hover:bg-teal-600 rounded-md transition-colors"
-        @click="addQuery"
-      >
-        <Plus class="w-4 h-4" />
-        Add query
-      </button>
-    </div>
-
     <!-- Tabbed Query Editor -->
-    <div v-else class="flex flex-col flex-1 min-h-0">
+    <div class="flex flex-col flex-1 min-h-0">
       <!-- Query Tabs -->
       <SqlQueryTabs
         :tabs="queryTabs"
@@ -253,7 +229,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
-import { AlertTriangle, CheckCircle, FileText, Play, Plus, RefreshCw, Sheet } from 'lucide-vue-next'
+import { AlertTriangle, CheckCircle, Play, RefreshCw, Sheet } from 'lucide-vue-next'
 import SqlCodeMirror from '@/components/codemirror/SqlCodeMirror.vue'
 import { SqlQueryTabs } from '@/components/database/sql-console'
 import FormSelect from '@/components/base/FormSelect.vue'
@@ -378,9 +354,9 @@ watch(
   { immediate: true }
 )
 
-// Auto-create first query when federated execution is needed
+// Auto-create first query when opening Queries tab (skip empty-state click).
 onMounted(() => {
-  if (needsFederatedExecution.value && queries.value.length === 0) {
+  if (queries.value.length === 0) {
     addQuery()
   }
 })

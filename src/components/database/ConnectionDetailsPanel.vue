@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { Popover, PopoverButton, PopoverPanel } from '@headlessui/vue'
 import type { Connection } from '@/types/connections'
 import BaseButton from '@/components/base/BaseButton.vue'
 import FormInput from '@/components/base/FormInput.vue'
@@ -544,6 +545,222 @@ const isLoadingDatabases = computed(() => {
         </div>
         <BaseButton variant="secondary" size="sm" @click="emit('clone')">Clone</BaseButton>
         <BaseButton variant="danger" size="sm" @click="emit('delete')">Delete</BaseButton>
+
+        <!-- Action buttons separator -->
+        <div class="w-px h-6 bg-gray-200 dark:bg-gray-700 mx-0.5"></div>
+
+        <!-- File connection actions -->
+        <template v-if="isFileConnection">
+          <BaseButton
+            variant="secondary"
+            size="sm"
+            title="SQL Console"
+            @click="emit('open-file-console')"
+          >
+            <Terminal class="w-3.5 h-3.5" />
+          </BaseButton>
+
+          <!-- S3: Create Bucket popover -->
+          <Popover v-if="isS3Connection" v-slot="{ close }" as="div" class="relative">
+            <PopoverButton as="template">
+              <BaseButton variant="secondary" size="sm">
+                <Plus class="w-3.5 h-3.5 mr-1" />
+                Create Bucket
+              </BaseButton>
+            </PopoverButton>
+            <transition
+              enter-active-class="transition duration-100 ease-out"
+              enter-from-class="transform scale-95 opacity-0"
+              enter-to-class="transform scale-100 opacity-100"
+              leave-active-class="transition duration-75 ease-in"
+              leave-from-class="transform scale-100 opacity-100"
+              leave-to-class="transform scale-95 opacity-0"
+            >
+              <PopoverPanel
+                class="absolute right-0 z-10 mt-1 w-72 origin-top-right rounded-lg bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black/5 dark:ring-white/10 p-3"
+              >
+                <div class="space-y-2">
+                  <label class="block text-xs font-medium text-gray-600 dark:text-gray-400"
+                    >Bucket name</label
+                  >
+                  <FormInput
+                    v-model="newBucketName"
+                    placeholder="analytics-exports"
+                    :disabled="isCreatingBucket"
+                    @keyup.enter="
+                      () => {
+                        handleCreateBucket()
+                        close()
+                      }
+                    "
+                  />
+                  <label class="block text-xs font-medium text-gray-600 dark:text-gray-400"
+                    >Region</label
+                  >
+                  <FormInput
+                    v-model="newBucketRegion"
+                    :placeholder="storageRegion || 'us-east-1'"
+                    :disabled="isCreatingBucket"
+                    @keyup.enter="
+                      () => {
+                        handleCreateBucket()
+                        close()
+                      }
+                    "
+                  />
+                  <p v-if="bucketValidationMessage" class="text-xs text-red-500">
+                    {{ bucketValidationMessage }}
+                  </p>
+                  <BaseButton
+                    variant="primary"
+                    size="sm"
+                    class="w-full justify-center"
+                    :disabled="!canCreateBucket || isCreatingBucket"
+                    @click="
+                      () => {
+                        handleCreateBucket()
+                        close()
+                      }
+                    "
+                  >
+                    Create
+                  </BaseButton>
+                </div>
+              </PopoverPanel>
+            </transition>
+          </Popover>
+        </template>
+
+        <!-- Database connection actions -->
+        <template v-if="!isFileConnection">
+          <BaseButton
+            variant="secondary"
+            size="sm"
+            title="SQL Console"
+            @click="emit('open-sql-console')"
+          >
+            <Terminal class="w-3.5 h-3.5" />
+          </BaseButton>
+
+          <!-- Create Database popover -->
+          <Popover v-if="canCreateDatabase" v-slot="{ close }" as="div" class="relative">
+            <PopoverButton as="template">
+              <BaseButton variant="secondary" size="sm">
+                <Database class="w-3.5 h-3.5 mr-1" />
+                Create DB
+              </BaseButton>
+            </PopoverButton>
+            <transition
+              enter-active-class="transition duration-100 ease-out"
+              enter-from-class="transform scale-95 opacity-0"
+              enter-to-class="transform scale-100 opacity-100"
+              leave-active-class="transition duration-75 ease-in"
+              leave-from-class="transform scale-100 opacity-100"
+              leave-to-class="transform scale-95 opacity-0"
+            >
+              <PopoverPanel
+                class="absolute right-0 z-10 mt-1 w-64 origin-top-right rounded-lg bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black/5 dark:ring-white/10 p-3"
+              >
+                <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5"
+                  >Database name</label
+                >
+                <div class="flex gap-2">
+                  <FormInput
+                    v-model="newDatabaseName"
+                    placeholder="database_name"
+                    class="flex-1"
+                    :disabled="isCreatingDatabase"
+                    @keyup.enter="
+                      () => {
+                        handleCreateDatabase()
+                        close()
+                      }
+                    "
+                  />
+                  <BaseButton
+                    variant="primary"
+                    size="sm"
+                    class="shrink-0"
+                    :disabled="!newDatabaseName.trim() || isCreatingDatabase"
+                    @click="
+                      () => {
+                        handleCreateDatabase()
+                        close()
+                      }
+                    "
+                  >
+                    Create
+                  </BaseButton>
+                </div>
+              </PopoverPanel>
+            </transition>
+          </Popover>
+
+          <!-- Create Schema popover -->
+          <Popover
+            v-if="showSchemaCreationAtConnectionLevel"
+            v-slot="{ close }"
+            as="div"
+            class="relative"
+          >
+            <PopoverButton as="template">
+              <BaseButton variant="secondary" size="sm">
+                <Plus class="w-3.5 h-3.5 mr-1" />
+                Create Schema
+              </BaseButton>
+            </PopoverButton>
+            <transition
+              enter-active-class="transition duration-100 ease-out"
+              enter-from-class="transform scale-95 opacity-0"
+              enter-to-class="transform scale-100 opacity-100"
+              leave-active-class="transition duration-75 ease-in"
+              leave-from-class="transform scale-100 opacity-100"
+              leave-to-class="transform scale-95 opacity-0"
+            >
+              <PopoverPanel
+                class="absolute right-0 z-10 mt-1 w-64 origin-top-right rounded-lg bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black/5 dark:ring-white/10 p-3"
+              >
+                <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                  In database:
+                  <span class="font-medium text-gray-700 dark:text-gray-300">{{
+                    defaultDatabase
+                  }}</span>
+                </p>
+                <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5"
+                  >Schema name</label
+                >
+                <div class="flex gap-2">
+                  <FormInput
+                    v-model="newSchemaName"
+                    placeholder="schema_name"
+                    class="flex-1"
+                    :disabled="isCreatingSchema"
+                    @keyup.enter="
+                      () => {
+                        handleCreateSchema()
+                        close()
+                      }
+                    "
+                  />
+                  <BaseButton
+                    variant="primary"
+                    size="sm"
+                    class="shrink-0"
+                    :disabled="!newSchemaName.trim() || isCreatingSchema"
+                    @click="
+                      () => {
+                        handleCreateSchema()
+                        close()
+                      }
+                    "
+                  >
+                    Create
+                  </BaseButton>
+                </div>
+              </PopoverPanel>
+            </transition>
+          </Popover>
+        </template>
       </div>
     </div>
 
@@ -686,79 +903,6 @@ const isLoadingDatabases = computed(() => {
               </div>
             </div>
           </div>
-
-          <div class="grid gap-4 grid-cols-[repeat(auto-fit,minmax(260px,1fr))]">
-            <div
-              class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700"
-            >
-              <div class="flex items-center gap-2 mb-3">
-                <div class="p-1.5 bg-teal-100 dark:bg-teal-900/30 rounded-lg">
-                  <Terminal class="h-4 w-4 text-teal-600 dark:text-teal-400" />
-                </div>
-                <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"
-                  >SQL Console</span
-                >
-              </div>
-              <p class="text-xs text-gray-600 dark:text-gray-400 mb-3">
-                Query CSV, JSONL, Parquet, and manifests in this bucket using DuckDB SQL.
-              </p>
-              <BaseButton
-                variant="secondary"
-                size="sm"
-                class="w-full justify-center"
-                @click="emit('open-file-console')"
-              >
-                <Terminal class="w-4 h-4 mr-1.5" />
-                Open SQL Console
-              </BaseButton>
-            </div>
-
-            <div
-              class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700"
-            >
-              <div class="flex items-center gap-2 mb-3">
-                <div class="p-1.5 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
-                  <Database class="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                </div>
-                <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"
-                  >Create Bucket</span
-                >
-              </div>
-              <p class="text-xs text-gray-600 dark:text-gray-400 mb-3">
-                Provision a new bucket using this connection's credentials.
-              </p>
-              <div class="space-y-2">
-                <FormInput
-                  v-model="newBucketName"
-                  placeholder="analytics-exports"
-                  :disabled="isCreatingBucket"
-                  @keyup.enter="handleCreateBucket"
-                />
-                <FormInput
-                  v-model="newBucketRegion"
-                  :placeholder="storageRegion || 'us-east-1'"
-                  :disabled="isCreatingBucket"
-                  @keyup.enter="handleCreateBucket"
-                />
-                <p class="text-[11px] text-gray-500 dark:text-gray-400">
-                  Region defaults to the connection's region if left blank.
-                </p>
-                <p v-if="bucketValidationMessage" class="text-xs text-red-500">
-                  {{ bucketValidationMessage }}
-                </p>
-                <BaseButton
-                  variant="primary"
-                  size="sm"
-                  class="w-full justify-center"
-                  :disabled="!canCreateBucket || isCreatingBucket"
-                  @click="handleCreateBucket"
-                >
-                  <Plus class="w-4 h-4 mr-1.5" />
-                  Create Bucket
-                </BaseButton>
-              </div>
-            </div>
-          </div>
         </template>
         <template v-else>
           <div
@@ -813,30 +957,6 @@ const isLoadingDatabases = computed(() => {
                 <span v-else class="text-gray-500 dark:text-gray-400">No path configured</span>
               </p>
             </div>
-          </div>
-          <div
-            class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700"
-          >
-            <div class="flex items-center gap-2 mb-3">
-              <div class="p-1.5 bg-teal-100 dark:bg-teal-900/30 rounded-lg">
-                <Terminal class="h-4 w-4 text-teal-600 dark:text-teal-400" />
-              </div>
-              <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"
-                >File Console</span
-              >
-            </div>
-            <p class="text-xs text-gray-600 dark:text-gray-400 mb-3">
-              Query CSV, JSON, and Parquet files directly with DuckDB SQL.
-            </p>
-            <BaseButton
-              variant="secondary"
-              size="sm"
-              class="w-full justify-center"
-              @click="emit('open-file-console')"
-            >
-              <Terminal class="w-4 h-4 mr-1.5" />
-              Open File Console
-            </BaseButton>
           </div>
         </template>
       </div>
@@ -1075,119 +1195,6 @@ const isLoadingDatabases = computed(() => {
               </div>
             </div>
           </div>
-        </div>
-
-        <!-- Row 2: Tools -->
-        <!-- Create Database Card -->
-        <div
-          v-if="canCreateDatabase"
-          class="bg-linear-to-br from-emerald-50 to-slate-50 dark:from-emerald-950/30 dark:to-gray-800/50 rounded-xl p-4 ring-1 ring-emerald-200/70 dark:ring-emerald-800/50"
-        >
-          <div class="flex items-start gap-4 mb-4">
-            <div
-              class="shrink-0 p-3 bg-emerald-100 dark:bg-emerald-900/50 rounded-xl ring-1 ring-emerald-200 dark:ring-emerald-700/50"
-            >
-              <Database class="h-7 w-7 text-emerald-600 dark:text-emerald-400" />
-            </div>
-            <div class="flex-1 min-w-0 pt-1">
-              <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200">
-                Create Database
-              </h4>
-              <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                Create a new database on this server
-              </p>
-            </div>
-          </div>
-
-          <div class="flex flex-col sm:flex-row gap-2">
-            <FormInput
-              v-model="newDatabaseName"
-              placeholder="database_name"
-              class="flex-1"
-              :disabled="isCreatingDatabase"
-              @keyup.enter="handleCreateDatabase"
-            />
-            <BaseButton
-              variant="primary"
-              size="sm"
-              class="shrink-0 whitespace-nowrap"
-              :disabled="!newDatabaseName.trim() || isCreatingDatabase"
-              @click="handleCreateDatabase"
-            >
-              <Plus class="w-4 h-4 mr-1.5" />
-              Create Database
-            </BaseButton>
-          </div>
-
-          <!-- Schema creation for non-PostgreSQL databases -->
-          <div
-            v-if="showSchemaCreationAtConnectionLevel"
-            class="mt-4 pt-4 border-t border-emerald-200 dark:border-emerald-800/50"
-          >
-            <div class="flex items-start gap-4 mb-3">
-              <div class="shrink-0 p-2 bg-emerald-100 dark:bg-emerald-900/50 rounded-lg">
-                <Plus class="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-              </div>
-              <div class="flex-1 min-w-0">
-                <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  Create Schema
-                </h4>
-                <p class="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
-                  In database: <span class="font-medium">{{ defaultDatabase }}</span>
-                </p>
-              </div>
-            </div>
-            <div class="space-y-2">
-              <FormInput
-                v-model="newSchemaName"
-                placeholder="schema_name"
-                :disabled="isCreatingSchema"
-                @keyup.enter="handleCreateSchema"
-              />
-              <BaseButton
-                variant="secondary"
-                size="sm"
-                class="w-full justify-center"
-                :disabled="!newSchemaName.trim() || isCreatingSchema"
-                @click="handleCreateSchema"
-              >
-                <Plus class="w-4 h-4 mr-1.5" />
-                Create Schema
-              </BaseButton>
-            </div>
-          </div>
-        </div>
-
-        <!-- Database Console Card -->
-        <div
-          v-if="!isFileConnection"
-          class="bg-linear-to-br from-indigo-50 to-slate-50 dark:from-indigo-950/30 dark:to-gray-800/50 rounded-xl p-4 ring-1 ring-indigo-200/70 dark:ring-indigo-800/50"
-        >
-          <div class="flex items-start gap-4 mb-4">
-            <div
-              class="shrink-0 p-3 bg-indigo-100 dark:bg-indigo-900/50 rounded-xl ring-1 ring-indigo-200 dark:ring-indigo-700/50"
-            >
-              <Terminal class="h-7 w-7 text-indigo-600 dark:text-indigo-400" />
-            </div>
-            <div class="flex-1 min-w-0 pt-1">
-              <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200">
-                Database Console
-              </h4>
-              <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                Execute SQL commands directly on this server (CREATE DATABASE, DROP, etc.)
-              </p>
-            </div>
-          </div>
-
-          <BaseButton
-            variant="secondary"
-            size="sm"
-            class="w-full justify-center"
-            @click="emit('open-sql-console')"
-          >
-            <Terminal class="w-4 h-4 mr-1.5" />
-            Open Database Console
-          </BaseButton>
         </div>
       </div>
 

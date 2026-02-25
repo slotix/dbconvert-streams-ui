@@ -292,7 +292,7 @@ export function useStreamWizard() {
         selectedTablesCount += conn.tables.length
       }
       if (conn.queries) {
-        customQueriesCount += conn.queries.length
+        customQueriesCount += conn.queries.filter((query) => query.query?.trim()).length
       }
     }
     const selectedFiles = config?.files?.filter((f) => f.selected) || []

@@ -1,11 +1,10 @@
 <template>
   <div class="flex h-full min-h-0 flex-col gap-6">
-    <!-- Data Transfer Mode Section - Only show when CDC mode is possible -->
+    <!-- Data Transfer Mode Section -->
     <div
-      v-if="canUseCDCMode"
       class="shrink-0 bg-linear-to-br from-slate-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-850 border border-gray-100 dark:border-gray-700 rounded-xl p-6 shadow-sm dark:shadow-gray-900/30"
     >
-      <ModeButtons />
+      <ModeButtons :disabled-mode-ids="disabledModeIds" :disabled-reasons="modeDisabledReasons" />
 
       <!-- CDC Operations - Only show when CDC mode is selected -->
       <div v-if="currentMode === 'cdc'" class="mt-6">
@@ -369,6 +368,7 @@ import { Code, Sheet, Cloud, FolderOpen } from 'lucide-vue-next'
 import type { StreamConnectionMapping } from '@/types/streamConfig'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
+import type { ModeOption } from '@/stores/common'
 import { getConnectionKindFromSpec, isDatabaseKind, isFileBasedKind } from '@/types/specs'
 
 interface Props {
@@ -416,15 +416,39 @@ const connectionsStore = useConnectionsStore()
 // Current mode from stream config
 const currentMode = computed(() => streamsStore.currentStreamConfig?.mode || 'convert')
 
-// CDC only allowed with exactly 1 database source and no file sources
-// This must be computed here since we need access to the connections from the store
-const canUseCDCMode = computed(() => {
-  const connections = streamsStore.currentStreamConfig?.source?.connections || []
-  if (connections.length === 0) return false
-  const dbConnections = connections.filter((conn) => !isFileType(conn.connectionId))
-  const fileConnections = connections.filter((conn) => isFileType(conn.connectionId))
-  return dbConnections.length === 1 && fileConnections.length === 0
+const streamSourceConnections = computed(
+  () => streamsStore.currentStreamConfig?.source?.connections || []
+)
+const databaseSourceCount = computed(
+  () => streamSourceConnections.value.filter((conn) => isDatabaseType(conn.connectionId)).length
+)
+const fileSourceCount = computed(
+  () => streamSourceConnections.value.filter((conn) => isFileType(conn.connectionId)).length
+)
+
+// CDC only allowed with exactly 1 database source and no file/S3 sources
+const canUseCDCMode = computed(() => databaseSourceCount.value === 1 && fileSourceCount.value === 0)
+
+const cdcModeDisabledReason = computed(() => {
+  if (canUseCDCMode.value) return ''
+  if (databaseSourceCount.value > 1 && fileSourceCount.value === 0) {
+    return 'Requires exactly one database source.'
+  }
+  if (databaseSourceCount.value > 0 && fileSourceCount.value > 0) {
+    return 'Not available with mixed database and file/S3 sources.'
+  }
+  if (databaseSourceCount.value === 0 && fileSourceCount.value > 0) {
+    return 'File/S3 sources support Convert mode only.'
+  }
+  return 'Select one database source to enable CDC.'
 })
+
+type ModeId = ModeOption['id']
+
+const disabledModeIds = computed<ModeId[]>(() => (canUseCDCMode.value ? [] : ['cdc']))
+const modeDisabledReasons = computed<Partial<Record<ModeId, string>>>(() => ({
+  cdc: cdcModeDisabledReason.value
+}))
 
 // Reset activeDataTab to 'tables' when switching to CDC mode
 watch(currentMode, (newMode) => {
@@ -432,6 +456,16 @@ watch(currentMode, (newMode) => {
     activeDataTab.value = 'tables'
   }
 })
+
+watch(
+  canUseCDCMode,
+  (canUseCDC) => {
+    if (!canUseCDC && streamsStore.currentStreamConfig?.mode === 'cdc') {
+      streamsStore.currentStreamConfig.mode = 'convert'
+    }
+  },
+  { immediate: true }
+)
 
 // Count selected tables (now per-connection)
 // Note: connection.tables only contains selected tables (filtered in TableList.vue)
@@ -452,7 +486,7 @@ const customQueriesCount = computed(() => {
   let count = 0
   for (const conn of connections) {
     if (conn.queries) {
-      count += conn.queries.length
+      count += conn.queries.filter((query) => query.query?.trim()).length
     }
   }
   return count
@@ -473,6 +507,12 @@ function isFileType(connectionId: string): boolean {
   const conn = connectionsStore.connectionByID(connectionId)
   const kind = getConnectionKindFromSpec(conn?.spec)
   return isFileBasedKind(kind)
+}
+
+function isDatabaseType(connectionId: string): boolean {
+  const conn = connectionsStore.connectionByID(connectionId)
+  const kind = getConnectionKindFromSpec(conn?.spec)
+  return isDatabaseKind(kind)
 }
 
 // Helper to check if a connection is S3 (spec.s3)
