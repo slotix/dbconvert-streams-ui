@@ -11,6 +11,7 @@ import { useSystemStatus } from '@/composables/useSystemStatus'
 type Props = {
   compact?: boolean
   showOpenLogs?: boolean
+  showMeta?: boolean
   title?: string
   showTitle?: boolean
   showDescription?: boolean
@@ -19,6 +20,7 @@ type Props = {
 const props = withDefaults(defineProps<Props>(), {
   compact: false,
   showOpenLogs: false,
+  showMeta: true,
   title: 'System Status',
   showTitle: true,
   showDescription: true
@@ -86,7 +88,7 @@ onMounted(async () => {
       </div>
     </div>
 
-    <div v-if="meta.length" class="text-[11px] text-gray-500">
+    <div v-if="props.showMeta && meta.length" class="text-[11px] text-gray-500">
       <div v-for="line in meta" :key="line">{{ line }}</div>
     </div>
 

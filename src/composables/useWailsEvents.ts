@@ -52,6 +52,7 @@ function eventsOn(eventName: string, callback: (...data: unknown[]) => void): ()
  * - menu:toggle-logs - Toggle the logs panel
  * - menu:refresh - Refresh the current view
  * - menu:zoom-in / menu:zoom-out / menu:zoom-reset - Adjust UI zoom (desktop only)
+ * - menu:open-settings - Open global settings panel (optional section payload)
  * - menu:show-about - Show about dialog
  */
 export function useWailsMenuEvents() {
@@ -117,6 +118,14 @@ export function useWailsMenuEvents() {
     cleanupFns.push(
       eventsOn('menu:toggle-explorer-sidebar', () => {
         window.dispatchEvent(new CustomEvent('wails:toggle-explorer-sidebar'))
+      })
+    )
+
+    // Open settings panel from native menu
+    cleanupFns.push(
+      eventsOn('menu:open-settings', (section: unknown) => {
+        const detail = typeof section === 'string' ? { section } : {}
+        window.dispatchEvent(new CustomEvent('wails:open-settings', { detail }))
       })
     )
 

@@ -176,13 +176,13 @@
           </button>
           <div
             v-if="settingsOpen"
-            class="absolute left-full ml-2 bottom-0 w-64 rounded-lg bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black/10 dark:ring-gray-700 z-9999 p-3"
+            class="absolute bottom-0 left-full z-9999 ml-2 w-72 rounded-lg bg-white p-3 shadow-lg ring-1 ring-black/10 dark:bg-gray-800 dark:ring-gray-700"
           >
             <div class="flex items-center justify-between">
-              <span class="text-sm font-semibold text-gray-700 dark:text-gray-200">Theme</span>
+              <span class="text-sm font-medium text-gray-700 dark:text-gray-200">Theme</span>
               <button
                 type="button"
-                class="inline-flex items-center gap-2 rounded-md px-2 py-1 text-sm font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700"
+                class="inline-flex items-center gap-2 rounded-md px-2 py-1 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white"
                 title="Toggle theme"
                 @click="themeStore.toggleTheme"
               >
@@ -196,7 +196,7 @@
               </button>
             </div>
             <div v-if="isDesktop" class="mt-3 flex items-center justify-between">
-              <span class="text-sm font-semibold text-gray-700 dark:text-gray-200">Zoom</span>
+              <span class="text-sm font-medium text-gray-700 dark:text-gray-200">Zoom</span>
               <div class="flex items-center gap-2">
                 <div class="relative w-28">
                   <input
@@ -218,7 +218,7 @@
                   />
                   <div
                     v-if="isZoomActive"
-                    class="absolute -top-6 -translate-x-1/2 text-[11px] font-semibold text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-900 px-2 py-0.5 rounded shadow"
+                    class="absolute -top-6 -translate-x-1/2 rounded bg-white px-2 py-0.5 text-[11px] font-medium text-gray-700 shadow dark:bg-gray-900 dark:text-gray-200"
                     :style="zoomTooltipStyle"
                   >
                     {{ zoomPendingPercent }}
@@ -232,7 +232,7 @@
                 </div>
                 <button
                   type="button"
-                  class="px-2 py-1 text-xs font-semibold rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                  class="rounded-md px-2 py-1 text-xs font-medium hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-gray-700"
                   title="Reset zoom"
                   :disabled="isZoomDefault"
                   @click="resetZoom"
@@ -241,40 +241,135 @@
                 </button>
               </div>
             </div>
-            <div class="mt-4 border-t border-gray-200 dark:border-gray-700 pt-3">
-              <button
-                type="button"
-                class="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm font-semibold text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700/60"
-                @click="toggleStatusExpanded"
-              >
-                <span class="flex items-center gap-2">
-                  <span
-                    :class="[
-                      'h-2.5 w-2.5 rounded-full',
-                      commonStore.isBackendConnected ? 'bg-emerald-500' : 'bg-red-500'
-                    ]"
-                  ></span>
-                  <span>System Status</span>
-                </span>
-                <span
+            <div class="mt-4 border-t border-gray-200 pt-3 dark:border-gray-700">
+              <div class="grid grid-cols-2 gap-1 rounded-md bg-gray-100/70 p-1 dark:bg-gray-900/70">
+                <button
+                  type="button"
                   :class="[
-                    'rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wide',
-                    commonStore.isBackendConnected
-                      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200'
-                      : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-200'
+                    'rounded-md px-2 py-1.5 text-xs font-medium transition-colors',
+                    settingsTab === 'logging'
+                      ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-700 dark:text-white'
+                      : 'text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white'
                   ]"
+                  @click="settingsTab = 'logging'"
                 >
-                  {{ commonStore.isBackendConnected ? 'Healthy' : 'Offline' }}
-                </span>
-              </button>
+                  Logging
+                </button>
+                <button
+                  type="button"
+                  :class="[
+                    'rounded-md px-2 py-1.5 text-xs font-medium transition-colors',
+                    settingsTab === 'system'
+                      ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-700 dark:text-white'
+                      : 'text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white'
+                  ]"
+                  @click="settingsTab = 'system'"
+                >
+                  <span class="inline-flex items-center gap-1.5">
+                    <span
+                      :class="[
+                        'h-2 w-2 rounded-full',
+                        commonStore.isBackendConnected ? 'bg-emerald-500' : 'bg-red-500'
+                      ]"
+                    ></span>
+                    <span>System Status</span>
+                  </span>
+                </button>
+              </div>
+
+              <div v-if="settingsTab === 'logging'" class="mt-3 space-y-3">
+                <div class="space-y-2 rounded-md bg-gray-50/70 p-2 dark:bg-gray-900/60">
+                  <div class="flex items-center justify-between">
+                    <div class="text-xs font-medium text-gray-600 dark:text-gray-300">
+                      SQL Capture Level
+                    </div>
+                    <div class="text-xs text-gray-600 dark:text-gray-300">
+                      {{ currentSQLCaptureLabel }}
+                    </div>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="2"
+                    step="1"
+                    :value="sqlCaptureSliderValue"
+                    :disabled="logsStore.runtimeLoggingSaving"
+                    class="h-2 w-full accent-teal-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/60 disabled:opacity-50"
+                    aria-label="SQL Capture Level"
+                    @input="onSQLCaptureSliderInput"
+                    @change="onSQLCaptureSliderInput"
+                  />
+                  <div class="flex justify-between text-[11px] text-gray-500 dark:text-gray-400">
+                    <span
+                      :class="sqlCaptureSliderValue === 0 ? 'text-teal-600 dark:text-teal-300' : ''"
+                    >
+                      Off
+                    </span>
+                    <span
+                      :class="sqlCaptureSliderValue === 1 ? 'text-teal-600 dark:text-teal-300' : ''"
+                    >
+                      Minimal
+                    </span>
+                    <span
+                      :class="sqlCaptureSliderValue === 2 ? 'text-teal-600 dark:text-teal-300' : ''"
+                    >
+                      Verbose
+                    </span>
+                  </div>
+                </div>
+
+                <div
+                  class="space-y-2 rounded-md border border-gray-200/70 bg-white/70 p-2 dark:border-gray-700/80 dark:bg-gray-900/50"
+                >
+                  <div class="text-[11px] font-medium uppercase tracking-wide text-gray-500">
+                    Logs Folder
+                  </div>
+                  <div
+                    v-for="line in systemStatusMeta"
+                    :key="line"
+                    class="text-[11px] leading-4 text-gray-600 dark:text-gray-300 break-all"
+                  >
+                    {{ line }}
+                  </div>
+                  <div
+                    v-if="!systemStatusMeta.length"
+                    class="text-[11px] text-gray-500 dark:text-gray-400"
+                  >
+                    Logs folder path unavailable
+                  </div>
+                  <button
+                    v-if="canOpenLogsFolder"
+                    type="button"
+                    class="inline-flex items-center gap-2 rounded-md bg-gray-100 px-2.5 py-1 text-[11px] font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                    @click="openLogsFolder"
+                  >
+                    Open Logs Folder
+                  </button>
+                  <div
+                    v-if="systemStatusError"
+                    class="text-[11px] whitespace-pre-wrap text-red-500 dark:text-red-300"
+                  >
+                    {{ systemStatusError }}
+                  </div>
+                </div>
+
+                <div
+                  v-if="logsStore.runtimeLoggingError"
+                  class="text-[11px] text-amber-600 dark:text-amber-300"
+                >
+                  {{ logsStore.runtimeLoggingError }}
+                </div>
+              </div>
+
               <div
-                v-if="statusExpanded"
+                v-else
                 class="mt-3 rounded-lg border border-gray-200/60 bg-white/70 p-3 shadow-sm dark:border-gray-700/80 dark:bg-gray-900/60"
               >
                 <div class="max-h-[45vh] overflow-y-auto">
                   <SystemStatusPanel
                     compact
-                    show-open-logs
+                    :show-open-logs="false"
+                    :show-meta="false"
                     :show-title="false"
                     :show-description="false"
                   />
@@ -347,12 +442,13 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { AlertCircle, CircleUser, FileText, Menu, Moon, Settings, Sun } from 'lucide-vue-next'
 import { useCommonStore } from '@/stores/common'
-import { useLogsStore } from '@/stores/logs'
+import { useLogsStore, type SQLCaptureMode } from '@/stores/logs'
 import { useThemeStore } from '@/stores/theme'
 import { useDesktopMode } from '@/composables/useDesktopMode'
 import { useContextualIconSizes } from '@/composables/useIconSizes'
 import { useLucideIcons } from '@/composables/useLucideIcons'
 import { useDesktopZoom } from '@/utils/desktopZoom'
+import { useSystemStatus } from '@/composables/useSystemStatus'
 import SystemStatusPanel from '@/components/common/SystemStatusPanel.vue'
 import VersionDisplay from '@/components/common/VersionDisplay.vue'
 import SidebarNavItems from '@/components/layout/SidebarNavItems.vue'
@@ -371,15 +467,44 @@ const themeStore = useThemeStore()
 const { isDesktop } = useDesktopMode()
 const { strokeWidth: iconStroke } = useLucideIcons()
 const iconSizes = useContextualIconSizes()
+const {
+  meta: systemStatusMeta,
+  canOpenLogsFolder,
+  openLogsFolder,
+  error: systemStatusError,
+  refresh
+} = useSystemStatus()
+
+type SettingsTab = 'logging' | 'system'
 
 const settingsOpen = ref(false)
 const settingsPopoverRef = ref<HTMLElement | null>(null)
-const statusExpanded = ref(false)
+const settingsTab = ref<SettingsTab>('logging')
+
+const sqlCaptureModeLabels: Record<SQLCaptureMode, string> = {
+  off: 'Off',
+  minimal: 'Minimal',
+  verbose: 'Verbose'
+}
+
+const sqlCaptureModes: SQLCaptureMode[] = ['off', 'minimal', 'verbose']
+
+const loadSettingsData = () => {
+  void logsStore.loadRuntimeLoggingSettings()
+  void refresh()
+}
+
+const openLoggingSettings = () => {
+  settingsOpen.value = true
+  settingsTab.value = 'logging'
+  loadSettingsData()
+}
 
 const toggleSettings = () => {
   settingsOpen.value = !settingsOpen.value
-  if (!settingsOpen.value) {
-    statusExpanded.value = false
+  if (settingsOpen.value) {
+    settingsTab.value = 'logging'
+    loadSettingsData()
   }
 }
 
@@ -393,24 +518,66 @@ const handleSettingsClickOutside = (event: MouseEvent) => {
   const target = event.target as Node
   if (settingsPopoverRef.value && !settingsPopoverRef.value.contains(target)) {
     settingsOpen.value = false
-    statusExpanded.value = false
   }
 }
 
 const handleSettingsKeydown = (event: KeyboardEvent) => {
   if (event.key === 'Escape') {
     settingsOpen.value = false
-    statusExpanded.value = false
   }
-}
-
-const toggleStatusExpanded = () => {
-  statusExpanded.value = !statusExpanded.value
 }
 
 const openStatusPanelFromSidebar = () => {
   settingsOpen.value = true
-  statusExpanded.value = true
+  settingsTab.value = 'system'
+  loadSettingsData()
+}
+
+const onSQLCaptureModeChange = async (value: unknown) => {
+  const mode: SQLCaptureMode = value === 'off' || value === 'verbose' ? value : 'minimal'
+  try {
+    await logsStore.updateRuntimeLoggingSettings({ sqlCaptureMode: mode })
+  } catch {
+    // Error text is exposed via logsStore.runtimeLoggingError
+  }
+}
+
+const sqlCaptureSliderValue = computed(() => {
+  const mode = logsStore.runtimeLoggingSettings.sqlCaptureMode
+  if (mode === 'off') return 0
+  if (mode === 'verbose') return 2
+  return 1
+})
+
+const currentSQLCaptureLabel = computed(
+  () => sqlCaptureModeLabels[logsStore.runtimeLoggingSettings.sqlCaptureMode]
+)
+
+const onSQLCaptureSliderInput = async (event: Event) => {
+  const target = event.target as HTMLInputElement | null
+  if (!target) return
+
+  const raw = Number(target.value)
+  const rounded = Number.isFinite(raw) ? Math.round(raw) : 1
+  const clamped = Math.max(0, Math.min(2, rounded))
+  const mode = sqlCaptureModes[clamped] ?? 'minimal'
+
+  await onSQLCaptureModeChange(mode)
+}
+
+const handleOpenSettingsEvent = (event: Event) => {
+  const custom = event as CustomEvent<{ section?: string }>
+  if (custom.detail?.section === 'logging') {
+    openLoggingSettings()
+    return
+  }
+  if (custom.detail?.section === 'system') {
+    openStatusPanelFromSidebar()
+    return
+  }
+  settingsOpen.value = true
+  settingsTab.value = 'logging'
+  loadSettingsData()
 }
 
 const { zoomLevel, resetZoom, setZoom } = useDesktopZoom()
@@ -440,11 +607,13 @@ watch(zoomLevel, (value) => {
 onMounted(() => {
   window.addEventListener('keydown', handleSettingsKeydown)
   document.addEventListener('mousedown', handleSettingsClickOutside)
+  window.addEventListener('wails:open-settings', handleOpenSettingsEvent as EventListener)
 })
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleSettingsKeydown)
   document.removeEventListener('mousedown', handleSettingsClickOutside)
+  window.removeEventListener('wails:open-settings', handleOpenSettingsEvent as EventListener)
 })
 
 const statusText = computed(() => props.statusText)

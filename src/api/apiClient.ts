@@ -15,6 +15,11 @@ interface HealthCheckResponse {
   status: string
 }
 
+export interface LoggingSettings {
+  sqlCaptureMode: 'off' | 'minimal' | 'verbose'
+  forwardSQLLogs: boolean
+}
+
 interface RetryConfig {
   maxRetries: number
   delayMs: number
@@ -264,6 +269,26 @@ const getSystemDefaults = async (): Promise<SystemDefaults> => {
   }
 }
 
+export async function getLoggingSettings(): Promise<LoggingSettings> {
+  try {
+    const response: ApiResponse<LoggingSettings> = await apiClient.get('/system/logging')
+    return response.data
+  } catch (error) {
+    throw handleApiError(error)
+  }
+}
+
+export async function updateLoggingSettings(
+  payload: Partial<LoggingSettings>
+): Promise<LoggingSettings> {
+  try {
+    const response: ApiResponse<LoggingSettings> = await apiClient.put('/system/logging', payload)
+    return response.data
+  } catch (error) {
+    throw handleApiError(error)
+  }
+}
+
 export async function getConnections(): Promise<unknown> {
   try {
     const response = await apiClient.get('/connections')
@@ -321,6 +346,8 @@ export default {
   sentryHealthCheck,
   getServiceStatus,
   getSystemDefaults,
+  getLoggingSettings,
+  updateLoggingSettings,
   clearApiKey,
   getConnections,
   getStreams,

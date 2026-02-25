@@ -1,9 +1,11 @@
 import { ref } from 'vue'
 import { initializeApiClient } from '@/api/apiClient'
 import { useCommonStore } from '@/stores/common'
+import { useLogsStore } from '@/stores/logs'
 
 export function useAppInitialization() {
   const commonStore = useCommonStore()
+  const logsStore = useLogsStore()
   const isInitializing = ref(true)
 
   const initializeApp = async () => {
@@ -29,6 +31,7 @@ export function useAppInitialization() {
     try {
       isInitializing.value = true
       await initializeApiClient()
+      await logsStore.applyPersistedRuntimeLoggingSettings()
       return await initializeApp()
     } finally {
       isInitializing.value = false

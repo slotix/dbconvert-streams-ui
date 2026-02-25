@@ -67,6 +67,9 @@ export const STORAGE_KEYS = {
   /** Logs panel visually grouped preference */
   LOGS_VISUALLY_GROUPED: 'sqlLogVisuallyGrouped',
 
+  /** Global SQL logging capture mode preference */
+  LOGGING_SQL_CAPTURE_MODE: 'loggingSqlCaptureMode',
+
   /** Streams view selection + active tab */
   STREAMS_VIEW_STATE: 'streamsViewState'
 } as const

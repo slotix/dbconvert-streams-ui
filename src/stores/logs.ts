@@ -1,5 +1,10 @@
 import { defineStore } from 'pinia'
-import { getStreamLogs } from '@/api/apiClient'
+import {
+  getStreamLogs,
+  getLoggingSettings,
+  updateLoggingSettings,
+  type LoggingSettings
+} from '@/api/apiClient'
 import type { StandardLogEntry } from '@/types/logs'
 import { useMonitoringStore } from '@/stores/monitoring'
 import { useCommonStore } from '@/stores/common'
@@ -52,6 +57,7 @@ export type QueryPurpose =
 
 export type TimeWindow = '5m' | '1h' | 'session' | 'all'
 export type ExportFormat = 'text' | 'csv' | 'json'
+export type SQLCaptureMode = 'off' | 'minimal' | 'verbose'
 
 export interface LogFilters {
   purposes: Set<QueryPurpose>
@@ -84,6 +90,11 @@ export interface LogWithHeader {
   showHeader: boolean
   location: string
   queriesInGroup?: number
+}
+
+export interface RuntimeLoggingSettings {
+  sqlCaptureMode: SQLCaptureMode
+  forwardSQLLogs: boolean
 }
 
 type ExportFieldKey =
@@ -171,8 +182,30 @@ function logMatchesFilters(
   return true
 }
 
+function normalizeSQLCaptureMode(mode: unknown): SQLCaptureMode {
+  if (mode === 'off' || mode === 'verbose') {
+    return mode
+  }
+  return 'minimal'
+}
+
+function normalizeRuntimeLoggingSettings(input: Partial<LoggingSettings>): RuntimeLoggingSettings {
+  const sqlCaptureMode = normalizeSQLCaptureMode(input.sqlCaptureMode)
+  return {
+    sqlCaptureMode,
+    forwardSQLLogs: sqlCaptureMode !== 'off'
+  }
+}
+
 export const useLogsStore = defineStore('logs', {
   state: () => {
+    const savedRuntimeSettings = normalizeRuntimeLoggingSettings({
+      sqlCaptureMode: getStorageValue<SQLCaptureMode>(
+        STORAGE_KEYS.LOGGING_SQL_CAPTURE_MODE,
+        'minimal'
+      )
+    })
+
     return {
       logs: [] as SystemLog[],
       maxLogs: 1000,
@@ -217,7 +250,13 @@ export const useLogsStore = defineStore('logs', {
       currentTabId: null as string | null,
       collapsedLocations: new Set<string>(), // Locations that are collapsed when visuallyGrouped is true
       visuallyGrouped: getStorageValue<boolean>(STORAGE_KEYS.LOGS_VISUALLY_GROUPED, true), // Show location headers
-      sortOrder: getStorageValue<'newest' | 'oldest'>(STORAGE_KEYS.LOGS_SORT_ORDER, 'newest')
+      sortOrder: getStorageValue<'newest' | 'oldest'>(STORAGE_KEYS.LOGS_SORT_ORDER, 'newest'),
+
+      // Global logging runtime settings (backed by API + local persistence)
+      runtimeLoggingSettings: savedRuntimeSettings as RuntimeLoggingSettings,
+      runtimeLoggingLoaded: false,
+      runtimeLoggingSaving: false,
+      runtimeLoggingError: ''
     }
   },
 
@@ -546,6 +585,10 @@ export const useLogsStore = defineStore('logs', {
 
     // Phase 2: SQL Logs Actions
     addSQLLog(log: SQLQueryLog) {
+      if (this.runtimeLoggingSettings.sqlCaptureMode === 'off') {
+        return
+      }
+
       // Store log
       this.flatLogs.set(log.id, log)
       this.displayOrder.push(log.id)
@@ -647,6 +690,71 @@ export const useLogsStore = defineStore('logs', {
     setQueryPurposes(purposes: Set<QueryPurpose>) {
       this.filters.purposes = purposes
       // Note: Query purposes are not persisted as users may want different filters per session
+    },
+
+    async loadRuntimeLoggingSettings(force = false) {
+      if (this.runtimeLoggingLoaded && !force) return
+
+      this.runtimeLoggingError = ''
+      try {
+        const settings = normalizeRuntimeLoggingSettings(await getLoggingSettings())
+        this.runtimeLoggingSettings = settings
+        this.runtimeLoggingLoaded = true
+        setStorageValue(STORAGE_KEYS.LOGGING_SQL_CAPTURE_MODE, settings.sqlCaptureMode)
+      } catch (error) {
+        this.runtimeLoggingError = error instanceof Error ? error.message : String(error)
+      }
+    },
+
+    async applyPersistedRuntimeLoggingSettings() {
+      const desired = normalizeRuntimeLoggingSettings({
+        sqlCaptureMode: this.runtimeLoggingSettings.sqlCaptureMode
+      })
+
+      this.runtimeLoggingSaving = true
+      this.runtimeLoggingError = ''
+
+      try {
+        const payload: Partial<LoggingSettings> = {
+          sqlCaptureMode: desired.sqlCaptureMode
+        }
+        const updated = normalizeRuntimeLoggingSettings(await updateLoggingSettings(payload))
+        this.runtimeLoggingSettings = updated
+        this.runtimeLoggingLoaded = true
+        setStorageValue(STORAGE_KEYS.LOGGING_SQL_CAPTURE_MODE, updated.sqlCaptureMode)
+      } catch (error) {
+        this.runtimeLoggingError = error instanceof Error ? error.message : String(error)
+      } finally {
+        this.runtimeLoggingSaving = false
+      }
+    },
+
+    async updateRuntimeLoggingSettings(patch: Partial<RuntimeLoggingSettings>) {
+      const previous = this.runtimeLoggingSettings
+      const merged = normalizeRuntimeLoggingSettings({
+        ...previous,
+        ...patch
+      })
+
+      this.runtimeLoggingSettings = merged
+      this.runtimeLoggingSaving = true
+      this.runtimeLoggingError = ''
+
+      try {
+        const payload: Partial<LoggingSettings> = {
+          sqlCaptureMode: merged.sqlCaptureMode
+        }
+        const updated = normalizeRuntimeLoggingSettings(await updateLoggingSettings(payload))
+        this.runtimeLoggingSettings = updated
+        this.runtimeLoggingLoaded = true
+        setStorageValue(STORAGE_KEYS.LOGGING_SQL_CAPTURE_MODE, updated.sqlCaptureMode)
+      } catch (error) {
+        this.runtimeLoggingSettings = previous
+        this.runtimeLoggingError = error instanceof Error ? error.message : String(error)
+        throw error
+      } finally {
+        this.runtimeLoggingSaving = false
+      }
     },
 
     getOrderedLogs(): SQLQueryLog[] {
