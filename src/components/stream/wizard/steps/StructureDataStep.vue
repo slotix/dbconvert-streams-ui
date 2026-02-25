@@ -1,9 +1,9 @@
 <template>
-  <div class="space-y-6">
+  <div class="flex h-full min-h-0 flex-col gap-6">
     <!-- Data Transfer Mode Section - Only show when CDC mode is possible -->
     <div
       v-if="canUseCDCMode"
-      class="bg-linear-to-br from-slate-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-850 border border-gray-100 dark:border-gray-700 rounded-xl p-6 shadow-sm dark:shadow-gray-900/30"
+      class="shrink-0 bg-linear-to-br from-slate-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-850 border border-gray-100 dark:border-gray-700 rounded-xl p-6 shadow-sm dark:shadow-gray-900/30"
     >
       <ModeButtons />
 
@@ -14,7 +14,7 @@
     </div>
 
     <!-- Dataset Section -->
-    <div>
+    <div class="flex-1 min-h-0">
       <!-- Pure File Source: Show file preview list for ALL file connections -->
       <template v-if="isFileSourceConnection">
         <div
@@ -50,7 +50,9 @@
       <!-- Mixed or Pure Database Sources -->
       <template v-else>
         <!-- Tab-based Data Source Selector -->
-        <div class="flex items-center gap-2 mb-4 border-b border-gray-200 dark:border-gray-700">
+        <div
+          class="shrink-0 flex items-center gap-2 mb-4 border-b border-gray-200 dark:border-gray-700"
+        >
           <!-- Tables Tab -->
           <button
             type="button"
@@ -100,10 +102,10 @@
         </div>
 
         <!-- Tab Content -->
-        <div class="mt-4">
+        <div class="mt-4 flex-1 min-h-0">
           <!-- Tables Tab Content -->
-          <div v-if="activeDataTab === 'tables'">
-            <TableList />
+          <div v-if="activeDataTab === 'tables'" class="h-full min-h-0 flex flex-col">
+            <TableList list-height="100%" />
 
             <!-- File/S3 Sources Section (in mixed mode) -->
             <div v-if="hasMixedSourceTypes" class="mt-6 space-y-4">
@@ -144,7 +146,7 @@
           <!-- Queries Tab Content - Only in Convert mode -->
           <div
             v-else-if="activeDataTab === 'queries' && currentMode === 'convert'"
-            class="h-[600px] min-h-[400px]"
+            class="h-full min-h-0"
           >
             <CustomQueryEditor :source-connections="sourceConnections" />
           </div>

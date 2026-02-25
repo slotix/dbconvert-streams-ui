@@ -50,7 +50,8 @@
 
     <!-- Table List Container with scroll -->
     <div
-      class="bg-white dark:bg-gray-850 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden max-h-[500px] overflow-y-auto"
+      class="bg-white dark:bg-gray-850 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden overflow-y-auto"
+      :style="listContainerStyle"
     >
       <!-- Empty State -->
       <div
@@ -392,6 +393,29 @@ import { debounce } from '@/utils/debounce'
 import { type StreamConfig, type Table } from '@/types/streamConfig'
 import { isFederatedMode as checkFederatedMode, parseTableName } from '@/utils/federatedUtils'
 import { getConnectionTypeLabel } from '@/types/specs'
+
+const props = withDefaults(
+  defineProps<{
+    listMaxHeight?: string
+    listHeight?: string
+  }>(),
+  {
+    listMaxHeight: '500px',
+    listHeight: undefined
+  }
+)
+
+const listContainerStyle = computed(() => {
+  if (props.listHeight) {
+    return {
+      height: props.listHeight,
+      maxHeight: props.listHeight
+    }
+  }
+  return {
+    maxHeight: props.listMaxHeight
+  }
+})
 
 const streamsStore = useStreamsStore()
 const connectionStore = useConnectionsStore()
@@ -985,7 +1009,7 @@ const refreshTables = async () => {
           }
 
           if (!table.name.includes('.')) {
-            const schema = conn.schema || currentStreamConfig.value.sourceSchema
+            const schema = conn.schema
             if (schema) {
               const schemaName = `${schema}.${table.name}`
               existingSelections.set(schemaName, table.selected ?? true)

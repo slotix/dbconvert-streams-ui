@@ -45,9 +45,53 @@
           @quick-save="handleQuickSave"
           @cancel="cancelWizard"
         >
+          <template #footer-left>
+            <div v-if="showStepOneSelectionFooter" class="flex min-w-0 flex-1 items-center gap-2">
+              <div
+                class="min-w-0 max-w-[36rem] truncate bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-600/60 rounded-lg px-3 py-1.5 text-sm shadow-sm shadow-blue-900/10 dark:shadow-blue-900/40"
+                :title="sourceFooterLabel"
+              >
+                <span class="font-semibold text-blue-700 dark:text-blue-200">Source:</span>
+                <span class="text-blue-900 dark:text-blue-100 ml-1 font-medium">
+                  {{ sourceFooterLabel }}
+                </span>
+              </div>
+              <svg
+                class="w-5 h-5 shrink-0 text-teal-500 dark:text-teal-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M13 7l5 5m0 0l-5 5m5-5H6"
+                />
+              </svg>
+              <div
+                class="min-w-0 max-w-[36rem] truncate bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-600/60 rounded-lg px-3 py-1.5 text-sm shadow-sm shadow-emerald-900/10 dark:shadow-emerald-900/40"
+                :title="targetFooterLabel"
+              >
+                <span class="font-semibold text-emerald-700 dark:text-emerald-200">Target:</span>
+                <span class="text-emerald-900 dark:text-emerald-100 ml-1 font-medium">
+                  {{ targetFooterLabel }}
+                </span>
+              </div>
+              <button
+                v-if="hasAnySelection"
+                type="button"
+                class="ml-2 inline-flex items-center rounded-md border border-red-300 dark:border-red-700 px-2.5 py-1.5 text-sm font-medium text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 whitespace-nowrap transition-colors duration-200"
+                @click="handleClearAll"
+              >
+                Clear Connections
+              </button>
+            </div>
+          </template>
+
           <template #default="{ currentStepIndex }">
             <!-- Step 1: Source & Target Selection -->
-            <div v-if="currentStepIndex === 0">
+            <div v-if="currentStepIndex === 0" class="h-full min-h-0">
               <SourceTargetSelectionStep
                 :source-connection-id="wizard.primarySourceId.value"
                 :target-connection-id="wizard.selection.value.targetConnectionId"
@@ -67,7 +111,7 @@
             </div>
 
             <!-- Step 2: Structure & Data -->
-            <div v-if="currentStepIndex === 1">
+            <div v-if="currentStepIndex === 1" class="h-full min-h-0">
               <StructureDataStep
                 :target-connection-id="wizard.selection.value.targetConnectionId"
                 :create-tables="wizard.createTables.value"
@@ -86,7 +130,7 @@
             </div>
 
             <!-- Step 3: Stream Configuration -->
-            <div v-if="currentStepIndex === 2">
+            <div v-if="currentStepIndex === 2" class="h-full min-h-0">
               <StreamConfigurationStep
                 :source-connection-id="wizard.primarySourceId.value"
                 :target-connection-id="wizard.selection.value.targetConnectionId"
@@ -125,6 +169,7 @@ import { useCommonStore } from '@/stores/common'
 import type { StreamConnectionMapping } from '@/types/streamConfig'
 import { getConnectionKindFromSpec } from '@/types/specs'
 import { DEFAULT_ALIAS } from '@/utils/federatedUtils'
+import { getSourceSelectionValue } from '@/components/stream/wizard/sourceMappings'
 import WizardLayout from '@/components/connection/wizard/WizardLayout.vue'
 import SourceTargetSelectionStep from '@/components/stream/wizard/steps/SourceTargetSelectionStep.vue'
 import StructureDataStep from '@/components/stream/wizard/steps/StructureDataStep.vue'
@@ -154,6 +199,47 @@ const showExitConfirm = ref(false)
 // Get stream ID from props or route params
 const streamId = computed(() => props.id || (route.params.id as string))
 const isEditMode = computed(() => Boolean(streamId.value))
+const hasAnySelection = computed(
+  () =>
+    wizard.sourceConnections.value.length > 0 || Boolean(wizard.selection.value.targetConnectionId)
+)
+const showStepOneSelectionFooter = computed(
+  () => wizard.currentStepIndex.value === 0 && hasAnySelection.value
+)
+
+function getConnectionDisplayName(connectionId?: string | null): string {
+  if (!connectionId) return 'Not selected'
+  const conn = connectionsStore.connectionByID(connectionId)
+  if (!conn) return 'Unknown connection'
+  return conn.name || conn.id
+}
+
+const sourceFooterLabel = computed(() => {
+  const sources = wizard.sourceConnections.value
+  if (sources.length === 0) return 'Not selected'
+  if (sources.length > 1) return `${sources.length} sources`
+
+  const first = sources[0]
+  const conn = connectionsStore.connectionByID(first.connectionId)
+  const kind = getConnectionKindFromSpec(conn?.spec)
+  const selection = getSourceSelectionValue(first, kind)
+  return selection
+    ? `${getConnectionDisplayName(first.connectionId)} / ${selection}`
+    : getConnectionDisplayName(first.connectionId)
+})
+
+const targetFooterLabel = computed(() => {
+  const targetId = wizard.selection.value.targetConnectionId
+  if (!targetId) return 'Not selected'
+
+  const segments: string[] = [getConnectionDisplayName(targetId)]
+  if (wizard.selection.value.targetDatabase) segments.push(wizard.selection.value.targetDatabase)
+  if (wizard.selection.value.targetSchema) segments.push(wizard.selection.value.targetSchema)
+  if (!wizard.selection.value.targetDatabase && wizard.selection.value.targetPath) {
+    segments.push(wizard.selection.value.targetPath)
+  }
+  return segments.join(' / ')
+})
 
 // Initialize
 onMounted(async () => {
@@ -322,9 +408,7 @@ watch(
         if (wizard.selection.value.sourceDatabase) {
           streamsStore.currentStreamConfig.sourceDatabase = wizard.selection.value.sourceDatabase
         }
-        if (wizard.selection.value.sourceSchema) {
-          streamsStore.currentStreamConfig.sourceSchema = wizard.selection.value.sourceSchema
-        }
+        streamsStore.currentStreamConfig.sourceSchema = undefined
 
         // Wait for next tick to ensure TableList component is rendered
         await nextTick()
@@ -336,7 +420,7 @@ watch(
   }
 )
 
-function handleSourceUpdate(connectionId: string, database?: string, schema?: string) {
+function handleSourceUpdate(connectionId: string, database?: string, _schema?: string) {
   const sourceConnection = connectionsStore.connectionByID(connectionId)
   const sourceKind = getConnectionKindFromSpec(sourceConnection?.spec)
 
@@ -352,7 +436,7 @@ function handleSourceUpdate(connectionId: string, database?: string, schema?: st
     wizard.setSourceConnections([{ alias, connectionId, s3: { bucket: database } }])
     wizard.selection.value.sourceSchema = null
   } else {
-    wizard.setSourceConnection(connectionId, database, schema)
+    wizard.setSourceConnection(connectionId, database, undefined)
   }
 
   // Update both the wizard state and the stream config
@@ -363,8 +447,8 @@ function handleSourceUpdate(connectionId: string, database?: string, schema?: st
       wizard.selection.value.sourceDatabase ||
       (sourceKind === 's3' ? undefined : database) ||
       undefined
-    if (sourceKind !== 's3' && schema) {
-      streamsStore.currentStreamConfig.sourceSchema = schema
+    if (sourceKind !== 's3') {
+      streamsStore.currentStreamConfig.sourceSchema = undefined
     }
   }
 }
@@ -468,9 +552,7 @@ function applyWizardSourceSelection(mergedConnections: StreamConnectionMapping[]
   const primarySource = wizard.sourceConnections.value[0]
   streamsStore.currentStreamConfig.sourceDatabase =
     primarySource?.database || wizard.selection.value.sourceDatabase || undefined
-  if (wizard.selection.value.sourceSchema) {
-    streamsStore.currentStreamConfig.sourceSchema = wizard.selection.value.sourceSchema
-  }
+  streamsStore.currentStreamConfig.sourceSchema = undefined
 }
 
 function applyWizardTargetSelection(includeTargetPath: boolean) {

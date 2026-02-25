@@ -775,6 +775,11 @@ async function ensureMetadata(connectionId: string, database: string) {
 }
 
 function shouldShowSchemas(connection: Connection, database: string): boolean {
+  // Source schema selection is intentionally handled in Step 2 (Structure and Data).
+  if (props.mode === 'source') {
+    return false
+  }
+
   if (props.selectedConnectionId !== connection.id || props.selectedDatabase !== database) {
     return false
   }
@@ -846,7 +851,7 @@ function handleDatabaseRowClick(connection: Connection, database: string) {
 
 function handleSchemaRowClick(connection: Connection, database: string, schema: string) {
   // Skip file connections
-  if (isFileConnection(connection)) {
+  if (isFileConnection(connection) || props.mode === 'source') {
     return
   }
   addToSet(expandedConnections, connection.id)

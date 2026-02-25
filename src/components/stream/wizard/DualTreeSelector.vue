@@ -1,7 +1,7 @@
 <template>
-  <div class="flex flex-col gap-6">
+  <div class="flex h-full min-h-0 flex-col gap-6">
     <!-- Split Pane Container -->
-    <div class="grid gap-4 grid-cols-1 lg:grid-cols-2 lg:h-[600px]">
+    <div class="grid flex-1 min-h-0 grid-cols-1 gap-4 lg:grid-cols-2">
       <!-- Source Tree (Left) - Sky Blue Theme -->
       <div
         class="relative rounded-xl bg-linear-to-br from-sky-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-850 overflow-hidden flex flex-col border border-gray-200 dark:border-gray-800 shadow-sm dark:shadow-gray-900/30 h-full"
@@ -131,133 +131,49 @@
       </div>
     </div>
 
-    <!-- Selection Summary - Enhanced Chips -->
+    <!-- Source Aliases - shown when multiple sources selected -->
     <div
-      v-if="primarySourceId || targetConnectionId || localSourceConnections.length > 0"
-      class="shrink-0 flex flex-col gap-3"
+      v-if="showAliasUI"
+      class="shrink-0 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/60 rounded-lg p-3"
     >
-      <!-- Source and Target Chips -->
-      <div class="flex items-center justify-between gap-3">
-        <div class="flex items-center gap-2 flex-1">
-          <!-- Source Chip - Sky Blue -->
-          <div
-            class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-600/60 rounded-lg px-3 py-1.5 text-sm shadow-sm shadow-blue-900/10 dark:shadow-blue-900/40"
-          >
-            <span class="font-semibold text-blue-700 dark:text-blue-200">Source:</span>
-            <span
-              v-if="localSourceConnections.length > 0"
-              class="text-blue-900 dark:text-blue-100 ml-1 font-medium"
-            >
-              <template v-if="localSourceConnections.length === 1">
-                {{ getConnectionName(localSourceConnections[0].connectionId) }}
-                <span
-                  v-if="getSelectionValue(localSourceConnections[0])"
-                  class="text-blue-600 dark:text-blue-300"
-                >
-                  /
-                  {{ getSelectionValue(localSourceConnections[0]) }}
-                </span>
-              </template>
-              <template v-else> {{ localSourceConnections.length }} sources </template>
-            </span>
-            <span v-else class="text-blue-500/80 dark:text-blue-300/70 ml-1 italic"
-              >Not selected</span
-            >
-          </div>
-
-          <!-- Arrow - Sky Blue to Emerald Gradient -->
-          <svg class="w-5 h-5 shrink-0" fill="none" stroke="url(#skyToEmerald)" viewBox="0 0 24 24">
-            <defs>
-              <linearGradient id="skyToEmerald" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" style="stop-color: rgb(14, 165, 233); stop-opacity: 1" />
-                <stop offset="100%" style="stop-color: rgb(16, 185, 129); stop-opacity: 1" />
-              </linearGradient>
-            </defs>
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M13 7l5 5m0 0l-5 5m5-5H6"
-            />
-          </svg>
-
-          <!-- Target Chip - Emerald -->
-          <div
-            class="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-600/60 rounded-lg px-3 py-1.5 text-sm shadow-sm shadow-emerald-900/10 dark:shadow-emerald-900/40"
-          >
-            <span class="font-semibold text-emerald-700 dark:text-emerald-200">Target:</span>
-            <span
-              v-if="targetConnectionId"
-              class="text-emerald-900 dark:text-emerald-100 ml-1 font-medium"
-            >
-              {{ getConnectionName(targetConnectionId) }}
-              <span v-if="targetDatabase" class="text-emerald-600 dark:text-emerald-300">
-                / {{ targetDatabase }}
-              </span>
-              <span v-if="targetSchema" class="text-emerald-600 dark:text-emerald-300">
-                / {{ targetSchema }}
-              </span>
-            </span>
-            <span v-else class="text-emerald-500/80 dark:text-emerald-300/70 ml-1 italic"
-              >Not selected</span
-            >
-          </div>
-        </div>
-
-        <!-- Clear All Button -->
-        <button
-          type="button"
-          class="text-sm text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium whitespace-nowrap transition-colors duration-200"
-          @click="clearAll"
+      <div class="flex items-center gap-2 mb-2">
+        <span class="text-xs font-semibold uppercase text-amber-700 dark:text-amber-300"
+          >Source Aliases</span
         >
-          Clear All
-        </button>
+        <span class="text-xs text-amber-600 dark:text-amber-400">(used in SQL queries)</span>
       </div>
-
-      <!-- Source Aliases - shown when multiple sources selected -->
-      <div
-        v-if="showAliasUI"
-        class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/60 rounded-lg p-3"
-      >
-        <div class="flex items-center gap-2 mb-2">
-          <span class="text-xs font-semibold uppercase text-amber-700 dark:text-amber-300"
-            >Source Aliases</span
-          >
-          <span class="text-xs text-amber-600 dark:text-amber-400">(used in SQL queries)</span>
-        </div>
-        <div class="flex flex-wrap gap-2">
-          <div
-            v-for="conn in localSourceConnections"
-            :key="`${conn.connectionId}-${getSelectionValue(conn)}`"
-            class="flex items-center gap-2 bg-white dark:bg-gray-800 border border-amber-300 dark:border-amber-600 rounded-md px-2 py-1.5"
-          >
-            <input
-              type="text"
-              :value="conn.alias"
-              class="w-16 px-1.5 py-0.5 text-xs font-mono font-semibold bg-amber-100 dark:bg-amber-900/40 border border-amber-300 dark:border-amber-600 rounded text-amber-800 dark:text-amber-200 focus:outline-none focus:ring-1 focus:ring-amber-500"
-              @input="
-                updateConnectionAlias(
-                  conn.connectionId,
-                  getSelectionValue(conn),
-                  ($event.target as HTMLInputElement).value
-                )
-              "
-            />
-            <span class="text-xs text-gray-600 dark:text-gray-300">
-              {{ getConnectionName(conn.connectionId) }}
-              <span v-if="getSelectionValue(conn)" class="text-gray-500 dark:text-gray-400">
-                / {{ getSelectionValue(conn) }}
-              </span>
+      <div class="flex flex-wrap gap-2">
+        <div
+          v-for="conn in localSourceConnections"
+          :key="`${conn.connectionId}-${getSelectionValue(conn)}`"
+          class="flex items-center gap-2 bg-white dark:bg-gray-800 border border-amber-300 dark:border-amber-600 rounded-md px-2 py-1.5"
+        >
+          <input
+            type="text"
+            :value="conn.alias"
+            class="w-16 px-1.5 py-0.5 text-xs font-mono font-semibold bg-amber-100 dark:bg-amber-900/40 border border-amber-300 dark:border-amber-600 rounded text-amber-800 dark:text-amber-200 focus:outline-none focus:ring-1 focus:ring-amber-500"
+            @input="
+              updateConnectionAlias(
+                conn.connectionId,
+                getSelectionValue(conn),
+                ($event.target as HTMLInputElement).value
+              )
+            "
+          />
+          <span class="text-xs text-gray-600 dark:text-gray-300">
+            {{ getConnectionName(conn.connectionId) }}
+            <span v-if="getSelectionValue(conn)" class="text-gray-500 dark:text-gray-400">
+              / {{ getSelectionValue(conn) }}
             </span>
-            <button
-              type="button"
-              class="p-0.5 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
-              title="Remove source"
-              @click="removeSourceConnection(conn.connectionId, getSelectionValue(conn))"
-            >
-              <X class="w-3.5 h-3.5" />
-            </button>
-          </div>
+          </span>
+          <button
+            type="button"
+            class="p-0.5 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+            title="Remove source"
+            @click="removeSourceConnection(conn.connectionId, getSelectionValue(conn))"
+          >
+            <X class="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
     </div>
@@ -687,9 +603,5 @@ function handleTargetBucketSelect(payload: { connectionId: string; bucket: strin
   // For S3 targets, the bucket is passed as the "database" parameter
   // Empty output path lets backend use platform-appropriate temp directory
   emit('update:target-connection', payload.connectionId, payload.bucket, undefined, '')
-}
-
-function clearAll() {
-  emit('clear-all')
 }
 </script>

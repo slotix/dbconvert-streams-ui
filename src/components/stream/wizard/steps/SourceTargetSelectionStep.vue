@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col gap-6">
+  <div class="flex h-full min-h-0 flex-col gap-6">
     <!-- Stream Name Field -->
     <div class="shrink-0">
       <StreamNameField
@@ -11,7 +11,7 @@
     </div>
 
     <!-- Dual Tree Selector -->
-    <div class="shrink-0">
+    <div class="flex-1 min-h-0">
       <DualTreeSelector
         :source-connection-id="sourceConnectionId"
         :target-connection-id="targetConnectionId"
