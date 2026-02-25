@@ -903,17 +903,14 @@ const refreshTables = async () => {
         }
       }
 
-      // Map table names and preserve existing selections/filters
-      // In create mode (no stream ID), select all tables by default
-      // In edit mode (has stream ID), only keep previously selected tables, new ones default to false
-      const isEditMode = Boolean(currentStreamConfig.value.id)
+      // Map table names and preserve existing selections/filters.
+      // New tables default to unselected; explicit previous selections are preserved.
 
       tables.value = allTableNames.map((name: string) => {
         const hasExistingSelection = existingSelections.has(name)
 
-        // Tables that were previously selected should remain selected
-        // In edit mode: new tables default to false; in create mode: new tables default to true
-        const selected = hasExistingSelection ? existingSelections.get(name)! : !isEditMode
+        // Keep existing explicit state; otherwise default to unselected.
+        const selected = hasExistingSelection ? existingSelections.get(name)! : false
 
         const filter = existingFilters.get(name)
 
@@ -1022,17 +1019,14 @@ const refreshTables = async () => {
       }
     }
 
-    // Map the response and preserve existing selections
-    // In create mode (no stream ID), select all tables by default
-    // In edit mode (has stream ID), only keep previously selected tables, new ones default to false
-    const isEditMode = Boolean(currentStreamConfig.value.id)
+    // Map the response and preserve existing selections.
+    // New tables default to unselected; explicit previous selections are preserved.
 
     tables.value = allTableNames.map((name: string) => {
       const hasExistingSelection = existingSelections.has(name)
 
-      // Tables that were previously selected should remain selected
-      // In edit mode: new tables default to false; in create mode: new tables default to true
-      const selected = hasExistingSelection ? existingSelections.get(name)! : !isEditMode
+      // Keep existing explicit state; otherwise default to unselected.
+      const selected = hasExistingSelection ? existingSelections.get(name)! : false
 
       const filter = existingFilters.get(name)
 
