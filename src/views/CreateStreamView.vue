@@ -125,6 +125,7 @@
                 @update:create-foreign-keys="wizard.setCreateForeignKeys"
                 @update:create-check-constraints="wizard.setCreateCheckConstraints"
                 @update:copy-data="wizard.setCopyData"
+                @update:source-connections="handleSourceConnectionsUpdate"
                 @update:can-proceed="updateCanProceed"
               />
             </div>

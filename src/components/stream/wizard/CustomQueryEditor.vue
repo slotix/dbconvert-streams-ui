@@ -29,28 +29,42 @@
                 <div class="flex flex-wrap gap-2 min-w-0">
                   <div
                     v-for="conn in sourceConnections"
-                    :key="`${conn.connectionId}:${conn.alias}`"
-                    class="inline-flex items-center gap-1.5 px-2 py-1 text-xs bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded"
+                    :key="getConnectionMappingKey(conn)"
+                    class="inline-flex flex-col gap-1 px-2 py-1 text-xs bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded"
                   >
-                    <span class="font-mono font-semibold text-teal-600 dark:text-teal-400">{{
-                      conn.alias
-                    }}</span>
-                    <span class="text-gray-400 dark:text-gray-500">→</span>
-                    <span class="text-gray-600 dark:text-gray-400">{{
-                      getConnectionLabel(conn.connectionId)
-                    }}</span>
-                    <span
-                      v-if="isFileConnection(conn.connectionId)"
-                      class="ml-1 px-1.5 py-0.5 text-[10px] bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded"
-                      title="File sources are read directly using DuckDB functions"
-                      >file</span
+                    <div class="inline-flex items-center gap-1.5 min-w-0">
+                      <input
+                        type="text"
+                        :value="getAliasDraft(conn)"
+                        class="w-16 rounded border border-sky-300 dark:border-sky-700/80 bg-sky-50/60 dark:bg-sky-900/20 px-1.5 py-0.5 text-xs font-mono font-semibold text-sky-700 dark:text-sky-300 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                        title="Edit source alias"
+                        @input="onAliasInput(conn, $event)"
+                        @keydown.enter.prevent="commitAlias(conn)"
+                        @blur="commitAlias(conn)"
+                      />
+                      <span class="text-gray-400 dark:text-gray-500">→</span>
+                      <span class="text-gray-600 dark:text-gray-400 truncate">{{
+                        getConnectionLabel(conn.connectionId)
+                      }}</span>
+                      <span
+                        v-if="isFileConnection(conn.connectionId)"
+                        class="ml-1 px-1.5 py-0.5 text-[10px] bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded"
+                        title="File sources are read directly using DuckDB functions"
+                        >file</span
+                      >
+                      <span
+                        v-else
+                        class="ml-1 px-1.5 py-0.5 text-[10px] bg-sky-100 dark:bg-sky-900/50 text-sky-700 dark:text-sky-300 rounded"
+                        title="Use alias.table syntax to reference tables"
+                        >{{ getAliasDraft(conn) }}.table</span
+                      >
+                    </div>
+                    <p
+                      v-if="getAliasError(conn)"
+                      class="text-[10px] text-red-600 dark:text-red-300 leading-tight"
                     >
-                    <span
-                      v-else
-                      class="ml-1 px-1.5 py-0.5 text-[10px] bg-sky-100 dark:bg-sky-900/50 text-sky-700 dark:text-sky-300 rounded"
-                      title="Use alias.table syntax to reference tables"
-                      >{{ conn.alias }}.table</span
-                    >
+                      {{ getAliasError(conn) }}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -235,9 +249,8 @@ import { SqlQueryTabs } from '@/components/database/sql-console'
 import FormSelect from '@/components/base/FormSelect.vue'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
-import type { QuerySource } from '@/types/streamConfig'
+import type { QuerySource, StreamConnectionMapping } from '@/types/streamConfig'
 import type { SqlLspConnectionContext } from '@/composables/useSqlLspProviders'
-import type { ConnectionMapping } from '@/api/federated'
 import { executeFederatedQuery } from '@/api/federated'
 import connections from '@/api/connections'
 import { useSplitPaneResize } from '@/composables/useSplitPaneResize'
@@ -248,12 +261,15 @@ import {
 } from '@/types/specs'
 
 interface Props {
-  sourceConnections?: ConnectionMapping[]
+  sourceConnections?: StreamConnectionMapping[]
 }
 
 const props = withDefaults(defineProps<Props>(), {
   sourceConnections: () => []
 })
+const emit = defineEmits<{
+  'update:source-connections': [connections: StreamConnectionMapping[]]
+}>()
 
 const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
@@ -306,6 +322,26 @@ const {
   leftPaneRef
 } = useSplitPaneResize()
 const previewLimit = 100
+const aliasDrafts = ref<Record<string, string>>({})
+const aliasErrors = ref<Record<string, string>>({})
+
+watch(
+  () => props.sourceConnections,
+  (connections) => {
+    const nextDrafts: Record<string, string> = {}
+    const nextErrors: Record<string, string> = {}
+    for (const conn of connections) {
+      const key = getConnectionMappingKey(conn)
+      nextDrafts[key] = conn.alias || ''
+      if (aliasErrors.value[key]) {
+        nextErrors[key] = aliasErrors.value[key]
+      }
+    }
+    aliasDrafts.value = nextDrafts
+    aliasErrors.value = nextErrors
+  },
+  { immediate: true, deep: true }
+)
 
 // Queries are stored on the first connection.
 // In federated mode, queries span multiple connections using aliases (e.g., src.table, src2.table)
@@ -586,6 +622,114 @@ const formatCellValue = (value: unknown): string => {
     }
   }
   return String(value)
+}
+
+function getConnectionMappingKey(mapping: StreamConnectionMapping): string {
+  const scope = mapping.database || mapping.s3?.bucket || mapping.files?.basePath || ''
+  return `${mapping.connectionId}:${scope}`
+}
+
+function sanitizeAlias(rawValue: string): string {
+  const lower = rawValue.trim().toLowerCase()
+  let sanitized = ''
+  for (const ch of lower) {
+    const code = ch.charCodeAt(0)
+    const isLowerLetter = code >= 97 && code <= 122
+    const isDigit = code >= 48 && code <= 57
+    if (isLowerLetter || isDigit || ch === '_') {
+      sanitized += ch
+    }
+  }
+  return sanitized
+}
+
+function getAliasDraft(mapping: StreamConnectionMapping): string {
+  const key = getConnectionMappingKey(mapping)
+  return aliasDrafts.value[key] ?? mapping.alias ?? ''
+}
+
+function getAliasError(mapping: StreamConnectionMapping): string {
+  const key = getConnectionMappingKey(mapping)
+  return aliasErrors.value[key] || ''
+}
+
+function clearAliasError(key: string): void {
+  if (!aliasErrors.value[key]) return
+  const nextErrors = { ...aliasErrors.value }
+  delete nextErrors[key]
+  aliasErrors.value = nextErrors
+}
+
+function setAliasError(key: string, message: string): void {
+  aliasErrors.value = {
+    ...aliasErrors.value,
+    [key]: message
+  }
+}
+
+function validateAlias(mapping: StreamConnectionMapping, nextAlias: string): string | null {
+  if (!nextAlias) {
+    return 'Alias is required'
+  }
+
+  const firstChar = nextAlias[0]
+  const firstCharCode = firstChar.charCodeAt(0)
+  const startsWithLetter = firstCharCode >= 97 && firstCharCode <= 122
+  if (!startsWithLetter && firstChar !== '_') {
+    return 'Use a letter or "_" first'
+  }
+
+  const mappingKey = getConnectionMappingKey(mapping)
+  const hasDuplicate = props.sourceConnections.some((conn) => {
+    if (getConnectionMappingKey(conn) === mappingKey) {
+      return false
+    }
+    return sanitizeAlias(conn.alias || '') === nextAlias
+  })
+
+  if (hasDuplicate) {
+    return 'Alias must be unique'
+  }
+
+  return null
+}
+
+function onAliasInput(mapping: StreamConnectionMapping, event: Event): void {
+  const target = event.target as HTMLInputElement | null
+  if (!target) return
+  const key = getConnectionMappingKey(mapping)
+  aliasDrafts.value[key] = sanitizeAlias(target.value)
+  clearAliasError(key)
+}
+
+function commitAlias(mapping: StreamConnectionMapping): void {
+  const key = getConnectionMappingKey(mapping)
+  const candidate = sanitizeAlias(aliasDrafts.value[key] ?? mapping.alias ?? '')
+  aliasDrafts.value[key] = candidate
+
+  const validationError = validateAlias(mapping, candidate)
+  if (validationError) {
+    setAliasError(key, validationError)
+    return
+  }
+
+  clearAliasError(key)
+  const currentAlias = sanitizeAlias(mapping.alias || '')
+  if (candidate === currentAlias) {
+    return
+  }
+
+  const nextConnections = props.sourceConnections.map((conn) => {
+    if (getConnectionMappingKey(conn) === key) {
+      return {
+        ...conn,
+        alias: candidate
+      }
+    }
+    return conn
+  })
+
+  emit('update:source-connections', nextConnections)
 }
 
 const applyTemplateSelection = (value: string | number | null, query: QuerySource) => {

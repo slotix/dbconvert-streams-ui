@@ -4,7 +4,8 @@
     ref="editorRef"
     :config="config as unknown as Record<string, unknown>"
     :height="height"
-    title="Connection Configuration"
+    :default-collapsed="defaultCollapsed"
+    title="Edit Connection JSON"
     :validator="validateConnection"
     @save="handleSave"
   />
@@ -19,6 +20,7 @@ import type { Connection } from '@/types/connections'
 defineProps<{
   config: Connection | null
   height?: string
+  defaultCollapsed?: boolean
 }>()
 
 const emit = defineEmits<{

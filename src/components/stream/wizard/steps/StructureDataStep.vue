@@ -147,7 +147,10 @@
             v-else-if="activeDataTab === 'queries' && currentMode === 'convert'"
             class="h-full min-h-0"
           >
-            <CustomQueryEditor :source-connections="sourceConnections" />
+            <CustomQueryEditor
+              :source-connections="sourceConnections"
+              @update:source-connections="handleSourceConnectionsUpdate"
+            />
           </div>
         </div>
       </template>
@@ -398,6 +401,7 @@ const emit = defineEmits<{
   'update:create-check-constraints': [value: boolean]
   'update:copy-data': [value: boolean]
   'update:can-proceed': [value: boolean]
+  'update:source-connections': [connections: StreamConnectionMapping[]]
 }>()
 
 const createTables = ref(props.createTables)
@@ -624,6 +628,10 @@ function handleOptionsChange() {
   // For file targets, always allow proceeding (no structure options needed)
   const canProceed = !isTargetDatabase.value || anyStructureEnabled.value || copyData.value
   emit('update:can-proceed', canProceed)
+}
+
+function handleSourceConnectionsUpdate(connections: StreamConnectionMapping[]) {
+  emit('update:source-connections', connections)
 }
 
 // Initialize can-proceed state

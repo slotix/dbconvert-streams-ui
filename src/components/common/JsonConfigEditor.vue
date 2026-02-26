@@ -1,7 +1,11 @@
 <template>
   <div class="json-config-editor">
     <div class="flex items-center justify-between mb-3">
-      <div class="flex items-center gap-2">
+      <button class="flex items-center gap-2 group" @click="isCollapsed = !isCollapsed">
+        <component
+          :is="isCollapsed ? ChevronRight : ChevronDown"
+          class="h-4 w-4 text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors"
+        />
         <span
           class="inline-flex items-center gap-1.5 text-sm font-medium text-teal-600 dark:text-teal-400"
         >
@@ -9,9 +13,9 @@
           {{ title }}
           <span v-if="isDirty" class="text-amber-500">*</span>
         </span>
-      </div>
+      </button>
 
-      <div class="flex items-center gap-2">
+      <div v-show="!isCollapsed" class="flex items-center gap-2">
         <button
           v-tooltip="'Find in configuration (Ctrl+F)'"
           class="p-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
@@ -66,6 +70,7 @@
     </div>
 
     <div
+      v-show="!isCollapsed"
       class="rounded-lg border overflow-hidden transition-colors border-gray-300 dark:border-gray-700"
     >
       <JsonCodeMirror
@@ -79,6 +84,7 @@
 
     <div
       v-if="validationErrors.length > 0"
+      v-show="!isCollapsed"
       class="mt-3 p-3 bg-red-50 dark:bg-red-950/35 border border-red-200 dark:border-red-700/70 rounded-lg"
     >
       <h4 class="text-sm font-medium text-red-800 dark:text-red-200 mb-2 flex items-center gap-1.5">
@@ -115,6 +121,8 @@ import { ref, computed, watch, onBeforeUnmount, onMounted } from 'vue'
 import {
   AlertTriangle,
   Check,
+  ChevronDown,
+  ChevronRight,
   Clipboard,
   Code,
   Loader2,
@@ -142,14 +150,18 @@ interface Props {
   config: Record<string, unknown>
   title?: string
   height?: string
+  defaultCollapsed?: boolean
   validator?: (content: string, original: Record<string, unknown>) => ValidationResult
 }
 
 const props = withDefaults(defineProps<Props>(), {
   title: 'JSON Editor',
   height: '500px',
+  defaultCollapsed: false,
   validator: undefined
 })
+
+const isCollapsed = ref(props.defaultCollapsed)
 
 const emit = defineEmits<{
   (e: 'save', config: Record<string, unknown>): void

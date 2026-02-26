@@ -1218,6 +1218,7 @@ const isLoadingDatabases = computed(() => {
           ref="jsonEditorRef"
           :config="connection"
           height="600px"
+          default-collapsed
           @save="handleSaveConfig"
         />
       </div>

@@ -1,5 +1,5 @@
 <template>
-  <div class="flex h-full min-h-0 flex-col gap-6">
+  <div class="flex h-full min-h-0 flex-col gap-4">
     <!-- Stream Name Field -->
     <div class="shrink-0">
       <StreamNameField

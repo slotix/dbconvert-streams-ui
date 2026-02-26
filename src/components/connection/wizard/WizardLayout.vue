@@ -80,9 +80,7 @@
     </div>
 
     <!-- Wizard Content -->
-    <div
-      class="bg-white dark:bg-gray-850 rounded-lg p-6 shadow-lg dark:shadow-gray-900/30 flex flex-col flex-1 min-h-0"
-    >
+    <div :class="contentContainerClass">
       <!-- Step Content Slot -->
       <div class="flex-1 mb-6 overflow-y-auto">
         <slot :currentStep="currentStep" :currentStepIndex="currentStepIndex"></slot>
@@ -205,6 +203,12 @@ const emit = defineEmits<{
 const currentStep = computed(() => props.steps[props.currentStepIndex])
 const canGoBack = computed(() => props.currentStepIndex > 0)
 const isLastStep = computed(() => props.currentStepIndex === props.steps.length - 1)
+const contentContainerClass = computed(() => {
+  if (props.wizardType === 'stream') {
+    return 'flex flex-col flex-1 min-h-0'
+  }
+  return 'bg-white dark:bg-gray-850 rounded-lg p-6 shadow-lg dark:shadow-gray-900/30 flex flex-col flex-1 min-h-0'
+})
 
 function goToPreviousStep() {
   if (canGoBack.value) {

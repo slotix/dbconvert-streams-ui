@@ -1,5 +1,5 @@
 <template>
-  <div class="flex h-full min-h-0 flex-col gap-6">
+  <div class="flex h-full min-h-0 flex-col gap-4">
     <!-- Split Pane Container -->
     <div class="grid flex-1 min-h-0 grid-cols-1 gap-4 lg:grid-cols-2">
       <!-- Source Tree (Left) - Sky Blue Theme -->
@@ -131,53 +131,6 @@
       </div>
     </div>
 
-    <!-- Source Aliases - shown when multiple sources selected -->
-    <div
-      v-if="showAliasUI"
-      class="shrink-0 bg-sky-50 dark:bg-sky-900/20 border border-sky-200 dark:border-sky-700/60 rounded-lg p-3"
-    >
-      <div class="flex items-center gap-2 mb-2">
-        <span class="text-xs font-semibold uppercase text-sky-700 dark:text-sky-300"
-          >Source Aliases</span
-        >
-        <span class="text-xs text-sky-600 dark:text-sky-400">(used in SQL queries)</span>
-      </div>
-      <div class="flex flex-wrap gap-2">
-        <div
-          v-for="conn in localSourceConnections"
-          :key="`${conn.connectionId}-${getSelectionValue(conn)}`"
-          class="flex items-center gap-2 bg-white dark:bg-gray-800 border border-sky-300 dark:border-sky-600 rounded-md px-2 py-1.5"
-        >
-          <input
-            type="text"
-            :value="conn.alias"
-            class="w-16 px-1.5 py-0.5 text-xs font-mono font-semibold bg-sky-100 dark:bg-sky-900/40 border border-sky-300 dark:border-sky-600 rounded text-sky-800 dark:text-sky-200 focus:outline-none focus:ring-1 focus:ring-sky-500"
-            @input="
-              updateConnectionAlias(
-                conn.connectionId,
-                getSelectionValue(conn),
-                ($event.target as HTMLInputElement).value
-              )
-            "
-          />
-          <span class="text-xs text-gray-600 dark:text-gray-300">
-            {{ getConnectionName(conn.connectionId) }}
-            <span v-if="getSelectionValue(conn)" class="text-gray-500 dark:text-gray-400">
-              / {{ getSelectionValue(conn) }}
-            </span>
-          </span>
-          <button
-            type="button"
-            class="p-0.5 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
-            title="Remove source"
-            @click="removeSourceConnection(conn.connectionId, getSelectionValue(conn))"
-          >
-            <X class="w-3.5 h-3.5" />
-          </button>
-        </div>
-      </div>
-    </div>
-
     <!-- Validation Error -->
     <div
       v-if="isSameConnectionAndDatabase"
@@ -207,7 +160,6 @@
 import { ref, computed, watch } from 'vue'
 import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
-import { X } from 'lucide-vue-next'
 import BaseButton from '@/components/base/BaseButton.vue'
 import ConnectionTreeSelector from './ConnectionTreeSelector.vue'
 import StreamConnectionFilter from './StreamConnectionFilter.vue'
@@ -305,8 +257,7 @@ const primarySourceDatabase = computed(() => {
   }
   return props.sourceDatabase
 })
-// Show alias UI when 2+ sources selected (for disambiguation in queries)
-const showAliasUI = computed(() => localSourceConnections.value.length > 1)
+const hasMultipleSources = computed(() => localSourceConnections.value.length > 1)
 
 // Generate type-based alias for a connection (e.g., pg1, my1, s31)
 function generateAlias(connectionId: string): string {
@@ -314,41 +265,6 @@ function generateAlias(connectionId: string): string {
   const connectionType = getConnectionTypeLabel(connection?.spec, connection?.type) || undefined
   const existingAliases = localSourceConnections.value.map((c) => c.alias || '')
   return generateTypeBasedAlias(connectionType, existingAliases)
-}
-
-// Update alias for a connection
-function updateConnectionAlias(
-  connectionId: string,
-  selectionValue: string | undefined,
-  newAlias: string
-) {
-  // Sanitize: lowercase, alphanumeric + underscore only
-  const sanitized = newAlias.toLowerCase().replace(/[^a-z0-9_]/g, '')
-  if (!sanitized) return
-
-  // Check for uniqueness (excluding the current connection)
-  const isDuplicate = localSourceConnections.value.some(
-    (c) =>
-      c.alias === sanitized &&
-      !(c.connectionId === connectionId && getSelectionValue(c) === selectionValue)
-  )
-  if (isDuplicate) return
-
-  localSourceConnections.value = localSourceConnections.value.map((c) =>
-    c.connectionId === connectionId && getSelectionValue(c) === selectionValue
-      ? { ...c, alias: sanitized }
-      : c
-  )
-  emit('update:source-connections', localSourceConnections.value)
-}
-
-// Remove a single source connection
-function removeSourceConnection(connectionId: string, database: string | undefined) {
-  localSourceConnections.value = localSourceConnections.value.filter(
-    (c) => !(c.connectionId === connectionId && getSelectionValue(c) === database)
-  )
-  emit('update:source-connections', localSourceConnections.value)
-  syncPrimarySelection()
 }
 
 function syncPrimarySelection() {
@@ -481,7 +397,7 @@ const filteredTargetConnections = computed(() => {
 // With multiple sources, at least one differs from target, so this check is skipped
 const isSameConnectionAndDatabase = computed(() => {
   return (
-    !showAliasUI.value &&
+    !hasMultipleSources.value &&
     primarySourceId.value &&
     props.targetConnectionId &&
     primarySourceId.value === props.targetConnectionId &&
@@ -489,11 +405,6 @@ const isSameConnectionAndDatabase = computed(() => {
     (primarySourceDatabase.value || props.sourceDatabase)
   )
 })
-
-function getConnectionName(connectionId: string): string {
-  const conn = connections.value.find((c) => c.id === connectionId)
-  return conn?.name || connectionId
-}
 
 function handleSourceConnectionSelect(payload: {
   connectionId: string
