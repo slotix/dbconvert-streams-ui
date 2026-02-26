@@ -76,6 +76,9 @@ const connectionsStore = useConnectionsStore()
 const selectedTable = ref<string>('')
 const sourceConnections = computed(() => props.stream.source?.connections || [])
 const isFederated = computed(() => sourceConnections.value.length > 1)
+const hasAnyTables = computed(() =>
+  sourceConnections.value.some((conn) => (conn.tables || []).length > 0)
+)
 const hasAnyQueries = computed(() =>
   sourceConnections.value.some((conn) =>
     (conn.queries || []).some((q) => !!q.name && !!q.query?.trim())
@@ -90,8 +93,9 @@ function buildTargetObjectNameForTable(
   const trimmedTable = tableName.trim()
   const trimmedAlias = alias.trim()
 
-  // Query/mixed mode runs table selections through federated query execution:
+  // Legacy query-table naming:
   // SELECT * FROM <alias>.<table> -> output name is dot-to-underscore.
+  // Keep this path available for backward-compatibility with older stream runs.
   if (useQueryNaming) {
     const qualified = trimmedAlias ? `${trimmedAlias}.${trimmedTable}` : trimmedTable
     return qualified.replaceAll('.', '_')
@@ -131,7 +135,11 @@ const compareItems = computed<CompareItem[]>(() => {
         tableName: rawName,
         schema: parsed.schema,
         alias,
-        targetObjectName: buildTargetObjectNameForTable(rawName, alias, hasAnyQueries.value)
+        targetObjectName: buildTargetObjectNameForTable(
+          rawName,
+          alias,
+          hasAnyQueries.value && !hasAnyTables.value
+        )
       })
     }
 
@@ -665,22 +673,35 @@ async function loadTargetFile() {
       return
     }
 
-    const tableFolderName = buildTargetTableFolderName()
-    const tableFolderPath = joinPaths(targetRootPath.value, streamId, tableFolderName)
+    const tableFolderNames = buildTargetTableFolderCandidates()
+    let metadata: FileMetadata | null = null
+    let tableFolderPath = ''
+    let resolvedFolderName = ''
+    let lastError: unknown = null
 
-    // Get metadata for the entire folder (DuckDB aggregates across all files).
-    // Pass target connection ID for S3 credential configuration.
-    const metadata = await files.getFileMetadata(
-      tableFolderPath,
-      detectedFormat,
-      true,
-      props.target.id
-    )
+    // Try canonical naming first, then legacy naming for backward-compatibility.
+    for (const folderName of tableFolderNames) {
+      const candidatePath = joinPaths(targetRootPath.value, streamId, folderName)
+      try {
+        metadata = await files.getFileMetadata(candidatePath, detectedFormat, true, props.target.id)
+        tableFolderPath = candidatePath
+        resolvedFolderName = folderName
+        break
+      } catch (error) {
+        lastError = error
+      }
+    }
+
+    if (!metadata || !tableFolderPath) {
+      throw lastError instanceof Error
+        ? lastError
+        : new Error('Failed to load target file metadata')
+    }
 
     // Create a FileSystemEntry for the folder itself (not individual files).
     // DuckDB will use wildcard patterns like "folder/*.csv.zst" to read all files.
     targetFileEntry.value = {
-      name: selectedTargetObjectName.value,
+      name: resolvedFolderName || selectedTargetObjectName.value,
       path: tableFolderPath,
       type: 'dir',
       isTable: true,
@@ -696,6 +717,29 @@ async function loadTargetFile() {
 
 function buildTargetTableFolderName(): string {
   return selectedTargetObjectName.value?.trim() || selectedTable.value?.trim() || ''
+}
+
+function buildTargetTableFolderCandidates(): string[] {
+  const candidates: string[] = []
+  const pushCandidate = (value?: string) => {
+    const normalized = value?.trim()
+    if (!normalized || candidates.includes(normalized)) return
+    candidates.push(normalized)
+  }
+
+  // Preferred candidate (current backend naming).
+  pushCandidate(buildTargetTableFolderName())
+
+  // For table comparisons, also consider both naming strategies so Compare
+  // keeps working for historical runs created before mixed-mode routing changes.
+  if (selectedCompareItem.value?.kind === 'table') {
+    const rawName = selectedCompareItem.value.tableName || ''
+    const alias = selectedCompareItem.value.alias || ''
+    pushCandidate(buildTargetObjectNameForTable(rawName, alias, false))
+    pushCandidate(buildTargetObjectNameForTable(rawName, alias, true))
+  }
+
+  return candidates
 }
 
 function joinPaths(basePath: string, ...segments: (string | undefined)[]): string {
