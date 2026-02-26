@@ -291,11 +291,11 @@ const templateContextBadge = computed(() => {
 })
 
 const templateSectionPriority: TemplateSection[] = [
-  'Session',
+  'Joins',
   'Databases',
   'Files',
   'S3',
-  'Joins',
+  'Session',
   'Snippets'
 ]
 

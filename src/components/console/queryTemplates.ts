@@ -151,37 +151,40 @@ SHOW DATABASES;`,
     )
   ]
 
-  if (hasDbSources) {
+  // Joins first — the primary federated use case
+  if (dbAliases.length > 1) {
     templates.push(
       makeTemplate(
-        'List source namespaces',
-        `-- Multi-source mode: inspect schemas/databases exposed per alias
-SELECT DISTINCT
-  database_name AS source_alias,
-  schema_name
-FROM duckdb_tables()
-ORDER BY source_alias, schema_name;`,
+        'Cross-database JOIN',
+        `-- Join rows from two databases by a shared column
+SELECT a.*, b.*
+FROM ${pg1}.public.table_name a
+JOIN ${my1}.database.table_name b ON a.id = b.id
+LIMIT 100;`,
         {
-          description: 'Namespaces exposed for each attached database alias',
-          section: 'Databases',
-          icon: 'database'
+          description: 'Match rows across sources on a common key',
+          section: 'Joins',
+          icon: 'join'
         }
       ),
       makeTemplate(
-        'List tables for alias',
-        `-- Multi-source mode: replace '${pg1}' with any database alias chip above
-SELECT
-  schema_name,
-  table_name
-FROM duckdb_tables()
-WHERE database_name = '${q(pg1)}'
-ORDER BY schema_name, table_name;`,
+        'UNION from multiple sources',
+        `-- Stack rows from two databases into one result
+SELECT '${pg1}' as source, * FROM ${pg1}.public.table_name
+UNION ALL
+SELECT '${my1}' as source, * FROM ${my1}.database.table_name
+LIMIT 100;`,
         {
-          description: `Lists tables for alias ${pg1}`,
-          section: 'Databases',
-          icon: 'database'
+          description: 'Combine rows from both sources into one list',
+          section: 'Joins',
+          icon: 'join'
         }
-      ),
+      )
+    )
+  }
+
+  if (hasDbSources) {
+    templates.push(
       ...dbMetadataTemplates,
       makeTemplate(
         'PostgreSQL query',
@@ -201,65 +204,6 @@ SELECT * FROM ${my1}.database.table_name LIMIT 100;`,
           description: 'Basic query against a MySQL alias',
           section: 'Databases',
           icon: 'database'
-        }
-      ),
-      makeTemplate(
-        'List attached schemas',
-        `-- Backward-compatible alias-scoped schema list
-SELECT DISTINCT schema_name
-FROM duckdb_tables()
-WHERE database_name = '${q(pg1)}'
-ORDER BY schema_name;`,
-        {
-          description: `Lists schemas for alias ${pg1}`,
-          section: 'Databases',
-          icon: 'database'
-        }
-      )
-    )
-  }
-
-  if (dbAliases.length > 1) {
-    templates.push(
-      makeTemplate(
-        'Cross-database JOIN',
-        `-- Join rows from two databases by a shared column
-SELECT a.*, b.*
-FROM ${pg1}.public.table_name a
-JOIN ${my1}.database.table_name b ON a.id = b.id
-LIMIT 100;`,
-        {
-          description: 'Match rows across sources on a common key',
-          section: 'Joins',
-          icon: 'join'
-        }
-      ),
-      makeTemplate(
-        'Aggregate across databases',
-        `-- Count and sum data that lives in two databases
-SELECT a.id, COUNT(*) as row_count, SUM(b.amount) as total
-FROM ${pg1}.public.table_name a
-JOIN ${my1}.database.table_name b ON a.id = b.id
-GROUP BY a.id
-ORDER BY total DESC
-LIMIT 100;`,
-        {
-          description: 'Group and summarize data from both sources',
-          section: 'Joins',
-          icon: 'join'
-        }
-      ),
-      makeTemplate(
-        'UNION from multiple sources',
-        `-- Stack rows from two databases into one result
-SELECT '${pg1}' as source, * FROM ${pg1}.public.table_name
-UNION ALL
-SELECT '${my1}' as source, * FROM ${my1}.database.table_name
-LIMIT 100;`,
-        {
-          description: 'Combine rows from both sources into one list',
-          section: 'Joins',
-          icon: 'join'
         }
       )
     )
