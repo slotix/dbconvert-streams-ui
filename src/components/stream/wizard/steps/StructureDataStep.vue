@@ -1,9 +1,7 @@
 <template>
   <div class="flex h-full min-h-0 flex-col gap-6">
     <!-- Data Transfer Mode Section -->
-    <div
-      class="shrink-0 bg-linear-to-br from-slate-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-850 border border-gray-100 dark:border-gray-700 rounded-xl p-6 shadow-sm dark:shadow-gray-900/30"
-    >
+    <div class="shrink-0">
       <ModeButtons :disabled-mode-ids="disabledModeIds" :disabled-reasons="modeDisabledReasons" />
 
       <!-- CDC Operations - Only show when CDC mode is selected -->
@@ -13,7 +11,7 @@
     </div>
 
     <!-- Dataset Section -->
-    <div class="flex-1 min-h-0">
+    <div class="flex-1 min-h-0 flex flex-col">
       <!-- Pure File Source: Show file preview list for ALL file connections -->
       <template v-if="isFileSourceConnection">
         <div
@@ -101,7 +99,7 @@
         </div>
 
         <!-- Tab Content -->
-        <div class="mt-4 flex-1 min-h-0">
+        <div class="flex-1 min-h-0 flex flex-col">
           <!-- Tables Tab Content -->
           <div v-if="activeDataTab === 'tables'" class="h-full min-h-0 flex flex-col">
             <TableList list-height="100%" />
@@ -145,7 +143,7 @@
           <!-- Queries Tab Content - Only in Convert mode -->
           <div
             v-else-if="activeDataTab === 'queries' && currentMode === 'convert'"
-            class="h-full min-h-0"
+            class="flex-1 min-h-0 flex flex-col"
           >
             <CustomQueryEditor
               :source-connections="sourceConnections"
@@ -157,10 +155,7 @@
     </div>
 
     <!-- Structure Options Section - Only show for database targets -->
-    <div
-      v-if="isTargetDatabase"
-      class="bg-linear-to-br from-slate-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-850 border border-gray-100 dark:border-gray-700 rounded-xl p-6 shadow-sm dark:shadow-gray-900/30"
-    >
+    <div v-if="isTargetDatabase" class="">
       <!-- Warning when nothing is selected -->
       <div
         v-if="!anyStructureEnabled && !copyData"

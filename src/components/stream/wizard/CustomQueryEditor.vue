@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
+  <div class="flex flex-col h-full">
     <!-- Tabbed Query Editor -->
     <div class="flex flex-col flex-1 min-h-0">
       <!-- Query Tabs -->
@@ -17,9 +17,7 @@
       <!-- Query Content -->
       <div v-if="activeQuery" class="flex-1 flex flex-col min-h-0 bg-white dark:bg-gray-850">
         <!-- Query Controls Row -->
-        <div
-          class="px-4 py-2 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700"
-        >
+        <div class="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
           <div class="flex items-start justify-between gap-4">
             <div class="min-w-0 flex-1">
               <div v-if="sourceConnections.length > 1" class="flex items-start gap-3">
@@ -125,7 +123,7 @@
           <div class="min-h-0 flex flex-col" :style="{ width: `${100 - editorWidth}%` }">
             <!-- Results Header -->
             <div
-              class="flex items-center justify-between px-3 py-2 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
+              class="flex items-center justify-between px-3 py-1.5 border-b border-gray-200 dark:border-gray-700"
             >
               <div class="flex items-center gap-2">
                 <Sheet class="w-4 h-4 text-teal-500" />
@@ -205,10 +203,7 @@
 
               <!-- No Results Yet -->
               <div v-else class="flex flex-col items-center justify-center h-full p-8 text-center">
-                <Play class="w-12 h-12 text-gray-300 dark:text-gray-600 mb-3" />
-                <p class="text-sm text-gray-500 dark:text-gray-400">
-                  Preview the query to see results
-                </p>
+                <p class="text-xs text-gray-400 dark:text-gray-500">Run Preview to see results</p>
               </div>
             </div>
 

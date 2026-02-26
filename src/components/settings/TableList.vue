@@ -2,7 +2,7 @@
   <div class="space-y-3">
     <!-- Header Bar -->
     <div
-      class="flex flex-wrap items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700"
+      class="flex flex-wrap items-center gap-3 pb-3 border-b border-gray-200 dark:border-gray-700"
     >
       <!-- Table count badge -->
       <div
