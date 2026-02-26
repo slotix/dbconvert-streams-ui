@@ -15,8 +15,13 @@
     >
       <button
         type="button"
-        class="flex w-full items-start gap-2.5 px-3 py-2 text-left transition-colors rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:focus-visible:ring-emerald-400"
-        :class="[connectionHeaderClass(connection.id)]"
+        class="flex w-full items-start gap-2.5 px-3 py-2 text-left transition-colors rounded-lg focus:outline-none focus-visible:ring-2"
+        :class="[
+          connectionHeaderClass(connection.id),
+          props.mode === 'source'
+            ? 'focus-visible:ring-sky-500 dark:focus-visible:ring-sky-400'
+            : 'focus-visible:ring-emerald-500 dark:focus-visible:ring-emerald-400'
+        ]"
         :title="connectionTooltip(connection)"
         @click="toggleConnectionExpansion(connection)"
       >
@@ -61,7 +66,10 @@
             v-if="isS3BucketsLoading(connection.id)"
             class="flex items-center gap-2 px-4 py-3 text-sm text-gray-500 dark:text-gray-400"
           >
-            <Loader2 class="h-4 w-4 animate-spin text-teal-500" />
+            <Loader2
+              class="h-4 w-4 animate-spin"
+              :class="props.mode === 'source' ? 'text-sky-500' : 'text-emerald-500'"
+            />
             Loading buckets…
           </div>
 
@@ -95,7 +103,7 @@
                   v-if="props.enableMultiSelect && props.mode === 'source'"
                   type="checkbox"
                   :checked="isS3BucketSelected(connection.id, bucket)"
-                  class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-teal-600 focus:ring-teal-500 bg-white dark:bg-gray-800 shrink-0"
+                  class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-sky-600 focus:ring-sky-500 bg-white dark:bg-gray-800 shrink-0"
                   @click.stop
                   @change="
                     handleS3BucketCheckboxChange(
@@ -125,7 +133,7 @@
                 v-if="props.enableMultiSelect && props.mode === 'source'"
                 type="checkbox"
                 :checked="isFileConnectionSelected(connection.id)"
-                class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-teal-600 focus:ring-teal-500 bg-white dark:bg-gray-800 shrink-0 mt-0.5"
+                class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-sky-600 focus:ring-sky-500 bg-white dark:bg-gray-800 shrink-0 mt-0.5"
                 @click.stop
                 @change="
                   handleFilePathCheckboxChange(
@@ -178,7 +186,10 @@
             v-if="isDatabasesLoading(connection.id)"
             class="flex items-center gap-2 px-4 py-3 text-sm text-gray-500 dark:text-gray-400"
           >
-            <Loader2 class="h-4 w-4 animate-spin text-blue-500" />
+            <Loader2
+              class="h-4 w-4 animate-spin"
+              :class="props.mode === 'source' ? 'text-sky-500' : 'text-emerald-500'"
+            />
             Loading databases…
           </div>
 
@@ -207,7 +218,7 @@
                   v-if="props.enableMultiSelect && props.mode === 'source'"
                   type="checkbox"
                   :checked="isDatabaseSelected(connection.id, database.name)"
-                  class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-teal-600 focus:ring-teal-500 bg-white dark:bg-gray-800 shrink-0"
+                  class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-sky-600 focus:ring-sky-500 bg-white dark:bg-gray-800 shrink-0"
                   @change="
                     handleDatabaseCheckboxChange(
                       connection.id,
@@ -557,7 +568,7 @@ function s3BucketRowClass(connectionId: string, bucket: string): string {
   }
 
   if (props.mode === 'source') {
-    return 'bg-gradient-to-r from-blue-50 via-blue-100/60 to-transparent dark:from-blue-900/30 dark:via-blue-900/15 dark:to-transparent text-blue-900 dark:text-blue-100 font-semibold ring-1 ring-blue-200 dark:ring-blue-500/30 border border-blue-100/70 dark:border-blue-800/40 pl-2 shadow-inner shadow-blue-900/5'
+    return 'bg-gradient-to-r from-sky-50 via-sky-100/60 to-transparent dark:from-sky-900/30 dark:via-sky-900/15 dark:to-transparent text-sky-900 dark:text-sky-100 font-semibold ring-1 ring-sky-200 dark:ring-sky-500/30 border border-sky-100/70 dark:border-sky-800/40 pl-2 shadow-inner shadow-sky-900/5'
   } else {
     return 'bg-gradient-to-r from-emerald-50 via-emerald-100/60 to-transparent dark:from-emerald-900/30 dark:via-emerald-900/15 dark:to-transparent text-emerald-900 dark:text-emerald-100 font-semibold ring-1 ring-emerald-200 dark:ring-emerald-500/30 border border-emerald-100/70 dark:border-emerald-800/40 pl-2 shadow-inner shadow-emerald-900/5'
   }
@@ -637,7 +648,7 @@ function connectionCardClass(connectionId: string): string {
   if (!props.selectedDatabase) {
     if (props.mode === 'source') {
       const sourceHighlight =
-        'bg-gradient-to-r from-blue-50/90 via-blue-100/70 to-white dark:from-blue-900/40 dark:via-blue-900/20 dark:to-transparent border-blue-200/80 dark:border-blue-700/60 ring-1 ring-blue-300/60 dark:ring-blue-500/30 shadow-lg shadow-blue-900/10 dark:shadow-blue-900/40'
+        'bg-gradient-to-r from-sky-50/90 via-sky-100/70 to-white dark:from-sky-900/40 dark:via-sky-900/20 dark:to-transparent border-sky-200/80 dark:border-sky-700/60 ring-1 ring-sky-300/60 dark:ring-sky-500/30 shadow-lg shadow-sky-900/10 dark:shadow-sky-900/40'
       return `${base} ${sourceHighlight}`
     }
     const targetHighlight =
@@ -671,7 +682,7 @@ function connectionHeaderClass(connectionId: string): string {
   }
 
   return props.mode === 'source'
-    ? 'bg-transparent text-blue-800 dark:text-blue-100 font-semibold'
+    ? 'bg-transparent text-sky-800 dark:text-sky-100 font-semibold'
     : 'bg-transparent text-emerald-700 dark:text-emerald-100 font-semibold'
 }
 
@@ -684,7 +695,7 @@ function filePathClass(connectionId: string): string {
 
   // Selected file path styling (same as database row for consistency)
   if (props.mode === 'source') {
-    return 'bg-gradient-to-r from-blue-50 via-blue-100/60 to-transparent dark:from-blue-900/30 dark:via-blue-900/15 dark:to-transparent text-blue-900 dark:text-blue-100 font-semibold ring-1 ring-blue-200 dark:ring-blue-500/30 border border-blue-100/70 dark:border-blue-800/40 pl-2 shadow-inner shadow-blue-900/5'
+    return 'bg-gradient-to-r from-sky-50 via-sky-100/60 to-transparent dark:from-sky-900/30 dark:via-sky-900/15 dark:to-transparent text-sky-900 dark:text-sky-100 font-semibold ring-1 ring-sky-200 dark:ring-sky-500/30 border border-sky-100/70 dark:border-sky-800/40 pl-2 shadow-inner shadow-sky-900/5'
   } else {
     return 'bg-gradient-to-r from-emerald-50 via-emerald-100/60 to-transparent dark:from-emerald-900/30 dark:via-emerald-900/15 dark:to-transparent text-emerald-900 dark:text-emerald-100 font-semibold ring-1 ring-emerald-200 dark:ring-emerald-500/30 border border-emerald-100/70 dark:border-emerald-800/40 pl-2 shadow-inner shadow-emerald-900/5'
   }
@@ -698,7 +709,7 @@ function databaseRowClass(connectionId: string, database: string): string {
   }
 
   if (props.mode === 'source') {
-    return 'bg-gradient-to-r from-blue-50 via-blue-100/60 to-transparent dark:from-blue-900/30 dark:via-blue-900/15 dark:to-transparent text-blue-900 dark:text-blue-100 font-semibold ring-1 ring-blue-200 dark:ring-blue-500/30 border border-blue-100/70 dark:border-blue-800/40 pl-2 shadow-inner shadow-blue-900/5'
+    return 'bg-gradient-to-r from-sky-50 via-sky-100/60 to-transparent dark:from-sky-900/30 dark:via-sky-900/15 dark:to-transparent text-sky-900 dark:text-sky-100 font-semibold ring-1 ring-sky-200 dark:ring-sky-500/30 border border-sky-100/70 dark:border-sky-800/40 pl-2 shadow-inner shadow-sky-900/5'
   } else {
     return 'bg-gradient-to-r from-emerald-50 via-emerald-100/60 to-transparent dark:from-emerald-900/30 dark:via-emerald-900/15 dark:to-transparent text-emerald-900 dark:text-emerald-100 font-semibold ring-1 ring-emerald-200 dark:ring-emerald-500/30 border border-emerald-100/70 dark:border-emerald-800/40 pl-2 shadow-inner shadow-emerald-900/5'
   }
@@ -715,7 +726,7 @@ function schemaRowClass(connectionId: string, database: string, schema: string):
   }
 
   return props.mode === 'source'
-    ? 'bg-gradient-to-r from-blue-50 via-blue-100/60 to-transparent dark:from-blue-900/30 dark:via-blue-900/15 dark:to-transparent text-blue-900 dark:text-blue-100 font-semibold ring-1 ring-blue-200 dark:ring-blue-500/30 border border-blue-100/70 dark:border-blue-800/40 shadow-inner shadow-blue-900/5'
+    ? 'bg-gradient-to-r from-sky-50 via-sky-100/60 to-transparent dark:from-sky-900/30 dark:via-sky-900/15 dark:to-transparent text-sky-900 dark:text-sky-100 font-semibold ring-1 ring-sky-200 dark:ring-sky-500/30 border border-sky-100/70 dark:border-sky-800/40 shadow-inner shadow-sky-900/5'
     : 'bg-gradient-to-r from-emerald-50 via-emerald-100/60 to-transparent dark:from-emerald-900/30 dark:via-emerald-900/15 dark:to-transparent text-emerald-900 dark:text-emerald-100 font-semibold ring-1 ring-emerald-200 dark:ring-emerald-500/30 border border-emerald-100/70 dark:border-emerald-800/40 shadow-inner shadow-emerald-900/5'
 }
 

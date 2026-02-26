@@ -47,7 +47,7 @@
                     >
                     <span
                       v-else
-                      class="ml-1 px-1.5 py-0.5 text-[10px] bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded"
+                      class="ml-1 px-1.5 py-0.5 text-[10px] bg-sky-100 dark:bg-sky-900/50 text-sky-700 dark:text-sky-300 rounded"
                       title="Use alias.table syntax to reference tables"
                       >{{ conn.alias }}.table</span
                     >

@@ -48,11 +48,11 @@
           <template #footer-left>
             <div v-if="showStepOneSelectionFooter" class="flex min-w-0 flex-1 items-center gap-2">
               <div
-                class="min-w-0 max-w-[36rem] truncate bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-600/60 rounded-lg px-3 py-1.5 text-sm shadow-sm shadow-blue-900/10 dark:shadow-blue-900/40"
+                class="min-w-0 max-w-[36rem] truncate bg-sky-50 dark:bg-sky-900/20 border border-sky-200 dark:border-sky-600/60 rounded-lg px-3 py-1.5 text-sm shadow-sm shadow-sky-900/10 dark:shadow-sky-900/40"
                 :title="sourceFooterLabel"
               >
-                <span class="font-semibold text-blue-700 dark:text-blue-200">Source:</span>
-                <span class="text-blue-900 dark:text-blue-100 ml-1 font-medium">
+                <span class="font-semibold text-sky-700 dark:text-sky-200">Source:</span>
+                <span class="text-sky-900 dark:text-sky-100 ml-1 font-medium">
                   {{ sourceFooterLabel }}
                 </span>
               </div>

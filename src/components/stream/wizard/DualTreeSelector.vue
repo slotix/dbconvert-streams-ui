@@ -7,7 +7,7 @@
         class="relative rounded-xl bg-linear-to-br from-sky-50 to-white dark:from-gray-900 dark:via-gray-900 dark:to-gray-850 overflow-hidden flex flex-col border border-gray-200 dark:border-gray-800 shadow-sm dark:shadow-gray-900/30 h-full"
       >
         <div
-          class="px-4 py-3 border-b border-blue-200 dark:border-blue-800/60 bg-gradient-to-br from-blue-50 via-blue-100 to-blue-50 dark:from-blue-900/20 dark:via-blue-900/10 dark:to-blue-900/5 relative overflow-hidden"
+          class="px-4 py-3 border-b border-sky-200 dark:border-sky-800/60 bg-gradient-to-br from-sky-50 via-sky-100 to-sky-50 dark:from-sky-900/20 dark:via-sky-900/10 dark:to-sky-900/5 relative overflow-hidden"
         >
           <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div class="flex items-center gap-3 min-w-0">
@@ -19,10 +19,10 @@
                 />
               </div>
               <div class="min-w-0">
-                <h3 class="text-base font-semibold text-blue-700 dark:text-blue-200 leading-tight">
+                <h3 class="text-base font-semibold text-sky-700 dark:text-sky-200 leading-tight">
                   Source Connections
                 </h3>
-                <p class="text-xs text-blue-700/80 dark:text-blue-100/80 font-medium truncate">
+                <p class="text-xs text-sky-700/80 dark:text-sky-100/80 font-medium truncate">
                   Select one or more sources to read from
                 </p>
               </div>
