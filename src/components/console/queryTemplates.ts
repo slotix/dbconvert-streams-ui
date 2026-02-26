@@ -223,46 +223,41 @@ ORDER BY schema_name;`,
     templates.push(
       makeTemplate(
         'Cross-database JOIN',
-        `-- Join tables from different databases
+        `-- Join rows from two databases by a shared column
 SELECT a.*, b.*
-FROM ${pg1}.public.table1 a
-JOIN ${my1}.database.table2 b ON a.id = b.id
+FROM ${pg1}.public.table_name a
+JOIN ${my1}.database.table_name b ON a.id = b.id
 LIMIT 100;`,
         {
-          description: 'Joins tables across two database aliases',
+          description: 'Match rows across sources on a common key',
           section: 'Joins',
           icon: 'join'
         }
       ),
       makeTemplate(
         'Aggregate across databases',
-        `-- Aggregate data from multiple sources
-SELECT
-  a.category,
-  COUNT(DISTINCT b.id) as count,
-  SUM(b.amount) as total
-FROM ${pg1}.public.categories a
-JOIN ${my1}.database.orders b ON a.id = b.category_id
-GROUP BY a.category
-ORDER BY total DESC;`,
+        `-- Count and sum data that lives in two databases
+SELECT a.id, COUNT(*) as row_count, SUM(b.amount) as total
+FROM ${pg1}.public.table_name a
+JOIN ${my1}.database.table_name b ON a.id = b.id
+GROUP BY a.id
+ORDER BY total DESC
+LIMIT 100;`,
         {
-          description: 'Aggregation query that spans two database aliases',
+          description: 'Group and summarize data from both sources',
           section: 'Joins',
           icon: 'join'
         }
       ),
       makeTemplate(
         'UNION from multiple sources',
-        `-- Combine results from different databases
-SELECT 'postgres' as source, name, created_at
-FROM ${pg1}.public.users
+        `-- Stack rows from two databases into one result
+SELECT '${pg1}' as source, * FROM ${pg1}.public.table_name
 UNION ALL
-SELECT 'mysql' as source, name, created_at
-FROM ${my1}.database.users
-ORDER BY created_at DESC
+SELECT '${my1}' as source, * FROM ${my1}.database.table_name
 LIMIT 100;`,
         {
-          description: 'UNION ALL pattern across two database aliases',
+          description: 'Combine rows from both sources into one list',
           section: 'Joins',
           icon: 'join'
         }
@@ -290,13 +285,13 @@ SELECT * FROM read_parquet('${aws}://bucket-name/path/*.parquet') LIMIT 100;`,
     templates.push(
       makeTemplate(
         'JOIN across S3 providers',
-        `-- Join data from different S3 providers (AWS + DigitalOcean)
+        `-- Match rows from files on two S3 providers
 SELECT a.*, b.*
-FROM read_parquet('${aws}://bucket/data_a.parquet') a
-JOIN read_parquet('${doAlias}://bucket/data_b.parquet') b ON a.id = b.id
+FROM read_parquet('${aws}://bucket/file.parquet') a
+JOIN read_parquet('${doAlias}://bucket/file.parquet') b ON a.id = b.id
 LIMIT 100;`,
         {
-          description: 'Joins files from two S3 aliases/providers',
+          description: 'Match rows from files stored on different S3 providers',
           section: 'Joins',
           icon: 'join'
         }
@@ -308,14 +303,13 @@ LIMIT 100;`,
     templates.push(
       makeTemplate(
         'Database + S3 JOIN',
-        `-- Join database table with S3 data
+        `-- Match database rows with S3 file data
 SELECT db.*, s3.*
-FROM ${pg1}.public.customers db
-JOIN read_parquet('${aws}://bucket/orders/*.parquet') s3
-ON db.id = s3.customer_id
+FROM ${pg1}.public.table_name db
+JOIN read_parquet('${aws}://bucket/path/*.parquet') s3 ON db.id = s3.id
 LIMIT 100;`,
         {
-          description: 'Joins a database table with S3-backed files',
+          description: 'Match rows from a database table and an S3 file',
           section: 'Joins',
           icon: 'join'
         }
@@ -372,13 +366,13 @@ SELECT * FROM read_json_auto('/path/to/files/*.json*') LIMIT 100;`,
     templates.push(
       makeTemplate(
         'JOIN database + local file',
-        `-- Join database table with local Parquet file
+        `-- Match database rows with a local file
 SELECT db.*, f.*
 FROM ${pg1}.public.table_name db
 JOIN read_parquet('/path/to/file.parquet') f ON db.id = f.id
 LIMIT 100;`,
         {
-          description: 'Joins a database table with a local parquet file',
+          description: 'Match rows from a database table and a local file',
           section: 'Joins',
           icon: 'join'
         }

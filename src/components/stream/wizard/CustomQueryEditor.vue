@@ -69,15 +69,24 @@
             </div>
 
             <div class="flex items-center gap-2 shrink-0">
-              <FormSelect
-                v-if="!needsFederatedExecution"
-                class="w-[220px]"
-                :model-value="selectedTemplate"
-                :options="templateOptions"
-                compact
-                button-class="bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600"
-                placeholder="Templates"
-                @update:model-value="applyTemplateSelection($event, activeQuery)"
+              <div v-if="wizardTemplates.length > 0" ref="wizardTemplatesRef" class="relative">
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors shadow-sm"
+                  title="Insert a SQL template"
+                  @click="templatePickerRef?.toggle()"
+                >
+                  <FileText class="w-4 h-4" />
+                  <span>Templates</span>
+                  <ChevronDown class="w-3 h-3" />
+                </button>
+              </div>
+              <SqlTemplatePicker
+                ref="templatePickerRef"
+                :templates="wizardTemplates"
+                :dialect="connectionDialect"
+                :trigger-ref="wizardTemplatesRef"
+                @select="handleTemplateSelect"
               />
               <button
                 type="button"
@@ -238,10 +247,17 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
-import { AlertTriangle, CheckCircle, Play, RefreshCw, Sheet } from 'lucide-vue-next'
+import {
+  AlertTriangle,
+  CheckCircle,
+  ChevronDown,
+  FileText,
+  Play,
+  RefreshCw,
+  Sheet
+} from 'lucide-vue-next'
 import SqlCodeMirror from '@/components/codemirror/SqlCodeMirror.vue'
-import { SqlQueryTabs } from '@/components/database/sql-console'
-import FormSelect from '@/components/base/FormSelect.vue'
+import { SqlQueryTabs, SqlTemplatePicker } from '@/components/database/sql-console'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
 import type { QuerySource, StreamConnectionMapping } from '@/types/streamConfig'
@@ -254,6 +270,12 @@ import {
   getSqlDialectFromConnection,
   isFileBasedKind
 } from '@/types/specs'
+import {
+  getFederatedTemplates,
+  getDatabaseTemplates,
+  type FederatedTemplateSource,
+  type QueryTemplate
+} from '@/components/console/queryTemplates'
 
 interface Props {
   sourceConnections?: StreamConnectionMapping[]
@@ -268,13 +290,31 @@ const emit = defineEmits<{
 
 const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
-const selectedTemplate = ref<string | number | null>('')
-const templateOptions = [
-  { value: 'cte', label: 'CTE with aggregation' },
-  { value: 'join', label: 'Multi-table JOIN' },
-  { value: 'subquery', label: 'Subquery filter' },
-  { value: 'union', label: 'UNION query' }
-]
+
+// Context-aware template sources
+const templateSources = computed<FederatedTemplateSource[]>(() =>
+  props.sourceConnections.map((conn) => {
+    const connection = connectionsStore.connectionByID(conn.connectionId)
+    const kind = getConnectionKindFromSpec(connection?.spec)
+    const templateKind = isFileBasedKind(kind) ? (kind === 's3' ? 's3' : 'files') : 'database'
+    return { alias: conn.alias || '', kind: templateKind }
+  })
+)
+
+const wizardTemplates = computed<QueryTemplate[]>(() => {
+  if (needsFederatedExecution.value) {
+    return getFederatedTemplates(templateSources.value).filter((t) => t.section === 'Joins')
+  }
+  return getDatabaseTemplates({ dialect: connectionDialect.value })
+})
+
+function handleTemplateSelect(query: string) {
+  if (activeQuery.value) {
+    activeQuery.value.query = query
+    activeQuery.value.validated = false
+    activeQuery.value.columns = undefined
+  }
+}
 
 // Federated execution needed when multiple DB sources or mixed DB+file sources
 const needsFederatedExecution = computed(() => {
@@ -308,6 +348,8 @@ function isFileConnection(connectionId: string): boolean {
 // Local state
 const activeTabId = ref<string>('')
 const isRunning = ref<number | null>(null)
+const wizardTemplatesRef = ref<HTMLElement | null>(null)
+const templatePickerRef = ref<InstanceType<typeof SqlTemplatePicker> | null>(null)
 const previewErrors = ref<Record<number, string>>({})
 const previewData = ref<Record<number, { columns: string[]; rows: Record<string, unknown>[] }>>({})
 const {
@@ -725,97 +767,5 @@ function commitAlias(mapping: StreamConnectionMapping): void {
   })
 
   emit('update:source-connections', nextConnections)
-}
-
-const applyTemplateSelection = (value: string | number | null, query: QuerySource) => {
-  const template = String(value ?? '')
-  selectedTemplate.value = template
-
-  if (!template) return
-
-  const templates: Record<string, string> = {
-    cte: `-- CTE with aggregation example
-WITH customer_stats AS (
-    SELECT 
-        customer_id,
-        COUNT(*) AS total_orders,
-        SUM(amount) AS total_spent,
-        AVG(amount) AS avg_order
-    FROM orders
-    GROUP BY customer_id
-)
-SELECT 
-    c.name,
-    c.email,
-    cs.total_orders,
-    cs.total_spent,
-    cs.avg_order
-FROM customers c
-INNER JOIN customer_stats cs ON c.id = cs.customer_id
-WHERE cs.total_orders > 5`,
-
-    join: `-- Multi-table JOIN example
-SELECT 
-    o.id AS order_id,
-    o.order_date,
-    c.name AS customer_name,
-    c.email,
-    p.name AS product_name,
-    oi.quantity,
-    oi.unit_price,
-    (oi.quantity * oi.unit_price) AS line_total
-FROM orders o
-INNER JOIN customers c ON o.customer_id = c.id
-INNER JOIN order_items oi ON o.id = oi.order_id
-INNER JOIN products p ON oi.product_id = p.id
-WHERE o.order_date >= '2024-01-01'`,
-
-    subquery: `-- Subquery filter example
-SELECT 
-    p.id,
-    p.name,
-    p.price,
-    p.category
-FROM products p
-WHERE p.category IN (
-    SELECT DISTINCT category 
-    FROM products 
-    WHERE price > 100
-)
-AND p.id NOT IN (
-    SELECT product_id 
-    FROM discontinued_products
-)`,
-
-    union: `-- UNION query example
-SELECT 
-    'active' AS status,
-    id,
-    name,
-    email,
-    created_at
-FROM active_users
-WHERE created_at >= '2024-01-01'
-
-UNION ALL
-
-SELECT 
-    'inactive' AS status,
-    id,
-    name,
-    email,
-    last_login AS created_at
-FROM inactive_users
-WHERE last_login < '2024-01-01'`
-  }
-
-  if (templates[template]) {
-    query.query = templates[template]
-    query.validated = false
-    query.columns = undefined
-  }
-
-  // Reset select
-  selectedTemplate.value = ''
 }
 </script>
