@@ -101,11 +101,18 @@
         <!-- Tab Content -->
         <div class="flex-1 min-h-0 flex flex-col">
           <!-- Tables Tab Content -->
-          <div v-if="activeDataTab === 'tables'" class="h-full min-h-0 flex flex-col">
-            <TableList list-height="100%" />
+          <div
+            v-if="activeDataTab === 'tables'"
+            class="h-full min-h-0 flex flex-col"
+            :class="hasMixedSourceTypes ? 'overflow-y-auto pr-1 gap-6' : ''"
+          >
+            <TableList
+              :list-height="hasMixedSourceTypes ? undefined : '100%'"
+              :list-max-height="hasMixedSourceTypes ? '500px' : undefined"
+            />
 
             <!-- File/S3 Sources Section (in mixed mode) -->
-            <div v-if="hasMixedSourceTypes" class="mt-6 space-y-4">
+            <div v-if="hasMixedSourceTypes" class="space-y-4 shrink-0">
               <div
                 v-for="fileConn in fileSourceConnections"
                 :key="fileConn.connectionId"
@@ -155,7 +162,7 @@
     </div>
 
     <!-- Structure Options Section - Only show for database targets -->
-    <div v-if="isTargetDatabase" class="">
+    <div v-if="isTargetDatabase" class="shrink-0">
       <!-- Warning when nothing is selected -->
       <div
         v-if="!anyStructureEnabled && !copyData"
