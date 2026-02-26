@@ -199,29 +199,9 @@
             </div>
           </div>
           <div v-if="activeTemplate" class="p-3 pb-8 min-h-0 flex-1 overflow-y-auto">
-            <div class="flex items-center gap-2 mb-2">
-              <img
-                v-if="logoForTemplate(activeTemplate)"
-                :src="logoForTemplate(activeTemplate) || ''"
-                alt=""
-                class="h-4 w-4 object-contain shrink-0 opacity-80 dark:brightness-0 dark:invert"
-              />
-              <component
-                :is="iconForTemplate(activeTemplate)"
-                v-else
-                class="h-4 w-4 text-gray-500 dark:text-gray-400"
-              />
-              <div class="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                {{ activeTemplate.name }}
-              </div>
-            </div>
-            <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">
-              {{ templateDescription(activeTemplate) }}
-            </p>
             <pre
               class="text-[11px] leading-snug font-mono rounded-md p-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-850 text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words"
             ><code>{{ activeTemplate.query }}</code></pre>
-            <div aria-hidden="true" class="h-6"></div>
           </div>
           <div v-else class="p-3 text-xs text-gray-500 dark:text-gray-400">
             Select a template to preview SQL.
