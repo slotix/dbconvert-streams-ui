@@ -9,6 +9,7 @@ import SchemaComparisonPanel from './SchemaComparisonPanel.vue'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useDatabaseOverviewStore } from '@/stores/databaseOverview'
 import { useMonitoringStore } from '@/stores/monitoring'
+import { useConnectionsStore } from '@/stores/connections'
 import { normalizeDataType } from '@/constants/databaseTypes'
 import type { StreamConfig } from '@/types/streamConfig'
 import type { Connection } from '@/types/connections'
@@ -16,6 +17,7 @@ import type { SQLTableMeta } from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import type { FileMetadata } from '@/types/files'
 import * as files from '@/api/files'
+import { executeFederatedQuery, type ConnectionMapping } from '@/api/federated'
 import type { FileFormat } from '@/utils/fileFormat'
 import { parseTableName } from '@/utils/federatedUtils'
 import {
@@ -46,6 +48,19 @@ interface SchemaComparison {
   targetDiffs: Record<string, SchemaDifference>
 }
 
+interface CompareItem {
+  value: string
+  label: string
+  kind: 'table' | 'query'
+  connectionId?: string
+  database?: string
+  tableName?: string
+  schema?: string
+  alias?: string
+  query?: string
+  targetObjectName: string
+}
+
 const props = defineProps<{
   stream: StreamConfig
   source: Connection
@@ -55,18 +70,131 @@ const props = defineProps<{
 const navigationStore = useExplorerNavigationStore()
 const overviewStore = useDatabaseOverviewStore()
 const monitoringStore = useMonitoringStore()
+const connectionsStore = useConnectionsStore()
 
-// Selected table from stream config
+// Selected table/query from stream config
 const selectedTable = ref<string>('')
-const isFederated = computed(() => (props.stream.source?.connections?.length || 0) > 1)
-const parsedSelectedTable = computed(() =>
-  parseTableName(selectedTable.value || '', isFederated.value)
+const sourceConnections = computed(() => props.stream.source?.connections || [])
+const isFederated = computed(() => sourceConnections.value.length > 1)
+const hasAnyQueries = computed(() =>
+  sourceConnections.value.some((conn) =>
+    (conn.queries || []).some((q) => !!q.name && !!q.query?.trim())
+  )
 )
-const selectedTableName = computed(() => parsedSelectedTable.value.table)
-const selectedSchemaFromTable = computed(() => parsedSelectedTable.value.schema)
+
+function buildTargetObjectNameForTable(
+  tableName: string,
+  alias: string,
+  useQueryNaming: boolean
+): string {
+  const trimmedTable = tableName.trim()
+  const trimmedAlias = alias.trim()
+
+  // Query/mixed mode runs table selections through federated query execution:
+  // SELECT * FROM <alias>.<table> -> output name is dot-to-underscore.
+  if (useQueryNaming) {
+    const qualified = trimmedAlias ? `${trimmedAlias}.${trimmedTable}` : trimmedTable
+    return qualified.replaceAll('.', '_')
+  }
+
+  // Table-only mode follows target/shared/GetOutputTableName behavior.
+  const parsed = parseTableName(trimmedTable, false)
+  let outputName = parsed.table
+  if (parsed.schema && parsed.schema.toLowerCase() !== 'public') {
+    outputName = `${parsed.schema}.${parsed.table}`
+  }
+
+  if (trimmedAlias && !outputName.startsWith(`${trimmedAlias}_`)) {
+    outputName = `${trimmedAlias}_${outputName}`
+  }
+  return outputName
+}
+
+const compareItems = computed<CompareItem[]>(() => {
+  const items: CompareItem[] = []
+
+  for (const conn of sourceConnections.value) {
+    const alias = (conn.alias || '').trim()
+    const database = conn.database
+
+    for (const table of conn.tables || []) {
+      const rawName = table.name
+      const parsed = parseTableName(rawName, false)
+      const value = isFederated.value && alias ? `${alias}.${rawName}` : rawName
+
+      items.push({
+        value,
+        label: value,
+        kind: 'table',
+        connectionId: conn.connectionId,
+        database,
+        tableName: rawName,
+        schema: parsed.schema,
+        alias,
+        targetObjectName: buildTargetObjectNameForTable(rawName, alias, hasAnyQueries.value)
+      })
+    }
+
+    for (const query of conn.queries || []) {
+      if (!query.name || !query.query?.trim()) continue
+      items.push({
+        value: query.name,
+        label: query.name,
+        kind: 'query',
+        connectionId: conn.connectionId,
+        database,
+        alias,
+        query: query.query,
+        targetObjectName: query.name
+      })
+    }
+  }
+
+  return items
+})
+
+const selectedCompareItem = computed<CompareItem | null>(
+  () => compareItems.value.find((item) => item.value === selectedTable.value) || null
+)
+
+const selectedSourceConnection = computed<Connection>(() => {
+  const connectionId = selectedCompareItem.value?.connectionId
+  return (connectionId ? connectionsStore.connectionByID(connectionId) : undefined) || props.source
+})
+
+const selectedSourceConnectionId = computed(
+  () => selectedSourceConnection.value?.id || props.source.id
+)
+const selectedSourceDatabase = computed(
+  () => selectedCompareItem.value?.database || sourceConnections.value[0]?.database || undefined
+)
+const selectedSourceSchema = computed(() => {
+  if (selectedCompareItem.value?.kind !== 'table') return undefined
+  return (
+    selectedCompareItem.value.schema ||
+    sourceConnections.value.find((c) => c.connectionId === selectedCompareItem.value?.connectionId)
+      ?.schema ||
+    undefined
+  )
+})
+
+const selectedSourceTableName = computed(() => {
+  if (selectedCompareItem.value?.kind !== 'table') return ''
+  return parseTableName(selectedCompareItem.value.tableName || '', false).table
+})
+
+const selectedTargetObjectName = computed(
+  () => selectedCompareItem.value?.targetObjectName || selectedTable.value
+)
+const selectedTargetParsed = computed(() =>
+  parseTableName(selectedTargetObjectName.value || '', false)
+)
 
 // Source and target metadata
 const sourceTableMeta = ref<SQLTableMeta | null>(null)
+const sourceQueryPreview = ref<{ columns: string[]; rows: Record<string, unknown>[] } | null>(null)
+const sourceQueryError = ref<string | null>(null)
+const isLoadingSourceQuery = ref(false)
 const targetTableMeta = ref<SQLTableMeta | null>(null)
 const targetFileEntry = ref<FileSystemEntry | null>(null)
 const targetFileMetadata = ref<FileMetadata | null>(null)
@@ -86,43 +214,57 @@ const syncFlashTarget = ref(false) // Visual feedback for target grid
 
 // Get approximate row counts from store for both source and target
 const sourceApproxRows = computed(() => {
-  if (!selectedTable.value || !sourceDatabase.value) return 0
+  if (selectedCompareItem.value?.kind !== 'table') return 0
+  if (!selectedSourceDatabase.value || !selectedSourceTableName.value) return 0
   const direct = overviewStore.getTableRowCount(
-    selectedTable.value,
-    props.source.id,
-    sourceDatabase.value
+    selectedSourceTableName.value,
+    selectedSourceConnectionId.value,
+    selectedSourceDatabase.value
   )
   if (direct !== undefined) return direct
-  const parsed = selectedTableName.value
-  if (parsed && parsed !== selectedTable.value) {
-    return overviewStore.getTableRowCount(parsed, props.source.id, sourceDatabase.value) ?? 0
+  const fullName = selectedCompareItem.value?.tableName || ''
+  if (fullName && fullName !== selectedSourceTableName.value) {
+    return (
+      overviewStore.getTableRowCount(
+        fullName,
+        selectedSourceConnectionId.value,
+        selectedSourceDatabase.value
+      ) ?? 0
+    )
   }
   return 0
 })
 
 const targetApproxRows = computed(() => {
-  if (!selectedTable.value || !targetDatabase.value || isFileTarget.value) return 0
+  if (!selectedTargetObjectName.value || !targetDatabase.value || isFileTarget.value) return 0
   const direct = overviewStore.getTableRowCount(
-    selectedTable.value,
+    selectedTargetObjectName.value,
     props.target.id,
     targetDatabase.value
   )
   if (direct !== undefined) return direct
-  const parsed = selectedTableName.value
-  if (parsed && parsed !== selectedTable.value) {
+  const parsed = selectedTargetParsed.value.table
+  if (parsed && parsed !== selectedTargetObjectName.value) {
     return overviewStore.getTableRowCount(parsed, props.target.id, targetDatabase.value) ?? 0
   }
   return 0
 })
 
 const sourceTypeLabel = computed(
-  () => getConnectionTypeLabel(props.source.spec, props.source.type) || ''
+  () =>
+    getConnectionTypeLabel(
+      selectedSourceConnection.value?.spec,
+      selectedSourceConnection.value?.type
+    ) || ''
 )
 const targetTypeLabel = computed(
   () => getConnectionTypeLabel(props.target.spec, props.target.type) || ''
 )
 const sourceDialect = computed(() =>
-  getSqlDialectFromConnection(props.source.spec, props.source.type)
+  getSqlDialectFromConnection(
+    selectedSourceConnection.value?.spec,
+    selectedSourceConnection.value?.type
+  )
 )
 const targetDialect = computed(() =>
   getSqlDialectFromConnection(props.target.spec, props.target.type)
@@ -174,25 +316,19 @@ const targetFileDisplayName = computed(() => {
     return targetFileEntry.value.name
   }
   if (!selectedTable.value) return ''
-  if (!targetFileFormat.value) return selectedTable.value
+  if (!targetFileFormat.value) return selectedTargetObjectName.value
   const ext = getBaseExtensionForFormat(targetFileFormat.value)
-  return ext ? `${selectedTable.value}${ext}` : selectedTable.value
+  return ext ? `${selectedTargetObjectName.value}${ext}` : selectedTargetObjectName.value
 })
 
-// Get list of tables from stream config (tables are now per-connection)
-const tablesList = computed(() => {
-  const firstConn = props.stream.source?.connections?.[0]
-  return (firstConn?.tables || []).map((t) => t.name)
-})
-
-const sourceDatabase = computed(() => props.stream.source?.connections?.[0]?.database || undefined)
+const sourceDatabase = computed(() => selectedSourceDatabase.value)
 const targetDatabase = computed(() => {
   const spec = props.stream.target?.spec
   if (spec?.database?.database) return spec.database.database
   if (spec?.snowflake?.database) return spec.snowflake.database
   return undefined
 })
-const sourceSchema = computed(() => props.stream.source?.connections?.[0]?.schema || undefined)
+const sourceSchema = computed(() => selectedSourceSchema.value)
 const targetSchema = computed(() => {
   const spec = props.stream.target?.spec
   if (spec?.database?.schema) return spec.database.schema
@@ -279,10 +415,33 @@ const schemaComparison = computed((): SchemaComparison | null => {
   return comparison
 })
 
-// Initialize with first table
+// Keep selected item valid when stream config changes
+watch(
+  compareItems,
+  async (items) => {
+    if (items.length === 0) {
+      selectedTable.value = ''
+      sourceTableMeta.value = null
+      sourceQueryPreview.value = null
+      sourceQueryError.value = null
+      isLoadingSourceQuery.value = false
+      targetTableMeta.value = null
+      targetFileEntry.value = null
+      targetFileMetadata.value = null
+      targetFileError.value = null
+      return
+    }
+
+    if (!items.some((item) => item.value === selectedTable.value)) {
+      selectedTable.value = items[0].value
+      await loadTableData()
+    }
+  },
+  { immediate: true }
+)
+
 onMounted(async () => {
-  if (tablesList.value.length > 0) {
-    selectedTable.value = tablesList.value[0]
+  if (selectedTable.value) {
     await loadTableData()
   }
 })
@@ -297,36 +456,58 @@ async function loadTableData() {
 
 async function loadSourceTable() {
   try {
-    if (!sourceDatabase.value) {
+    if (selectedCompareItem.value?.kind === 'query') {
+      sourceTableMeta.value = null
+      await loadSourceQueryPreview()
+      return
+    }
+
+    sourceQueryPreview.value = null
+    sourceQueryError.value = null
+    isLoadingSourceQuery.value = false
+
+    if (selectedCompareItem.value?.kind !== 'table') {
+      sourceTableMeta.value = null
+      return
+    }
+
+    if (!selectedSourceDatabase.value) {
+      sourceTableMeta.value = null
       return
     }
 
     // Ensure metadata is loaded
-    await navigationStore.ensureMetadata(props.source.id, sourceDatabase.value)
+    await navigationStore.ensureMetadata(
+      selectedSourceConnectionId.value,
+      selectedSourceDatabase.value
+    )
 
     // Fetch database overview to get row counts
     try {
-      await overviewStore.fetchOverview(props.source.id, sourceDatabase.value)
+      await overviewStore.fetchOverview(
+        selectedSourceConnectionId.value,
+        selectedSourceDatabase.value
+      )
     } catch (e) {
       console.warn('Failed to fetch source database overview:', e)
     }
 
-    const tableName = selectedTableName.value
-    const schemaFromName = selectedSchemaFromTable.value
+    const tableName = selectedSourceTableName.value
+    const schemaFromName = selectedSourceSchema.value
 
     // For MySQL, don't pass schema (database IS the schema)
     // For PostgreSQL, use schema if provided, otherwise default to 'public'
     let schema: string | undefined
-    const sourceKind = getConnectionKindFromSpec(props.source.spec)
+    const sourceKind = getConnectionKindFromSpec(selectedSourceConnection.value.spec)
     if (sourceKind === 'database' && sourceTypeLabel.value === 'mysql') {
       schema = undefined // MySQL doesn't use separate schemas
     } else {
-      schema = schemaFromName || sourceSchema.value || 'public'
+      schema = schemaFromName || 'public'
     }
 
     const meta = navigationStore.findTableMeta(
-      props.source.id,
-      sourceDatabase.value,
+      selectedSourceConnectionId.value,
+      selectedSourceDatabase.value,
       tableName,
       schema
     )
@@ -334,6 +515,75 @@ async function loadSourceTable() {
   } catch (error) {
     console.error('Failed to load source table metadata:', error)
   }
+}
+
+async function loadSourceQueryPreview() {
+  sourceQueryPreview.value = null
+  sourceQueryError.value = null
+
+  const querySql = selectedCompareItem.value?.query?.trim()
+  if (!querySql) {
+    sourceQueryError.value = 'Query text is empty.'
+    return
+  }
+
+  const queryConnections: ConnectionMapping[] = sourceConnections.value
+    .map((conn) => {
+      const alias = (conn.alias || '').trim()
+      if (!alias || !conn.connectionId) return null
+
+      const database = conn.database?.trim()
+      const scopePath = conn.files?.basePath?.trim()
+      return {
+        alias,
+        connectionId: conn.connectionId,
+        ...(database ? { database } : {}),
+        ...(scopePath ? { scopePath } : {})
+      } as ConnectionMapping
+    })
+    .filter((conn): conn is ConnectionMapping => conn !== null)
+
+  if (queryConnections.length === 0) {
+    sourceQueryError.value = 'No source connections available for query preview.'
+    return
+  }
+
+  isLoadingSourceQuery.value = true
+  try {
+    const result = await executeFederatedQuery({
+      query: querySql,
+      connections: queryConnections
+    })
+
+    const columns = result.columns || []
+    const rows = (result.rows || []).map((row) => {
+      const rowObject: Record<string, unknown> = {}
+      columns.forEach((col, idx) => {
+        rowObject[col] = row[idx]
+      })
+      return rowObject
+    })
+
+    sourceQueryPreview.value = { columns, rows }
+  } catch (error) {
+    sourceQueryError.value =
+      error instanceof Error ? error.message : 'Failed to load source query preview.'
+  } finally {
+    isLoadingSourceQuery.value = false
+  }
+}
+
+function formatSourceQueryCellValue(value: unknown): string {
+  if (value === null) return 'NULL'
+  if (value === undefined) return ''
+  if (typeof value === 'object') {
+    try {
+      return JSON.stringify(value)
+    } catch {
+      return String(value)
+    }
+  }
+  return String(value)
 }
 
 async function loadTargetTable() {
@@ -355,8 +605,8 @@ async function loadTargetTable() {
       console.warn('Failed to fetch target database overview:', e)
     }
 
-    const tableName = selectedTableName.value
-    const schemaFromName = selectedSchemaFromTable.value
+    const tableName = selectedTargetParsed.value.table
+    const schemaFromName = selectedTargetParsed.value.schema
 
     // For MySQL, don't pass schema (database IS the schema)
     // For PostgreSQL, use schema if provided, otherwise default to 'public'
@@ -430,7 +680,7 @@ async function loadTargetFile() {
     // Create a FileSystemEntry for the folder itself (not individual files).
     // DuckDB will use wildcard patterns like "folder/*.csv.zst" to read all files.
     targetFileEntry.value = {
-      name: selectedTable.value,
+      name: selectedTargetObjectName.value,
       path: tableFolderPath,
       type: 'dir',
       isTable: true,
@@ -445,20 +695,7 @@ async function loadTargetFile() {
 }
 
 function buildTargetTableFolderName(): string {
-  const tableName = selectedTableName.value?.trim() || selectedTable.value?.trim() || ''
-  const schema = selectedSchemaFromTable.value?.trim() || ''
-  const alias = parsedSelectedTable.value.alias?.trim() || ''
-
-  let outputName = tableName
-  if (schema && schema.toLowerCase() !== 'public') {
-    outputName = `${schema}.${tableName}`
-  }
-
-  if (alias && !outputName.startsWith(`${alias}_`)) {
-    outputName = `${alias}_${outputName}`
-  }
-
-  return outputName
+  return selectedTargetObjectName.value?.trim() || selectedTable.value?.trim() || ''
 }
 
 function joinPaths(basePath: string, ...segments: (string | undefined)[]): string {
@@ -636,7 +873,7 @@ async function selectTable(tableName: string) {
             <MenuButton
               class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
             >
-              {{ selectedTable || 'Select a table' }}
+              {{ selectedCompareItem?.label || 'Select a table' }}
               <ChevronDown class="h-4 w-4 text-gray-500 dark:text-gray-400" />
             </MenuButton>
             <MenuItems
@@ -644,21 +881,21 @@ async function selectTable(tableName: string) {
             >
               <div class="py-1">
                 <MenuItem
-                  v-for="table in tablesList"
-                  :key="table"
+                  v-for="item in compareItems"
+                  :key="item.value"
                   v-slot="{ active }"
-                  @click="selectTable(table)"
+                  @click="selectTable(item.value)"
                 >
                   <button
                     :class="[
                       active ? 'bg-gray-100 dark:bg-gray-800' : '',
-                      selectedTable === table
+                      selectedTable === item.value
                         ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 font-medium'
                         : '',
                       'block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200'
                     ]"
                   >
-                    {{ table }}
+                    {{ item.label }}
                   </button>
                 </MenuItem>
               </div>
@@ -734,20 +971,81 @@ async function selectTable(tableName: string) {
               >
                 Source
               </span>
-              <span class="text-xs text-gray-600 dark:text-gray-400">{{ source.name }}</span>
+              <span class="text-xs text-gray-600 dark:text-gray-400">{{
+                selectedSourceConnection.name
+              }}</span>
             </div>
             <div class="text-xs text-gray-600 dark:text-gray-400">
               {{ sourceDatabase }}
               <span v-if="sourceSchema && sourceSchema !== 'public'"> / {{ sourceSchema }} </span>
-              / {{ selectedTable }}
+              /
+              {{
+                selectedCompareItem?.kind === 'table'
+                  ? selectedSourceTableName
+                  : selectedCompareItem?.label
+              }}
             </div>
           </div>
         </div>
 
         <!-- Source Data View -->
         <div class="flex-1 overflow-auto p-4">
+          <div v-if="selectedCompareItem?.kind === 'query'" class="h-full overflow-auto">
+            <div
+              v-if="isLoadingSourceQuery"
+              class="h-full flex items-center justify-center text-gray-500 dark:text-gray-400 text-sm"
+            >
+              Loading source query preview...
+            </div>
+            <div
+              v-else-if="sourceQueryError"
+              class="p-4 text-sm text-red-600 dark:text-red-300 bg-red-50 dark:bg-red-950/35 border border-red-200 dark:border-red-700/70 rounded-md"
+            >
+              {{ sourceQueryError }}
+            </div>
+            <div
+              v-else-if="sourceQueryPreview && sourceQueryPreview.rows.length > 0"
+              class="rounded-md border border-gray-200 dark:border-gray-700 overflow-auto"
+            >
+              <table class="w-full text-xs">
+                <thead class="bg-gray-50 dark:bg-gray-900 sticky top-0 z-10">
+                  <tr>
+                    <th
+                      v-for="col in sourceQueryPreview.columns"
+                      :key="col"
+                      class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700 whitespace-nowrap"
+                    >
+                      {{ col }}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                  <tr
+                    v-for="(row, idx) in sourceQueryPreview.rows"
+                    :key="idx"
+                    class="hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                  >
+                    <td
+                      v-for="col in sourceQueryPreview.columns"
+                      :key="col"
+                      class="px-3 py-2 text-gray-900 dark:text-gray-100 whitespace-nowrap max-w-[260px] truncate"
+                      :title="formatSourceQueryCellValue(row[col])"
+                    >
+                      {{ formatSourceQueryCellValue(row[col]) }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div
+              v-else
+              class="h-full flex items-center justify-center text-gray-500 dark:text-gray-400 text-sm"
+            >
+              Query returned no rows.
+            </div>
+          </div>
           <div
-            v-if="sourceTableMeta && sourceDatabase"
+            v-else-if="sourceTableMeta && sourceDatabase"
             class="h-full transition-all duration-300"
             :class="{ 'ring-2 ring-blue-400 ring-opacity-50': syncFlashSource }"
           >
@@ -755,7 +1053,7 @@ async function selectTable(tableName: string) {
               :key="`compare-source-${stream.id}-${selectedTable}`"
               ref="sourceGridRef"
               :table-meta="sourceTableMeta"
-              :connection-id="source.id"
+              :connection-id="selectedSourceConnectionId"
               :database="sourceDatabase"
               :is-view="false"
               :approx-rows="sourceApproxRows"
@@ -791,12 +1089,12 @@ async function selectTable(tableName: string) {
             </div>
             <div class="text-xs text-gray-600 dark:text-gray-400">
               <template v-if="isFileTarget">
-                {{ targetFileDisplayName || `${selectedTable}.${target.type}` }}
+                {{ targetFileDisplayName || `${selectedTargetObjectName}.${target.type}` }}
               </template>
               <template v-else>
                 {{ targetDatabase }}
                 <span v-if="targetSchema && targetSchema !== 'public'"> / {{ targetSchema }} </span>
-                / {{ selectedTable }}
+                / {{ selectedTargetObjectName }}
               </template>
             </div>
           </div>
