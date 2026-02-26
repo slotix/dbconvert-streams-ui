@@ -576,7 +576,8 @@ function updateTemplateMenuPosition() {
 
   const preferredWidth = Math.max(minWidth, Math.min(maxWidth, viewportWidth - viewportPadding * 2))
   const width = Math.min(preferredWidth, horizontalBounds.availableWidth)
-  let left = triggerRect.left
+  // Right-align to trigger when it's in the right half of the viewport
+  let left = triggerRect.right > viewportWidth / 2 ? triggerRect.right - width : triggerRect.left
   if (left + width > horizontalBounds.maxRight) {
     left = horizontalBounds.maxRight - width
   }

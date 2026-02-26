@@ -149,7 +149,11 @@
           />
         </svg>
         <p class="text-sm text-red-700 dark:text-red-300 font-medium">
-          Source and target cannot be the same connection and database
+          {{
+            conflictingSourceName
+              ? `Source "${conflictingSourceName}" and target use the same connection and database`
+              : 'Source and target cannot be the same connection and database'
+          }}
         </p>
       </div>
     </div>
@@ -393,18 +397,47 @@ const filteredTargetConnections = computed(() => {
   return filtered.filter((conn) => connectionMatchesDeepSearch(conn, query))
 })
 
-// Conflict check: source and target cannot be same connection + database (for single source)
-// With multiple sources, at least one differs from target, so this check is skipped
-const isSameConnectionAndDatabase = computed(() => {
-  return (
-    !hasMultipleSources.value &&
-    primarySourceId.value &&
-    props.targetConnectionId &&
-    primarySourceId.value === props.targetConnectionId &&
-    (primarySourceDatabase.value || props.sourceDatabase) === props.targetDatabase &&
-    (primarySourceDatabase.value || props.sourceDatabase)
-  )
+// Effective target selection: database for DB connections, path for file connections, bucket for S3
+const effectiveTargetSelection = computed(() => {
+  if (!props.targetConnectionId) return undefined
+  const kind = getConnectionKind(props.targetConnectionId)
+  if (kind === 'files') return props.targetPath || undefined
+  if (kind === 's3') return props.targetPath || undefined
+  return props.targetDatabase || undefined
 })
+
+// Conflict check: a source cannot be the same connection + database/bucket/path as the target
+const conflictingSourceName = computed<string | null>(() => {
+  if (!props.targetConnectionId) return null
+  const targetSel = effectiveTargetSelection.value
+
+  if (hasMultipleSources.value) {
+    // Multi-source: check each source for conflict with target
+    for (const conn of localSourceConnections.value) {
+      if (conn.connectionId !== props.targetConnectionId) continue
+      const sourceSelection = getSelectionValue(conn)
+      if (sourceSelection && targetSel && sourceSelection === targetSel) {
+        const connection = connectionsStore.connectionByID(conn.connectionId)
+        return connection?.name || conn.connectionId
+      }
+    }
+    return null
+  }
+
+  // Single source
+  const sourceSel = primarySourceDatabase.value || props.sourceDatabase
+  if (
+    primarySourceId.value &&
+    primarySourceId.value === props.targetConnectionId &&
+    sourceSel === targetSel &&
+    sourceSel
+  ) {
+    return ''
+  }
+  return null
+})
+
+const isSameConnectionAndDatabase = computed(() => conflictingSourceName.value !== null)
 
 function handleSourceConnectionSelect(payload: {
   connectionId: string
