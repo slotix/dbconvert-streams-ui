@@ -869,7 +869,7 @@ async function selectTable(tableName: string) {
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
           <span class="text-sm font-medium text-gray-700 dark:text-gray-200">Compare Table:</span>
-          <Menu as="div" class="relative">
+          <Menu as="div" class="relative z-[1200]">
             <MenuButton
               class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
             >
@@ -877,7 +877,7 @@ async function selectTable(tableName: string) {
               <ChevronDown class="h-4 w-4 text-gray-500 dark:text-gray-400" />
             </MenuButton>
             <MenuItems
-              class="absolute left-0 z-10 mt-1 w-56 origin-top-left rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-lg ring-1 ring-black ring-opacity-5 dark:ring-white/10 border border-gray-200 dark:border-gray-700 focus:outline-none"
+              class="absolute left-0 z-[1300] mt-1 w-56 origin-top-left rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-lg ring-1 ring-black ring-opacity-5 dark:ring-white/10 border border-gray-200 dark:border-gray-700 focus:outline-none"
             >
               <div class="py-1">
                 <MenuItem
