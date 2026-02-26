@@ -62,7 +62,7 @@
     v-else
     v-bind="containerProps"
     :style="{ height: `${virtualContainerHeight}px` }"
-    class="overflow-y-auto overscroll-contain scrollbar-thin"
+    class="overflow-y-auto scrollbar-thin"
   >
     <div v-bind="wrapperProps">
       <div
