@@ -8,6 +8,21 @@
     :style="containerStyle"
   >
     <div ref="editorHost" class="h-full w-full" />
+    <CodeMirrorContextMenu
+      v-if="contextMenuVisible"
+      :x="contextMenuX"
+      :y="contextMenuY"
+      :can-undo="contextMenuCanUndo"
+      :can-redo="contextMenuCanRedo"
+      :can-cut="contextMenuCanCut"
+      :can-copy="contextMenuCanCopy"
+      :can-paste="contextMenuCanPaste"
+      :can-delete="contextMenuCanDelete"
+      :can-format="contextMenuCanFormat"
+      :can-select-all="contextMenuCanSelectAll"
+      @close="closeContextMenu"
+      @action="handleContextMenuAction"
+    />
     <button
       v-if="showResizeGrip"
       type="button"
@@ -30,6 +45,8 @@ import { openSearchPanel, search, searchKeymap } from '@codemirror/search'
 import { json } from '@codemirror/lang-json'
 import { oneDark } from '@codemirror/theme-one-dark'
 import { syntaxTree } from '@codemirror/language'
+import CodeMirrorContextMenu from './CodeMirrorContextMenu.vue'
+import { useCodeMirrorContextMenu } from './useCodeMirrorContextMenu'
 
 interface Props {
   modelValue?: string
@@ -132,6 +149,42 @@ function stopResize() {
     document.body.style.userSelect = ''
   }
 }
+
+function handleFormatShortcut() {
+  if (props.readOnly) {
+    return false
+  }
+  emit('format-shortcut')
+  return true
+}
+
+const {
+  contextMenuVisible,
+  contextMenuX,
+  contextMenuY,
+  contextMenuCanUndo,
+  contextMenuCanRedo,
+  contextMenuCanCut,
+  contextMenuCanCopy,
+  contextMenuCanPaste,
+  contextMenuCanDelete,
+  contextMenuCanFormat,
+  contextMenuCanSelectAll,
+  closeContextMenu,
+  syncContextMenuCapabilities,
+  handleContextMenuAction,
+  attachEditorContextMenuListener,
+  detachEditorContextMenuListener,
+  handleUndoShortcut,
+  handleRedoShortcut
+} = useCodeMirrorContextMenu({
+  getEditorView: () => editorView.value,
+  isReadOnly: () => props.readOnly,
+  canFormat: () => !props.readOnly,
+  onFormat: () => {
+    handleFormatShortcut()
+  }
+})
 
 function startResize(event: MouseEvent) {
   if (!showResizeGrip.value) return
@@ -297,6 +350,9 @@ function mountEditor() {
   }
 
   const shortcuts = keymap.of([
+    { key: 'Mod-z', run: handleUndoShortcut },
+    { key: 'Shift-Mod-z', run: handleRedoShortcut },
+    { key: 'Mod-y', run: handleRedoShortcut },
     {
       key: 'Mod-f',
       preventDefault: true,
@@ -317,10 +373,12 @@ function mountEditor() {
     {
       key: 'Mod-Shift-f',
       preventDefault: true,
-      run: () => {
-        emit('format-shortcut')
-        return true
-      }
+      run: handleFormatShortcut
+    },
+    {
+      key: 'Shift-Alt-f',
+      preventDefault: true,
+      run: handleFormatShortcut
     },
     indentWithTab
   ])
@@ -337,9 +395,15 @@ function mountEditor() {
       themeCompartment.of(getThemeExtension(isDarkTheme.value)),
       EditorView.updateListener.of((update) => {
         if (!update.docChanged || suppressModelSync) {
+          if (contextMenuVisible.value && (update.selectionSet || update.docChanged)) {
+            syncContextMenuCapabilities(update.view)
+          }
           return
         }
         emit('update:modelValue', update.state.doc.toString())
+        if (contextMenuVisible.value && (update.selectionSet || update.docChanged)) {
+          syncContextMenuCapabilities(update.view)
+        }
       })
     ]
   })
@@ -348,6 +412,7 @@ function mountEditor() {
     state,
     parent: editorHost.value
   })
+  attachEditorContextMenuListener(editorView.value)
 }
 
 onMounted(() => {
@@ -371,6 +436,9 @@ watch(
     view.dispatch({
       effects: readOnlyCompartment.reconfigure(EditorState.readOnly.of(nextReadOnly))
     })
+    if (contextMenuVisible.value) {
+      syncContextMenuCapabilities(view)
+    }
   }
 )
 
@@ -385,7 +453,9 @@ watch(isDarkTheme, (darkModeEnabled) => {
 })
 
 onBeforeUnmount(() => {
+  closeContextMenu()
   stopResize()
+  detachEditorContextMenuListener(editorView.value)
   editorView.value?.destroy()
   editorView.value = null
 })

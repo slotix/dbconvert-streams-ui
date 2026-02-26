@@ -46,7 +46,6 @@ export function useSqlCodeMirrorTooltips(options: UseSqlCodeMirrorTooltipsOption
   let hoverMouseLeaveListener: (() => void) | null = null
   let hoverMouseDownListener: (() => void) | null = null
   let definitionMouseDownListener: ((event: MouseEvent) => void) | null = null
-  let selectionResetClickListener: ((event: MouseEvent) => void) | null = null
   let signatureTooltipEl: HTMLDivElement | null = null
   let signatureHideTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -539,10 +538,6 @@ export function useSqlCodeMirrorTooltips(options: UseSqlCodeMirrorTooltipsOption
       view.dom.removeEventListener('mousedown', definitionMouseDownListener)
       definitionMouseDownListener = null
     }
-    if (selectionResetClickListener) {
-      view.dom.removeEventListener('click', selectionResetClickListener)
-      selectionResetClickListener = null
-    }
   }
 
   function attachHoverDomListeners(view: EditorView) {
@@ -581,26 +576,10 @@ export function useSqlCodeMirrorTooltips(options: UseSqlCodeMirrorTooltipsOption
       options.onGoToDefinitionAtPosition(pos)
     }
 
-    selectionResetClickListener = (event: MouseEvent) => {
-      if (!options.readOnly.value) return
-      if (event.button !== 0 || event.defaultPrevented) return
-      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
-      if (view.state.selection.main.empty) return
-
-      const pos = view.posAtCoords({ x: event.clientX, y: event.clientY })
-      if (pos === null) return
-
-      view.dispatch({
-        selection: { anchor: pos },
-        effects: EditorView.scrollIntoView(pos, { y: 'nearest' })
-      })
-    }
-
     view.dom.addEventListener('mouseover', hoverMouseOverListener, { passive: true })
     view.dom.addEventListener('mouseleave', hoverMouseLeaveListener)
     view.dom.addEventListener('mousedown', hoverMouseDownListener)
     view.dom.addEventListener('mousedown', definitionMouseDownListener)
-    view.dom.addEventListener('click', selectionResetClickListener)
   }
 
   function dispose(view: EditorView | null) {

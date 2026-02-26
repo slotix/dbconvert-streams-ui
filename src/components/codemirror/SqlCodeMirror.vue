@@ -11,6 +11,21 @@
     :style="containerStyle"
   >
     <div ref="editorHost" class="h-full w-full" />
+    <CodeMirrorContextMenu
+      v-if="contextMenuVisible"
+      :x="contextMenuX"
+      :y="contextMenuY"
+      :can-undo="contextMenuCanUndo"
+      :can-redo="contextMenuCanRedo"
+      :can-cut="contextMenuCanCut"
+      :can-copy="contextMenuCanCopy"
+      :can-paste="contextMenuCanPaste"
+      :can-delete="contextMenuCanDelete"
+      :can-format="contextMenuCanFormat"
+      :can-select-all="contextMenuCanSelectAll"
+      @close="closeContextMenu"
+      @action="handleContextMenuAction"
+    />
   </div>
 </template>
 
@@ -51,8 +66,10 @@ import {
   shouldTriggerClauseCompletion,
   shouldTriggerDuckDBReadArgumentCompletion
 } from './sqlCodeMirrorCompletionUtils'
+import { useCodeMirrorContextMenu } from './useCodeMirrorContextMenu'
 import { useSqlCodeMirrorLspSession } from './useSqlCodeMirrorLspSession'
 import { useSqlCodeMirrorTooltips } from './useSqlCodeMirrorTooltips'
+import CodeMirrorContextMenu from './CodeMirrorContextMenu.vue'
 import type {
   EditorStateLike,
   JsonRpcNotification,
@@ -324,6 +341,34 @@ function getSelectedSqlIfAny() {
   return selected || undefined
 }
 
+const {
+  contextMenuVisible,
+  contextMenuX,
+  contextMenuY,
+  contextMenuCanUndo,
+  contextMenuCanRedo,
+  contextMenuCanCut,
+  contextMenuCanCopy,
+  contextMenuCanPaste,
+  contextMenuCanDelete,
+  contextMenuCanFormat,
+  contextMenuCanSelectAll,
+  closeContextMenu,
+  syncContextMenuCapabilities,
+  handleContextMenuAction,
+  attachEditorContextMenuListener,
+  detachEditorContextMenuListener,
+  handleUndoShortcut,
+  handleRedoShortcut
+} = useCodeMirrorContextMenu({
+  getEditorView: () => editorView.value,
+  isReadOnly: () => props.readOnly,
+  canFormat: () => props.enableFormatAction && !props.readOnly,
+  onFormat: () => {
+    handleFormatShortcut()
+  }
+})
+
 function handleExecuteShortcut() {
   if (!props.enableExecute) {
     return false
@@ -343,7 +388,7 @@ function handleClearSelectionShortcut(view: EditorView) {
 }
 
 function handleFormatShortcut() {
-  if (!props.enableFormatAction) {
+  if (!props.enableFormatAction || props.readOnly) {
     return false
   }
   emit('format')
@@ -539,6 +584,9 @@ function refreshLspCompartment() {
 
 function createEditorState() {
   const keymaps = keymap.of([
+    { key: 'Mod-z', run: handleUndoShortcut },
+    { key: 'Shift-Mod-z', run: handleRedoShortcut },
+    { key: 'Mod-y', run: handleRedoShortcut },
     { key: 'Escape', run: handleClearSelectionShortcut },
     { key: 'F12', run: handleDefinitionShortcut },
     { key: 'Mod-Enter', run: handleExecuteShortcut },
@@ -605,6 +653,9 @@ function createEditorState() {
         }
         if (update.selectionSet || update.docChanged) {
           emitSelectionState(update.state)
+          if (contextMenuVisible.value) {
+            syncContextMenuCapabilities(update.view)
+          }
         }
       })
     ]
@@ -617,6 +668,7 @@ function recreateEditor() {
   }
 
   detachHoverDomListeners(editorView.value)
+  detachEditorContextMenuListener(editorView.value)
   editorView.value?.destroy()
   const view = new EditorView({
     state: createEditorState(),
@@ -624,6 +676,7 @@ function recreateEditor() {
   })
   editorView.value = view
   attachHoverDomListeners(view)
+  attachEditorContextMenuListener(view)
 
   emitSelectionState(view.state)
 }
@@ -677,6 +730,9 @@ watch(
     view.dispatch({
       effects: readOnlyCompartment.reconfigure(EditorState.readOnly.of(value))
     })
+    if (contextMenuVisible.value) {
+      syncContextMenuCapabilities(view)
+    }
   }
 )
 
@@ -724,8 +780,10 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  closeContextMenu()
   disconnectLspSession()
   disposeTooltips(editorView.value)
+  detachEditorContextMenuListener(editorView.value)
   editorView.value?.destroy()
   editorView.value = null
 })
