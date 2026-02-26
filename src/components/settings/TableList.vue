@@ -1,58 +1,24 @@
 <template>
   <div class="space-y-3">
-    <!-- Header Bar -->
-    <div
-      class="flex flex-wrap items-center gap-3 pb-3 border-b border-gray-200 dark:border-gray-700"
-    >
-      <!-- Table count badge -->
-      <div
-        class="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-600 text-sm font-medium"
-      >
-        <span class="text-teal-600 dark:text-teal-400">{{ checkedTablesCount }}</span>
-        <span class="text-gray-400">/</span>
-        <span class="text-gray-600 dark:text-gray-300">{{ tables.length }}</span>
-      </div>
-
-      <!-- Filter input - grows to fill space -->
-      <div class="flex-1 min-w-[180px]">
-        <div class="relative">
-          <Search class="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            v-model="searchQuery"
-            type="text"
-            placeholder="Filter tables..."
-            class="w-full pl-8 pr-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
-          />
-        </div>
-      </div>
-
-      <!-- Select All -->
-      <div class="inline-flex items-center">
-        <FormCheckbox
-          :model-value="selectAllCheckboxState"
-          :indeterminate="indeterminate"
-          label="All"
-          @update:model-value="setSelectAllFromValue"
-        />
-      </div>
-
-      <!-- Refresh button -->
-      <button
-        type="button"
-        class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-        title="Refresh tables"
-        @click="debouncedRefreshTables"
-      >
-        <RefreshCw class="w-4 h-4" />
-        <span class="hidden sm:inline">Refresh</span>
-      </button>
-    </div>
+    <DataSelectionToolbar
+      v-if="showToolbar"
+      :selected-count="checkedTablesCount"
+      :total-count="tables.length"
+      :search-value="searchQuery"
+      search-placeholder="Filter tables..."
+      :select-all-checked="selectAllCheckboxState"
+      :select-all-indeterminate="indeterminate"
+      select-all-label="All"
+      refresh-label="Refresh"
+      refresh-title="Refresh tables"
+      :sticky="stickyHeader"
+      @update:search-value="searchQuery = $event"
+      @update:select-all="setSelectAll"
+      @refresh="debouncedRefreshTables"
+    />
 
     <!-- Table List Container with scroll -->
-    <div
-      class="bg-white dark:bg-gray-850 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden overflow-y-auto"
-      :style="listContainerStyle"
-    >
+    <div :class="listContainerClass" :style="listContainerStyle">
       <!-- Empty State -->
       <div
         v-if="filteredTablesCount === 0"
@@ -70,59 +36,26 @@
             :key="connectionGroup.alias"
           >
             <!-- Connection Header -->
-            <div
-              class="sticky top-0 z-20 flex items-center justify-between px-4 py-3 bg-linear-to-r from-sky-50 to-cyan-50 dark:from-sky-900/30 dark:to-cyan-900/30 border-b-2 border-sky-200 dark:border-sky-700 cursor-pointer backdrop-blur-sm"
-              @click="toggleConnectionGroup(connectionGroup.alias)"
+            <SourceSectionHeader
+              :alias="connectionGroup.alias"
+              :connection-name="connectionGroup.connectionName"
+              :selection-label="connectionGroup.database"
+              :count-label="`${connectionGroup.tableCount} tables`"
+              :icon="getConnectionIcon(connectionGroup.connectionType)"
+              :icon-class="getConnectionIconColor(connectionGroup.connectionType)"
+              collapsible
+              sticky
+              :expanded="isConnectionGroupExpanded(connectionGroup.alias)"
+              class="rounded-none border-x-0 border-t-0 border-b border-b-gray-200/70 dark:border-b-gray-700/70"
+              @toggle="toggleConnectionGroup(connectionGroup.alias)"
             >
-              <div class="flex items-center gap-3">
-                <component
-                  :is="
-                    isConnectionGroupExpanded(connectionGroup.alias) ? ChevronDown : ChevronRight
-                  "
-                  class="h-4 w-4 text-sky-600 dark:text-sky-400"
+              <template #actions>
+                <SourceHeaderActions
+                  @select-all="selectAllInConnection(connectionGroup.alias)"
+                  @clear="clearAllInConnection(connectionGroup.alias)"
                 />
-                <component
-                  :is="getConnectionIcon(connectionGroup.connectionType)"
-                  class="w-5 h-5"
-                  :class="getConnectionIconColor(connectionGroup.connectionType)"
-                />
-                <div>
-                  <div class="flex items-center gap-2">
-                    <span class="text-sm font-bold text-sky-900 dark:text-sky-100">
-                      {{ connectionGroup.alias }}
-                    </span>
-                    <span class="text-xs text-sky-600 dark:text-sky-400 font-medium">
-                      {{ connectionGroup.connectionName }}
-                    </span>
-                    <span
-                      v-if="connectionGroup.database"
-                      class="text-xs text-sky-500 dark:text-sky-400"
-                    >
-                      / {{ connectionGroup.database }}
-                    </span>
-                  </div>
-                </div>
-                <span
-                  class="text-xs text-sky-700 dark:text-sky-300 bg-sky-100 dark:bg-sky-900/50 rounded px-2 py-0.5 font-medium"
-                >
-                  {{ connectionGroup.tableCount }} tables
-                </span>
-              </div>
-              <div class="flex items-center gap-3">
-                <button
-                  class="text-xs text-sky-600 dark:text-sky-400 hover:underline font-medium"
-                  @click.stop="selectAllInConnection(connectionGroup.alias)"
-                >
-                  Select All
-                </button>
-                <button
-                  class="text-xs text-sky-500 dark:text-sky-400 hover:underline"
-                  @click.stop="clearAllInConnection(connectionGroup.alias)"
-                >
-                  Clear
-                </button>
-              </div>
-            </div>
+              </template>
+            </SourceSectionHeader>
 
             <!-- Schema Groups within Connection -->
             <template v-if="isConnectionGroupExpanded(connectionGroup.alias)">
@@ -163,67 +96,23 @@
                     !schemaGroup.schema ||
                     isSchemaExpanded(`${connectionGroup.alias}-${schemaGroup.schema}`)
                   "
-                  class="grid grid-cols-1 lg:grid-cols-2"
-                  :class="
-                    schemaGroup.schema
-                      ? 'border-l-2 border-sky-200 dark:border-sky-700 ml-9'
-                      : 'ml-6'
-                  "
+                  class="border-l-2 border-sky-200 dark:border-sky-700"
+                  :class="schemaGroup.schema ? 'ml-9' : 'ml-6 border-l-0'"
                 >
-                  <template v-for="(table, idx) in schemaGroup.tables" :key="table.name">
-                    <!-- Table Row -->
-                    <div
-                      class="group flex items-center gap-3 px-4 py-2.5 border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
-                      :class="[
-                        idx % 2 === 0
-                          ? 'lg:border-r lg:border-r-gray-100 lg:dark:border-r-gray-800'
-                          : ''
-                      ]"
-                    >
-                      <!-- Checkbox -->
-                      <input
-                        :id="`table-${table.name}`"
-                        v-model="table.selected"
-                        type="checkbox"
-                        class="h-4 w-4 text-teal-600 dark:text-teal-500 focus:ring-teal-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 shrink-0"
-                        @change="
-                          handleCheckboxChange(
-                            table,
-                            ($event.target as HTMLInputElement)?.checked || false
-                          )
-                        "
-                      />
-                      <TableIcon class="h-4 w-4 text-gray-400 dark:text-gray-500 shrink-0" />
-                      <label
-                        :for="`table-${table.name}`"
-                        class="flex-1 min-w-0 cursor-pointer text-sm text-gray-900 dark:text-gray-100 truncate"
-                      >
-                        <HighlightedText
-                          :text="getTableDisplayName(table.name)"
-                          :query="searchQuery"
-                        />
-                      </label>
-
-                      <!-- Filter indicator/toggle - only when selected and not CDC -->
-                      <button
-                        v-if="table.selected && !isCDCMode"
-                        class="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-all"
-                        :class="
-                          isTableSettingsOpen(table.name)
-                            ? 'bg-teal-500/20 text-teal-600 dark:text-teal-400'
-                            : hasTableFilter(table)
-                              ? 'bg-sky-500/20 text-sky-600 dark:text-sky-400'
-                              : 'text-gray-400 opacity-0 group-hover:opacity-100 hover:bg-gray-200 dark:hover:bg-gray-700'
-                        "
-                        :title="hasTableFilter(table) ? 'Edit filter' : 'Add filter'"
-                        @click="toggleTableSettings(table.name)"
-                      >
-                        <Filter class="w-3.5 h-3.5" />
-                        <span v-if="hasTableFilter(table)" class="hidden sm:inline">filtered</span>
-                        <ChevronUp v-if="isTableSettingsOpen(table.name)" class="w-3 h-3" />
-                      </button>
-                    </div>
-                  </template>
+                  <TableItemsList
+                    :tables="schemaGroup.tables"
+                    :search-query="searchQuery"
+                    :is-cdc-mode="isCDCMode"
+                    :get-table-display-name="getTableDisplayName"
+                    :has-table-filter="hasTableFilter"
+                    :is-table-settings-open="isTableSettingsOpen"
+                    @checkbox-change="
+                      ({ table, checked }) => {
+                        handleCheckboxChange(table, checked)
+                      }
+                    "
+                    @toggle-filter="toggleTableSettings"
+                  />
                 </div>
               </template>
             </template>
@@ -273,77 +162,30 @@
             <!-- Tables Grid - 2 columns on wider screens -->
             <div
               v-if="sourceConnectionType !== 'postgresql' || isSchemaExpanded(schemaGroup.schema)"
-              class="grid grid-cols-1 lg:grid-cols-2"
+              class=""
               :class="
                 sourceConnectionType === 'postgresql' && schemaGroup.schema
                   ? 'border-l-2 border-gray-200 dark:border-gray-700 ml-3'
                   : ''
               "
             >
-              <template v-for="(table, idx) in schemaGroup.tables" :key="table.name">
-                <!-- Table Row -->
-                <div
-                  class="group flex items-center gap-3 px-4 py-2.5 border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
-                  :class="[
-                    idx % 2 === 0
-                      ? 'lg:border-r lg:border-r-gray-100 lg:dark:border-r-gray-800'
-                      : ''
-                  ]"
-                >
-                  <!-- Checkbox -->
-                  <input
-                    :id="`table-${table.name}`"
-                    v-model="table.selected"
-                    type="checkbox"
-                    class="h-4 w-4 text-teal-600 dark:text-teal-500 focus:ring-teal-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 shrink-0"
-                    @change="
-                      handleCheckboxChange(
-                        table,
-                        ($event.target as HTMLInputElement)?.checked || false
-                      )
-                    "
-                  />
-
-                  <!-- Table Icon -->
-                  <TableIcon class="h-4 w-4 text-gray-400 dark:text-gray-500 shrink-0" />
-
-                  <!-- Table Name -->
-                  <label
-                    :for="`table-${table.name}`"
-                    class="flex-1 min-w-0 cursor-pointer text-sm text-gray-900 dark:text-gray-100 truncate"
-                  >
-                    <HighlightedText :text="getTableDisplayName(table.name)" :query="searchQuery" />
-                  </label>
-
-                  <!-- Row count badge (informational only, shown if overview data is cached) -->
-                  <span
-                    v-if="getTableRowCount(table.name) !== undefined"
-                    class="text-xs px-1.5 py-0.5 rounded shrink-0 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
-                    title="Approximate row count"
-                  >
-                    {{ formatRowCount(getTableRowCount(table.name)) }}
-                  </span>
-
-                  <!-- Filter indicator/toggle - only when selected and not CDC -->
-                  <button
-                    v-if="table.selected && !isCDCMode"
-                    class="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-all"
-                    :class="
-                      isTableSettingsOpen(table.name)
-                        ? 'bg-teal-500/20 text-teal-600 dark:text-teal-400'
-                        : hasTableFilter(table)
-                          ? 'bg-sky-500/20 text-sky-600 dark:text-sky-400'
-                          : 'text-gray-400 opacity-0 group-hover:opacity-100 hover:bg-gray-200 dark:hover:bg-gray-700'
-                    "
-                    :title="hasTableFilter(table) ? 'Edit filter' : 'Add filter'"
-                    @click="toggleTableSettings(table.name)"
-                  >
-                    <Filter class="w-3.5 h-3.5" />
-                    <span v-if="hasTableFilter(table)" class="hidden sm:inline">filtered</span>
-                    <ChevronUp v-if="isTableSettingsOpen(table.name)" class="w-3 h-3" />
-                  </button>
-                </div>
-              </template>
+              <TableItemsList
+                :tables="schemaGroup.tables"
+                :search-query="searchQuery"
+                :is-cdc-mode="isCDCMode"
+                :show-row-count="true"
+                :get-table-display-name="getTableDisplayName"
+                :has-table-filter="hasTableFilter"
+                :is-table-settings-open="isTableSettingsOpen"
+                :get-table-row-count="getTableRowCount"
+                :format-row-count="formatRowCount"
+                @checkbox-change="
+                  ({ table, checked }) => {
+                    handleCheckboxChange(table, checked)
+                  }
+                "
+                @toggle-filter="toggleTableSettings"
+              />
             </div>
           </template>
         </template>
@@ -375,20 +217,13 @@ import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { useDatabaseOverviewStore } from '@/stores/databaseOverview'
 import { useSelectableList } from '@/composables/useSelectableList'
-import FormCheckbox from '@/components/base/FormCheckbox.vue'
+import DataSelectionToolbar from '@/components/stream/wizard/DataSelectionToolbar.vue'
 import SlideOverPanel from '@/components/common/SlideOverPanel.vue'
-import HighlightedText from '@/components/common/HighlightedText.vue'
+import SourceSectionHeader from '@/components/stream/wizard/SourceSectionHeader.vue'
+import SourceHeaderActions from '@/components/stream/wizard/SourceHeaderActions.vue'
+import TableItemsList from '@/components/settings/TableItemsList.vue'
 import TableSettings from './TableSettings.vue'
-import {
-  ChevronDown,
-  ChevronRight,
-  ChevronUp,
-  Filter,
-  Grid2X2,
-  RefreshCw,
-  Search,
-  Sheet as TableIcon
-} from 'lucide-vue-next'
+import { ChevronDown, ChevronRight, Grid2X2, Sheet as TableIcon } from 'lucide-vue-next'
 import { debounce } from '@/utils/debounce'
 import { type StreamConfig, type Table } from '@/types/streamConfig'
 import { isFederatedMode as checkFederatedMode, parseTableName } from '@/utils/federatedUtils'
@@ -398,11 +233,30 @@ const props = withDefaults(
   defineProps<{
     listMaxHeight?: string
     listHeight?: string
+    stickyHeader?: boolean
+    showToolbar?: boolean
+    externalSearchQuery?: string
+    embedded?: boolean
   }>(),
   {
     listMaxHeight: '500px',
-    listHeight: undefined
+    listHeight: undefined,
+    stickyHeader: false,
+    showToolbar: true,
+    externalSearchQuery: '',
+    embedded: false
   }
+)
+const emit = defineEmits<{
+  'stats-change': [stats: { selected: number; total: number }]
+}>()
+
+const stickyHeader = computed(() => props.stickyHeader)
+const showToolbar = computed(() => props.showToolbar)
+const listContainerClass = computed(() =>
+  props.embedded
+    ? 'overflow-hidden overflow-y-auto'
+    : 'bg-white dark:bg-gray-850 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden overflow-y-auto'
 )
 
 const listContainerStyle = computed(() => {
@@ -455,7 +309,7 @@ const tables = ref<Table[]>(
   })) || []
 )
 
-const searchQuery = ref('')
+const searchQuery = ref(props.externalSearchQuery || '')
 const activeFilterTableName = ref<string | null>(null)
 const expandedSchemas = ref(new Set<string>())
 const schemasInitialized = ref(false)
@@ -503,16 +357,7 @@ function buildGroupedTables(tablesToGroup: Table[], initializeSchemas = false): 
   })
 
   if (initializeSchemas && !schemasInitialized.value && groups.length > 0) {
-    if (groups.length === 1) {
-      expandedSchemas.value.add(groups[0].schema)
-    } else {
-      const publicSchema = groups.find((g) => g.schema === 'public')
-      if (publicSchema) {
-        expandedSchemas.value.add('public')
-      } else {
-        expandedSchemas.value.add(groups[0].schema)
-      }
-    }
+    // Keep PostgreSQL schemas collapsed by default; user expands explicitly.
     schemasInitialized.value = true
   }
 
@@ -593,8 +438,6 @@ const multiSourceGroupedTables = computed<ConnectionGroup[]>(() => {
         schemas: [],
         tableCount: 0
       })
-      // Auto-expand all groups by default
-      expandedConnectionGroups.value.add(alias)
     }
 
     const group = connectionMap.get(alias)!
@@ -684,16 +527,27 @@ function formatRowCount(count: number | undefined): string {
 }
 
 function isSchemaExpanded(schema: string): boolean {
-  // For non-PostgreSQL databases, always show tables (no schema grouping)
-  if (sourceConnectionType.value !== 'postgresql' || schema === '') {
+  if (schema === '') {
+    return true
+  }
+  // In federated mode, schema groups can come from any source type; rely on explicit toggles.
+  if (isFederatedMode.value) {
+    return expandedSchemas.value.has(schema)
+  }
+  // For non-PostgreSQL single-source databases, always show tables (no schema grouping).
+  if (sourceConnectionType.value !== 'postgresql') {
     return true
   }
   return expandedSchemas.value.has(schema)
 }
 
 function toggleSchema(schema: string) {
-  // Only allow toggling for PostgreSQL with non-empty schemas
-  if (sourceConnectionType.value !== 'postgresql' || schema === '') {
+  if (schema === '') {
+    return
+  }
+  // In federated mode, always allow schema toggle.
+  // In single-source mode, only PostgreSQL has schema grouping.
+  if (!isFederatedMode.value && sourceConnectionType.value !== 'postgresql') {
     return
   }
 
@@ -756,7 +610,7 @@ function toggleConnectionGroup(alias: string) {
   if (expandedConnectionGroups.value.has(alias)) {
     expandedConnectionGroups.value.delete(alias)
   } else {
-    expandedConnectionGroups.value.add(alias)
+    expandedConnectionGroups.value = new Set([alias])
   }
 }
 
@@ -813,8 +667,7 @@ function handleCheckboxChange(table: Table, checked: boolean) {
   table.selected = checked
 }
 
-function setSelectAllFromValue(value: boolean | unknown[]) {
-  const selectAll = Array.isArray(value) ? value.length > 0 : value
+function setSelectAll(selectAll: boolean) {
   filteredTables.value.forEach((table) => {
     table.selected = selectAll
   })
@@ -1071,6 +924,26 @@ watch(
 const debouncedRefreshTables = debounce(refreshTables, 500)
 
 watch(
+  () => props.externalSearchQuery,
+  (value) => {
+    const next = value || ''
+    if (next === searchQuery.value) return
+    searchQuery.value = next
+  }
+)
+
+watch(
+  [checkedTablesCount, () => tables.value.length],
+  () => {
+    emit('stats-change', {
+      selected: checkedTablesCount.value,
+      total: tables.value.length
+    })
+  },
+  { immediate: true }
+)
+
+watch(
   tables,
   (newTables) => {
     if (
@@ -1131,4 +1004,13 @@ watch(
   },
   { deep: true }
 )
+
+defineExpose({
+  refresh: refreshTables,
+  setSelectAll,
+  getStats: () => ({
+    selected: checkedTablesCount.value,
+    total: tables.value.length
+  })
+})
 </script>

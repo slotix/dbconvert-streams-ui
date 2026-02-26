@@ -1,47 +1,24 @@
 <template>
   <div class="space-y-4">
-    <!-- Header with file count, filter, select all, and refresh -->
-    <div class="flex items-center gap-4">
-      <!-- File count -->
-      <div class="text-sm font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">
-        {{ selectedCount }} / {{ selectableCount }}
-      </div>
-
-      <!-- Filter input -->
-      <div class="flex-1">
-        <FormInput v-model="searchQuery" type="text" placeholder="Filter files..." />
-      </div>
-
-      <!-- Select All checkbox -->
-      <div class="flex items-center whitespace-nowrap">
-        <input
-          id="select-all-files"
-          :checked="selectAllCheckboxState"
-          :indeterminate="indeterminate"
-          type="checkbox"
-          class="h-4 w-4 text-teal-600 dark:text-teal-500 focus:ring-teal-500 dark:focus:ring-teal-400 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
-          @change="toggleSelectAll"
-        />
-        <label for="select-all-files" class="ml-2 text-sm text-gray-700 dark:text-gray-300">
-          Select All
-        </label>
-      </div>
-
-      <!-- Refresh button -->
-      <button
-        type="button"
-        class="inline-flex items-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:focus:ring-gray-400 dark:focus:ring-offset-gray-900 whitespace-nowrap"
-        :disabled="isLoading"
-        @click="refresh"
-      >
-        Refresh files
-      </button>
-    </div>
+    <DataSelectionToolbar
+      v-if="showToolbar"
+      :selected-count="selectedCount"
+      :total-count="selectableCount"
+      :search-value="searchQuery"
+      search-placeholder="Filter files..."
+      :select-all-checked="selectAllCheckboxState"
+      :select-all-indeterminate="indeterminate"
+      select-all-label="Select All"
+      refresh-label="Refresh files"
+      refresh-title="Refresh files"
+      :refresh-disabled="isLoading"
+      @update:search-value="searchQuery = $event"
+      @update:select-all="toggleSelectAll"
+      @refresh="refresh"
+    />
 
     <!-- File List -->
-    <div
-      class="bg-white dark:bg-gray-850 shadow-sm dark:shadow-gray-900/30 ring-1 ring-gray-900/5 dark:ring-gray-700 rounded-lg divide-y divide-gray-200 dark:divide-gray-800"
-    >
+    <div :class="fileListContainerClass">
       <div v-if="isLoading" class="py-10 text-center text-sm text-gray-500 dark:text-gray-400">
         Loading files…
       </div>
@@ -141,7 +118,7 @@ import { useFileExplorerStore } from '@/stores/fileExplorer'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { getFileFormat } from '@/utils/fileFormat'
 import { formatDataSize } from '@/utils/formats'
-import FormInput from '@/components/base/FormInput.vue'
+import DataSelectionToolbar from '@/components/stream/wizard/DataSelectionToolbar.vue'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import type { FileEntry } from '@/types/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
@@ -149,16 +126,31 @@ import FileIcon from '@/components/common/FileIcon.vue'
 
 interface Props {
   connectionId?: string | null
+  showToolbar?: boolean
+  externalSearchQuery?: string
+  embedded?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  connectionId: null
+  connectionId: null,
+  showToolbar: true,
+  externalSearchQuery: '',
+  embedded: false
 })
+const emit = defineEmits<{
+  'stats-change': [stats: { selected: number; total: number }]
+}>()
 
 const fileExplorerStore = useFileExplorerStore()
 const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
-const searchQuery = ref('')
+const showToolbar = computed(() => props.showToolbar)
+const searchQuery = ref(props.externalSearchQuery || '')
+const fileListContainerClass = computed(() =>
+  props.embedded
+    ? 'divide-y divide-gray-200 dark:divide-gray-800'
+    : 'bg-white dark:bg-gray-850 shadow-sm dark:shadow-gray-900/30 ring-1 ring-gray-900/5 dark:ring-gray-700 rounded-lg divide-y divide-gray-200 dark:divide-gray-800'
+)
 
 const isS3Connection = computed(() => {
   if (!props.connectionId) return false
@@ -699,8 +691,7 @@ const isLoading = computed(() => {
   return fileExplorerStore.isLoading(props.connectionId)
 })
 
-function toggleSelectAll(event: Event) {
-  const selectAll = (event.target as HTMLInputElement).checked
+function toggleSelectAll(selectAll: boolean) {
   // Apply to the currently filtered rows (so filter + select all works predictably)
   filteredRows.value.forEach((r) => {
     if (!isSelectable(r.entry)) return
@@ -739,6 +730,26 @@ watch(filteredRows, async () => {
   updateViewportHeight()
   resetScroll()
 })
+
+watch(
+  () => props.externalSearchQuery,
+  (value) => {
+    const next = value || ''
+    if (next === searchQuery.value) return
+    searchQuery.value = next
+  }
+)
+
+watch(
+  [selectedCount, selectableCount],
+  () => {
+    emit('stats-change', {
+      selected: selectedCount.value,
+      total: selectableCount.value
+    })
+  },
+  { immediate: true }
+)
 
 /**
  * Get all parent folder paths for a given file/folder path.
@@ -865,4 +876,13 @@ function refresh() {
 function fileFormat(file: FileEntry | FileSystemEntry) {
   return getFileFormat(file.name)
 }
+
+defineExpose({
+  refresh,
+  setSelectAll: toggleSelectAll,
+  getStats: () => ({
+    selected: selectedCount.value,
+    total: selectableCount.value
+  })
+})
 </script>

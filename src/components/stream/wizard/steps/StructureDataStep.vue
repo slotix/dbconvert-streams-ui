@@ -12,153 +12,147 @@
 
     <!-- Dataset Section -->
     <div class="flex-1 min-h-0 flex flex-col">
-      <!-- Pure File Source: Show file preview list for ALL file connections -->
-      <template v-if="isFileSourceConnection">
-        <div
-          v-for="fileConn in fileSourceConnections"
-          :key="fileConn.connectionId"
-          class="mb-6 last:mb-0"
+      <!-- Tab-based Data Source Selector -->
+      <div
+        v-if="!isFileSourceConnection"
+        class="shrink-0 flex items-center gap-2 mb-4 border-b border-gray-200 dark:border-gray-700"
+      >
+        <!-- Tables Tab -->
+        <button
+          type="button"
+          class="px-4 py-2 text-sm font-medium transition-colors relative"
+          :class="[
+            activeDataTab === 'tables'
+              ? 'text-teal-600 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-400'
+              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+          ]"
+          @click="activeDataTab = 'tables'"
         >
-          <!-- File source header (when multiple sources) -->
-          <div
-            v-if="fileSourceConnections.length > 1"
-            class="flex items-center gap-3 mb-3 px-4 py-2 bg-linear-to-r from-teal-50 to-cyan-50 dark:from-teal-900/30 dark:to-cyan-900/30 rounded-lg border border-teal-200 dark:border-teal-700"
-          >
-            <component
-              :is="isS3Type(fileConn.connectionId) ? Cloud : FolderOpen"
-              class="w-5 h-5 text-teal-600 dark:text-teal-400"
-            />
-            <div class="flex items-center gap-2">
-              <span class="text-sm font-bold text-teal-900 dark:text-teal-100">
-                {{ fileConn.alias }}
-              </span>
-              <span class="text-xs text-teal-600 dark:text-teal-400">
-                {{ getConnectionName(fileConn.connectionId) }}
-              </span>
-              <span v-if="fileConn.s3?.bucket" class="text-xs text-teal-500 dark:text-teal-400">
-                / {{ fileConn.s3.bucket }}
-              </span>
-            </div>
-          </div>
-          <FilePreviewList :connection-id="fileConn.connectionId" />
-        </div>
-      </template>
+          <span class="flex items-center gap-2">
+            <Sheet class="w-4 h-4" />
+            Tables
+            <span
+              v-if="selectedTablesCount > 0"
+              class="px-1.5 py-0.5 text-xs rounded-full bg-teal-100 dark:bg-teal-900/50 text-teal-700 dark:text-teal-300"
+            >
+              {{ selectedTablesCount }}
+            </span>
+          </span>
+        </button>
 
-      <!-- Mixed or Pure Database Sources -->
-      <template v-else>
-        <!-- Tab-based Data Source Selector -->
-        <div
-          class="shrink-0 flex items-center gap-2 mb-4 border-b border-gray-200 dark:border-gray-700"
+        <!-- Queries Tab - Hidden in CDC mode -->
+        <button
+          v-if="currentMode !== 'cdc'"
+          type="button"
+          class="px-4 py-2 text-sm font-medium transition-colors relative"
+          :class="[
+            activeDataTab === 'queries'
+              ? 'text-teal-600 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-400'
+              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+          ]"
+          @click="activeDataTab = 'queries'"
         >
-          <!-- Tables Tab -->
-          <button
-            type="button"
-            class="px-4 py-2 text-sm font-medium transition-colors relative"
-            :class="[
-              activeDataTab === 'tables'
-                ? 'text-teal-600 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-400'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-            ]"
-            @click="activeDataTab = 'tables'"
-          >
-            <span class="flex items-center gap-2">
-              <Sheet class="w-4 h-4" />
-              Tables
-              <span
-                v-if="selectedTablesCount > 0"
-                class="px-1.5 py-0.5 text-xs rounded-full bg-teal-100 dark:bg-teal-900/50 text-teal-700 dark:text-teal-300"
-              >
-                {{ selectedTablesCount }}
-              </span>
+          <span class="flex items-center gap-2">
+            <Code class="w-4 h-4" />
+            Queries
+            <span
+              v-if="customQueriesCount > 0"
+              class="px-1.5 py-0.5 text-xs rounded-full bg-teal-100 dark:bg-teal-900/50 text-teal-700 dark:text-teal-300"
+            >
+              {{ customQueriesCount }}
             </span>
-          </button>
+          </span>
+        </button>
+      </div>
 
-          <!-- Queries Tab - Hidden in CDC mode -->
-          <button
-            v-if="currentMode !== 'cdc'"
-            type="button"
-            class="px-4 py-2 text-sm font-medium transition-colors relative"
-            :class="[
-              activeDataTab === 'queries'
-                ? 'text-teal-600 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-400'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-            ]"
-            @click="activeDataTab = 'queries'"
-          >
-            <span class="flex items-center gap-2">
-              <Code class="w-4 h-4" />
-              Queries
-              <span
-                v-if="customQueriesCount > 0"
-                class="px-1.5 py-0.5 text-xs rounded-full bg-teal-100 dark:bg-teal-900/50 text-teal-700 dark:text-teal-300"
-              >
-                {{ customQueriesCount }}
-              </span>
-            </span>
-          </button>
-        </div>
-
-        <!-- Tab Content -->
-        <div class="flex-1 min-h-0 flex flex-col">
-          <!-- Tables Tab Content -->
-          <div
-            v-if="activeDataTab === 'tables'"
-            class="h-full min-h-0 flex flex-col"
-            :class="hasMixedSourceTypes ? 'overflow-y-auto pr-1 gap-6' : ''"
-          >
+      <!-- Tab Content -->
+      <div class="flex-1 min-h-0 flex flex-col">
+        <!-- Tables / Source Objects Tab Content -->
+        <div
+          v-if="isFileSourceConnection || activeDataTab === 'tables'"
+          class="h-full min-h-0 flex flex-col"
+          :class="showCombinedObjectsToolbar ? 'overflow-y-auto pr-1 gap-6' : ''"
+        >
+          <DataSelectionToolbar
+            v-if="showCombinedObjectsToolbar"
+            :selected-count="combinedObjectSelectedCount"
+            :total-count="combinedObjectTotalCount"
+            :search-value="combinedObjectSearchQuery"
+            search-placeholder="Filter source objects..."
+            :select-all-checked="combinedSelectAllChecked"
+            :select-all-indeterminate="combinedSelectAllIndeterminate"
+            select-all-label="All"
+            refresh-label="Refresh"
+            refresh-title="Refresh source objects"
+            sticky
+            @update:search-value="combinedObjectSearchQuery = $event"
+            @update:select-all="setCombinedSelectAll"
+            @refresh="refreshCombinedObjects"
+          />
+          <div :class="sourceObjectsContainerClass">
             <TableList
-              :list-height="hasMixedSourceTypes ? undefined : '100%'"
-              :list-max-height="hasMixedSourceTypes ? '500px' : undefined"
+              v-if="!isFileSourceConnection"
+              ref="tableListRef"
+              :list-height="showCombinedObjectsToolbar ? undefined : '100%'"
+              :list-max-height="showCombinedObjectsToolbar ? 'none' : undefined"
+              :sticky-header="!showCombinedObjectsToolbar"
+              :show-toolbar="!showCombinedObjectsToolbar"
+              :external-search-query="showCombinedObjectsToolbar ? combinedObjectSearchQuery : ''"
+              :embedded="showCombinedObjectsToolbar"
+              @stats-change="tableObjectStats = $event"
             />
 
-            <!-- File/S3 Sources Section (in mixed mode) -->
-            <div v-if="hasMixedSourceTypes" class="space-y-4 shrink-0">
+            <div v-if="hasFileSourceGroups">
               <div
                 v-for="fileConn in fileSourceConnections"
                 :key="fileConn.connectionId"
-                class="border-t border-gray-200 dark:border-gray-700 pt-4"
+                class="border-t first:border-t-0 border-gray-200 dark:border-gray-700"
               >
-                <!-- File source header -->
-                <div
-                  class="flex items-center gap-3 mb-3 px-4 py-2 bg-linear-to-r from-teal-50 to-cyan-50 dark:from-teal-900/30 dark:to-cyan-900/30 rounded-lg border border-teal-200 dark:border-teal-700"
+                <SourceSectionHeader
+                  :alias="fileConn.alias"
+                  :connection-name="getConnectionName(fileConn.connectionId)"
+                  :selection-label="getSourceSelectionLabel(fileConn)"
+                  :icon="isS3Type(fileConn.connectionId) ? Cloud : FolderOpen"
+                  icon-class="text-sky-500/80 dark:text-sky-400/80"
+                  collapsible
+                  :expanded="isFileGroupExpanded(fileConn.connectionId)"
+                  sticky
+                  class="rounded-none border-x-0 border-t-0 border-b border-b-gray-200/70 dark:border-b-gray-700/70"
+                  @toggle="toggleFileGroup(fileConn.connectionId)"
                 >
-                  <component
-                    :is="isS3Type(fileConn.connectionId) ? Cloud : FolderOpen"
-                    class="w-5 h-5 text-teal-600 dark:text-teal-400"
+                  <template #actions>
+                    <SourceHeaderActions
+                      @select-all="selectAllInFileGroup(fileConn.connectionId)"
+                      @clear="clearAllInFileGroup(fileConn.connectionId)"
+                    />
+                  </template>
+                </SourceSectionHeader>
+                <div v-show="isFileGroupExpanded(fileConn.connectionId)">
+                  <FilePreviewList
+                    :ref="(instance) => setFilePreviewRef(fileConn.connectionId, instance)"
+                    :connection-id="fileConn.connectionId"
+                    :show-toolbar="false"
+                    :external-search-query="combinedObjectSearchQuery"
+                    :embedded="showCombinedObjectsToolbar"
+                    @stats-change="(stats) => setFileObjectStats(fileConn.connectionId, stats)"
                   />
-                  <div class="flex items-center gap-2">
-                    <span class="text-sm font-bold text-teal-900 dark:text-teal-100">
-                      {{ fileConn.alias }}
-                    </span>
-                    <span class="text-xs text-teal-600 dark:text-teal-400">
-                      {{ getConnectionName(fileConn.connectionId) }}
-                    </span>
-                    <span
-                      v-if="fileConn.s3?.bucket"
-                      class="text-xs text-teal-500 dark:text-teal-400"
-                    >
-                      / {{ fileConn.s3.bucket }}
-                    </span>
-                  </div>
                 </div>
-                <!-- File preview for this connection - bucket looked up from stream config -->
-                <FilePreviewList :connection-id="fileConn.connectionId" />
               </div>
             </div>
           </div>
-
-          <!-- Queries Tab Content - Only in Convert mode -->
-          <div
-            v-else-if="activeDataTab === 'queries' && currentMode === 'convert'"
-            class="flex-1 min-h-0 flex flex-col"
-          >
-            <CustomQueryEditor
-              :source-connections="sourceConnections"
-              @update:source-connections="handleSourceConnectionsUpdate"
-            />
-          </div>
         </div>
-      </template>
+
+        <!-- Queries Tab Content - Only in Convert mode -->
+        <div
+          v-else-if="activeDataTab === 'queries' && currentMode === 'convert'"
+          class="flex-1 min-h-0 flex flex-col"
+        >
+          <CustomQueryEditor
+            :source-connections="sourceConnections"
+            @update:source-connections="handleSourceConnectionsUpdate"
+          />
+        </div>
+      </div>
     </div>
 
     <!-- Structure Options Section - Only show for database targets -->
@@ -366,6 +360,9 @@
 import { ref, computed, watch } from 'vue'
 import TableList from '@/components/settings/TableList.vue'
 import FilePreviewList from '@/components/stream/wizard/FilePreviewList.vue'
+import DataSelectionToolbar from '@/components/stream/wizard/DataSelectionToolbar.vue'
+import SourceSectionHeader from '@/components/stream/wizard/SourceSectionHeader.vue'
+import SourceHeaderActions from '@/components/stream/wizard/SourceHeaderActions.vue'
 import ModeButtons from '@/components/settings/ModeButtons.vue'
 import Operations from '@/components/settings/Operations.vue'
 import CustomQueryEditor from '@/components/stream/wizard/CustomQueryEditor.vue'
@@ -418,6 +415,23 @@ const activeDataTab = ref<'tables' | 'queries'>('tables')
 
 const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
+
+interface ObjectListStats {
+  selected: number
+  total: number
+}
+
+interface UnifiedObjectPanelHandle {
+  refresh?: () => void | Promise<void>
+  setSelectAll?: (value: boolean) => void
+}
+
+const tableListRef = ref<UnifiedObjectPanelHandle | null>(null)
+const filePreviewRefs = ref<Record<string, UnifiedObjectPanelHandle | null>>({})
+const tableObjectStats = ref<ObjectListStats>({ selected: 0, total: 0 })
+const fileObjectStats = ref<Record<string, ObjectListStats>>({})
+const combinedObjectSearchQuery = ref('')
+const expandedFileGroups = ref<Set<string>>(new Set())
 
 // Current mode from stream config
 const currentMode = computed(() => streamsStore.currentStreamConfig?.mode || 'convert')
@@ -546,15 +560,95 @@ const isFileSourceConnection = computed(() => {
   return connections.every((conn) => isFileType(conn.connectionId))
 })
 
-// Check if we have a mix of database and file sources
-const hasMixedSourceTypes = computed(() => {
-  return fileSourceConnections.value.length > 0 && databaseSourceConnections.value.length > 0
+const hasFileSourceGroups = computed(() => fileSourceConnections.value.length > 0)
+const showCombinedObjectsToolbar = computed(() => hasFileSourceGroups.value)
+const sourceObjectsContainerClass = computed(() =>
+  showCombinedObjectsToolbar.value
+    ? 'rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-850 overflow-hidden'
+    : ''
+)
+
+const combinedObjectSelectedCount = computed(() => {
+  const fileSelected = Object.values(fileObjectStats.value).reduce(
+    (sum, stats) => sum + (stats?.selected || 0),
+    0
+  )
+  return tableObjectStats.value.selected + fileSelected
 })
+
+const combinedObjectTotalCount = computed(() => {
+  const fileTotal = Object.values(fileObjectStats.value).reduce(
+    (sum, stats) => sum + (stats?.total || 0),
+    0
+  )
+  return tableObjectStats.value.total + fileTotal
+})
+
+const combinedSelectAllChecked = computed(() => {
+  const total = combinedObjectTotalCount.value
+  if (total === 0) return false
+  return combinedObjectSelectedCount.value === total
+})
+
+const combinedSelectAllIndeterminate = computed(() => {
+  const selected = combinedObjectSelectedCount.value
+  const total = combinedObjectTotalCount.value
+  return selected > 0 && selected < total
+})
+
+function setFilePreviewRef(connectionId: string, instance: unknown) {
+  filePreviewRefs.value[connectionId] = instance as UnifiedObjectPanelHandle | null
+}
+
+function setFileObjectStats(connectionId: string, stats: ObjectListStats) {
+  fileObjectStats.value = {
+    ...fileObjectStats.value,
+    [connectionId]: stats
+  }
+}
+
+function isFileGroupExpanded(connectionId: string): boolean {
+  return expandedFileGroups.value.has(connectionId)
+}
+
+function toggleFileGroup(connectionId: string) {
+  if (expandedFileGroups.value.has(connectionId)) {
+    expandedFileGroups.value.delete(connectionId)
+  } else {
+    expandedFileGroups.value = new Set([connectionId])
+  }
+}
+
+function selectAllInFileGroup(connectionId: string) {
+  filePreviewRefs.value[connectionId]?.setSelectAll?.(true)
+}
+
+function clearAllInFileGroup(connectionId: string) {
+  filePreviewRefs.value[connectionId]?.setSelectAll?.(false)
+}
+
+function setCombinedSelectAll(selectAll: boolean) {
+  tableListRef.value?.setSelectAll?.(selectAll)
+  for (const refInstance of Object.values(filePreviewRefs.value)) {
+    refInstance?.setSelectAll?.(selectAll)
+  }
+}
+
+function refreshCombinedObjects() {
+  void tableListRef.value?.refresh?.()
+  for (const refInstance of Object.values(filePreviewRefs.value)) {
+    void refInstance?.refresh?.()
+  }
+}
 
 // Get connection name by ID
 function getConnectionName(connectionId: string): string {
   const conn = connectionsStore.connectionByID(connectionId)
   return conn?.name || connectionId
+}
+
+function getSourceSelectionLabel(source: StreamConnectionMapping): string {
+  return source.s3?.bucket || source.files?.basePath || source.database || ''
 }
 
 // Check if target is a database type that supports structure options
@@ -586,6 +680,46 @@ watch(
     // can have both database AND file sources, and we need to preserve the file selections
   },
   { immediate: true }
+)
+
+watch(
+  fileSourceConnections,
+  (connections) => {
+    const validIds = new Set(connections.map((c) => c.connectionId))
+    const nextRefs: Record<string, UnifiedObjectPanelHandle | null> = {}
+    const nextStats: Record<string, ObjectListStats> = {}
+    const nextExpanded = new Set<string>()
+
+    for (const [connectionId, instance] of Object.entries(filePreviewRefs.value)) {
+      if (validIds.has(connectionId)) {
+        nextRefs[connectionId] = instance
+      }
+    }
+    for (const [connectionId, stats] of Object.entries(fileObjectStats.value)) {
+      if (validIds.has(connectionId)) {
+        nextStats[connectionId] = stats
+      }
+    }
+    for (const connectionId of connections.map((c) => c.connectionId)) {
+      if (expandedFileGroups.value.has(connectionId)) {
+        nextExpanded.add(connectionId)
+      }
+    }
+    filePreviewRefs.value = nextRefs
+    fileObjectStats.value = nextStats
+    expandedFileGroups.value = nextExpanded
+  },
+  { deep: true, immediate: true }
+)
+
+watch(
+  databaseSourceConnections,
+  (connections) => {
+    if (connections.length === 0) {
+      tableObjectStats.value = { selected: 0, total: 0 }
+    }
+  },
+  { deep: true, immediate: true }
 )
 
 // Master "Create structure" checkbox - checked if any structure option is enabled
