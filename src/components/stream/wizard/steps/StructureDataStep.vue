@@ -612,11 +612,13 @@ function isFileGroupExpanded(connectionId: string): boolean {
 }
 
 function toggleFileGroup(connectionId: string) {
-  if (expandedFileGroups.value.has(connectionId)) {
-    expandedFileGroups.value.delete(connectionId)
+  const next = new Set(expandedFileGroups.value)
+  if (next.has(connectionId)) {
+    next.delete(connectionId)
   } else {
-    expandedFileGroups.value = new Set([connectionId])
+    next.add(connectionId)
   }
+  expandedFileGroups.value = next
 }
 
 function selectAllInFileGroup(connectionId: string) {

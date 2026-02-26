@@ -37,7 +37,7 @@
           </span>
 
           <button
-            v-if="table.selected && !isCDCMode"
+            v-if="table.selected && !isCdcMode"
             class="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-all"
             :class="
               isTableSettingsOpen(table.name)
@@ -101,7 +101,7 @@
         </span>
 
         <button
-          v-if="table.selected && !isCDCMode"
+          v-if="table.selected && !isCdcMode"
           class="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-all"
           :class="
             isTableSettingsOpen(table.name)
@@ -136,7 +136,7 @@ const MAX_VIRTUAL_HEIGHT = 800
 interface Props {
   tables: Table[]
   searchQuery: string
-  isCDCMode: boolean
+  isCdcMode: boolean
   showRowCount?: boolean
   getTableDisplayName: (tableName: string) => string
   hasTableFilter: (table: Table) => boolean
@@ -179,4 +179,5 @@ const hasTableFilter = (table: Table) => props.hasTableFilter(table)
 const isTableSettingsOpen = (tableName: string) => props.isTableSettingsOpen(tableName)
 const getTableRowCount = (tableName: string) => props.getTableRowCount(tableName)
 const formatRowCount = (count: number | undefined) => props.formatRowCount(count)
+const isCdcMode = computed(() => props.isCdcMode)
 </script>

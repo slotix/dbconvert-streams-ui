@@ -96,8 +96,7 @@
                     !schemaGroup.schema ||
                     isSchemaExpanded(`${connectionGroup.alias}-${schemaGroup.schema}`)
                   "
-                  class="border-l-2 border-sky-200 dark:border-sky-700"
-                  :class="schemaGroup.schema ? 'ml-9' : 'ml-6 border-l-0'"
+                  :class="schemaGroup.schema ? 'ml-9' : 'ml-6'"
                 >
                   <TableItemsList
                     :tables="schemaGroup.tables"
@@ -607,11 +606,13 @@ function isConnectionGroupExpanded(alias: string): boolean {
 }
 
 function toggleConnectionGroup(alias: string) {
-  if (expandedConnectionGroups.value.has(alias)) {
-    expandedConnectionGroups.value.delete(alias)
+  const next = new Set(expandedConnectionGroups.value)
+  if (next.has(alias)) {
+    next.delete(alias)
   } else {
-    expandedConnectionGroups.value = new Set([alias])
+    next.add(alias)
   }
+  expandedConnectionGroups.value = next
 }
 
 function selectAllInConnection(alias: string) {
