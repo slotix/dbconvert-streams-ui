@@ -55,8 +55,11 @@
         </p>
       </div>
 
-      <!-- Stream list with improved spacing -->
-      <div v-else class="space-y-1">
+      <!-- Stream list with subtle separators -->
+      <div
+        v-else
+        class="overflow-hidden rounded-md border border-slate-200/60 dark:border-white/[0.06] divide-y divide-slate-200/60 dark:divide-white/[0.06]"
+      >
         <StreamListItem
           v-for="stream in filteredStreams"
           :key="stream.id"

@@ -1,11 +1,10 @@
 <template>
   <div
     :class="[
-      'px-3 py-2.5 cursor-pointer transition-all duration-200 ease-out group relative',
-      'rounded-lg',
+      'px-3 py-2.5 cursor-pointer transition-colors duration-150 ease-out group relative',
       isSelected
-        ? 'bg-linear-to-r from-gray-200 to-gray-300 dark:from-gray-800 dark:to-gray-700 shadow-md ring-2 ring-gray-300/50 dark:ring-gray-700/50'
-        : 'hover:bg-linear-to-r hover:from-gray-100 hover:to-gray-200 dark:hover:from-gray-850 dark:hover:to-gray-800 hover:shadow-sm hover:scale-[1.01] active:scale-[0.98]'
+        ? 'bg-linear-to-r from-gray-200/90 to-gray-300/80 dark:from-gray-800/90 dark:to-gray-700/80'
+        : 'hover:bg-linear-to-r hover:from-gray-100/80 hover:to-gray-200/70 dark:hover:from-gray-850/80 dark:hover:to-gray-800/70'
     ]"
     @click="selectStream"
     @contextmenu="handleContextMenu"
@@ -22,7 +21,7 @@
         </h3>
       </div>
 
-      <!-- Badges Row - Wrap freely -->
+      <!-- Chips Row -->
       <div class="flex items-center gap-1.5 mb-1.5 flex-wrap">
         <!-- Mode Badge -->
         <span
@@ -35,30 +34,24 @@
         >
           {{ stream.mode }}
         </span>
+        <span
+          v-if="isMultiSource"
+          class="inline-flex items-center rounded-full px-1.5 py-0.5 text-xs font-medium ring-1 ring-inset shrink-0 bg-slate-100 dark:bg-gray-800/70 text-slate-700 dark:text-gray-300 ring-slate-300/50 dark:ring-gray-600/50"
+        >
+          {{ topologyLabel }}
+        </span>
       </div>
 
-      <!-- Connection Info - Separate Row with Better Truncation -->
+      <!-- Route Row -->
       <div class="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 min-w-0 mb-1">
-        <span v-if="source" class="truncate font-medium" :title="source.name">{{
-          source.name
-        }}</span>
-        <span v-else class="text-gray-400 dark:text-gray-600 shrink-0 text-xs">Unknown</span>
+        <span class="truncate font-medium" :title="sourceDisplayName">{{ sourceDisplayName }}</span>
         <ArrowRight class="h-3 w-3 shrink-0 text-gray-400 dark:text-gray-600" />
-        <span v-if="target" class="truncate font-medium" :title="target.name">{{
-          target.name
-        }}</span>
-        <span v-else class="text-gray-400 dark:text-gray-600 shrink-0 text-xs">Unknown</span>
+        <span class="truncate font-medium" :title="targetDisplayName">{{ targetDisplayName }}</span>
       </div>
 
-      <!-- Table/Query count -->
-      <div class="text-xs text-gray-400 dark:text-gray-600">
-        <span v-if="totalTablesCount > 0">
-          {{ totalTablesCount }} table{{ totalTablesCount !== 1 ? 's' : '' }}
-        </span>
-        <span v-if="totalTablesCount > 0 && totalQueriesCount > 0">, </span>
-        <span v-if="totalQueriesCount > 0">
-          {{ totalQueriesCount }} quer{{ totalQueriesCount !== 1 ? 'ies' : 'y' }}
-        </span>
+      <!-- Optional table/query summary -->
+      <div v-if="objectsSummaryLabel" class="text-xs text-gray-400 dark:text-gray-500">
+        {{ objectsSummaryLabel }}
       </div>
     </div>
 
@@ -181,6 +174,10 @@ const emit = defineEmits<{
 
 const monitoringStore = useMonitoringStore()
 
+const sourceConnections = computed(() => props.stream.source?.connections || [])
+const sourceCount = computed(() => sourceConnections.value.length)
+const isMultiSource = computed(() => sourceCount.value > 1)
+
 const isRunning = computed(() => {
   // Check if this stream config is the one currently running
   // Compare config IDs since streamID and config ID are different
@@ -221,14 +218,36 @@ const hasHistory = computed(() => {
 
 // Count tables from all connections
 const totalTablesCount = computed(() => {
-  if (!props.stream.source?.connections?.length) return 0
-  return props.stream.source.connections.reduce((sum, conn) => sum + (conn.tables?.length || 0), 0)
+  return sourceConnections.value.reduce((sum, conn) => sum + (conn.tables?.length || 0), 0)
 })
 
 // Count queries from all connections
 const totalQueriesCount = computed(() => {
-  if (!props.stream.source?.connections?.length) return 0
-  return props.stream.source.connections.reduce((sum, conn) => sum + (conn.queries?.length || 0), 0)
+  return sourceConnections.value.reduce((sum, conn) => sum + (conn.queries?.length || 0), 0)
+})
+
+const topologyLabel = computed(() => (isMultiSource.value ? 'multi-source' : 'single-source'))
+
+const sourceDisplayName = computed(() => {
+  if (sourceCount.value > 1) {
+    return `${sourceCount.value} sources`
+  }
+  if (props.source?.name) return props.source.name
+  if (sourceConnections.value[0]?.alias) return sourceConnections.value[0].alias
+  return 'Unknown'
+})
+
+const targetDisplayName = computed(() => props.target?.name || 'Unknown')
+
+const objectsSummaryLabel = computed(() => {
+  const parts: string[] = []
+  if (totalTablesCount.value > 0) {
+    parts.push(`${totalTablesCount.value} table${totalTablesCount.value === 1 ? '' : 's'}`)
+  }
+  if (totalQueriesCount.value > 0) {
+    parts.push(`${totalQueriesCount.value} quer${totalQueriesCount.value === 1 ? 'y' : 'ies'}`)
+  }
+  return parts.join(', ')
 })
 
 function selectStream() {
