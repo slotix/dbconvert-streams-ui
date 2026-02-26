@@ -203,6 +203,50 @@ describe('buildStreamPayload combinations', () => {
     })
   })
 
+  it('omits database sources with no selected tables in convert table mode', () => {
+    seedConnections([
+      makeConnection('conn-pg', 'postgresql', {
+        database: { host: 'localhost', port: 5432, username: 'postgres', database: 'postgres' }
+      }),
+      makeConnection('conn-my', 'mysql', {
+        database: { host: 'localhost', port: 3306, username: 'root', database: 'sakila' }
+      })
+    ])
+
+    const stream: StreamConfig = {
+      name: 'multi_source_tables_only',
+      mode: 'convert',
+      source: {
+        connections: [
+          {
+            alias: 'my1',
+            connectionId: 'conn-my',
+            database: 'sakila'
+          },
+          {
+            alias: 'pg1',
+            connectionId: 'conn-pg',
+            database: 'postgres',
+            tables: [{ name: 'public.actor' }]
+          }
+        ]
+      },
+      target: baseTarget
+    }
+
+    const payload = buildStreamPayload(stream)
+    const connections = payload.source?.connections || []
+
+    expect(connections).toEqual([
+      {
+        alias: 'pg1',
+        connectionId: 'conn-pg',
+        database: 'postgres',
+        tables: [{ name: 'public.actor' }]
+      }
+    ])
+  })
+
   it('builds payload for multi-source queries across connections', () => {
     seedConnections([
       makeConnection('conn-pg', 'postgresql', {

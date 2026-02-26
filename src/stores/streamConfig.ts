@@ -476,8 +476,21 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
     return result
   })
 
+  const hasQueryModeSelections = builtConnections.some(
+    (conn) => Array.isArray(conn.queries) && conn.queries.length > 0
+  )
+
+  const payloadConnections =
+    stream.mode === 'convert' && !hasQueryModeSelections
+      ? builtConnections.filter((conn) => {
+          const isDatabaseConnection = !conn.files && !conn.s3
+          if (!isDatabaseConnection) return true
+          return Array.isArray(conn.tables) && conn.tables.length > 0
+        })
+      : builtConnections
+
   filteredStream.source = {
-    connections: builtConnections
+    connections: payloadConnections
   }
 
   // Handle source options

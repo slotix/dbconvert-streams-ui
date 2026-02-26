@@ -1,7 +1,7 @@
 <template>
   <div v-if="table && isConvertMode">
     <QueryBuilder
-      :table-name="table.name"
+      :table-name="previewTableName"
       :dialect="connectionDialect"
       :columns="tableColumns"
       :schema-context="schemaContext"
@@ -94,6 +94,12 @@ const tableSchema = computed(() => {
   return extractSchema(props.table?.name || '', isFederated)
 })
 
+// Preview API is scoped to a single connection/database and expects unaliased table names.
+const previewTableName = computed(() => {
+  const isFederated = isFederatedMode(connections.value)
+  return stripAliasPrefix(props.table?.name || '', isFederated)
+})
+
 // Handle filter state updates from QueryBuilder
 const onFilterStateUpdate = (filterState: TableFilterState) => {
   if (props.table) {
@@ -165,9 +171,11 @@ onMounted(async () => {
         // Find the connection that owns this table
         const conn = tableConnection.value
         if (conn?.tables) {
-          const tableIndex = conn.tables.findIndex((t) => t.name === newTable.name)
+          const isFederated = isFederatedMode(connections.value)
+          const unaliasedName = stripAliasPrefix(newTable.name, isFederated)
+          const tableIndex = conn.tables.findIndex((t) => t.name === unaliasedName)
           if (tableIndex !== -1) {
-            conn.tables[tableIndex] = { ...newTable }
+            conn.tables[tableIndex] = { ...newTable, name: unaliasedName }
           }
         }
       },
@@ -182,9 +190,11 @@ const updateStreamSettings = () => {
     // Find the connection that owns this table
     const conn = tableConnection.value
     if (conn?.tables) {
-      const tableIndex = conn.tables.findIndex((t) => t.name === props.table.name)
+      const isFederated = isFederatedMode(connections.value)
+      const unaliasedName = stripAliasPrefix(props.table.name, isFederated)
+      const tableIndex = conn.tables.findIndex((t) => t.name === unaliasedName)
       if (tableIndex !== -1) {
-        conn.tables[tableIndex] = { ...props.table }
+        conn.tables[tableIndex] = { ...props.table, name: unaliasedName }
         streamsStore.currentStreamConfig = { ...stream }
       }
     }
