@@ -3,59 +3,55 @@
     :class="[
       'px-3 py-2.5 cursor-pointer transition-colors duration-150 ease-out group relative',
       isSelected
-        ? 'bg-linear-to-r from-gray-200/90 to-gray-300/80 dark:from-gray-800/90 dark:to-gray-700/80'
-        : 'hover:bg-linear-to-r hover:from-gray-100/80 hover:to-gray-200/70 dark:hover:from-gray-850/80 dark:hover:to-gray-800/70'
+        ? 'bg-slate-100/55 dark:bg-gray-800/45'
+        : 'hover:bg-slate-100/45 dark:hover:bg-gray-850/65'
     ]"
     @click="selectStream"
     @contextmenu="handleContextMenu"
   >
+    <span
+      v-if="isSelected"
+      class="absolute left-0 top-2 bottom-2 w-0.5 rounded-r bg-teal-500/80 dark:bg-teal-400/80"
+    ></span>
+
     <!-- Stream Info - Full Width -->
     <div class="w-full min-w-0 pr-8">
       <!-- Stream Name - Full Width with Truncation -->
       <div class="mb-1.5 min-w-0">
         <h3
-          class="text-sm font-semibold text-slate-800 dark:text-gray-100 group-hover:text-teal-900 dark:group-hover:text-teal-400 truncate leading-tight"
+          class="text-sm font-semibold text-slate-800 dark:text-gray-100 truncate leading-tight"
           :title="stream.name"
         >
           {{ stream.name }}
         </h3>
       </div>
 
-      <!-- Chips Row -->
-      <div class="flex items-center gap-1.5 mb-1.5 flex-wrap">
-        <!-- Mode Badge -->
+      <!-- Route + Mode Row -->
+      <div class="flex items-center gap-1 text-xs min-w-0 mb-1">
+        <span :class="modeLabelClass">{{ stream.mode }}</span>
+        <span class="shrink-0 text-slate-500/70 dark:text-gray-600">•</span>
         <span
-          :class="[
-            'inline-flex items-center rounded-full px-1.5 py-0.5 text-xs font-medium ring-1 ring-inset shrink-0',
-            stream.mode === 'cdc'
-              ? 'bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 ring-orange-600/20 dark:ring-orange-500/30'
-              : 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 ring-blue-600/20 dark:ring-blue-500/30'
-          ]"
+          class="truncate font-medium text-slate-700 dark:text-gray-300"
+          :title="sourceDisplayName"
         >
-          {{ stream.mode }}
+          {{ sourceDisplayName }}
         </span>
+        <ArrowRight class="h-3 w-3 shrink-0 text-slate-500/70 dark:text-gray-600" />
         <span
-          v-if="isMultiSource"
-          class="inline-flex items-center rounded-full px-1.5 py-0.5 text-xs font-medium ring-1 ring-inset shrink-0 bg-slate-100 dark:bg-gray-800/70 text-slate-700 dark:text-gray-300 ring-slate-300/50 dark:ring-gray-600/50"
+          class="truncate font-medium text-slate-700 dark:text-gray-300"
+          :title="targetDisplayName"
         >
-          {{ topologyLabel }}
+          {{ targetDisplayName }}
         </span>
-      </div>
-
-      <!-- Route Row -->
-      <div class="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 min-w-0 mb-1">
-        <span class="truncate font-medium" :title="sourceDisplayName">{{ sourceDisplayName }}</span>
-        <ArrowRight class="h-3 w-3 shrink-0 text-gray-400 dark:text-gray-600" />
-        <span class="truncate font-medium" :title="targetDisplayName">{{ targetDisplayName }}</span>
       </div>
 
       <!-- Optional table/query summary -->
-      <div v-if="objectsSummaryLabel" class="text-xs text-gray-400 dark:text-gray-500">
+      <div v-if="objectsSummaryLabel" class="text-xs text-slate-500 dark:text-gray-500">
         {{ objectsSummaryLabel }}
       </div>
     </div>
 
-    <!-- Action Buttons - Positioned Absolutely on Right -->
+    <!-- Action Buttons -->
     <div
       class="absolute right-2 top-2 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity bg-white/95 dark:bg-gray-850/95 backdrop-blur-sm rounded-md shadow-sm border border-gray-200 dark:border-gray-700 p-0.5"
       @click.stop
@@ -176,7 +172,6 @@ const monitoringStore = useMonitoringStore()
 
 const sourceConnections = computed(() => props.stream.source?.connections || [])
 const sourceCount = computed(() => sourceConnections.value.length)
-const isMultiSource = computed(() => sourceCount.value > 1)
 
 const isRunning = computed(() => {
   // Check if this stream config is the one currently running
@@ -226,7 +221,11 @@ const totalQueriesCount = computed(() => {
   return sourceConnections.value.reduce((sum, conn) => sum + (conn.queries?.length || 0), 0)
 })
 
-const topologyLabel = computed(() => (isMultiSource.value ? 'multi-source' : 'single-source'))
+const modeLabelClass = computed(() =>
+  props.stream.mode === 'cdc'
+    ? 'shrink-0 font-semibold text-orange-700 dark:text-orange-400'
+    : 'shrink-0 font-semibold text-blue-700 dark:text-blue-400'
+)
 
 const sourceDisplayName = computed(() => {
   if (sourceCount.value > 1) {
