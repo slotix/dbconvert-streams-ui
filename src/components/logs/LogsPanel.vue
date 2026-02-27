@@ -6,6 +6,7 @@ import {
   ArrowDown,
   ArrowUp,
   ChevronDown,
+  ClipboardCopy,
   Filter,
   FolderOpen,
   Info,
@@ -357,6 +358,30 @@ function getStatLogDisplay(log: SystemLog): string {
   return log.message || ''
 }
 
+// Copy helpers
+const copyAllFeedback = ref(false)
+
+function formatLogLine(log: SystemLog): string {
+  const ts = formatLogTimestamp(log.timestamp)
+  const msg = getStatLogDisplay(log)
+  const level = log.category || log.level || ''
+  return `${ts}  [${level}]  ${msg}`
+}
+
+async function copyAllLogs() {
+  const lines = logsWithContent.value.map(formatLogLine)
+  if (lines.length === 0) return
+  try {
+    await navigator.clipboard.writeText(lines.join('\n'))
+    copyAllFeedback.value = true
+    setTimeout(() => {
+      copyAllFeedback.value = false
+    }, 2000)
+  } catch (error) {
+    console.error('Failed to copy logs:', error)
+  }
+}
+
 // Keyboard shortcuts handler
 function handleKeyboardShortcut(event: KeyboardEvent) {
   // Don't trigger shortcuts if typing in an input field or editor
@@ -369,6 +394,13 @@ function handleKeyboardShortcut(event: KeyboardEvent) {
 
   // Only apply shortcuts for system logs view
   if (selectedView.value !== 'system') return
+
+  // C: Copy all visible logs
+  if (event.key.toLowerCase() === 'c' && !isInputField) {
+    event.preventDefault()
+    copyAllLogs()
+    return
+  }
 
   // K: Clear logs
   if (event.key.toLowerCase() === 'k' && !isInputField) {
@@ -680,6 +712,19 @@ onBeforeUnmount(() => {
                 <span class="hidden sm:inline">Logs Folder</span>
               </button>
 
+              <!-- Copy All Button -->
+              <button
+                type="button"
+                :title="`Copy ${logsWithContent.length} visible logs to clipboard (C)`"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-200"
+                @click="copyAllLogs"
+              >
+                <ClipboardCopy class="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
+                <span class="hidden sm:inline">
+                  {{ copyAllFeedback ? 'Copied!' : 'Copy All' }}
+                </span>
+              </button>
+
               <!-- Clear Button -->
               <button
                 type="button"
@@ -764,6 +809,7 @@ onBeforeUnmount(() => {
                     :message="getStatLogDisplay(log)"
                     :is-error="log.level === 'error'"
                     :expandable="false"
+                    :copy-text="formatLogLine(log)"
                   />
                 </div>
 
