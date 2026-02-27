@@ -341,10 +341,7 @@
             :options="schemaPolicyOptions"
             :disabled="!createStructure"
             :helper-text="schemaPolicyHelpText"
-            @update:model-value="
-              schemaPolicy = $event as SchemaPolicy
-              handleOptionsChange()
-            "
+            @change="onSchemaPolicyChange"
           />
 
           <FormSelect
@@ -353,10 +350,7 @@
             :options="writeModeOptions"
             :disabled="isWriteModeLocked || !copyData"
             :helper-text="writeModeHelpText"
-            @update:model-value="
-              writeMode = $event as WriteMode
-              handleOptionsChange()
-            "
+            @change="onWriteModeChange"
           />
         </div>
 
@@ -855,6 +849,16 @@ const anyStructureEnabled = computed(
 function handleStructureToggle() {
   // Already handled by computed setter
   // This just ensures the change event is properly emitted
+}
+
+function onSchemaPolicyChange(value: string | number | null) {
+  schemaPolicy.value = value as SchemaPolicy
+  handleOptionsChange()
+}
+
+function onWriteModeChange(value: string | number | null) {
+  writeMode.value = value as WriteMode
+  handleOptionsChange()
 }
 
 function handleOptionsChange() {
