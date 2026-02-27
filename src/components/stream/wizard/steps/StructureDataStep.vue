@@ -335,55 +335,29 @@
           v-if="isPolicySupportedTarget"
           class="ml-7 mt-3 space-y-4 rounded-md border border-gray-200 dark:border-gray-700 p-4"
         >
-          <div>
-            <label
-              for="schema-policy"
-              class="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1"
-            >
-              Schema policy
-            </label>
-            <select
-              id="schema-policy"
-              v-model="schemaPolicy"
-              class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500 disabled:opacity-60 disabled:cursor-not-allowed"
-              :disabled="!createStructure"
-              @change="handleOptionsChange"
-            >
-              <option
-                v-for="option in schemaPolicyOptions"
-                :key="option.value"
-                :value="option.value"
-              >
-                {{ option.label }}
-              </option>
-            </select>
-            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              {{ schemaPolicyHelpText }}
-            </p>
-          </div>
+          <FormSelect
+            :model-value="schemaPolicy"
+            label="Schema policy"
+            :options="schemaPolicyOptions"
+            :disabled="!createStructure"
+            :helper-text="schemaPolicyHelpText"
+            @update:model-value="
+              schemaPolicy = $event as SchemaPolicy
+              handleOptionsChange()
+            "
+          />
 
-          <div>
-            <label
-              for="write-mode"
-              class="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1"
-            >
-              Write mode
-            </label>
-            <select
-              id="write-mode"
-              v-model="writeMode"
-              class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500 disabled:opacity-60 disabled:cursor-not-allowed"
-              :disabled="isWriteModeLocked || !copyData"
-              @change="handleOptionsChange"
-            >
-              <option v-for="option in writeModeOptions" :key="option.value" :value="option.value">
-                {{ option.label }}
-              </option>
-            </select>
-            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              {{ writeModeHelpText }}
-            </p>
-          </div>
+          <FormSelect
+            :model-value="writeMode"
+            label="Write mode"
+            :options="writeModeOptions"
+            :disabled="isWriteModeLocked || !copyData"
+            :helper-text="writeModeHelpText"
+            @update:model-value="
+              writeMode = $event as WriteMode
+              handleOptionsChange()
+            "
+          />
         </div>
 
         <!-- Copy Data Checkbox -->
@@ -421,6 +395,7 @@ import SourceHeaderActions from '@/components/stream/wizard/SourceHeaderActions.
 import ModeButtons from '@/components/settings/ModeButtons.vue'
 import Operations from '@/components/settings/Operations.vue'
 import CustomQueryEditor from '@/components/stream/wizard/CustomQueryEditor.vue'
+import FormSelect from '@/components/base/FormSelect.vue'
 import { Code, Sheet, Cloud, FolderOpen } from 'lucide-vue-next'
 import type { StreamConnectionMapping } from '@/types/streamConfig'
 import { useStreamsStore } from '@/stores/streamConfig'
