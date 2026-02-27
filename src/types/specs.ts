@@ -89,10 +89,20 @@ export interface ConnectionSpec {
 
 // ===== Target Specs =====
 
+export type SchemaPolicy =
+  | 'fail_if_exists'
+  | 'validate_existing'
+  | 'create_missing_only'
+  | 'drop_and_recreate'
+
+export type WriteMode = 'fail_if_not_empty' | 'append' | 'truncate_and_load' | 'upsert'
+
 export interface DatabaseTargetSpec {
   database: string
   schema?: string
   structureOptions?: StructureOptions
+  schemaPolicy?: SchemaPolicy
+  writeMode?: WriteMode
   skipData?: boolean // Skip data transfer - only create structure
 }
 
@@ -218,6 +228,8 @@ export interface SnowflakeTargetSpec {
   database: string
   schema?: string
   structureOptions?: StructureOptions
+  schemaPolicy?: SchemaPolicy
+  writeMode?: WriteMode
   skipData?: boolean // Skip data transfer - only create structure
   // Snowflake-specific
   staging: SnowflakeStagingSpec
@@ -225,7 +237,7 @@ export interface SnowflakeTargetSpec {
 
 // Discriminated union - exactly ONE of these should be present
 export interface TargetSpec {
-  database?: DatabaseTargetSpec
+  db?: DatabaseTargetSpec
   files?: FileSpec
   s3?: S3Spec
   gcs?: GCSSpec

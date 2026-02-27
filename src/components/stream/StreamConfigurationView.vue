@@ -170,10 +170,10 @@ function handleSourceNavigate(connectionId: string) {
 const targetLogo = computed(() => getLogo(props.target))
 const targetSpec = computed(() => props.stream.target?.spec)
 const targetDatabaseName = computed(
-  () => targetSpec.value?.database?.database || targetSpec.value?.snowflake?.database || ''
+  () => targetSpec.value?.db?.database || targetSpec.value?.snowflake?.database || ''
 )
 const targetSchemaName = computed(
-  () => targetSpec.value?.database?.schema || targetSpec.value?.snowflake?.schema || ''
+  () => targetSpec.value?.db?.schema || targetSpec.value?.snowflake?.schema || ''
 )
 </script>
 

@@ -40,19 +40,29 @@ describe('Connection Spec Builders', () => {
 
 describe('Target Spec Builders', () => {
   it('builds database target spec', () => {
-    const spec = buildDatabaseTargetSpec('targetdb', 'public', {
-      tables: true,
-      indexes: true,
-      foreignKeys: false
-    })
+    const spec = buildDatabaseTargetSpec(
+      'targetdb',
+      'public',
+      {
+        tables: true,
+        indexes: true,
+        foreignKeys: false
+      },
+      'create_missing_only',
+      'append',
+      true
+    )
 
-    expect(spec.database).toBeDefined()
-    expect(spec.database?.database).toBe('targetdb')
-    expect(spec.database?.schema).toBe('public')
+    expect(spec.db).toBeDefined()
+    expect(spec.db?.database).toBe('targetdb')
+    expect(spec.db?.schema).toBe('public')
     // Backend expects: tables, indexes, foreignKeys
-    expect(spec.database?.structureOptions?.tables).toBe(true)
-    expect(spec.database?.structureOptions?.indexes).toBe(true)
-    expect(spec.database?.structureOptions?.foreignKeys).toBe(false)
+    expect(spec.db?.structureOptions?.tables).toBe(true)
+    expect(spec.db?.structureOptions?.indexes).toBe(true)
+    expect(spec.db?.structureOptions?.foreignKeys).toBe(false)
+    expect(spec.db?.schemaPolicy).toBe('create_missing_only')
+    expect(spec.db?.writeMode).toBe('append')
+    expect(spec.db?.skipData).toBe(true)
   })
 
   it('builds S3 target spec', () => {

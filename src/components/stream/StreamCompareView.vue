@@ -332,14 +332,14 @@ const targetFileDisplayName = computed(() => {
 const sourceDatabase = computed(() => selectedSourceDatabase.value)
 const targetDatabase = computed(() => {
   const spec = props.stream.target?.spec
-  if (spec?.database?.database) return spec.database.database
+  if (spec?.db?.database) return spec.db.database
   if (spec?.snowflake?.database) return spec.snowflake.database
   return undefined
 })
 const sourceSchema = computed(() => selectedSourceSchema.value)
 const targetSchema = computed(() => {
   const spec = props.stream.target?.spec
-  if (spec?.database?.schema) return spec.database.schema
+  if (spec?.db?.schema) return spec.db.schema
   if (spec?.snowflake?.schema) return spec.snowflake.schema
   return undefined
 })

@@ -13,7 +13,9 @@ import type {
   FileFormatSpec,
   ParquetConfig,
   CSVConfig,
-  UIStructureOptions
+  UIStructureOptions,
+  SchemaPolicy,
+  WriteMode
 } from '../types/specs'
 import type { Connection } from '../types/connections'
 
@@ -73,15 +75,19 @@ export function buildDatabaseTargetSpec(
   database: string,
   schema?: string,
   structureOptions?: UIStructureOptions,
+  schemaPolicy?: SchemaPolicy,
+  writeMode?: WriteMode,
   skipData?: boolean
 ): TargetSpec {
   const spec: DatabaseTargetSpec = {
     database,
     schema,
     structureOptions, // Already in correct format
+    schemaPolicy,
+    writeMode,
     skipData
   }
-  return { database: spec }
+  return { db: spec }
 }
 
 export function buildFileFormatSpec(
@@ -204,6 +210,8 @@ export function buildSnowflakeTargetSpec(
   fileFormat: string,
   schema?: string,
   structureOptions?: UIStructureOptions,
+  schemaPolicy?: SchemaPolicy,
+  writeMode?: WriteMode,
   compression?: string,
   parquetConfig?: ParquetConfig,
   csvConfig?: CSVConfig,
@@ -215,6 +223,8 @@ export function buildSnowflakeTargetSpec(
     database,
     schema,
     structureOptions, // Already in correct format
+    schemaPolicy,
+    writeMode,
     skipData,
     staging: {
       outputDirectory,

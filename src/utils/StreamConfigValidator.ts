@@ -27,6 +27,15 @@ const VALID_FILE_FORMATS = ['csv', 'jsonl', 'parquet'] as const
 // Valid compression types
 const VALID_COMPRESSION_TYPES = ['none', 'gzip', 'zstd', 'snappy', 'uncompressed'] as const
 
+const VALID_SCHEMA_POLICIES = [
+  'fail_if_exists',
+  'validate_existing',
+  'create_missing_only',
+  'drop_and_recreate'
+] as const
+
+const VALID_WRITE_MODES = ['fail_if_not_empty', 'append', 'truncate_and_load', 'upsert'] as const
+
 /**
  * Validates a stream configuration object
  */
@@ -87,6 +96,7 @@ export function validateStreamConfig(
 
   // Required fields
   validateRequiredFields(cfg, errors)
+  const mode = cfg.mode === 'convert' || cfg.mode === 'cdc' ? cfg.mode : undefined
 
   // Source validation
   if (cfg.source) {
@@ -95,7 +105,7 @@ export function validateStreamConfig(
 
   // Target validation
   if (cfg.target) {
-    validateTarget(cfg.target, errors)
+    validateTarget(cfg.target, mode, errors)
   }
 
   // Limits validation (optional)
@@ -497,7 +507,11 @@ function validateSourceOptions(options: unknown, errors: ValidationError[]): voi
   }
 }
 
-function validateTarget(target: unknown, errors: ValidationError[]): void {
+function validateTarget(
+  target: unknown,
+  mode: 'convert' | 'cdc' | undefined,
+  errors: ValidationError[]
+): void {
   if (typeof target !== 'object' || target === null) {
     errors.push({ path: 'target', message: 'Target must be an object' })
     return
@@ -515,7 +529,7 @@ function validateTarget(target: unknown, errors: ValidationError[]): void {
 
   // Target spec validation
   if (tgt.spec) {
-    validateTargetSpec(tgt.spec, errors)
+    validateTargetSpec(tgt.spec, mode, errors)
   }
 }
 
@@ -544,7 +558,11 @@ function extractConnections(src: Record<string, unknown>): Array<{
   return []
 }
 
-function validateTargetSpec(spec: unknown, errors: ValidationError[]): void {
+function validateTargetSpec(
+  spec: unknown,
+  mode: 'convert' | 'cdc' | undefined,
+  errors: ValidationError[]
+): void {
   if (typeof spec !== 'object' || spec === null) {
     errors.push({ path: 'target.spec', message: 'Target spec must be an object' })
     return
@@ -628,6 +646,51 @@ function validateTargetSpec(spec: unknown, errors: ValidationError[]): void {
           })
         }
       }
+    }
+  }
+
+  validateDatabaseWritePolicies(s.db, 'target.spec.db', mode, errors)
+  validateDatabaseWritePolicies(s.snowflake, 'target.spec.snowflake', mode, errors)
+}
+
+function validateDatabaseWritePolicies(
+  specObj: unknown,
+  basePath: string,
+  mode: 'convert' | 'cdc' | undefined,
+  errors: ValidationError[]
+): void {
+  if (!specObj || typeof specObj !== 'object') {
+    return
+  }
+
+  const dbSpec = specObj as Record<string, unknown>
+
+  if (dbSpec.schemaPolicy !== undefined) {
+    if (
+      typeof dbSpec.schemaPolicy !== 'string' ||
+      !VALID_SCHEMA_POLICIES.includes(dbSpec.schemaPolicy as (typeof VALID_SCHEMA_POLICIES)[number])
+    ) {
+      errors.push({
+        path: `${basePath}.schemaPolicy`,
+        message: `schemaPolicy must be one of: ${VALID_SCHEMA_POLICIES.join(', ')}`
+      })
+    }
+  }
+
+  if (dbSpec.writeMode !== undefined) {
+    if (
+      typeof dbSpec.writeMode !== 'string' ||
+      !VALID_WRITE_MODES.includes(dbSpec.writeMode as (typeof VALID_WRITE_MODES)[number])
+    ) {
+      errors.push({
+        path: `${basePath}.writeMode`,
+        message: `writeMode must be one of: ${VALID_WRITE_MODES.join(', ')}`
+      })
+    } else if (mode === 'cdc' && dbSpec.writeMode !== 'upsert') {
+      errors.push({
+        path: `${basePath}.writeMode`,
+        message: "CDC mode requires writeMode='upsert'"
+      })
     }
   }
 }

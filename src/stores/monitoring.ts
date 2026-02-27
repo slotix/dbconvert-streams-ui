@@ -906,7 +906,7 @@ export const useMonitoringStore = defineStore('monitoring', {
      */
     async refreshTargetDatabaseMetadata() {
       const targetId = this.streamConfig?.target?.id
-      const targetDatabase = this.streamConfig?.target?.spec?.database?.database
+      const targetDatabase = this.streamConfig?.target?.spec?.db?.database
       if (!targetId || !targetDatabase) return
 
       const fileExplorerStore = useFileExplorerStore()

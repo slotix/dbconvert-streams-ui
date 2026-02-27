@@ -47,7 +47,7 @@ export function isS3Target(spec: TargetSpec | undefined): boolean {
  * Check if this is a database target
  */
 export function isDatabaseTarget(spec: TargetSpec | undefined): boolean {
-  return !!spec?.database
+  return !!spec?.db
 }
 
 // Default S3 spec with required fields
@@ -184,46 +184,46 @@ export function useTargetSpec(streamConfig: StreamConfig) {
 
   // Database target fields
   const databaseName = computed({
-    get: () => streamConfig.target.spec?.database?.database || '',
+    get: () => streamConfig.target.spec?.db?.database || '',
     set: (value: string) => {
       const spec = ensureSpec()
-      if (!spec.database) {
-        spec.database = { database: '' }
+      if (!spec.db) {
+        spec.db = { database: '' }
       }
-      spec.database.database = value
+      spec.db.database = value
     }
   })
 
   const schemaName = computed({
-    get: () => streamConfig.target.spec?.database?.schema || '',
+    get: () => streamConfig.target.spec?.db?.schema || '',
     set: (value: string) => {
       const spec = ensureSpec()
-      if (!spec.database) {
-        spec.database = { database: '' }
+      if (!spec.db) {
+        spec.db = { database: '' }
       }
-      spec.database.schema = value
+      spec.db.schema = value
     }
   })
 
   const structureOptions = computed({
-    get: () => streamConfig.target.spec?.database?.structureOptions,
+    get: () => streamConfig.target.spec?.db?.structureOptions,
     set: (value) => {
       const spec = ensureSpec()
-      if (!spec.database) {
-        spec.database = { database: '' }
+      if (!spec.db) {
+        spec.db = { database: '' }
       }
-      spec.database.structureOptions = value
+      spec.db.structureOptions = value
     }
   })
 
   const skipData = computed({
-    get: () => streamConfig.target.spec?.database?.skipData ?? false,
+    get: () => streamConfig.target.spec?.db?.skipData ?? false,
     set: (value: boolean) => {
       const spec = ensureSpec()
-      if (!spec.database) {
-        spec.database = { database: '' }
+      if (!spec.db) {
+        spec.db = { database: '' }
       }
-      spec.database.skipData = value
+      spec.db.skipData = value
     }
   })
 

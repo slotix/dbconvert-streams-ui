@@ -412,6 +412,86 @@ describe('StreamConfigValidator', () => {
       expect(result.valid).toBe(false)
       expect(result.errors.some((e) => e.path === 'target.id')).toBe(true)
     })
+
+    it('should accept valid schemaPolicy and writeMode for database target', () => {
+      const config = {
+        ...validConfig,
+        target: {
+          ...validConfig.target,
+          spec: {
+            db: {
+              database: 'analytics',
+              schemaPolicy: 'create_missing_only',
+              writeMode: 'truncate_and_load'
+            }
+          }
+        }
+      }
+      const result = validateStreamConfig(config)
+      expect(result.errors.some((e) => e.path === 'target.spec.db.schemaPolicy')).toBe(false)
+      expect(result.errors.some((e) => e.path === 'target.spec.db.writeMode')).toBe(false)
+    })
+
+    it('should reject invalid schemaPolicy', () => {
+      const config = {
+        ...validConfig,
+        target: {
+          ...validConfig.target,
+          spec: {
+            db: {
+              database: 'analytics',
+              schemaPolicy: 'invalid_policy'
+            }
+          }
+        }
+      }
+      const result = validateStreamConfig(config)
+      expect(result.valid).toBe(false)
+      expect(result.errors.some((e) => e.path === 'target.spec.db.schemaPolicy')).toBe(true)
+    })
+
+    it('should reject invalid writeMode', () => {
+      const config = {
+        ...validConfig,
+        target: {
+          ...validConfig.target,
+          spec: {
+            db: {
+              database: 'analytics',
+              writeMode: 'invalid_mode'
+            }
+          }
+        }
+      }
+      const result = validateStreamConfig(config)
+      expect(result.valid).toBe(false)
+      expect(result.errors.some((e) => e.path === 'target.spec.db.writeMode')).toBe(true)
+    })
+
+    it('should enforce writeMode=upsert in cdc mode', () => {
+      const config = {
+        ...validConfig,
+        mode: 'cdc',
+        target: {
+          ...validConfig.target,
+          spec: {
+            db: {
+              database: 'analytics',
+              writeMode: 'append'
+            }
+          }
+        }
+      }
+      const result = validateStreamConfig(config)
+      expect(result.valid).toBe(false)
+      expect(
+        result.errors.some(
+          (e) =>
+            e.path === 'target.spec.db.writeMode' &&
+            e.message.includes("CDC mode requires writeMode='upsert'")
+        )
+      ).toBe(true)
+    })
   })
 
   describe('limits validation', () => {

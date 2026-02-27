@@ -331,6 +331,61 @@
           </div>
         </div>
 
+        <div
+          v-if="isPolicySupportedTarget"
+          class="ml-7 mt-3 space-y-4 rounded-md border border-gray-200 dark:border-gray-700 p-4"
+        >
+          <div>
+            <label
+              for="schema-policy"
+              class="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1"
+            >
+              Schema policy
+            </label>
+            <select
+              id="schema-policy"
+              v-model="schemaPolicy"
+              class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500 disabled:opacity-60 disabled:cursor-not-allowed"
+              :disabled="!createStructure"
+              @change="handleOptionsChange"
+            >
+              <option
+                v-for="option in schemaPolicyOptions"
+                :key="option.value"
+                :value="option.value"
+              >
+                {{ option.label }}
+              </option>
+            </select>
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {{ schemaPolicyHelpText }}
+            </p>
+          </div>
+
+          <div>
+            <label
+              for="write-mode"
+              class="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1"
+            >
+              Write mode
+            </label>
+            <select
+              id="write-mode"
+              v-model="writeMode"
+              class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500 disabled:opacity-60 disabled:cursor-not-allowed"
+              :disabled="isWriteModeLocked || !copyData"
+              @change="handleOptionsChange"
+            >
+              <option v-for="option in writeModeOptions" :key="option.value" :value="option.value">
+                {{ option.label }}
+              </option>
+            </select>
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {{ writeModeHelpText }}
+            </p>
+          </div>
+        </div>
+
         <!-- Copy Data Checkbox -->
         <div class="relative flex items-start">
           <div class="flex items-center h-5">
@@ -371,7 +426,13 @@ import type { StreamConnectionMapping } from '@/types/streamConfig'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
 import type { ModeOption } from '@/stores/common'
-import { getConnectionKindFromSpec, isDatabaseKind, isFileBasedKind } from '@/types/specs'
+import {
+  getConnectionKindFromSpec,
+  isDatabaseKind,
+  isFileBasedKind,
+  type SchemaPolicy,
+  type WriteMode
+} from '@/types/specs'
 
 interface Props {
   targetConnectionId?: string | null
@@ -379,6 +440,8 @@ interface Props {
   createIndexes?: boolean
   createForeignKeys?: boolean
   createCheckConstraints?: boolean
+  schemaPolicy?: SchemaPolicy
+  writeMode?: WriteMode
   copyData?: boolean
   sourceConnections?: StreamConnectionMapping[]
 }
@@ -389,6 +452,8 @@ const props = withDefaults(defineProps<Props>(), {
   createIndexes: true,
   createForeignKeys: true,
   createCheckConstraints: true,
+  schemaPolicy: 'fail_if_exists',
+  writeMode: 'fail_if_not_empty',
   copyData: true,
   sourceConnections: () => []
 })
@@ -398,6 +463,8 @@ const emit = defineEmits<{
   'update:create-indexes': [value: boolean]
   'update:create-foreign-keys': [value: boolean]
   'update:create-check-constraints': [value: boolean]
+  'update:schema-policy': [value: SchemaPolicy]
+  'update:write-mode': [value: WriteMode]
   'update:copy-data': [value: boolean]
   'update:can-proceed': [value: boolean]
   'update:source-connections': [connections: StreamConnectionMapping[]]
@@ -407,6 +474,8 @@ const createTables = ref(props.createTables)
 const createIndexes = ref(props.createIndexes)
 const createForeignKeys = ref(props.createForeignKeys)
 const createCheckConstraints = ref(props.createCheckConstraints)
+const schemaPolicy = ref<SchemaPolicy>(props.schemaPolicy)
+const writeMode = ref<WriteMode>(props.writeMode)
 const copyData = ref(props.copyData)
 const showAdvanced = ref(false)
 
@@ -667,6 +736,64 @@ const isTargetDatabase = computed(() => {
   return isDatabaseKind(kind)
 })
 
+const isPolicySupportedTarget = computed(() => {
+  if (!isTargetDatabase.value || !targetConnection.value?.type) return false
+  const targetType = targetConnection.value.type.toLowerCase()
+  return targetType === 'mysql' || targetType === 'postgresql' || targetType === 'postgres'
+})
+
+const schemaPolicyOptions: Array<{ value: SchemaPolicy; label: string }> = [
+  { value: 'fail_if_exists', label: 'Fail if exists (safe default)' },
+  { value: 'validate_existing', label: 'Validate existing' },
+  { value: 'create_missing_only', label: 'Create missing only' },
+  { value: 'drop_and_recreate', label: 'Drop and recreate' }
+]
+
+const writeModeOptions = computed<Array<{ value: WriteMode; label: string }>>(() => {
+  if (currentMode.value === 'cdc') {
+    return [{ value: 'upsert', label: 'Upsert (required for CDC)' }]
+  }
+  return [
+    { value: 'fail_if_not_empty', label: 'Fail if not empty (safe default)' },
+    { value: 'append', label: 'Append' },
+    { value: 'truncate_and_load', label: 'Truncate and load' },
+    { value: 'upsert', label: 'Upsert' }
+  ]
+})
+
+const isWriteModeLocked = computed(() => currentMode.value === 'cdc')
+
+const schemaPolicyHelpText = computed(() => {
+  if (!createStructure.value) {
+    return 'Ignored when structure creation is disabled.'
+  }
+  return 'Controls how existing target tables are handled before structure creation.'
+})
+
+const writeModeHelpText = computed(() => {
+  if (!copyData.value) {
+    return 'Ignored when data copy is disabled.'
+  }
+  if (isWriteModeLocked.value) {
+    return 'CDC requires upsert to keep target rows synchronized.'
+  }
+  return 'Controls how rows are written when target tables already contain data.'
+})
+
+watch(
+  currentMode,
+  (mode) => {
+    if (mode === 'cdc') {
+      writeMode.value = 'upsert'
+      if (schemaPolicy.value === 'fail_if_exists') {
+        schemaPolicy.value = 'validate_existing'
+      }
+      handleOptionsChange()
+    }
+  },
+  { immediate: true }
+)
+
 watch(
   isFileSourceConnection,
   (isFile) => {
@@ -760,6 +887,8 @@ function handleOptionsChange() {
   emit('update:create-indexes', createIndexes.value)
   emit('update:create-foreign-keys', createForeignKeys.value)
   emit('update:create-check-constraints', createCheckConstraints.value)
+  emit('update:schema-policy', schemaPolicy.value)
+  emit('update:write-mode', writeMode.value)
   emit('update:copy-data', copyData.value)
 
   // For database targets, require at least one option (structure or data)

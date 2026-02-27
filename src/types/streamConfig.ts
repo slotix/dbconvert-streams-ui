@@ -1,5 +1,5 @@
 // src/types/streams.ts
-import type { TargetSpec, UIStructureOptions } from './specs'
+import type { TargetSpec, UIStructureOptions, SchemaPolicy, WriteMode } from './specs'
 import type { ConnectionMapping } from '@/api/federated'
 
 /**
@@ -141,6 +141,8 @@ export interface StreamConfig {
   targetSchema?: string
   targetPath?: string
   structureOptions?: UIStructureOptions
+  schemaPolicy?: SchemaPolicy
+  writeMode?: WriteMode
   skipData?: boolean // Skip data transfer - only create structure (set by wizard)
 }
 

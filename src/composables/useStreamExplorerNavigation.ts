@@ -36,8 +36,7 @@ export function useStreamExplorerNavigation({
     () => stream.value?.source?.connections?.[0]?.database || undefined
   )
   const targetDatabase = computed(
-    () =>
-      stream.value?.targetDatabase || stream.value?.target?.spec?.database?.database || undefined
+    () => stream.value?.targetDatabase || stream.value?.target?.spec?.db?.database || undefined
   )
 
   async function navigateToSourceExplorer() {

@@ -889,14 +889,28 @@ export const useStreamsStore = defineStore('streams', {
 
         // Get structure options and skipData from wizard state or target spec
         const structureOptions = this.currentStreamConfig.structureOptions ||
-          existingSpec?.database?.structureOptions || {
+          existingSpec?.db?.structureOptions ||
+          existingSpec?.snowflake?.structureOptions || {
             tables: true,
             indexes: true,
             foreignKeys: true,
             checkConstraints: true
           }
         const skipData =
-          this.currentStreamConfig.skipData ?? existingSpec?.database?.skipData ?? false
+          this.currentStreamConfig.skipData ??
+          existingSpec?.db?.skipData ??
+          existingSpec?.snowflake?.skipData ??
+          false
+        const schemaPolicy =
+          this.currentStreamConfig.schemaPolicy ??
+          existingSpec?.db?.schemaPolicy ??
+          existingSpec?.snowflake?.schemaPolicy ??
+          (this.currentStreamConfig.mode === 'cdc' ? 'validate_existing' : 'fail_if_exists')
+        const writeMode =
+          this.currentStreamConfig.writeMode ??
+          existingSpec?.db?.writeMode ??
+          existingSpec?.snowflake?.writeMode ??
+          (this.currentStreamConfig.mode === 'cdc' ? 'upsert' : 'fail_if_not_empty')
 
         const targetDatabase = this.currentStreamConfig.targetDatabase || ''
         const targetSchema = this.currentStreamConfig.targetSchema
@@ -924,6 +938,8 @@ export const useStreamsStore = defineStore('streams', {
               resolvedFileFormat,
               targetSchema,
               structureOptions,
+              schemaPolicy,
+              writeMode,
               compressionType,
               parquetConfig,
               csvConfig,
@@ -983,7 +999,14 @@ export const useStreamsStore = defineStore('streams', {
           file: () =>
             buildFileTargetSpec(resolvedFileFormat, compressionType, parquetConfig, csvConfig),
           database: () =>
-            buildDatabaseTargetSpec(targetDatabase, targetSchema, structureOptions, skipData)
+            buildDatabaseTargetSpec(
+              targetDatabase,
+              targetSchema,
+              structureOptions,
+              schemaPolicy,
+              writeMode,
+              skipData
+            )
         }
 
         // Determine which builder to use based on spec-derived kind

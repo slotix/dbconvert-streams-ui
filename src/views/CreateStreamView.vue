@@ -118,12 +118,16 @@
                 :create-indexes="wizard.createIndexes.value"
                 :create-foreign-keys="wizard.createForeignKeys.value"
                 :create-check-constraints="wizard.createCheckConstraints.value"
+                :schema-policy="wizard.schemaPolicy.value"
+                :write-mode="wizard.writeMode.value"
                 :copy-data="wizard.copyData.value"
                 :source-connections="wizard.sourceConnections.value"
                 @update:create-tables="wizard.setCreateTables"
                 @update:create-indexes="wizard.setCreateIndexes"
                 @update:create-foreign-keys="wizard.setCreateForeignKeys"
                 @update:create-check-constraints="wizard.setCreateCheckConstraints"
+                @update:schema-policy="wizard.setSchemaPolicy"
+                @update:write-mode="wizard.setWriteMode"
                 @update:copy-data="wizard.setCopyData"
                 @update:source-connections="handleSourceConnectionsUpdate"
                 @update:can-proceed="updateCanProceed"
@@ -584,6 +588,8 @@ function applyWizardStructureOptions() {
     foreignKeys: wizard.createForeignKeys.value,
     checkConstraints: wizard.createCheckConstraints.value
   }
+  streamsStore.currentStreamConfig.schemaPolicy = wizard.schemaPolicy.value
+  streamsStore.currentStreamConfig.writeMode = wizard.writeMode.value
 
   if (!wizard.canUseCDCMode.value) {
     streamsStore.currentStreamConfig.mode = 'convert'

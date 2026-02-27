@@ -2,7 +2,13 @@ import { ref, computed } from 'vue'
 import type { StreamConfig, StreamConnectionMapping } from '@/types/streamConfig'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
-import { getConnectionKindFromSpec, isFileBasedKind, isDatabaseKind } from '@/types/specs'
+import {
+  getConnectionKindFromSpec,
+  isFileBasedKind,
+  isDatabaseKind,
+  type SchemaPolicy,
+  type WriteMode
+} from '@/types/specs'
 import { normalizeConnectionAliases, DEFAULT_ALIAS } from '@/utils/federatedUtils'
 
 export interface WizardStep {
@@ -28,6 +34,9 @@ interface WizardSnapshot {
   createTables: boolean
   createIndexes: boolean
   createForeignKeys: boolean
+  createCheckConstraints: boolean
+  schemaPolicy: SchemaPolicy
+  writeMode: WriteMode
   copyData: boolean
   // Serialized stream config for deep comparison
   streamConfigJson: string
@@ -132,6 +141,8 @@ export function useStreamWizard() {
   const createIndexes = ref(true)
   const createForeignKeys = ref(true)
   const createCheckConstraints = ref(true)
+  const schemaPolicy = ref<SchemaPolicy>('fail_if_exists')
+  const writeMode = ref<WriteMode>('fail_if_not_empty')
   const copyData = ref(true)
 
   // Initial state snapshot for change detection (edit mode only)
@@ -178,7 +189,9 @@ export function useStreamWizard() {
       limits: config.limits,
       reportingInterval: config.reportingInterval,
       skipData: config.skipData,
-      structureOptions: config.structureOptions
+      structureOptions: config.structureOptions,
+      schemaPolicy: config.schemaPolicy,
+      writeMode: config.writeMode
     }
     return JSON.stringify(normalized)
   }
@@ -191,6 +204,9 @@ export function useStreamWizard() {
       createTables: createTables.value,
       createIndexes: createIndexes.value,
       createForeignKeys: createForeignKeys.value,
+      createCheckConstraints: createCheckConstraints.value,
+      schemaPolicy: schemaPolicy.value,
+      writeMode: writeMode.value,
       copyData: copyData.value,
       streamConfigJson: serializeStreamConfig()
     }
@@ -242,6 +258,9 @@ export function useStreamWizard() {
       createTables.value !== initial.createTables ||
       createIndexes.value !== initial.createIndexes ||
       createForeignKeys.value !== initial.createForeignKeys ||
+      createCheckConstraints.value !== initial.createCheckConstraints ||
+      schemaPolicy.value !== initial.schemaPolicy ||
+      writeMode.value !== initial.writeMode ||
       copyData.value !== initial.copyData
     ) {
       return true
@@ -318,7 +337,11 @@ export function useStreamWizard() {
 
     // At least one option must be selected (structure or data) for database targets
     const hasStructureOrDataOption =
-      createTables.value || createIndexes.value || createForeignKeys.value || copyData.value
+      createTables.value ||
+      createIndexes.value ||
+      createForeignKeys.value ||
+      createCheckConstraints.value ||
+      copyData.value
 
     return hasStructureOrDataOption && hasRequiredDataSources
   })
@@ -452,6 +475,14 @@ export function useStreamWizard() {
     copyData.value = value
   }
 
+  function setSchemaPolicy(value: SchemaPolicy) {
+    schemaPolicy.value = value
+  }
+
+  function setWriteMode(value: WriteMode) {
+    writeMode.value = value
+  }
+
   function setSourceConnections(connections: StreamConnectionMapping[]) {
     const previousPrimary = sourceConnections.value[0]?.connectionId
     sourceConnections.value = normalizeSourceConnections(connections)
@@ -476,6 +507,9 @@ export function useStreamWizard() {
     createTables.value = true
     createIndexes.value = true
     createForeignKeys.value = true
+    createCheckConstraints.value = true
+    schemaPolicy.value = 'fail_if_exists'
+    writeMode.value = 'fail_if_not_empty'
     copyData.value = true
     setSourceConnections([])
     initialSnapshot.value = null
@@ -507,11 +541,11 @@ export function useStreamWizard() {
           const dbValue = obj.database
           if (typeof dbValue === 'string') return dbValue
         }
-        // Check nested .spec.database.database path (for target with spec structure)
+        // Check nested .spec.db.database path (for target with spec structure)
         if ('spec' in obj && obj.spec && typeof obj.spec === 'object') {
           const spec = obj.spec as Record<string, unknown>
-          if ('database' in spec && spec.database && typeof spec.database === 'object') {
-            const dbSpec = spec.database as Record<string, unknown>
+          if ('db' in spec && spec.db && typeof spec.db === 'object') {
+            const dbSpec = spec.db as Record<string, unknown>
             if ('database' in dbSpec && typeof dbSpec.database === 'string') {
               return dbSpec.database
             }
@@ -535,8 +569,8 @@ export function useStreamWizard() {
         }
         if ('spec' in obj && obj.spec && typeof obj.spec === 'object') {
           const spec = obj.spec as Record<string, unknown>
-          if ('database' in spec && spec.database && typeof spec.database === 'object') {
-            const dbSpec = spec.database as Record<string, unknown>
+          if ('db' in spec && spec.db && typeof spec.db === 'object') {
+            const dbSpec = spec.db as Record<string, unknown>
             if ('schema' in dbSpec && typeof dbSpec.schema === 'string') {
               return dbSpec.schema
             }
@@ -598,8 +632,7 @@ export function useStreamWizard() {
 
     const sourceSchema = resolveSchema(config.sourceSchema, config.source)
 
-    const structureOptions =
-      config.target?.spec?.database?.structureOptions || config.structureOptions
+    const structureOptions = config.target?.spec?.db?.structureOptions || config.structureOptions
     const normalize = (value: boolean | undefined, defaultValue: boolean) =>
       typeof value === 'boolean' ? value : defaultValue
     createTables.value = normalize(structureOptions?.tables, true)
@@ -607,8 +640,18 @@ export function useStreamWizard() {
     createForeignKeys.value = normalize(structureOptions?.foreignKeys, true)
     createCheckConstraints.value = normalize(structureOptions?.checkConstraints, true)
 
-    const skipData = config.target?.spec?.database?.skipData ?? config.skipData
+    const skipData = config.target?.spec?.db?.skipData ?? config.skipData
     copyData.value = skipData === undefined ? true : !skipData
+    schemaPolicy.value =
+      config.target?.spec?.db?.schemaPolicy ??
+      config.target?.spec?.snowflake?.schemaPolicy ??
+      config.schemaPolicy ??
+      (config.mode === 'cdc' ? 'validate_existing' : 'fail_if_exists')
+    writeMode.value =
+      config.target?.spec?.db?.writeMode ??
+      config.target?.spec?.snowflake?.writeMode ??
+      config.writeMode ??
+      (config.mode === 'cdc' ? 'upsert' : 'fail_if_not_empty')
 
     const connectionsStore = useConnectionsStore()
 
@@ -675,6 +718,8 @@ export function useStreamWizard() {
     createIndexes,
     createForeignKeys,
     createCheckConstraints,
+    schemaPolicy,
+    writeMode,
     copyData,
     sourceConnections,
     primarySourceId,
@@ -709,6 +754,8 @@ export function useStreamWizard() {
     setCreateIndexes,
     setCreateForeignKeys,
     setCreateCheckConstraints,
+    setSchemaPolicy,
+    setWriteMode,
     setCopyData,
     setSourceConnections,
     reset,
