@@ -174,7 +174,7 @@
       </div>
 
       <!-- Wizard Navigation -->
-      <div class="flex justify-between shrink-0 items-center gap-4">
+      <div :class="footerContainerClass">
         <div class="flex min-w-0 flex-1 items-center gap-3">
           <BaseButton v-if="canGoBack" variant="secondary" @click="goToPreviousStep">
             <ArrowLeft class="w-4 h-4 mr-2" />
@@ -183,7 +183,7 @@
           <slot name="footer-left" :current-step-index="currentStepIndex"></slot>
         </div>
 
-        <div class="flex shrink-0 items-center space-x-3">
+        <div :class="footerActionsClass">
           <BaseButton
             v-if="showTestButton"
             variant="secondary"
@@ -228,7 +228,10 @@
                 </span>
                 <span v-else class="flex items-center"> Update Stream </span>
               </BaseButton>
-              <p class="mt-1 text-[11px] text-gray-500 dark:text-gray-400 whitespace-nowrap">
+              <p
+                v-if="showStreamRestartHint"
+                class="mt-1 text-[11px] text-gray-500 dark:text-gray-400 whitespace-nowrap"
+              >
                 Stream will restart if running
               </p>
             </div>
@@ -281,6 +284,7 @@ interface Props {
   isTestingConnection?: boolean
   isEditMode?: boolean
   showTestButton?: boolean
+  showStreamRestartHint?: boolean
   wizardType?: 'connection' | 'stream'
 }
 
@@ -293,7 +297,8 @@ const props = withDefaults(defineProps<Props>(), {
   isTestingConnection: false,
   wizardType: 'connection',
   isEditMode: false,
-  showTestButton: false
+  showTestButton: false,
+  showStreamRestartHint: false
 })
 
 const emit = defineEmits<{
@@ -326,6 +331,22 @@ const contentContainerClass = computed(() => {
     return 'flex flex-col flex-1 min-h-0'
   }
   return 'bg-white dark:bg-gray-850 rounded-lg p-6 shadow-lg dark:shadow-gray-900/30 flex flex-col flex-1 min-h-0'
+})
+
+const footerContainerClass = computed(() => {
+  const base = 'flex justify-between shrink-0 items-center gap-4'
+  if (props.wizardType === 'stream') {
+    return `${base} pr-20`
+  }
+  return base
+})
+
+const footerActionsClass = computed(() => {
+  const base = 'flex shrink-0 items-center space-x-3'
+  if (props.wizardType === 'stream') {
+    return `${base} min-w-0`
+  }
+  return base
 })
 
 function canJumpToStep(stepIndex: number): boolean {

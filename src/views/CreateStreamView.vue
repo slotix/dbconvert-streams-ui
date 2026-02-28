@@ -41,6 +41,7 @@
           :can-proceed="wizard.canProceed.value && canProceedOverride"
           :is-processing="isProcessing"
           :is-edit-mode="isEditMode"
+          :show-stream-restart-hint="showStreamRestartHint"
           wizard-type="stream"
           @next-step="handleNextStep"
           @previous-step="wizard.previousStep"
@@ -182,7 +183,9 @@ import { useStreamWizard } from '@/composables/useStreamWizard'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
 import { useCommonStore } from '@/stores/common'
+import { useMonitoringStore } from '@/stores/monitoring'
 import type { StreamConnectionMapping } from '@/types/streamConfig'
+import { STATUS, type Status } from '@/constants'
 import { getConnectionKindFromSpec } from '@/types/specs'
 import { DEFAULT_ALIAS } from '@/utils/federatedUtils'
 import { getSourceSelectionValue } from '@/components/stream/wizard/sourceMappings'
@@ -208,6 +211,7 @@ const wizard = useStreamWizard()
 const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
 const commonStore = useCommonStore()
+const monitoringStore = useMonitoringStore()
 const isProcessing = ref(false)
 const canProceedOverride = ref(true)
 const showExitConfirm = ref(false)
@@ -226,6 +230,28 @@ const hasAnySelection = computed(
 const showStepOneSelectionFooter = computed(
   () => wizard.currentStepIndex.value === 0 && hasAnySelection.value
 )
+
+const showStreamRestartHint = computed(() => {
+  if (!isEditMode.value || !streamId.value) {
+    return false
+  }
+
+  const configMatches = monitoringStore.streamConfig?.id === streamId.value
+  const hasStreamId = monitoringStore.streamID !== ''
+  if (!configMatches || !hasStreamId) {
+    return false
+  }
+
+  const terminalStates: Status[] = [
+    STATUS.FINISHED,
+    STATUS.STOPPED,
+    STATUS.FAILED,
+    STATUS.TIME_LIMIT_REACHED,
+    STATUS.EVENT_LIMIT_REACHED
+  ]
+
+  return !terminalStates.includes(monitoringStore.status as Status)
+})
 
 const selectedTablesCount = computed(() => {
   const config = streamsStore.currentStreamConfig
