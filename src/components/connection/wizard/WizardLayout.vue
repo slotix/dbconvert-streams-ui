@@ -9,18 +9,43 @@
         >
           <li v-for="(step, stepIdx) in steps" :key="step.name" class="relative md:flex md:flex-1">
             <!-- Completed Step -->
-            <div v-if="stepIdx < currentStepIndex" class="group flex w-full items-center">
-              <span class="flex items-center px-6 py-4 text-sm font-medium">
+            <button
+              v-if="stepIdx < currentStepIndex"
+              type="button"
+              :disabled="!canJumpToStep(stepIdx)"
+              :class="[
+                'group flex w-full items-center text-left',
+                canJumpToStep(stepIdx)
+                  ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-850/80'
+                  : 'cursor-default'
+              ]"
+              @click="handleStepClick(stepIdx)"
+            >
+              <span class="flex items-center px-6 py-4 text-sm font-medium min-w-0">
                 <span
                   class="flex size-10 shrink-0 items-center justify-center rounded-full bg-teal-600 shadow-sm"
                 >
                   <Check class="size-6 text-white" aria-hidden="true" />
                 </span>
-                <span class="ml-4 text-sm font-medium text-gray-900 dark:text-gray-100">{{
-                  step.title
-                }}</span>
+                <span class="ml-4 min-w-0">
+                  <span class="block text-sm font-medium text-gray-900 dark:text-gray-100">
+                    {{ step.title }}
+                  </span>
+                  <span
+                    v-if="stepContext[stepIdx]?.length"
+                    class="mt-1 flex flex-wrap items-center gap-1.5"
+                  >
+                    <span
+                      v-for="badge in stepContext[stepIdx]"
+                      :key="`completed-${stepIdx}-${badge}`"
+                      class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium border border-teal-200 dark:border-teal-700 text-teal-700 dark:text-teal-300 bg-teal-50/80 dark:bg-teal-900/30"
+                    >
+                      {{ badge }}
+                    </span>
+                  </span>
+                </span>
               </span>
-            </div>
+            </button>
 
             <!-- Current Step -->
             <div
@@ -35,14 +60,33 @@
                   {{ stepIdx + 1 }}
                 </span>
               </span>
-              <span class="ml-4 text-sm font-semibold text-teal-600 dark:text-teal-300">{{
-                step.title
-              }}</span>
+              <span class="ml-4 min-w-0">
+                <span class="block text-sm font-semibold text-teal-600 dark:text-teal-300">
+                  {{ step.title }}
+                </span>
+                <span
+                  v-if="stepContext[stepIdx]?.length"
+                  class="mt-1 flex flex-wrap items-center gap-1.5"
+                >
+                  <span
+                    v-for="badge in stepContext[stepIdx]"
+                    :key="`current-${stepIdx}-${badge}`"
+                    class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium border border-teal-300 dark:border-teal-600 text-teal-700 dark:text-teal-200 bg-teal-50 dark:bg-teal-900/40"
+                  >
+                    {{ badge }}
+                  </span>
+                </span>
+              </span>
             </div>
 
             <!-- Upcoming Step -->
-            <div v-else class="group flex items-center">
-              <span class="flex items-center px-6 py-4 text-sm font-medium">
+            <button
+              v-else-if="canJumpToStep(stepIdx)"
+              type="button"
+              class="group flex items-center w-full text-left cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-850/80"
+              @click="handleStepClick(stepIdx)"
+            >
+              <span class="flex items-center px-6 py-4 text-sm font-medium min-w-0">
                 <span
                   class="flex size-10 shrink-0 items-center justify-center rounded-full border-2 border-gray-300 dark:border-gray-600"
                 >
@@ -50,9 +94,52 @@
                     {{ stepIdx + 1 }}
                   </span>
                 </span>
-                <span class="ml-4 text-sm font-medium text-gray-400 dark:text-gray-500">{{
-                  step.title
-                }}</span>
+                <span class="ml-4 min-w-0">
+                  <span class="block text-sm font-medium text-gray-400 dark:text-gray-500">
+                    {{ step.title }}
+                  </span>
+                  <span
+                    v-if="stepContext[stepIdx]?.length"
+                    class="mt-1 flex flex-wrap items-center gap-1.5"
+                  >
+                    <span
+                      v-for="badge in stepContext[stepIdx]"
+                      :key="`upcoming-${stepIdx}-${badge}`"
+                      class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/70"
+                    >
+                      {{ badge }}
+                    </span>
+                  </span>
+                </span>
+              </span>
+            </button>
+
+            <div v-else class="group flex items-center">
+              <span class="flex items-center px-6 py-4 text-sm font-medium min-w-0">
+                <span
+                  class="flex size-10 shrink-0 items-center justify-center rounded-full border-2 border-gray-300 dark:border-gray-600"
+                >
+                  <span class="text-gray-400 dark:text-gray-500">
+                    {{ stepIdx + 1 }}
+                  </span>
+                </span>
+                <span class="ml-4 min-w-0">
+                  <span class="block text-sm font-medium text-gray-400 dark:text-gray-500">
+                    {{ step.title }}
+                  </span>
+                  <span
+                    v-if="stepContext[stepIdx]?.length"
+                    class="mt-1 flex flex-wrap items-center gap-1.5"
+                  >
+                    <span
+                      v-for="badge in stepContext[stepIdx]"
+                      :key="`upcoming-${stepIdx}-${badge}`"
+                      class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/70"
+                    >
+                      {{ badge }}
+                    </span>
+                  </span>
+                </span>
               </span>
             </div>
 
@@ -96,7 +183,7 @@
           <slot name="footer-left" :current-step-index="currentStepIndex"></slot>
         </div>
 
-        <div class="flex shrink-0 space-x-3">
+        <div class="flex shrink-0 items-center space-x-3">
           <BaseButton
             v-if="showTestButton"
             variant="secondary"
@@ -127,32 +214,44 @@
             <span v-else class="flex items-center"> Save Changes </span>
           </BaseButton>
 
-          <BaseButton
-            variant="primary"
-            :disabled="!canProceed || isProcessing"
-            @click="handleNextOrFinish"
-          >
-            <span v-if="isProcessing" class="flex items-center">
-              <Spinner size="sm" class="mr-2" />
-              {{ isLastStep ? 'Saving...' : 'Processing...' }}
-            </span>
-            <span v-else class="flex items-center">
-              {{
-                isLastStep
-                  ? isEditMode
-                    ? wizardType === 'stream'
-                      ? 'Update Stream'
-                      : 'Update Connection'
-                    : wizardType === 'stream'
-                      ? 'Create Stream'
-                      : 'Create Connection'
-                  : 'Next'
-              }}
-              <ArrowRight v-if="!isLastStep" class="w-4 h-4 ml-2" />
-            </span>
-          </BaseButton>
+          <template v-if="isStreamEditFinalStep">
+            <BaseButton variant="ghost" @click="$emit('cancel')"> Cancel </BaseButton>
+            <div class="flex flex-col items-start">
+              <BaseButton
+                variant="primary"
+                :disabled="!canProceed || isProcessing"
+                @click="handleNextOrFinish"
+              >
+                <span v-if="isProcessing" class="flex items-center">
+                  <Spinner size="sm" class="mr-2" />
+                  Saving...
+                </span>
+                <span v-else class="flex items-center"> Update Stream </span>
+              </BaseButton>
+              <p class="mt-1 text-[11px] text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                Stream will restart if running
+              </p>
+            </div>
+          </template>
 
-          <BaseButton variant="secondary" @click="$emit('cancel')"> Cancel </BaseButton>
+          <template v-else>
+            <BaseButton
+              variant="primary"
+              :disabled="!canProceed || isProcessing"
+              @click="handleNextOrFinish"
+            >
+              <span v-if="isProcessing" class="flex items-center">
+                <Spinner size="sm" class="mr-2" />
+                {{ isLastStep ? 'Saving...' : 'Processing...' }}
+              </span>
+              <span v-else class="flex items-center">
+                {{ primaryActionLabel }}
+                <ArrowRight v-if="!isLastStep" class="w-4 h-4 ml-2" />
+              </span>
+            </BaseButton>
+
+            <BaseButton variant="secondary" @click="$emit('cancel')"> Cancel </BaseButton>
+          </template>
         </div>
       </div>
     </div>
@@ -174,6 +273,9 @@ interface WizardStep {
 interface Props {
   steps: WizardStep[]
   currentStepIndex: number
+  stepContext?: Record<number, string[]>
+  allowStepJump?: boolean
+  maxStepJumpIndex?: number
   canProceed?: boolean
   isProcessing?: boolean
   isTestingConnection?: boolean
@@ -183,6 +285,9 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  stepContext: () => ({}),
+  allowStepJump: false,
+  maxStepJumpIndex: -1,
   canProceed: true,
   isProcessing: false,
   isTestingConnection: false,
@@ -194,6 +299,7 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   'next-step': []
   'previous-step': []
+  'go-to-step': [stepIndex: number]
   finish: []
   'quick-save': []
   test: []
@@ -203,12 +309,41 @@ const emit = defineEmits<{
 const currentStep = computed(() => props.steps[props.currentStepIndex])
 const canGoBack = computed(() => props.currentStepIndex > 0)
 const isLastStep = computed(() => props.currentStepIndex === props.steps.length - 1)
+const isStreamEditFinalStep = computed(
+  () => props.wizardType === 'stream' && isLastStep.value && props.isEditMode
+)
+const primaryActionLabel = computed(() => {
+  if (!isLastStep.value) {
+    return 'Next'
+  }
+  if (props.isEditMode) {
+    return props.wizardType === 'stream' ? 'Update Stream' : 'Update Connection'
+  }
+  return props.wizardType === 'stream' ? 'Create Stream' : 'Create Connection'
+})
 const contentContainerClass = computed(() => {
   if (props.wizardType === 'stream') {
     return 'flex flex-col flex-1 min-h-0'
   }
   return 'bg-white dark:bg-gray-850 rounded-lg p-6 shadow-lg dark:shadow-gray-900/30 flex flex-col flex-1 min-h-0'
 })
+
+function canJumpToStep(stepIndex: number): boolean {
+  if (!props.allowStepJump || props.isProcessing || stepIndex === props.currentStepIndex) {
+    return false
+  }
+
+  const maxStep =
+    props.maxStepJumpIndex >= 0 ? props.maxStepJumpIndex : Math.max(0, props.currentStepIndex - 1)
+  return stepIndex <= maxStep
+}
+
+function handleStepClick(stepIndex: number) {
+  if (!canJumpToStep(stepIndex)) {
+    return
+  }
+  emit('go-to-step', stepIndex)
+}
 
 function goToPreviousStep() {
   if (canGoBack.value) {

@@ -130,109 +130,135 @@
       </div>
     </div>
 
-    <!-- Performance & Monitoring + Execution Limits -->
-    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-      <!-- Performance & Monitoring Section -->
-      <div
-        class="bg-white dark:bg-gray-850 rounded-xl border border-gray-100 dark:border-gray-700 p-6 shadow-sm dark:shadow-gray-900/30"
-      >
-        <h4 class="text-base font-medium text-gray-900 dark:text-gray-100 mb-4">
-          Performance & Monitoring
-        </h4>
-        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
-          <!-- Data Bundle Size -->
-          <div>
-            <label
-              for="dataBundleSize"
-              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-              >Data Bundle Size</label
-            >
-            <input
-              id="dataBundleSize"
-              v-model.number="dataBundleSize"
-              type="number"
-              min="10"
-              max="1000"
-              class="block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 bg-white dark:bg-gray-900 focus:border-teal-500 dark:focus:border-teal-400 focus:ring-1 focus:ring-teal-500 dark:focus:ring-teal-400 sm:text-sm"
-              placeholder="10-1000"
-            />
-            <p
-              v-if="dataBundleSize < 10 || dataBundleSize > 1000"
-              class="mt-1 text-xs text-red-600 dark:text-red-300"
-            >
-              Value must be 10-1000
-            </p>
-          </div>
+    <!-- Execution Performance + Safety Limits -->
+    <div class="space-y-2">
+      <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <!-- Execution Performance Section -->
+        <div
+          class="bg-white dark:bg-gray-850 rounded-xl border border-gray-100 dark:border-gray-700 p-6 shadow-sm dark:shadow-gray-900/30"
+        >
+          <h4 class="text-base font-medium text-gray-900 dark:text-gray-100 mb-4">
+            Execution Performance
+          </h4>
+          <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <!-- Data Bundle Size -->
+            <div>
+              <label
+                for="dataBundleSize"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >Data bundle size</label
+              >
+              <input
+                id="dataBundleSize"
+                :value="dataBundleSizeDraft"
+                type="number"
+                min="10"
+                max="1000"
+                step="10"
+                class="block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 bg-white dark:bg-gray-900 focus:border-teal-500 dark:focus:border-teal-400 focus:ring-1 focus:ring-teal-500 dark:focus:ring-teal-400 sm:text-sm"
+                placeholder="10-1000"
+                @focus="isEditingDataBundleSize = true"
+                @input="onDataBundleSizeInput"
+                @blur="onDataBundleSizeBlur"
+              />
+              <p
+                v-if="isDataBundleSizeOutOfRange"
+                class="mt-1 text-xs text-red-600 dark:text-red-300"
+              >
+                Value must be between 10 and 1000
+              </p>
+              <p v-else class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Allowed range: 10-1000
+              </p>
+            </div>
 
-          <!-- Reporting Interval -->
-          <div>
-            <label
-              for="readerReportingInterval"
-              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-              >Reporting Interval (sec)</label
-            >
-            <input
-              id="readerReportingInterval"
-              v-model="reportingInterval"
-              type="number"
-              class="block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900 focus:border-teal-500 dark:focus:border-teal-400 focus:ring-1 focus:ring-teal-500 dark:focus:ring-teal-400 sm:text-sm"
-            />
+            <!-- Reporting Interval -->
+            <div>
+              <label
+                for="readerReportingInterval"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >Reporting interval (sec)</label
+              >
+              <input
+                id="readerReportingInterval"
+                v-model.number="reportingInterval"
+                type="number"
+                min="1"
+                class="block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900 focus:border-teal-500 dark:focus:border-teal-400 focus:ring-1 focus:ring-teal-500 dark:focus:ring-teal-400 sm:text-sm"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Safety Limits Section -->
+        <div
+          class="bg-white dark:bg-gray-850 rounded-xl border border-gray-100 dark:border-gray-700 p-6 shadow-sm dark:shadow-gray-900/30"
+        >
+          <h4 class="text-base font-medium text-gray-900 dark:text-gray-100 mb-4">Safety Limits</h4>
+          <div class="space-y-4">
+            <div class="rounded-lg border border-gray-200 dark:border-gray-700 p-3">
+              <FormSwitch
+                v-model="isRowsLimitEnabled"
+                label="Limit rows"
+                :description="`${numberOfEventsLabel}. 0 means unlimited.`"
+              />
+              <div v-if="isRowsLimitEnabled" class="mt-3">
+                <label
+                  for="numberOfEvents"
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  {{ numberOfEventsLabel }}
+                </label>
+                <input
+                  id="numberOfEvents"
+                  v-model.number="limitsNumberOfEvents"
+                  type="number"
+                  min="1"
+                  class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 bg-white dark:bg-gray-900 focus:border-teal-500 dark:focus:border-teal-400 focus:ring-1 focus:ring-teal-500 dark:focus:ring-teal-400 sm:text-sm"
+                  placeholder="0 (unlimited)"
+                  @input="onRowsLimitInput"
+                />
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  {{ numberOfEventsDescription }}
+                </p>
+              </div>
+            </div>
+
+            <div class="rounded-lg border border-gray-200 dark:border-gray-700 p-3">
+              <FormSwitch
+                v-model="isExecutionTimeLimitEnabled"
+                label="Limit execution time"
+                description="Maximum allowed stream run duration. 0 means unlimited."
+              />
+              <div v-if="isExecutionTimeLimitEnabled" class="mt-3">
+                <label
+                  for="elapsedTime"
+                  class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  Maximum execution time (seconds)
+                </label>
+                <input
+                  id="elapsedTime"
+                  v-model.number="limitsElapsedTime"
+                  type="number"
+                  min="1"
+                  class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 bg-white dark:bg-gray-900 focus:border-teal-500 dark:focus:border-teal-400 focus:ring-1 focus:ring-teal-500 dark:focus:ring-teal-400 sm:text-sm"
+                  placeholder="0 (unlimited)"
+                  @input="onElapsedLimitInput"
+                />
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Optional safety limit</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-
-      <!-- Limits Section -->
-      <div
-        class="bg-white dark:bg-gray-850 rounded-xl border border-gray-100 dark:border-gray-700 p-6 shadow-sm dark:shadow-gray-900/30"
-      >
-        <h4 class="text-base font-medium text-gray-900 dark:text-gray-100 mb-4">
-          Execution Limits
-        </h4>
-        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
-          <div>
-            <label
-              for="numberOfEvents"
-              class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-              >{{ numberOfEventsLabel }}</label
-            >
-            <div class="mt-1">
-              <input
-                id="numberOfEvents"
-                v-model="limitsNumberOfEvents"
-                type="number"
-                class="block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 bg-white dark:bg-gray-900 focus:border-teal-500 dark:focus:border-teal-400 focus:ring-1 focus:ring-teal-500 dark:focus:ring-teal-400 sm:text-sm"
-                placeholder="0"
-              />
-            </div>
-            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              {{ numberOfEventsDescription }}
-            </p>
-          </div>
-          <div>
-            <label
-              for="elapsedTime"
-              class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-              >Maximum execution time (seconds)</label
-            >
-            <div class="mt-1">
-              <input
-                id="elapsedTime"
-                v-model="limitsElapsedTime"
-                type="number"
-                class="block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 bg-white dark:bg-gray-900 focus:border-teal-500 dark:focus:border-teal-400 focus:ring-1 focus:ring-teal-500 dark:focus:ring-teal-400 sm:text-sm"
-                placeholder="0"
-              />
-            </div>
-            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Optional safety limit</p>
-          </div>
-        </div>
-      </div>
+      <p class="text-xs text-gray-500 dark:text-gray-400">These limits apply per stream run.</p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { Cloud } from 'lucide-vue-next'
 import { useStreamsStore, defaultStreamConfigOptions } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
@@ -246,6 +272,11 @@ import { getConnectionKindFromSpec, isFileBasedKind } from '@/types/specs'
 
 const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
+const DEFAULT_DATA_BUNDLE_SIZE = 500
+const MIN_DATA_BUNDLE_SIZE = 10
+const MAX_DATA_BUNDLE_SIZE = 1000
+const DEFAULT_ROWS_LIMIT = 100000
+const DEFAULT_EXECUTION_TIME_LIMIT_SECONDS = 3600
 
 // Use computed to ensure reactivity with the store's current stream config
 const currentStreamConfig = computed(() => streamsStore.currentStreamConfig as StreamConfig)
@@ -475,18 +506,48 @@ const dataBundleSize = computed<number>({
     return (
       currentStreamConfig.value?.source?.options?.dataBundleSize ??
       defaultStreamConfigOptions.source.options!.dataBundleSize ??
-      500
+      DEFAULT_DATA_BUNDLE_SIZE
     )
   },
   set: (newValue) => {
-    const clampedValue = Math.min(Math.max(newValue, 10), 1000)
+    const normalizedValue = Number.isFinite(newValue)
+      ? Math.floor(newValue)
+      : DEFAULT_DATA_BUNDLE_SIZE
     const config = currentStreamConfig.value
     if (!config) return
     if (!config.source.options) {
       config.source.options = {}
     }
-    config.source.options.dataBundleSize = clampedValue
+    config.source.options.dataBundleSize = normalizedValue
   }
+})
+
+const dataBundleSizeDraft = ref('')
+const isEditingDataBundleSize = ref(false)
+
+watch(
+  dataBundleSize,
+  (value) => {
+    if (!isEditingDataBundleSize.value) {
+      dataBundleSizeDraft.value = String(value)
+    }
+  },
+  { immediate: true }
+)
+
+const parsedDataBundleSizeDraft = computed<number | null>(() => {
+  const parsed = Number.parseInt(dataBundleSizeDraft.value, 10)
+  return Number.isFinite(parsed) ? parsed : null
+})
+
+const isDataBundleSizeOutOfRange = computed(() => {
+  if (parsedDataBundleSizeDraft.value === null) {
+    return false
+  }
+  return (
+    parsedDataBundleSizeDraft.value < MIN_DATA_BUNDLE_SIZE ||
+    parsedDataBundleSizeDraft.value > MAX_DATA_BUNDLE_SIZE
+  )
 })
 
 // Single reporting interval for both source and target
@@ -520,7 +581,8 @@ const limitsNumberOfEvents = computed<number>({
     if (!config.limits) {
       config.limits = {}
     }
-    config.limits.numberOfEvents = value
+    const normalizedValue = Number.isFinite(value) ? value : 0
+    config.limits.numberOfEvents = Math.max(0, Math.floor(normalizedValue))
   }
 })
 
@@ -538,7 +600,8 @@ const limitsElapsedTime = computed<number>({
     if (!config.limits) {
       config.limits = {}
     }
-    config.limits.elapsedTime = value
+    const normalizedValue = Number.isFinite(value) ? value : 0
+    config.limits.elapsedTime = Math.max(0, Math.floor(normalizedValue))
   }
 })
 
@@ -554,4 +617,111 @@ const numberOfEventsDescription = computed(() => {
     ? 'Total rows copied from all tables'
     : 'INSERT + UPDATE + DELETE counted as events'
 })
+
+const lastRowsLimitValue = ref(DEFAULT_ROWS_LIMIT)
+const lastExecutionTimeLimitValue = ref(DEFAULT_EXECUTION_TIME_LIMIT_SECONDS)
+
+watch(
+  limitsNumberOfEvents,
+  (value) => {
+    if (value > 0) {
+      lastRowsLimitValue.value = value
+    }
+  },
+  { immediate: true }
+)
+
+watch(
+  limitsElapsedTime,
+  (value) => {
+    if (value > 0) {
+      lastExecutionTimeLimitValue.value = value
+    }
+  },
+  { immediate: true }
+)
+
+const isRowsLimitEnabled = computed<boolean>({
+  get: () => limitsNumberOfEvents.value > 0,
+  set: (enabled) => {
+    if (enabled) {
+      limitsNumberOfEvents.value = Math.max(1, lastRowsLimitValue.value || DEFAULT_ROWS_LIMIT)
+      return
+    }
+    if (limitsNumberOfEvents.value > 0) {
+      lastRowsLimitValue.value = limitsNumberOfEvents.value
+    }
+    limitsNumberOfEvents.value = 0
+  }
+})
+
+const isExecutionTimeLimitEnabled = computed<boolean>({
+  get: () => limitsElapsedTime.value > 0,
+  set: (enabled) => {
+    if (enabled) {
+      limitsElapsedTime.value = Math.max(
+        1,
+        lastExecutionTimeLimitValue.value || DEFAULT_EXECUTION_TIME_LIMIT_SECONDS
+      )
+      return
+    }
+    if (limitsElapsedTime.value > 0) {
+      lastExecutionTimeLimitValue.value = limitsElapsedTime.value
+    }
+    limitsElapsedTime.value = 0
+  }
+})
+
+function normalizePositiveInteger(value: number, fallback = 1): number {
+  if (!Number.isFinite(value)) {
+    return fallback
+  }
+  return Math.max(1, Math.floor(value))
+}
+
+function onDataBundleSizeInput(event: Event) {
+  const target = event.target as HTMLInputElement
+  dataBundleSizeDraft.value = target.value
+  const parsed = Number.parseInt(target.value, 10)
+  if (Number.isFinite(parsed)) {
+    dataBundleSize.value = parsed
+  }
+}
+
+function onDataBundleSizeBlur(event: Event) {
+  isEditingDataBundleSize.value = false
+  const target = event.target as HTMLInputElement
+  const parsed = Number.parseInt(dataBundleSizeDraft.value, 10)
+  if (Number.isFinite(parsed)) {
+    dataBundleSize.value = parsed
+  }
+  dataBundleSizeDraft.value = String(dataBundleSize.value)
+  target.value = dataBundleSizeDraft.value
+}
+
+function onRowsLimitInput(event: Event) {
+  const target = event.target as HTMLInputElement
+  const parsed = Number.parseInt(target.value, 10)
+  if (!Number.isFinite(parsed)) {
+    return
+  }
+  const normalized = normalizePositiveInteger(parsed, DEFAULT_ROWS_LIMIT)
+  limitsNumberOfEvents.value = normalized
+  if (normalized !== parsed) {
+    target.value = String(normalized)
+  }
+}
+
+function onElapsedLimitInput(event: Event) {
+  const target = event.target as HTMLInputElement
+  const parsed = Number.parseInt(target.value, 10)
+  if (!Number.isFinite(parsed)) {
+    return
+  }
+  const normalized = normalizePositiveInteger(parsed, DEFAULT_EXECUTION_TIME_LIMIT_SECONDS)
+  limitsElapsedTime.value = normalized
+  if (normalized !== parsed) {
+    target.value = String(normalized)
+  }
+}
 </script>

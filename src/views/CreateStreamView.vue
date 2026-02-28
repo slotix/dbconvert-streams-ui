@@ -35,12 +35,16 @@
         <WizardLayout
           :steps="wizard.steps"
           :current-step-index="wizard.currentStepIndex.value"
-          :can-proceed="wizard.canProceed.value"
+          :step-context="wizardStepContext"
+          allow-step-jump
+          :max-step-jump-index="maxStepJumpIndex"
+          :can-proceed="wizard.canProceed.value && canProceedOverride"
           :is-processing="isProcessing"
           :is-edit-mode="isEditMode"
           wizard-type="stream"
           @next-step="handleNextStep"
           @previous-step="wizard.previousStep"
+          @go-to-step="handleGoToStep"
           @finish="handleFinish"
           @quick-save="handleQuickSave"
           @cancel="cancelWizard"
@@ -200,6 +204,10 @@ const commonStore = useCommonStore()
 const isProcessing = ref(false)
 const canProceedOverride = ref(true)
 const showExitConfirm = ref(false)
+const maxReachedStepIndex = ref(0)
+const maxStepJumpIndex = computed(() =>
+  isEditMode.value ? Math.max(0, wizard.steps.length - 1) : maxReachedStepIndex.value
+)
 
 // Get stream ID from props or route params
 const streamId = computed(() => props.id || (route.params.id as string))
@@ -210,6 +218,42 @@ const hasAnySelection = computed(
 )
 const showStepOneSelectionFooter = computed(
   () => wizard.currentStepIndex.value === 0 && hasAnySelection.value
+)
+
+const selectedTablesCount = computed(() => {
+  const config = streamsStore.currentStreamConfig
+  if (!config) return 0
+
+  const selectedFiles = config.files?.filter((file) => file.selected).length || 0
+  if (selectedFiles > 0) {
+    return selectedFiles
+  }
+
+  let selectedTables = 0
+  for (const connection of config.source?.connections || []) {
+    if (connection.tables) {
+      selectedTables += connection.tables.filter((table) => table.selected !== false).length
+    }
+  }
+  return selectedTables
+})
+
+const wizardStepContext = computed<Record<number, string[]>>(() => {
+  const mode = streamsStore.currentStreamConfig?.mode === 'cdc' ? 'CDC' : 'Convert'
+  return {
+    2: [`Mode: ${mode}`, `Tables: ${selectedTablesCount.value}`]
+  }
+})
+
+watch(
+  () => wizard.currentStepIndex.value,
+  (index) => {
+    if (index > maxReachedStepIndex.value) {
+      maxReachedStepIndex.value = index
+    }
+    canProceedOverride.value = true
+  },
+  { immediate: true }
 )
 
 function getConnectionDisplayName(connectionId?: string | null): string {
@@ -610,6 +654,16 @@ function goToAddConnection(paneType: 'source' | 'target') {
 
 async function handleNextStep() {
   wizard.nextStep()
+}
+
+function handleGoToStep(stepIndex: number) {
+  if (
+    stepIndex !== wizard.currentStepIndex.value &&
+    stepIndex >= 0 &&
+    stepIndex <= maxStepJumpIndex.value
+  ) {
+    wizard.goToStep(stepIndex)
+  }
 }
 
 async function handleFinish() {
