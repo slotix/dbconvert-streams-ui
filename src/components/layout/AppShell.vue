@@ -4,6 +4,12 @@
 
     <ApiKeyExpiredBanner :show="showExpiredBanner" @dismiss="dismissBanner" />
 
+    <DegradedModeBanner
+      :show="showDegradedBanner"
+      :message="degradedMessage"
+      @dismiss="dismissDegradedBanner"
+    />
+
     <InitializingOverlay :show="isInitializing" />
 
     <SidebarMobile v-model:open="sidebarOpen" />
@@ -58,6 +64,7 @@ import { useAppInitialization } from '@/composables/useAppInitialization'
 import { useApiKeyBanner } from '@/composables/useApiKeyBanner'
 import { useStatusFavicon } from '@/composables/useStatusFavicon'
 import ApiKeyExpiredBanner from '@/components/layout/ApiKeyExpiredBanner.vue'
+import DegradedModeBanner from '@/components/layout/DegradedModeBanner.vue'
 import InitializingOverlay from '@/components/layout/InitializingOverlay.vue'
 import SidebarMobile from '@/components/layout/SidebarMobile.vue'
 import SidebarDesktop from '@/components/layout/SidebarDesktop.vue'
@@ -98,6 +105,34 @@ watchEffect(() => {
 const { isInitializing, initialize } = useAppInitialization()
 const { showExpiredBanner, dismissBanner } = useApiKeyBanner()
 const { statusText, showStatusDot } = useStatusFavicon({ baseTitle: 'DBConvert Streams' })
+
+const degradedDismissed = ref(false)
+const showDegradedBanner = computed(
+  () =>
+    !isInitializing.value &&
+    commonStore.isBackendConnected &&
+    !commonStore.sentryHealthy &&
+    !degradedDismissed.value
+)
+const degradedMessage = computed(() => {
+  if (!commonStore.sentryHealthy) {
+    return 'Sentry is unreachable — some features may be limited.'
+  }
+  return ''
+})
+const dismissDegradedBanner = () => {
+  degradedDismissed.value = true
+}
+
+// Auto-dismiss when sentry recovers, and re-show if it goes down again
+watch(
+  () => commonStore.sentryHealthy,
+  (healthy) => {
+    if (healthy) {
+      degradedDismissed.value = false
+    }
+  }
+)
 
 const showAboutDialog = ref(false)
 const handleShowAbout = () => {
