@@ -240,7 +240,12 @@
           <!-- JSON View -->
           <TabPanel>
             <div class="p-4">
-              <JsonViewer :json="configJson" title="Stream Configuration" height="400px" compact />
+              <JsonViewer
+                :json="configJson"
+                title="Stream Configuration"
+                height="min(70vh, 720px)"
+                compact
+              />
             </div>
           </TabPanel>
         </TabPanels>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import CopyButton from '@/components/common/CopyButton.vue'
+import JsonCodeMirror from '@/components/codemirror/JsonCodeMirror.vue'
 
 interface Props {
   json: string | object
@@ -43,13 +44,7 @@ const jsonString = computed(() => {
     </div>
 
     <div class="bg-white dark:bg-gray-900">
-      <pre
-        :class="[
-          'm-0 p-4 overflow-auto text-sm leading-6 font-mono text-gray-800 dark:text-gray-200',
-          compact ? 'whitespace-pre' : 'whitespace-pre-wrap break-words'
-        ]"
-        :style="{ height }"
-      ><code>{{ jsonString }}</code></pre>
+      <JsonCodeMirror :model-value="jsonString" :height="height" read-only :resizable="false" />
     </div>
   </div>
 </template>
