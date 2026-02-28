@@ -1,5 +1,5 @@
 <template>
-  <div class="flex h-full min-h-0 flex-col gap-6">
+  <div class="flex h-full min-h-0 flex-col gap-4">
     <!-- Data Transfer Mode Section -->
     <div class="shrink-0">
       <ModeButtons :disabled-mode-ids="disabledModeIds" :disabled-reasons="modeDisabledReasons" />
@@ -156,7 +156,7 @@
     </div>
 
     <!-- Structure Options Section - Only show for database targets -->
-    <div v-if="isTargetDatabase" class="shrink-0">
+    <div v-if="isTargetDatabase" class="shrink-0 overflow-visible">
       <!-- Warning when nothing is selected -->
       <div
         v-if="!anyStructureEnabled && !copyData"
@@ -183,10 +183,11 @@
         </div>
       </div>
 
-      <div class="space-y-4">
-        <!-- Create Structure Checkbox (Master) -->
-        <div class="relative flex items-start">
-          <div class="flex items-center h-5">
+      <div class="grid grid-cols-2 gap-4 overflow-visible">
+        <!-- Create Structure Column -->
+        <div class="rounded-lg border border-gray-200 dark:border-gray-700 p-4 overflow-visible">
+          <!-- Checkbox Header -->
+          <div class="flex items-center gap-2.5">
             <input
               id="create-structure"
               v-model="createStructure"
@@ -194,169 +195,140 @@
               class="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
               @change="handleStructureToggle"
             />
-          </div>
-          <div class="ml-3 text-sm">
             <label
               for="create-structure"
-              class="font-medium text-gray-900 dark:text-gray-100 cursor-pointer"
+              class="text-sm font-semibold text-gray-900 dark:text-gray-100 cursor-pointer"
             >
               Create structure
             </label>
-            <!-- Helper text for file sources -->
-            <p
-              v-if="isFileSourceConnection"
-              class="text-xs text-gray-500 dark:text-gray-400 mt-0.5"
-            >
-              Table structure will be inferred from file schema
-            </p>
           </div>
-        </div>
 
-        <!-- Advanced Structure Options (Expandable) -->
-        <div v-if="createStructure && !isFileSourceConnection" class="ml-7 mt-3">
-          <button
-            type="button"
-            class="flex items-center text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 focus:outline-none"
-            @click="showAdvanced = !showAdvanced"
+          <!-- Helper text for file sources -->
+          <p
+            v-if="isFileSourceConnection"
+            class="mt-1.5 ml-6.5 text-xs text-gray-500 dark:text-gray-400"
           >
-            <svg
-              class="h-4 w-4 mr-1 transition-transform"
-              :class="{ 'rotate-90': showAdvanced }"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 5l7 7-7 7"
-              />
-            </svg>
-            <span class="font-medium">Advanced structure options</span>
-          </button>
+            Table structure will be inferred from file schema
+          </p>
 
-          <!-- Granular Structure Options -->
-          <div
-            v-if="showAdvanced"
-            class="mt-3 pl-5 space-y-3 border-l-2 border-gray-200 dark:border-gray-700"
-          >
-            <!-- Create Tables -->
-            <div class="relative flex items-start">
-              <div class="flex items-center h-5">
-                <input
-                  id="create-tables"
-                  v-model="createTables"
-                  type="checkbox"
-                  class="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
-                  :disabled="isFileSourceConnection"
-                  @change="handleOptionsChange"
-                />
-              </div>
-              <div class="ml-3 text-sm">
-                <label
-                  for="create-tables"
-                  class="font-medium text-gray-700 dark:text-gray-300 cursor-pointer"
+          <!-- Content area -->
+          <div class="mt-3 space-y-3">
+            <!-- Advanced Structure Options (Expandable) -->
+            <div v-if="createStructure && !isFileSourceConnection">
+              <button
+                type="button"
+                class="flex items-center text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 focus:outline-none"
+                @click="showAdvanced = !showAdvanced"
+              >
+                <svg
+                  class="h-3.5 w-3.5 mr-1 transition-transform"
+                  :class="{ 'rotate-90': showAdvanced }"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
                 >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+                <span class="font-medium">Advanced options</span>
+              </button>
+
+              <div
+                v-if="showAdvanced"
+                class="mt-2 pl-4 space-y-2 border-l-2 border-gray-200 dark:border-gray-700"
+              >
+                <label
+                  class="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300 cursor-pointer"
+                >
+                  <input
+                    id="create-tables"
+                    v-model="createTables"
+                    type="checkbox"
+                    class="h-3.5 w-3.5 text-teal-600 focus:ring-teal-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
+                    :disabled="isFileSourceConnection"
+                    @change="handleOptionsChange"
+                  />
                   Tables
                 </label>
-              </div>
-            </div>
-
-            <!-- Create Indexes -->
-            <div class="relative flex items-start">
-              <div class="flex items-center h-5">
-                <input
-                  id="create-indexes"
-                  v-model="createIndexes"
-                  type="checkbox"
-                  class="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
-                  :disabled="isFileSourceConnection"
-                  @change="handleOptionsChange"
-                />
-              </div>
-              <div class="ml-3 text-sm">
                 <label
-                  for="create-indexes"
-                  class="font-medium text-gray-700 dark:text-gray-300 cursor-pointer"
+                  class="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300 cursor-pointer"
                 >
+                  <input
+                    id="create-indexes"
+                    v-model="createIndexes"
+                    type="checkbox"
+                    class="h-3.5 w-3.5 text-teal-600 focus:ring-teal-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
+                    :disabled="isFileSourceConnection"
+                    @change="handleOptionsChange"
+                  />
                   Indexes
                 </label>
-              </div>
-            </div>
-
-            <!-- Create Foreign Keys -->
-            <div class="relative flex items-start">
-              <div class="flex items-center h-5">
-                <input
-                  id="create-foreign-keys"
-                  v-model="createForeignKeys"
-                  type="checkbox"
-                  class="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
-                  :disabled="isFileSourceConnection"
-                  @change="handleOptionsChange"
-                />
-              </div>
-              <div class="ml-3 text-sm">
                 <label
-                  for="create-foreign-keys"
-                  class="font-medium text-gray-700 dark:text-gray-300 cursor-pointer"
+                  class="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300 cursor-pointer"
                 >
+                  <input
+                    id="create-foreign-keys"
+                    v-model="createForeignKeys"
+                    type="checkbox"
+                    class="h-3.5 w-3.5 text-teal-600 focus:ring-teal-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
+                    :disabled="isFileSourceConnection"
+                    @change="handleOptionsChange"
+                  />
                   Foreign keys
                 </label>
-              </div>
-            </div>
-
-            <!-- Create Check Constraints -->
-            <div class="relative flex items-start">
-              <div class="flex items-center h-5">
-                <input
-                  id="create-check-constraints"
-                  v-model="createCheckConstraints"
-                  type="checkbox"
-                  class="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
-                  :disabled="isFileSourceConnection"
-                  @change="handleOptionsChange"
-                />
-              </div>
-              <div class="ml-3 text-sm">
                 <label
-                  for="create-check-constraints"
-                  class="font-medium text-gray-700 dark:text-gray-300 cursor-pointer"
+                  class="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300 cursor-pointer"
                 >
+                  <input
+                    id="create-check-constraints"
+                    v-model="createCheckConstraints"
+                    type="checkbox"
+                    class="h-3.5 w-3.5 text-teal-600 focus:ring-teal-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
+                    :disabled="isFileSourceConnection"
+                    @change="handleOptionsChange"
+                  />
                   Check constraints
                 </label>
               </div>
             </div>
+
+            <!-- Schema Policy -->
+            <div
+              v-if="isPolicySupportedTarget"
+              class="pt-2 border-t border-gray-200/60 dark:border-gray-700/60"
+            >
+              <FormSelect
+                :model-value="schemaPolicy"
+                label="Schema policy"
+                :options="schemaPolicyOptions"
+                :disabled="!createStructure"
+                compact
+                placement="top"
+                @change="onSchemaPolicyChange"
+              />
+              <p
+                class="mt-1.5 text-[11px] leading-relaxed text-gray-500 dark:text-gray-400 flex items-start gap-1.5"
+              >
+                <span
+                  :class="[
+                    'inline-block w-1.5 h-1.5 rounded-full shrink-0 mt-[5px]',
+                    schemaPolicyDotColor
+                  ]"
+                />
+                {{ schemaPolicyDescription }}
+              </p>
+            </div>
           </div>
         </div>
 
-        <div
-          v-if="isPolicySupportedTarget"
-          class="ml-7 mt-3 space-y-4 rounded-md border border-gray-200 dark:border-gray-700 p-4"
-        >
-          <FormSelect
-            :model-value="schemaPolicy"
-            label="Schema policy"
-            :options="schemaPolicyOptions"
-            :disabled="!createStructure"
-            :helper-text="schemaPolicyHelpText"
-            @change="onSchemaPolicyChange"
-          />
-
-          <FormSelect
-            :model-value="writeMode"
-            label="Write mode"
-            :options="writeModeOptions"
-            :disabled="isWriteModeLocked || !copyData"
-            :helper-text="writeModeHelpText"
-            @change="onWriteModeChange"
-          />
-        </div>
-
-        <!-- Copy Data Checkbox -->
-        <div class="relative flex items-start">
-          <div class="flex items-center h-5">
+        <!-- Copy Data Column -->
+        <div class="rounded-lg border border-gray-200 dark:border-gray-700 p-4 overflow-visible">
+          <!-- Checkbox Header -->
+          <div class="flex items-center gap-2.5">
             <input
               id="copy-data"
               v-model="copyData"
@@ -364,14 +336,54 @@
               class="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
               @change="handleOptionsChange"
             />
-          </div>
-          <div class="ml-3 text-sm">
             <label
               for="copy-data"
-              class="font-medium text-gray-900 dark:text-gray-100 cursor-pointer"
+              class="text-sm font-semibold text-gray-900 dark:text-gray-100 cursor-pointer"
             >
               Copy data
             </label>
+          </div>
+
+          <!-- Content area -->
+          <div class="mt-3">
+            <!-- Write Mode -->
+            <div
+              v-if="isPolicySupportedTarget"
+              class="pt-2 border-t border-gray-200/60 dark:border-gray-700/60"
+            >
+              <FormSelect
+                :model-value="writeMode"
+                label="Write mode"
+                :options="writeModeOptions"
+                :disabled="isWriteModeLocked || !copyData"
+                compact
+                placement="top"
+                @change="onWriteModeChange"
+              />
+              <p
+                class="mt-1.5 text-[11px] leading-relaxed text-gray-500 dark:text-gray-400 flex items-start gap-1.5"
+              >
+                <span
+                  :class="[
+                    'inline-block w-1.5 h-1.5 rounded-full shrink-0 mt-[5px]',
+                    writeModeDotColor
+                  ]"
+                />
+                {{ writeModeDescription }}
+              </p>
+
+              <!-- Append warning -->
+              <div
+                v-if="writeMode === 'append' && copyData && !isWriteModeLocked"
+                class="mt-2 rounded-md bg-yellow-50 dark:bg-amber-900/30 border border-yellow-200 dark:border-amber-500/50 px-2.5 py-2"
+              >
+                <p class="text-[11px] leading-relaxed text-yellow-800 dark:text-amber-200">
+                  Append uses plain INSERT and keeps existing rows. If target tables have
+                  primary/unique keys, duplicate-key errors are likely. For reruns, prefer
+                  <strong>Upsert</strong> or <strong>Truncate and load</strong>.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -732,21 +744,66 @@ const writeModeOptions = computed<Array<{ value: WriteMode; label: string }>>(()
 
 const isWriteModeLocked = computed(() => currentMode.value === 'cdc')
 
-const schemaPolicyHelpText = computed(() => {
+const schemaPolicyDescriptions: Record<SchemaPolicy, { dot: string; text: string }> = {
+  fail_if_exists: {
+    dot: 'bg-green-500',
+    text: 'Raises an error if any target table already exists. Safest option for first-time runs.'
+  },
+  validate_existing: {
+    dot: 'bg-yellow-500',
+    text: 'Uses existing target tables as-is. Schema compatibility will be verified.'
+  },
+  create_missing_only: {
+    dot: 'bg-yellow-500',
+    text: "Creates only tables that don't exist yet. Existing tables are left unchanged."
+  },
+  drop_and_recreate: {
+    dot: 'bg-red-500',
+    text: 'Drops and recreates all target tables from source schema. All existing target data will be lost.'
+  }
+}
+
+const writeModeDescriptions: Record<WriteMode, { dot: string; text: string }> = {
+  fail_if_not_empty: {
+    dot: 'bg-green-500',
+    text: 'Raises an error if any target table already contains data. Safest option for first-time loads.'
+  },
+  append: { dot: 'bg-yellow-500', text: 'Adds source data to existing rows using plain INSERT.' },
+  truncate_and_load: {
+    dot: 'bg-red-500',
+    text: 'Deletes all existing rows before loading. Target tables are emptied first.'
+  },
+  upsert: {
+    dot: 'bg-green-500',
+    text: 'Updates matching rows by primary key, inserts new ones. Safe for reruns.'
+  }
+}
+
+const schemaPolicyDescription = computed(() => {
   if (!createStructure.value) {
     return 'Ignored when structure creation is disabled.'
   }
-  return 'Controls how existing target tables are handled before structure creation.'
+  return schemaPolicyDescriptions[schemaPolicy.value]?.text ?? ''
 })
 
-const writeModeHelpText = computed(() => {
+const schemaPolicyDotColor = computed(() => {
+  if (!createStructure.value) return 'bg-gray-400'
+  return schemaPolicyDescriptions[schemaPolicy.value]?.dot ?? 'bg-gray-400'
+})
+
+const writeModeDescription = computed(() => {
   if (!copyData.value) {
     return 'Ignored when data copy is disabled.'
   }
   if (isWriteModeLocked.value) {
     return 'CDC requires upsert to keep target rows synchronized.'
   }
-  return 'Controls how rows are written when target tables already contain data.'
+  return writeModeDescriptions[writeMode.value]?.text ?? ''
+})
+
+const writeModeDotColor = computed(() => {
+  if (!copyData.value || isWriteModeLocked.value) return 'bg-gray-400'
+  return writeModeDescriptions[writeMode.value]?.dot ?? 'bg-gray-400'
 })
 
 watch(
