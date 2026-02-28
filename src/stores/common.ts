@@ -554,7 +554,6 @@ export const useCommonStore = defineStore('common', {
               // the disconnected overlay for deactivated/seat/payment states.
               this.setBackendConnected(true)
               this.apiHealthy = true
-              this.sentryHealthy = true
               this.clearError()
               this.startHealthMonitoring()
               return 'failed'
@@ -568,36 +567,13 @@ export const useCommonStore = defineStore('common', {
             return 'failed'
           }
         } else if (this.apiHealthy) {
-          // Backend API is healthy but the optional Sentry service might not be.
-          // /user is served by the backend, so we can still load evaluation/account data.
-          console.log('Backend API healthy, attempting initialization without Sentry')
-          try {
-            await this.userDataFromSentry(apiKey)
-            this.apiKeyInvalidated = false
-            this.setBackendConnected(true)
-            this.clearError()
-
-            // Start real-time health monitoring
-            this.startHealthMonitoring()
-
-            return 'success'
-          } catch (error: unknown) {
-            const errMsg = error instanceof Error ? error.message : String(error)
-            const axiosErr = axios.isAxiosError(error) ? error : null
-            const permissionError = getPermissionError(error)
-            if (permissionError) {
-              this.setBackendConnected(true)
-              this.apiHealthy = true
-              this.sentryHealthy = true
-              this.clearError()
-              this.startHealthMonitoring()
-              return 'failed'
-            }
-            if (axiosErr?.response?.status === 401 || errMsg === 'Invalid API key') {
-              throw error
-            }
-            console.warn('Failed to initialize without Sentry:', errMsg)
-          }
+          // Backend API is healthy but Sentry is down.
+          // Enter degraded mode — core functionality works without user data.
+          console.log('Backend API healthy, Sentry unreachable — entering degraded mode')
+          this.setBackendConnected(true)
+          this.clearError()
+          this.startHealthMonitoring()
+          return 'success'
         } else {
           // Backend unavailable - cannot proceed
           console.log('Backend unavailable')
@@ -726,60 +702,63 @@ export const useCommonStore = defineStore('common', {
 
     // Real-time health monitoring
     async performHealthCheck() {
-      try {
-        // Quick health check without retries for monitoring - check both services
-        await Promise.all([api.backendHealthCheck(), api.sentryHealthCheck()])
+      // Check backend and sentry health independently so one failure
+      // does not mask the other's actual status.
+      const [apiResult, sentryResult] = await Promise.allSettled([
+        api.backendHealthCheck(),
+        api.sentryHealthCheck()
+      ])
 
-        // If we get here, both backend and sentry are healthy
-        if (!this.isBackendConnected) {
-          console.log('🔄 Backend connection restored')
-          this.setBackendConnected(true)
-          this.apiHealthy = true
-          this.sentryHealthy = true
-          this.clearError()
-          try {
-            await this.fetchServiceStatus()
-          } catch (error) {
-            console.warn('⚠️ Failed to refresh service status after reconnection:', error)
-          }
+      const apiOk = apiResult.status === 'fulfilled'
+      const sentryOk = sentryResult.status === 'fulfilled'
 
-          // Re-initialize user configs when backend comes back online
-          // This ensures the /user/configs call is made and connections are available
-          // Do this in the background without failing the health check
-          setTimeout(async () => {
-            try {
-              const currentKey = apiKeyStorage.value
-              if (currentKey) {
-                await api.loadUserConfigs(currentKey)
-                console.log('✅ User configs reloaded after reconnection')
+      // Always update individual health flags to reflect current state
+      this.apiHealthy = apiOk
+      this.sentryHealthy = sentryOk
 
-                // Explicitly trigger connections reload after user configs are loaded
-                // Emit a custom event that connections components can listen to
-                window.dispatchEvent(new CustomEvent('backend-reconnected'))
-              }
-            } catch {
-              console.warn('⚠️ Failed to reload user configs after reconnection')
-              // This is non-critical - the main health check should still succeed
-            }
-          }, 1000) // Small delay to let the connection stabilize
-
-          const toast = useToast()
-          toast.success('Connection restored!')
+      // Connection state is based on API health only.
+      // Sentry is optional — its status is shown in the System Status panel.
+      if (apiOk && !this.isBackendConnected) {
+        console.log('🔄 Backend connection restored')
+        this.setBackendConnected(true)
+        this.clearError()
+        try {
+          await this.fetchServiceStatus()
+        } catch (error) {
+          console.warn('⚠️ Failed to refresh service status after reconnection:', error)
         }
-      } catch {
-        // Backend or Sentry is down
-        if (this.isBackendConnected) {
-          console.warn('🔌 Backend connection lost')
-          this.setBackendConnected(false)
-          this.apiHealthy = false
-          this.sentryHealthy = false
 
-          // Only show toast if we've been connected for a while (not during initial startup)
-          const timeSinceInit = Date.now() - this.initializationStartTime
-          if (timeSinceInit > CONNECTION_GRACE_PERIOD_MS) {
-            const toast = useToast()
-            toast.warning('Backend connection lost. Reconnecting...')
+        // Re-initialize user configs when backend comes back online
+        // This ensures the /user/configs call is made and connections are available
+        // Do this in the background without failing the health check
+        setTimeout(async () => {
+          try {
+            const currentKey = apiKeyStorage.value
+            if (currentKey) {
+              await api.loadUserConfigs(currentKey)
+              console.log('✅ User configs reloaded after reconnection')
+
+              // Explicitly trigger connections reload after user configs are loaded
+              // Emit a custom event that connections components can listen to
+              window.dispatchEvent(new CustomEvent('backend-reconnected'))
+            }
+          } catch {
+            console.warn('⚠️ Failed to reload user configs after reconnection')
+            // This is non-critical - the main health check should still succeed
           }
+        }, 1000) // Small delay to let the connection stabilize
+
+        const toast = useToast()
+        toast.success('Connection restored!')
+      } else if (!apiOk && this.isBackendConnected) {
+        console.warn('🔌 Backend connection lost')
+        this.setBackendConnected(false)
+
+        // Only show toast if we've been connected for a while (not during initial startup)
+        const timeSinceInit = Date.now() - this.initializationStartTime
+        if (timeSinceInit > CONNECTION_GRACE_PERIOD_MS) {
+          const toast = useToast()
+          toast.warning('Backend connection lost. Reconnecting...')
         }
       }
     },
