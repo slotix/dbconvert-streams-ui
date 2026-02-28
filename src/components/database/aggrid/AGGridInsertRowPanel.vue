@@ -172,12 +172,12 @@ function inputTypeFor(col: SQLColumnMeta): string {
     <div class="h-full overflow-y-auto px-4 py-4 space-y-4">
       <div
         v-if="missingRequired.length > 0"
-        class="rounded-md border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-3"
+        class="rounded-md border border-amber-300/80 dark:border-amber-500/60 bg-gray-50 dark:bg-gray-900/40 p-3"
       >
-        <div class="text-xs font-semibold text-amber-800 dark:text-amber-200">
+        <div class="text-xs font-semibold text-amber-700 dark:text-amber-300">
           Required fields missing
         </div>
-        <div class="mt-1 text-xs text-amber-700 dark:text-amber-300">
+        <div class="mt-1 text-xs text-gray-700 dark:text-gray-200">
           {{ missingRequired.join(', ') }}
         </div>
       </div>

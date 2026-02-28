@@ -238,17 +238,17 @@
 
               <section v-if="riskWarningMessage" class="py-3">
                 <div
-                  class="rounded-md border border-amber-300 dark:border-amber-600/70 bg-amber-50 dark:bg-amber-900/20 p-3.5"
+                  class="rounded-md border border-amber-300/80 dark:border-amber-500/60 bg-gray-50 dark:bg-gray-900/40 p-3.5"
                 >
                   <div class="flex items-start gap-2">
                     <AlertTriangle
                       class="w-5 h-5 text-amber-600 dark:text-amber-300 shrink-0 mt-0.5"
                     />
                     <div>
-                      <p class="text-sm font-semibold text-amber-800 dark:text-amber-200">
+                      <p class="text-sm font-semibold text-amber-700 dark:text-amber-300">
                         Risk Warning
                       </p>
-                      <p class="mt-1 text-sm text-amber-800 dark:text-amber-200">
+                      <p class="mt-1 text-sm text-gray-700 dark:text-gray-200">
                         {{ riskWarningMessage }}
                       </p>
                     </div>
@@ -327,6 +327,8 @@ interface Props {
   sourceDatabase?: string | null
   targetDatabase?: string | null
   targetSchema?: string | null
+  createStructure?: boolean
+  copyData?: boolean
 }
 
 const props = defineProps<Props>()
@@ -446,6 +448,10 @@ const modeLabel = computed(() => (currentStreamConfig.value?.mode === 'cdc' ? 'C
 const isCDCMode = computed(() => currentStreamConfig.value?.mode === 'cdc')
 
 const structureModeLabel = computed(() => {
+  if (typeof props.createStructure === 'boolean') {
+    return props.createStructure ? 'Create structure' : 'Skip structure'
+  }
+
   const options = currentStreamConfig.value?.structureOptions
   if (!options) {
     return 'Create'
@@ -453,7 +459,15 @@ const structureModeLabel = computed(() => {
 
   const shouldCreateStructure =
     options.tables || options.indexes || options.foreignKeys || options.checkConstraints
-  return shouldCreateStructure ? 'Create' : 'Skip'
+  return shouldCreateStructure ? 'Create structure' : 'Skip structure'
+})
+
+const copyDataModeLabel = computed(() => {
+  if (typeof props.copyData === 'boolean') {
+    return props.copyData ? 'Copy data' : 'Skip data copy'
+  }
+
+  return currentStreamConfig.value?.skipData ? 'Skip data copy' : 'Copy data'
 })
 
 const fileFormatDisplay = computed(() => {
@@ -479,6 +493,7 @@ const summaryDetailCards = computed<SummaryDetailCard[]>(() => {
       label: isFileSource.value || isS3Source.value ? 'Files' : 'Tables',
       value: formatNumber(tableCount.value)
     },
+    { label: 'Data', value: copyDataModeLabel.value },
     {
       label: 'Batch',
       value: `${currentStreamConfig.value?.source?.options?.dataBundleSize || 500} rows`

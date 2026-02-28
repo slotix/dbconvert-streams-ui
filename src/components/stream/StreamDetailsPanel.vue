@@ -180,7 +180,7 @@
       <!-- Evaluation Banner (always visible when user is near/over limits) -->
       <div
         v-if="evaluationBanner"
-        class="mt-3 rounded-lg border border-amber-200 bg-amber-50/70 px-4 py-3 text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100"
+        class="mt-3 rounded-lg border border-amber-300/80 dark:border-amber-500/60 bg-gray-50 dark:bg-gray-900/40 px-4 py-3 text-gray-900 dark:text-gray-100"
       >
         <div class="flex items-start gap-3">
           <AlertTriangle class="h-5 w-5 text-amber-600 dark:text-amber-300 mt-0.5" />
@@ -188,7 +188,7 @@
             <div class="text-sm font-semibold">
               {{ evaluationBannerTitle }}
             </div>
-            <p class="text-sm text-amber-800 dark:text-amber-200">
+            <p class="text-sm text-gray-700 dark:text-gray-200">
               {{ evaluationBannerBody }}
             </p>
           </div>
@@ -221,7 +221,7 @@
           />
           <div
             v-else
-            class="rounded-lg border border-amber-200/80 dark:border-amber-700/60 bg-amber-50/70 dark:bg-amber-900/20 p-4 text-sm text-amber-800 dark:text-amber-200"
+            class="rounded-lg border border-amber-300/80 dark:border-amber-500/60 bg-gray-50 dark:bg-gray-900/40 p-4 text-sm text-gray-700 dark:text-gray-200"
           >
             JSON configuration editing is disabled while the stream is running.
           </div>

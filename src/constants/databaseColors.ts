@@ -332,11 +332,11 @@ export const DATABASE_ICON_COLORS: Record<string, IconColorScheme> = {
 
   // Oracle - Muted Amber (more visible)
   [DATABASE_TYPES.ORACLE]: {
-    iconBg: 'bg-amber-100 dark:bg-amber-500/10',
+    iconBg: 'bg-amber-100 dark:bg-gray-800',
     iconTint: 'brightness-100 saturate-90 dark:invert'
   },
   oracle: {
-    iconBg: 'bg-amber-100 dark:bg-amber-500/10',
+    iconBg: 'bg-amber-100 dark:bg-gray-800',
     iconTint: 'brightness-100 saturate-90 dark:invert'
   },
 

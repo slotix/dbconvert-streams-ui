@@ -84,7 +84,7 @@ function getUploadStatus(status: string) {
   >
     <!-- Header with amber/orange theme for cloud uploads -->
     <div
-      class="px-4 py-3 border-b border-amber-200 dark:border-amber-700/50 bg-amber-50 dark:bg-amber-900/20"
+      class="px-4 py-3 border-b border-amber-200 dark:border-amber-700/50 bg-gray-50 dark:bg-gray-900/40"
     >
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
@@ -268,8 +268,8 @@ function getUploadStatus(status: string) {
     </div>
 
     <!-- Empty State -->
-    <div v-else-if="isExpanded" class="px-6 py-12 text-center bg-amber-50/50 dark:bg-amber-900/10">
-      <div class="inline-flex p-4 bg-amber-100 dark:bg-amber-900/30 rounded-full mb-4">
+    <div v-else-if="isExpanded" class="px-6 py-12 text-center bg-gray-50/80 dark:bg-gray-900/40">
+      <div class="inline-flex p-4 bg-gray-100 dark:bg-gray-800 rounded-full mb-4">
         <CloudArrowUpIcon class="h-8 w-8 text-amber-400 dark:text-amber-500" />
       </div>
       <h4 class="text-base font-medium text-gray-900 dark:text-gray-100 mb-1">

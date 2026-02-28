@@ -63,7 +63,7 @@
 
       <div
         v-if="!showConnectCta && isCurrentInstallDeactivated"
-        class="flex items-start p-3 rounded-lg border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-900/20"
+        class="flex items-start p-3 rounded-lg border border-amber-300/80 dark:border-amber-500/60 bg-gray-50 dark:bg-gray-900/40"
       >
         <div class="shrink-0 mt-0.5">
           <AlertTriangle
@@ -72,10 +72,10 @@
           />
         </div>
         <div class="ml-3 flex-1">
-          <p class="text-sm font-medium text-amber-800 dark:text-amber-200">
+          <p class="text-sm font-medium text-amber-700 dark:text-amber-300">
             This device is deactivated
           </p>
-          <p class="mt-1 text-sm text-amber-700 dark:text-amber-300">
+          <p class="mt-1 text-sm text-gray-700 dark:text-gray-200">
             This device was deactivated. Reactivate it from https://streams.dbconvert.com/account
           </p>
           <button

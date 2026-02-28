@@ -1085,7 +1085,7 @@ async function handleCreateSchema() {
             class="flex items-start gap-2 p-2 rounded-lg text-sm"
             :class="{
               'bg-sky-100/50 dark:bg-sky-900/20': n.severity === 'info',
-              'bg-amber-100/50 dark:bg-amber-900/20': n.severity === 'warn',
+              'bg-gray-100/80 dark:bg-gray-900/40': n.severity === 'warn',
               'bg-red-100/50 dark:bg-red-900/30': n.severity === 'error'
             }"
           >

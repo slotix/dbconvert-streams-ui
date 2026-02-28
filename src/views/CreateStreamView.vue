@@ -146,6 +146,13 @@
                 :source-database="wizard.selection.value.sourceDatabase"
                 :target-database="wizard.selection.value.targetDatabase"
                 :target-schema="wizard.selection.value.targetSchema"
+                :create-structure="
+                  wizard.createTables.value ||
+                  wizard.createIndexes.value ||
+                  wizard.createForeignKeys.value ||
+                  wizard.createCheckConstraints.value
+                "
+                :copy-data="wizard.copyData.value"
                 @update:can-proceed="updateCanProceed"
               />
             </div>
