@@ -105,7 +105,41 @@ export function getFederatedTemplates(sources: FederatedTemplateSource[]): Query
     return `${alias} (Database)`
   }
 
+  const dbStarterQueryForAlias = (alias: string) => {
+    const lowered = alias.toLowerCase()
+    if (lowered.startsWith('pg')) {
+      return `-- Query PostgreSQL connection alias ${alias}
+SELECT * FROM ${alias}.public.table_name LIMIT 100;`
+    }
+    if (lowered.startsWith('my')) {
+      return `-- Query MySQL connection alias ${alias}
+SELECT * FROM ${alias}.database.table_name LIMIT 100;`
+    }
+    if (lowered.startsWith('sf')) {
+      return `-- Query Snowflake connection alias ${alias}
+SELECT * FROM ${alias}.schema.table_name LIMIT 100;`
+    }
+
+    return `-- Query database connection alias ${alias}
+SELECT * FROM ${alias}.schema.table_name LIMIT 100;`
+  }
+
+  const dbStarterNameForAlias = (alias: string) => {
+    const lowered = alias.toLowerCase()
+    if (lowered.startsWith('pg')) return `PostgreSQL query (${alias})`
+    if (lowered.startsWith('my')) return `MySQL query (${alias})`
+    if (lowered.startsWith('sf')) return `Snowflake query (${alias})`
+    return `Database query (${alias})`
+  }
+
   const dbMetadataTemplates: QueryTemplate[] = dbAliases.flatMap((alias) => [
+    makeTemplate(dbStarterNameForAlias(alias), dbStarterQueryForAlias(alias), {
+      description: `Basic query against alias ${alias}`,
+      section: 'Databases',
+      icon: 'database',
+      sourceAlias: alias,
+      sourceLabel: dbAliasLabel(alias)
+    }),
     makeTemplate(
       `List namespaces (${alias})`,
       `-- Namespaces (database/schema) visible under alias ${alias}
@@ -184,29 +218,7 @@ LIMIT 100;`,
   }
 
   if (hasDbSources) {
-    templates.push(
-      ...dbMetadataTemplates,
-      makeTemplate(
-        'PostgreSQL query',
-        `-- Query PostgreSQL connection
-SELECT * FROM ${pg1}.public.table_name LIMIT 100;`,
-        {
-          description: 'Basic query against a PostgreSQL alias',
-          section: 'Databases',
-          icon: 'database'
-        }
-      ),
-      makeTemplate(
-        'MySQL query',
-        `-- Query MySQL connection
-SELECT * FROM ${my1}.database.table_name LIMIT 100;`,
-        {
-          description: 'Basic query against a MySQL alias',
-          section: 'Databases',
-          icon: 'database'
-        }
-      )
-    )
+    templates.push(...dbMetadataTemplates)
   }
 
   if (hasS3Sources) {
