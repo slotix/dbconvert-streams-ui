@@ -7,6 +7,16 @@ Tool-specific settings live in `CLAUDE.md` and `AGENTS.md`.
 
 Start each task from `.ai/router.md` and select exactly one primary skill before making changes.
 
+## Skill Visibility (Required)
+
+To make routing observable to the user, every task response must include:
+
+- A first line in this exact format: `Primary skill: <path-to-skill>`
+- If used, a second line: `Secondary reference: <path-to-skill|none>`
+- A short `Skill compliance check` section in the final response (3-5 bullets) confirming key rules followed for the selected skill
+
+If `Primary skill` is missing, treat the response as incomplete and correct it before finishing.
+
 ## Engineering Principles
 
 Core repo preferences (simplicity-first, DRY, and no transitional compatibility by default):
