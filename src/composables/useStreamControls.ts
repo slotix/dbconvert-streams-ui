@@ -13,7 +13,7 @@ export function useStreamControls(stream: Ref<StreamConfig>) {
   const streamActions = useStreamActions()
 
   const isStreamRunning = computed(() => {
-    const configMatches = monitoringStore.streamConfig?.id === stream.value.id
+    const configMatches = monitoringStore.runningConfigID === stream.value.id
     const hasStreamId = monitoringStore.streamID !== ''
 
     // No stream if config doesn't match or no stream ID
@@ -119,6 +119,10 @@ export function useStreamControls(stream: Ref<StreamConfig>) {
     await streamActions.stopStream(monitoringStore.streamID)
   }
 
+  async function forceStopStream() {
+    await streamActions.forceStopStream(monitoringStore.streamID)
+  }
+
   async function runConstraints() {
     if (!stream.value.id) return
     try {
@@ -159,6 +163,7 @@ export function useStreamControls(stream: Ref<StreamConfig>) {
     pauseStream,
     resumeStream,
     stopStream,
+    forceStopStream,
     runConstraints
   }
 }

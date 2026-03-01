@@ -29,6 +29,7 @@ export function useStreamActions() {
 
     async function runStart(): Promise<string> {
       const streamID = await streamsStore.startStream(stream.id!)
+      monitoringStore.setForceStopRecommended(false)
       commonStore.showNotification('Stream started', 'success')
       monitoringStore.setStream(streamID, stream)
       monitoringStore.requestShowMonitorTab()
@@ -39,6 +40,7 @@ export function useStreamActions() {
       return await runStart()
     } catch (err: unknown) {
       if (isActiveStreamsError(err)) {
+        monitoringStore.setForceStopRecommended(true)
         commonStore.showNotification(
           'Please wait for the current stream to finish before starting a new one',
           'warning'
@@ -47,6 +49,9 @@ export function useStreamActions() {
         try {
           return await runStart()
         } catch (retryErr) {
+          if (isActiveStreamsError(retryErr)) {
+            monitoringStore.setForceStopRecommended(true)
+          }
           if (retryErr instanceof Error) {
             commonStore.showNotification(retryErr.message, 'error')
           }
@@ -92,6 +97,7 @@ export function useStreamActions() {
     if (!id) return
     try {
       await streamsStore.stopStream(id)
+      monitoringStore.setForceStopRecommended(false)
       commonStore.showNotification('Stream stopped', 'success')
       monitoringStore.requestShowMonitorTab()
     } catch (error) {
@@ -100,10 +106,25 @@ export function useStreamActions() {
     }
   }
 
+  async function forceStopStream(streamId?: string): Promise<void> {
+    const id = streamId || monitoringStore.streamID
+    if (!id) return
+    try {
+      await streamsStore.forceStopStream(id)
+      monitoringStore.setForceStopRecommended(false)
+      commonStore.showNotification('Stream force-stopped', 'success')
+      monitoringStore.requestShowMonitorTab()
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error)
+      commonStore.showNotification(`Failed to force-stop: ${errorMsg}`, 'error')
+    }
+  }
+
   return {
     startStream,
     pauseStream,
     resumeStream,
-    stopStream
+    stopStream,
+    forceStopStream
   }
 }

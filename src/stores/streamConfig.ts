@@ -1124,6 +1124,16 @@ export const useStreamsStore = defineStore('streams', {
         throw err
       }
     },
+    async forceStopStream(id: string) {
+      try {
+        await api.forceStopStream(id)
+        const monitoringStore = useMonitoringStore()
+        monitoringStore.updateStreamStatus(STATUS.STOPPED)
+      } catch (err) {
+        console.error('Failed to force-stop stream:', err)
+        throw err
+      }
+    },
     async runTargetConstraintsAction(configID: string) {
       try {
         return await api.runTargetConstraintsAction(configID)

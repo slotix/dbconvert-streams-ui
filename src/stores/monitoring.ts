@@ -87,6 +87,7 @@ interface State {
   aggregatedStats: AggregatedStatResponse | null
   tableMetadata: Map<string, TableMetadata>
   evaluationWarning: EvaluationWarning | null
+  forceStopRecommended: boolean
 }
 
 export const useMonitoringStore = defineStore('monitoring', {
@@ -142,7 +143,8 @@ export const useMonitoringStore = defineStore('monitoring', {
     shouldShowMonitorTab: false,
     aggregatedStats: null,
     tableMetadata: new Map(),
-    evaluationWarning: null
+    evaluationWarning: null,
+    forceStopRecommended: false
   }),
   getters: {
     currentStage(state: State): Stage | null {
@@ -616,6 +618,9 @@ export const useMonitoringStore = defineStore('monitoring', {
     setEvaluationWarning(warning: EvaluationWarning) {
       this.evaluationWarning = warning
     },
+    setForceStopRecommended(recommended: boolean) {
+      this.forceStopRecommended = recommended
+    },
     addLog(log: Log) {
       if (this.logs.length >= this.maxLogs) {
         this.logs = this.logs.slice(-Math.floor(this.maxLogs / 2))
@@ -714,7 +719,14 @@ export const useMonitoringStore = defineStore('monitoring', {
         )
         if (statusWithPriority) {
           const [statusKey] = statusWithPriority
-          const newStatus = statusKey as Status
+          let newStatus = statusKey as Status
+
+          // Preserve explicit user stop state even if some node logs still report FAILED.
+          // This avoids STOPPED -> FAILED flicker/mislabeling during shutdown races.
+          if (this.status === STATUS.STOPPED && newStatus === STATUS.FAILED) {
+            newStatus = STATUS.STOPPED
+          }
+
           if (this.status !== newStatus) {
             const previousStatus = this.status
             this.status = newStatus

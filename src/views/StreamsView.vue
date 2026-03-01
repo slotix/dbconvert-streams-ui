@@ -98,6 +98,7 @@
                 :target="connectionByID(selectedStream.target?.id)"
                 :initial-tab="initialTab"
                 @stream-deleted="handleStreamDeletedFromPanel"
+                @select-stream="handleSelectStreamFromPanel"
               />
             </div>
             <div
@@ -213,6 +214,10 @@ function handleDeleteStream(payload: { streamId: string }) {
 function handleStreamDeletedFromPanel() {
   selectedStreamId.value = ''
   setSelectedStreamInViewState()
+}
+
+function handleSelectStreamFromPanel(streamId: string) {
+  selectedStreamId.value = streamId
 }
 
 function handleToggleSidebar() {

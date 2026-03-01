@@ -79,13 +79,13 @@
           <div class="flex items-center min-w-0 flex-1 gap-3">
             <span class="text-xs text-gray-500 dark:text-gray-400 shrink-0">Stream Run:</span>
             <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 font-mono truncate">
-              {{ hasActiveRun ? monitoringStore.streamID : 'Not running' }}
+              {{ displayedStreamRunId }}
             </h2>
           </div>
           <div class="flex items-center gap-2 ml-4">
             <!-- Run Stream button (when not running) -->
             <BaseButton
-              v-if="!isStreamRunning"
+              v-if="!hasGlobalRunningRun"
               v-tooltip="'Start the stream'"
               variant="primary"
               @click="startStream"
@@ -96,7 +96,7 @@
 
             <!-- Run Again button (when finished) -->
             <BaseButton
-              v-if="isStreamFinished"
+              v-if="isStreamFinished && !hasGlobalRunningRun"
               v-tooltip="'Run this configuration again'"
               variant="primary"
               @click="startStream"
@@ -107,7 +107,7 @@
 
             <!-- Pause/Resume button (when running) -->
             <BaseButton
-              v-if="isStreamRunning && !isStreamFinished"
+              v-if="isRunOwner && isStreamRunning && !isStreamFinished"
               v-tooltip="isPaused ? 'Resume the stream' : 'Pause the stream'"
               variant="secondary"
               @click="isPaused ? resumeStream() : pauseStream()"
@@ -119,13 +119,23 @@
 
             <!-- Stop button (when running) -->
             <BaseButton
-              v-if="isStreamRunning && !isStreamFinished"
+              v-if="isRunOwner && isStreamRunning && !isStreamFinished"
               v-tooltip="'Stop the stream'"
               variant="danger"
               @click="stopStream"
             >
               <Square class="h-4 w-4" :stroke-width="iconStroke" />
               Stop
+            </BaseButton>
+
+            <BaseButton
+              v-if="showForceStopButton"
+              v-tooltip="'Force-stop and clear stale active stream state'"
+              variant="secondary"
+              @click="requestForceStop"
+            >
+              <Settings class="h-4 w-4" :stroke-width="iconStroke" />
+              Force Stop
             </BaseButton>
           </div>
         </div>
@@ -134,6 +144,15 @@
           <span class="text-sm text-gray-700 dark:text-gray-300 font-medium">{{
             stream.name
           }}</span>
+        </div>
+        <div
+          v-if="isViewingOtherRunningStream"
+          class="rounded-lg border border-amber-300/80 dark:border-amber-500/60 bg-gray-50 dark:bg-gray-900/40 px-4 py-3 text-sm text-gray-700 dark:text-gray-200 flex items-center justify-between gap-3"
+        >
+          <span> Another stream is currently running. </span>
+          <BaseButton variant="secondary" @click="switchToActiveRun"
+            >Switch to Active Run</BaseButton
+          >
         </div>
       </div>
 
@@ -290,6 +309,17 @@
       @confirm="deleteStream"
       @cancel="cancelDelete"
     />
+
+    <ConfirmDialog
+      v-model:is-open="showForceStopConfirm"
+      title="Force-stop stream?"
+      description="Use this only when a stream appears stuck. It will forcibly clear active stream state so new runs can start."
+      confirm-label="Force Stop"
+      cancel-label="Cancel"
+      :danger="true"
+      @confirm="confirmForceStop"
+      @cancel="cancelForceStop"
+    />
   </div>
 </template>
 
@@ -306,7 +336,7 @@ export default {
 <script setup lang="ts">
 import { ref, computed, watch, defineAsyncComponent, toRef } from 'vue'
 import { useRouter } from 'vue-router'
-import { Play, Pause, Square, AlertTriangle } from 'lucide-vue-next'
+import { Play, Pause, Square, AlertTriangle, Settings } from 'lucide-vue-next'
 import { useLucideIcons } from '@/composables/useLucideIcons'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
@@ -340,6 +370,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'stream-deleted'): void
+  (e: 'select-stream', streamId: string): void
 }>()
 
 const router = useRouter()
@@ -350,6 +381,7 @@ const monitoringStore = useMonitoringStore()
 const { strokeWidth: iconStroke } = useLucideIcons()
 
 const showDeleteConfirm = ref(false)
+const showForceStopConfirm = ref(false)
 const jsonEditorRef = ref<InstanceType<typeof StreamConfigJsonEditor> | null>(null)
 const activeTab = ref<StreamDetailsTab>(props.initialTab || 'configuration')
 
@@ -387,7 +419,8 @@ const {
   startStream,
   pauseStream,
   resumeStream,
-  stopStream
+  stopStream,
+  forceStopStream
 } = useStreamControls(streamRef)
 
 const dbTypes = computed(() => connectionsStore.dbTypes)
@@ -410,6 +443,46 @@ const hasActiveRun = computed(() => {
   if (monitoringStore.streamID === '') return false
   return monitoringStore.runningConfigID === props.stream.id
 })
+
+const globalTerminalStates = [
+  'FINISHED',
+  'STOPPED',
+  'FAILED',
+  'TIME_LIMIT_REACHED',
+  'EVENT_LIMIT_REACHED'
+]
+
+const hasGlobalRunningRun = computed(() => {
+  if (!monitoringStore.streamID) return false
+  return !globalTerminalStates.includes(monitoringStore.status)
+})
+
+const isRunOwner = computed(() => hasActiveRun.value)
+
+const isViewingOtherRunningStream = computed(() => {
+  return hasGlobalRunningRun.value && !isRunOwner.value
+})
+
+const displayedStreamRunId = computed(() => {
+  if (hasGlobalRunningRun.value) {
+    return monitoringStore.streamID
+  }
+  return 'Not running'
+})
+
+const showForceStopButton = computed(() => {
+  return monitoringStore.forceStopRecommended && hasActiveRun.value && !isStreamRunning.value
+})
+
+function switchToActiveRun() {
+  const runningConfigID = monitoringStore.runningConfigID
+  if (!runningConfigID) return
+  updateStreamsViewState({
+    selectedStreamId: runningConfigID,
+    tab: 'monitor'
+  })
+  emit('select-stream', runningConfigID)
+}
 
 const { evaluationBanner, evaluationBannerTitle, evaluationBannerBody } = useStreamEvaluationBanner(
   {
@@ -491,6 +564,19 @@ function requestDelete() {
 
 function cancelDelete() {
   showDeleteConfirm.value = false
+}
+
+function requestForceStop() {
+  showForceStopConfirm.value = true
+}
+
+function cancelForceStop() {
+  showForceStopConfirm.value = false
+}
+
+async function confirmForceStop() {
+  showForceStopConfirm.value = false
+  await forceStopStream()
 }
 
 async function deleteStream() {

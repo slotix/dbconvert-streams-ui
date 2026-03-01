@@ -103,6 +103,14 @@ const stopStream = async (id: string): Promise<void> => {
   }
 }
 
+const forceStopStream = async (id: string): Promise<void> => {
+  try {
+    await apiClient.post(`/streams/${id}/stop?force=true`, null)
+  } catch (error) {
+    throw handleApiError(error)
+  }
+}
+
 const updateStreamConfig = async (id: string, config: StreamConfig): Promise<StreamConfig> => {
   try {
     const response: AxiosResponse<StreamConfig> = await apiClient.put(
@@ -136,6 +144,7 @@ export default {
   pauseStream,
   resumeStream,
   stopStream,
+  forceStopStream,
   updateStreamConfig,
   runTargetConstraintsAction
 }

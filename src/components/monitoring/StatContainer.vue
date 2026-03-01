@@ -52,7 +52,7 @@
             </div>
           </div>
           <div class="shrink-0">
-            <StatusBadge v-if="sourceStats" :status="sourceStats.status" />
+            <StatusBadge v-if="sourceStats" :status="sourceBadgeStatus" />
             <div
               v-else
               class="px-3 py-1.5 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 text-xs font-medium rounded-full border border-gray-300 dark:border-gray-700"
@@ -141,7 +141,7 @@
             </div>
           </div>
           <div class="flex-shrink-0">
-            <StatusBadge v-if="targetStats" :status="targetStats.status" />
+            <StatusBadge v-if="targetStats" :status="targetBadgeStatus" />
             <div
               v-else
               class="px-3 py-1.5 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 text-xs font-medium rounded-full border border-gray-300 dark:border-gray-700"
@@ -255,6 +255,18 @@ const targetStats = computed(() => {
   return store.aggregatedTargetStats
 })
 
+const showStoppedState = computed(() => props.isStopped && !props.isRunning)
+
+const sourceBadgeStatus = computed(() => {
+  if (showStoppedState.value) return 'STOPPED'
+  return sourceStats.value?.status || 'READY'
+})
+
+const targetBadgeStatus = computed(() => {
+  if (showStoppedState.value) return 'STOPPED'
+  return targetStats.value?.status || 'READY'
+})
+
 const sourceCountLabel = computed(() => {
   const count = props.stream.source?.connections?.length
   if (count === undefined) return '— sources'
@@ -264,6 +276,8 @@ const sourceCountLabel = computed(() => {
 })
 
 const targetStageLabel = computed(() => {
+  if (showStoppedState.value) return 'Stage: Stopped'
+
   const targetStatus = targetStats.value?.status
   if (targetStatus === 'FAILED') return 'Stage: Failed'
   if (targetStatus === 'STOPPED') return 'Stage: Stopped'
@@ -334,6 +348,21 @@ const toggleUpload = () => {
 const statusMessage = computed(() => {
   if (!props.isStreamFinished) return null
 
+  // Show user stop outcome first to avoid misleading failure copy after a manual stop.
+  if (showStoppedState.value) {
+    const currentStage = store.currentStage?.title || 'Unknown Stage'
+    // Try to find stop reason in logs (optional)
+    const stopLog = store.logs
+      .filter((log) => log.msg?.toLowerCase().includes('stop'))
+      .slice(-3)
+      .reverse()
+      .find((log) => log.msg && !log.msg.includes('Stopped'))
+    const reason = stopLog?.msg || ''
+    return reason
+      ? `⚠️ Stopped during: ${currentStage} — Reason: ${reason}`
+      : `⚠️ Stopped during: ${currentStage}`
+  }
+
   // Check for failed state
   const hasFailed = store.stats.some((stat) => stat.status === 'FAILED')
   if (hasFailed) {
@@ -348,21 +377,6 @@ const statusMessage = computed(() => {
     return `✖ Failed during: ${currentStage} — Error: ${errorMsg}`
   }
 
-  // Check for stopped state
-  if (props.isStopped) {
-    const currentStage = store.currentStage?.title || 'Unknown Stage'
-    // Try to find stop reason in logs (optional)
-    const stopLog = store.logs
-      .filter((log) => log.msg?.toLowerCase().includes('stop'))
-      .slice(-3)
-      .reverse()
-      .find((log) => log.msg && !log.msg.includes('Stopped'))
-    const reason = stopLog?.msg || ''
-    return reason
-      ? `⚠️ Stopped during: ${currentStage} — Reason: ${reason}`
-      : `⚠️ Stopped during: ${currentStage}`
-  }
-
   // Finished successfully
   return '✓ Completed all stages successfully'
 })
@@ -370,13 +384,13 @@ const statusMessage = computed(() => {
 const statusMessageClass = computed(() => {
   if (!props.isStreamFinished) return ''
 
+  if (showStoppedState.value) {
+    return 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800'
+  }
+
   const hasFailed = store.stats.some((stat) => stat.status === 'FAILED')
   if (hasFailed) {
     return 'bg-red-50 dark:bg-red-900/30 text-red-800 dark:text-red-100/95 border border-red-200 dark:border-red-700/70'
-  }
-
-  if (props.isStopped) {
-    return 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800'
   }
 
   return 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300 border border-green-200 dark:border-green-800'
