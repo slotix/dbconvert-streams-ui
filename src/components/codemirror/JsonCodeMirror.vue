@@ -91,6 +91,8 @@ const manualHeightPx = ref<number | null>(null)
 let resizeMoveListener: ((event: MouseEvent) => void) | null = null
 let resizeUpListener: (() => void) | null = null
 let isResizing = false
+let containerResizeObserver: ResizeObserver | null = null
+let remeasureAnimationFrameId: number | null = null
 
 const showResizeGrip = computed(() => props.resizable && !props.fillParent)
 
@@ -147,6 +149,62 @@ function stopResize() {
   if (typeof document !== 'undefined') {
     document.body.style.cursor = ''
     document.body.style.userSelect = ''
+  }
+}
+
+function requestEditorRemeasure() {
+  const view = editorView.value
+  if (!view) {
+    return
+  }
+
+  if (typeof window === 'undefined') {
+    view.requestMeasure()
+    return
+  }
+
+  if (remeasureAnimationFrameId !== null) {
+    window.cancelAnimationFrame(remeasureAnimationFrameId)
+  }
+
+  remeasureAnimationFrameId = window.requestAnimationFrame(() => {
+    remeasureAnimationFrameId = null
+    view.requestMeasure()
+  })
+}
+
+function setupContainerResizeObserver() {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  const target = editorContainerRef.value
+  if (!target) {
+    return
+  }
+
+  if (typeof ResizeObserver !== 'undefined') {
+    containerResizeObserver = new ResizeObserver(() => {
+      requestEditorRemeasure()
+    })
+    containerResizeObserver.observe(target)
+  }
+
+  window.addEventListener('resize', requestEditorRemeasure)
+}
+
+function cleanupContainerResizeObserver() {
+  if (containerResizeObserver) {
+    containerResizeObserver.disconnect()
+    containerResizeObserver = null
+  }
+
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('resize', requestEditorRemeasure)
+    if (remeasureAnimationFrameId !== null) {
+      window.cancelAnimationFrame(remeasureAnimationFrameId)
+      remeasureAnimationFrameId = null
+    }
   }
 }
 
@@ -417,12 +475,21 @@ function mountEditor() {
 
 onMounted(() => {
   mountEditor()
+  setupContainerResizeObserver()
+  requestEditorRemeasure()
 })
 
 watch(
   () => props.modelValue,
   (nextValue) => {
     syncEditorValue(nextValue ?? '')
+  }
+)
+
+watch(
+  () => [manualHeightPx.value, props.height, props.fillParent],
+  () => {
+    requestEditorRemeasure()
   }
 )
 
@@ -455,6 +522,7 @@ watch(isDarkTheme, (darkModeEnabled) => {
 onBeforeUnmount(() => {
   closeContextMenu()
   stopResize()
+  cleanupContainerResizeObserver()
   detachEditorContextMenuListener(editorView.value)
   editorView.value?.destroy()
   editorView.value = null
