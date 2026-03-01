@@ -137,7 +137,7 @@ const compareItems = computed<CompareItem[]>(() => {
         alias,
         targetObjectName: buildTargetObjectNameForTable(
           rawName,
-          alias,
+          isFederated.value ? alias : '',
           hasAnyQueries.value && !hasAnyTables.value
         )
       })
