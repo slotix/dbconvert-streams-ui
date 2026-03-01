@@ -173,11 +173,24 @@ watch(
     if (!stream) return
     const streamId = stream.id
     if (!streamId) return
+
+    // If this config already owns the running stream, no-op
     const isSameStream = monitoringStore.streamConfig?.id === streamId
     if (isSameStream && monitoringStore.streamID) {
       return
     }
-    monitoringStore.setStream('', stream)
+
+    // If navigating back to the config that owns the active running stream,
+    // restore it by calling setStream with the running ID
+    const runningID = monitoringStore.streamID
+    const runningConfigID = monitoringStore.runningConfigID
+    if (runningID && runningConfigID === streamId) {
+      monitoringStore.setStream(runningID, stream)
+      return
+    }
+
+    // Viewing a different config — update viewed config only, preserve running stream
+    monitoringStore.viewConfig(stream)
   }
 )
 

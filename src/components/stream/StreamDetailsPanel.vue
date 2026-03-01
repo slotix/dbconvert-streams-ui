@@ -79,7 +79,7 @@
           <div class="flex items-center min-w-0 flex-1 gap-3">
             <span class="text-xs text-gray-500 dark:text-gray-400 shrink-0">Stream Run:</span>
             <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 font-mono truncate">
-              {{ monitoringStore.streamID || 'Not running' }}
+              {{ hasActiveRun ? monitoringStore.streamID : 'Not running' }}
             </h2>
           </div>
           <div class="flex items-center gap-2 ml-4">
@@ -407,7 +407,8 @@ const {
 
 const streamIdRef = computed(() => streamRef.value.id || '')
 const hasActiveRun = computed(() => {
-  return monitoringStore.streamConfig?.id === props.stream.id && monitoringStore.streamID !== ''
+  if (monitoringStore.streamID === '') return false
+  return monitoringStore.runningConfigID === props.stream.id
 })
 
 const { evaluationBanner, evaluationBannerTitle, evaluationBannerBody } = useStreamEvaluationBanner(

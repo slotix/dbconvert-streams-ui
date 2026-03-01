@@ -72,6 +72,7 @@ interface EvaluationWarning {
 
 interface State {
   streamID: string
+  runningConfigID: string
   nodes: Node[]
   logs: Log[]
   currentStageID: number
@@ -91,6 +92,7 @@ interface State {
 export const useMonitoringStore = defineStore('monitoring', {
   state: (): State => ({
     streamID: '',
+    runningConfigID: '',
     nodes: [],
     logs: [],
     currentStageID: 0,
@@ -569,6 +571,9 @@ export const useMonitoringStore = defineStore('monitoring', {
 
       this.streamID = id
       this.streamConfig = streamConfig
+      if (id) {
+        this.runningConfigID = streamConfig.id || ''
+      }
 
       // Rebuild table metadata from logs that arrived before setStream was called
       // Table metadata is now logged with the first stats report (after 500ms delay)
@@ -589,6 +594,9 @@ export const useMonitoringStore = defineStore('monitoring', {
       if (this.logs.length > 0) {
         this.aggregateNodeStatsByType()
       }
+    },
+    viewConfig(config: StreamConfig) {
+      this.streamConfig = config
     },
     setStageTimestamp(stageId: number) {
       const stage = this.stages.find((s) => s.id === stageId)
