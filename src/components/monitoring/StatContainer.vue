@@ -27,7 +27,7 @@
       >
         <div class="flex items-center justify-between gap-3 sm:gap-4">
           <div class="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-            <div class="flex-shrink-0">
+            <div class="shrink-0">
               <img
                 :src="sourceIcon"
                 alt="Source Reader"
@@ -106,7 +106,7 @@
       >
         <div class="flex items-center justify-between gap-3 sm:gap-4">
           <div class="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-            <div class="flex-shrink-0">
+            <div class="shrink-0">
               <img
                 :src="targetIcon"
                 alt="Target Writer"
@@ -130,7 +130,7 @@
                 </span>
                 <span
                   v-if="isRunning && targetStats && targetStats.activeNodes > 1"
-                  class="inline-flex items-center rounded-full bg-emerald-600 dark:bg-emerald-500 px-1.5 py-0.5 text-xs font-semibold text-white dark:text-gray-900 shadow-sm flex-shrink-0"
+                  class="inline-flex items-center rounded-full bg-emerald-600 dark:bg-emerald-500 px-1.5 py-0.5 text-xs font-semibold text-white dark:text-gray-900 shadow-sm shrink-0"
                 >
                   {{ targetStats.activeNodes }}×
                 </span>
@@ -140,7 +140,7 @@
               </div>
             </div>
           </div>
-          <div class="flex-shrink-0">
+          <div class="shrink-0">
             <StatusBadge v-if="targetStats" :status="targetBadgeStatus" />
             <div
               v-else

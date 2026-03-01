@@ -750,7 +750,7 @@ export const useMonitoringStore = defineStore('monitoring', {
         //   currentStatus: this.status,
         //   willUpdate: sourceStatus === STATUS.FAILED
         // })
-        if (sourceStatus === STATUS.FAILED) {
+        if (sourceStatus === STATUS.FAILED && this.status !== STATUS.STOPPED) {
           // console.log('[Monitoring] Setting stream status to FAILED (early source failure)')
           this.status = STATUS.FAILED
         }
