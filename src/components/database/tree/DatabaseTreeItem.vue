@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, watch, inject, ref } from 'vue'
+import { computed, watch, inject, ref, onBeforeUnmount } from 'vue'
 import type { ComputedRef } from 'vue'
 import { ChevronDown, ChevronRight } from 'lucide-vue-next'
 import SchemaTreeItem from './SchemaTreeItem.vue'
@@ -73,11 +73,24 @@ const tablesOpen = ref(true)
 const viewsOpen = ref(true)
 const functionsOpen = ref(true)
 const proceduresOpen = ref(true)
+const highlightedSection = ref<'tables' | 'views' | 'functions' | 'procedures' | null>(null)
+let sectionHighlightTimeout: ReturnType<typeof setTimeout> | null = null
 
 const tablesExpanded = computed(() => (hasSearch.value ? true : tablesOpen.value))
 const viewsExpanded = computed(() => (hasSearch.value ? true : viewsOpen.value))
 const functionsExpanded = computed(() => (hasSearch.value ? true : functionsOpen.value))
 const proceduresExpanded = computed(() => (hasSearch.value ? true : proceduresOpen.value))
+
+function highlightSection(section: 'tables' | 'views' | 'functions' | 'procedures') {
+  highlightedSection.value = section
+  if (sectionHighlightTimeout) {
+    clearTimeout(sectionHighlightTimeout)
+  }
+  sectionHighlightTimeout = setTimeout(() => {
+    highlightedSection.value = null
+    sectionHighlightTimeout = null
+  }, 900)
+}
 
 const emit = defineEmits<{
   (e: 'toggle-database'): void
@@ -135,6 +148,45 @@ watch(
   },
   { immediate: true }
 )
+
+watch(
+  () => treeSelection.value,
+  (sel) => {
+    if (props.hasSchemas) return
+    if (!sel?.name || !sel?.type) return
+    if (sel.connectionId !== props.connectionId || sel.database !== props.database.name) return
+
+    if (sel.type === 'table') {
+      if (!tablesOpen.value) {
+        tablesOpen.value = true
+        highlightSection('tables')
+      }
+    } else if (sel.type === 'view') {
+      if (!viewsOpen.value) {
+        viewsOpen.value = true
+        highlightSection('views')
+      }
+    } else if (sel.type === 'function') {
+      if (!functionsOpen.value) {
+        functionsOpen.value = true
+        highlightSection('functions')
+      }
+    } else if (sel.type === 'procedure') {
+      if (!proceduresOpen.value) {
+        proceduresOpen.value = true
+        highlightSection('procedures')
+      }
+    }
+  },
+  { immediate: true, deep: true }
+)
+
+onBeforeUnmount(() => {
+  if (sectionHighlightTimeout) {
+    clearTimeout(sectionHighlightTimeout)
+    sectionHighlightTimeout = null
+  }
+})
 
 function isSchemaExpanded(schemaName: string): boolean {
   const key = `${props.connectionId}:${props.database.name}:${schemaName}`
@@ -273,6 +325,9 @@ function handleFlatObjectContextMenu(payload: {
           <button
             type="button"
             class="w-full text-left text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-1 flex items-center justify-between hover:text-gray-500 dark:hover:text-gray-400"
+            :class="{
+              'animate-pulse text-teal-600 dark:text-teal-300': highlightedSection === 'tables'
+            }"
             :aria-expanded="tablesExpanded"
             @click.stop="tablesOpen = !tablesOpen"
           >
@@ -305,6 +360,9 @@ function handleFlatObjectContextMenu(payload: {
           <button
             type="button"
             class="w-full text-left text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-2 flex items-center justify-between hover:text-gray-500 dark:hover:text-gray-400"
+            :class="{
+              'animate-pulse text-teal-600 dark:text-teal-300': highlightedSection === 'views'
+            }"
             :aria-expanded="viewsExpanded"
             @click.stop="viewsOpen = !viewsOpen"
           >
@@ -337,6 +395,9 @@ function handleFlatObjectContextMenu(payload: {
             v-if="flatFunctions.length"
             type="button"
             class="w-full text-left text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-2 flex items-center justify-between hover:text-gray-500 dark:hover:text-gray-400"
+            :class="{
+              'animate-pulse text-teal-600 dark:text-teal-300': highlightedSection === 'functions'
+            }"
             :aria-expanded="functionsExpanded"
             @click.stop="functionsOpen = !functionsOpen"
           >
@@ -369,6 +430,9 @@ function handleFlatObjectContextMenu(payload: {
             v-if="flatProcedures.length"
             type="button"
             class="w-full text-left text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-2 flex items-center justify-between hover:text-gray-500 dark:hover:text-gray-400"
+            :class="{
+              'animate-pulse text-teal-600 dark:text-teal-300': highlightedSection === 'procedures'
+            }"
             :aria-expanded="proceduresExpanded"
             @click.stop="proceduresOpen = !proceduresOpen"
           >

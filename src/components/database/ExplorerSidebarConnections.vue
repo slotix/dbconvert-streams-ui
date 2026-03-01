@@ -1009,25 +1009,14 @@ watch(
     }
 
     await nextTick()
-    function focusSelector(selector: string) {
-      const el = document.querySelector<HTMLElement>(selector)
-      if (el) {
-        el.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
-        el.classList.add('ring-1', 'ring-slate-300')
-        setTimeout(() => el.classList.remove('ring-1', 'ring-slate-300'), 600)
-      }
+    const selectedNode = findSelectedNodeElement()
+    if (selectedNode) {
+      focusTreeNode(selectedNode)
+      selectedNode.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' })
+      selectedNode.classList.add('ring-1', 'ring-slate-300')
+      setTimeout(() => selectedNode.classList.remove('ring-1', 'ring-slate-300'), 600)
     }
-    if (sel.database && sel.type && sel.name) {
-      const objKey = `${connId}:${sel.database}:${sel.schema || ''}:${sel.type}:${sel.name}`
-      focusSelector(`[data-explorer-obj="${objKey}"]`)
-    } else if (sel.database && sel.schema) {
-      const schemaKey = `${connId}:${sel.database}:${sel.schema}`
-      focusSelector(`[data-explorer-schema="${schemaKey}"]`)
-    } else if (sel.database) {
-      const dbKey = `${connId}:${sel.database}`
-      focusSelector(`[data-explorer-db="${dbKey}"]`)
-    }
-    syncTreeTabStop(findSelectedNodeElement())
+    syncTreeTabStop(selectedNode)
   },
   { immediate: false }
 )

@@ -46,10 +46,16 @@ const showTableSizesInTree = inject<ComputedRef<boolean>>(
 
 // Check if an item is currently selected (active pane)
 const isItemSelected = (itemName: string) => {
+  const selectionSchema = treeSelection.value.schema || undefined
+  const itemSchema = props.schema || undefined
+  const schemaMatches =
+    !itemSchema || // flat tree lists (e.g., MySQL): ignore selection schema
+    selectionSchema === itemSchema
+
   return (
     treeSelection.value.connectionId === props.connectionId &&
     treeSelection.value.database === props.database &&
-    treeSelection.value.schema === (props.schema || undefined) &&
+    schemaMatches &&
     treeSelection.value.type === props.objectType &&
     treeSelection.value.name === itemName
   )

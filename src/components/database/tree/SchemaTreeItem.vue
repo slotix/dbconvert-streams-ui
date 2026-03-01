@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject, computed, ref } from 'vue'
+import { inject, computed, ref, watch, onBeforeUnmount } from 'vue'
 import type { ComputedRef } from 'vue'
 import { ChevronDown, ChevronRight, Grid2X2 } from 'lucide-vue-next'
 import ObjectList from './ObjectList.vue'
@@ -65,12 +65,71 @@ const viewsOpen = ref(true)
 const functionsOpen = ref(true)
 const proceduresOpen = ref(true)
 const sequencesOpen = ref(true)
+const highlightedSection = ref<
+  'tables' | 'views' | 'functions' | 'procedures' | 'sequences' | null
+>(null)
+let sectionHighlightTimeout: ReturnType<typeof setTimeout> | null = null
 
 const tablesExpanded = computed(() => (hasSearch.value ? true : tablesOpen.value))
 const viewsExpanded = computed(() => (hasSearch.value ? true : viewsOpen.value))
 const functionsExpanded = computed(() => (hasSearch.value ? true : functionsOpen.value))
 const proceduresExpanded = computed(() => (hasSearch.value ? true : proceduresOpen.value))
 const sequencesExpanded = computed(() => (hasSearch.value ? true : sequencesOpen.value))
+
+function highlightSection(section: 'tables' | 'views' | 'functions' | 'procedures' | 'sequences') {
+  highlightedSection.value = section
+  if (sectionHighlightTimeout) {
+    clearTimeout(sectionHighlightTimeout)
+  }
+  sectionHighlightTimeout = setTimeout(() => {
+    highlightedSection.value = null
+    sectionHighlightTimeout = null
+  }, 900)
+}
+
+watch(
+  () => treeSelection.value,
+  (sel) => {
+    if (!sel?.name || !sel?.type) return
+    if (sel.connectionId !== props.connectionId || sel.database !== props.database) return
+    if ((sel.schema || '') !== (props.schema.name || '')) return
+
+    if (sel.type === 'table') {
+      if (!tablesOpen.value) {
+        tablesOpen.value = true
+        highlightSection('tables')
+      }
+    } else if (sel.type === 'view') {
+      if (!viewsOpen.value) {
+        viewsOpen.value = true
+        highlightSection('views')
+      }
+    } else if (sel.type === 'function') {
+      if (!functionsOpen.value) {
+        functionsOpen.value = true
+        highlightSection('functions')
+      }
+    } else if (sel.type === 'procedure') {
+      if (!proceduresOpen.value) {
+        proceduresOpen.value = true
+        highlightSection('procedures')
+      }
+    } else if (sel.type === 'sequence') {
+      if (!sequencesOpen.value) {
+        sequencesOpen.value = true
+        highlightSection('sequences')
+      }
+    }
+  },
+  { immediate: true, deep: true }
+)
+
+onBeforeUnmount(() => {
+  if (sectionHighlightTimeout) {
+    clearTimeout(sectionHighlightTimeout)
+    sectionHighlightTimeout = null
+  }
+})
 
 const emit = defineEmits<{
   (e: 'toggle'): void
@@ -169,6 +228,9 @@ function handleObjectContextMenu(payload: {
       <button
         type="button"
         class="w-full text-left text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-1 flex items-center justify-between hover:text-gray-500 dark:hover:text-gray-400"
+        :class="{
+          'animate-pulse text-teal-600 dark:text-teal-300': highlightedSection === 'tables'
+        }"
         :aria-expanded="tablesExpanded"
         @click.stop="tablesOpen = !tablesOpen"
       >
@@ -202,6 +264,9 @@ function handleObjectContextMenu(payload: {
       <button
         type="button"
         class="w-full text-left text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-2 flex items-center justify-between hover:text-gray-500 dark:hover:text-gray-400"
+        :class="{
+          'animate-pulse text-teal-600 dark:text-teal-300': highlightedSection === 'views'
+        }"
         :aria-expanded="viewsExpanded"
         @click.stop="viewsOpen = !viewsOpen"
       >
@@ -235,6 +300,9 @@ function handleObjectContextMenu(payload: {
         v-if="schema.functions.length"
         type="button"
         class="w-full text-left text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-2 flex items-center justify-between hover:text-gray-500 dark:hover:text-gray-400"
+        :class="{
+          'animate-pulse text-teal-600 dark:text-teal-300': highlightedSection === 'functions'
+        }"
         :aria-expanded="functionsExpanded"
         @click.stop="functionsOpen = !functionsOpen"
       >
@@ -268,6 +336,9 @@ function handleObjectContextMenu(payload: {
         v-if="schema.procedures.length"
         type="button"
         class="w-full text-left text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-2 flex items-center justify-between hover:text-gray-500 dark:hover:text-gray-400"
+        :class="{
+          'animate-pulse text-teal-600 dark:text-teal-300': highlightedSection === 'procedures'
+        }"
         :aria-expanded="proceduresExpanded"
         @click.stop="proceduresOpen = !proceduresOpen"
       >
@@ -301,6 +372,9 @@ function handleObjectContextMenu(payload: {
         v-if="schema.sequences.length"
         type="button"
         class="w-full text-left text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-2 flex items-center justify-between hover:text-gray-500 dark:hover:text-gray-400"
+        :class="{
+          'animate-pulse text-teal-600 dark:text-teal-300': highlightedSection === 'sequences'
+        }"
         :aria-expanded="sequencesExpanded"
         @click.stop="sequencesOpen = !sequencesOpen"
       >

@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { ChevronDown } from 'lucide-vue-next'
+import { ChevronDown, ExternalLink } from 'lucide-vue-next'
+import { useRouter } from 'vue-router'
 import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/vue'
 import type { SortModelItem } from 'ag-grid-community'
 import AGGridDataView from '@/components/database/AGGridDataView.vue'
 import AGGridFileDataView from '@/components/files/AGGridFileDataView.vue'
 import SchemaComparisonPanel from './SchemaComparisonPanel.vue'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
+import { useExplorerViewStateStore } from '@/stores/explorerViewState'
+import { usePaneTabsStore } from '@/stores/paneTabs'
 import { useDatabaseOverviewStore } from '@/stores/databaseOverview'
 import { useMonitoringStore } from '@/stores/monitoring'
 import { useConnectionsStore } from '@/stores/connections'
@@ -26,6 +29,7 @@ import {
   getSqlDialectFromConnection,
   isFileBasedKind
 } from '@/types/specs'
+import type { SqlDialect } from '@/types/specs'
 
 interface GridState {
   sortModel?: SortModelItem[]
@@ -67,13 +71,43 @@ const props = defineProps<{
   target: Connection
 }>()
 
+const router = useRouter()
 const navigationStore = useExplorerNavigationStore()
+const explorerViewStateStore = useExplorerViewStateStore()
+const paneTabsStore = usePaneTabsStore()
 const overviewStore = useDatabaseOverviewStore()
 const monitoringStore = useMonitoringStore()
 const connectionsStore = useConnectionsStore()
 
+function getCompareSelectionStorageKey(streamId?: string): string {
+  return `stream-compare-selected-table:${streamId || 'unknown'}`
+}
+
+function readPersistedSelectedTable(streamId?: string): string {
+  if (typeof window === 'undefined') return ''
+  try {
+    return window.localStorage.getItem(getCompareSelectionStorageKey(streamId)) || ''
+  } catch {
+    return ''
+  }
+}
+
+function persistSelectedTable(streamId: string | undefined, tableValue: string) {
+  if (typeof window === 'undefined') return
+  try {
+    const key = getCompareSelectionStorageKey(streamId)
+    if (!tableValue) {
+      window.localStorage.removeItem(key)
+      return
+    }
+    window.localStorage.setItem(key, tableValue)
+  } catch {
+    // Ignore storage errors.
+  }
+}
+
 // Selected table/query from stream config
-const selectedTable = ref<string>('')
+const selectedTable = ref<string>(readPersistedSelectedTable(props.stream.id))
 const sourceConnections = computed(() => props.stream.source?.connections || [])
 const isFederated = computed(() => sourceConnections.value.length > 1)
 const hasAnyTables = computed(() =>
@@ -84,6 +118,14 @@ const hasAnyQueries = computed(() =>
     (conn.queries || []).some((q) => !!q.name && !!q.query?.trim())
   )
 )
+const targetDialect = computed(() =>
+  getSqlDialectFromConnection(props.target.spec, props.target.type)
+)
+
+function isMysqlEngineType(connectionType?: string): boolean {
+  const normalized = (connectionType || '').toLowerCase().trim()
+  return normalized === 'mysql' || normalized === 'mariadb'
+}
 
 function buildTargetObjectNameForTable(
   tableName: string,
@@ -105,7 +147,10 @@ function buildTargetObjectNameForTable(
   const parsed = parseTableName(trimmedTable, false)
   let outputName = parsed.table
   if (parsed.schema && parsed.schema.toLowerCase() !== 'public') {
-    outputName = `${parsed.schema}.${parsed.table}`
+    outputName =
+      targetDialect.value === 'mysql'
+        ? `${parsed.schema}__${parsed.table}`
+        : `${parsed.schema}.${parsed.table}`
   }
 
   if (trimmedAlias && !outputName.startsWith(`${trimmedAlias}_`)) {
@@ -274,9 +319,24 @@ const sourceDialect = computed(() =>
     selectedSourceConnection.value?.type
   )
 )
-const targetDialect = computed(() =>
-  getSqlDialectFromConnection(props.target.spec, props.target.type)
+const isSourceMysql = computed(
+  () => sourceDialect.value === 'mysql' || isMysqlEngineType(selectedSourceConnection.value?.type)
 )
+const isTargetMysql = computed(
+  () => targetDialect.value === 'mysql' || isMysqlEngineType(props.target?.type)
+)
+
+function resolveSchemaForDialect(
+  dialect: SqlDialect,
+  ...candidates: Array<string | undefined>
+): string | undefined {
+  if (dialect !== 'pgsql') return undefined
+  for (const candidate of candidates) {
+    const value = candidate?.trim()
+    if (value) return value
+  }
+  return undefined
+}
 
 // Check if target is file-based - spec is the ONLY source of truth
 const targetKind = computed(() => getConnectionKindFromSpec(props.target.spec))
@@ -343,6 +403,21 @@ const targetSchema = computed(() => {
   if (spec?.snowflake?.schema) return spec.snowflake.schema
   return undefined
 })
+
+const canOpenSourceInExplorer = computed(
+  () =>
+    selectedCompareItem.value?.kind === 'table' &&
+    Boolean(
+      selectedSourceConnectionId.value && sourceDatabase.value && selectedSourceTableName.value
+    )
+)
+
+const canOpenTargetInExplorer = computed(
+  () =>
+    selectedCompareItem.value?.kind === 'table' &&
+    !isFileTarget.value &&
+    Boolean(props.target.id && targetDatabase.value && selectedTargetParsed.value.table)
+)
 
 // Schema comparison (only for database targets, not files)
 const schemaComparison = computed((): SchemaComparison | null => {
@@ -454,6 +529,20 @@ onMounted(async () => {
   }
 })
 
+watch(
+  () => selectedTable.value,
+  (value) => {
+    persistSelectedTable(props.stream.id, value)
+  }
+)
+
+watch(
+  () => props.stream.id,
+  (streamId) => {
+    selectedTable.value = readPersistedSelectedTable(streamId)
+  }
+)
+
 // Load source and target table/file data in parallel
 async function loadTableData() {
   if (!selectedTable.value) return
@@ -503,15 +592,7 @@ async function loadSourceTable() {
     const tableName = selectedSourceTableName.value
     const schemaFromName = selectedSourceSchema.value
 
-    // For MySQL, don't pass schema (database IS the schema)
-    // For PostgreSQL, use schema if provided, otherwise default to 'public'
-    let schema: string | undefined
-    const sourceKind = getConnectionKindFromSpec(selectedSourceConnection.value.spec)
-    if (sourceKind === 'database' && sourceTypeLabel.value === 'mysql') {
-      schema = undefined // MySQL doesn't use separate schemas
-    } else {
-      schema = schemaFromName || 'public'
-    }
+    const schema = resolveSchemaForDialect(sourceDialect.value, schemaFromName)
 
     const meta = navigationStore.findTableMeta(
       selectedSourceConnectionId.value,
@@ -615,18 +696,13 @@ async function loadTargetTable() {
 
     const tableName = selectedTargetParsed.value.table
     const schemaFromName = selectedTargetParsed.value.schema
+    const schema = resolveSchemaForDialect(
+      targetDialect.value,
+      schemaFromName,
+      targetTableMeta.value?.schema,
+      targetSchema.value
+    )
 
-    // For MySQL, don't pass schema (database IS the schema)
-    // For PostgreSQL, use schema if provided, otherwise default to 'public'
-    let schema: string | undefined
-    const targetKind = getConnectionKindFromSpec(props.target.spec)
-    if (targetKind === 'database' && targetTypeLabel.value === 'mysql') {
-      schema = undefined // MySQL doesn't use separate schemas
-    } else {
-      schema = schemaFromName || targetSchema.value || 'public'
-    }
-
-    // Find the table metadata
     const meta = navigationStore.findTableMeta(
       props.target.id,
       targetDatabase.value,
@@ -713,6 +789,113 @@ async function loadTargetFile() {
     targetFileError.value =
       error instanceof Error ? error.message : 'Failed to load target file metadata'
   }
+}
+
+async function openSourceInExplorer() {
+  if (!canOpenSourceInExplorer.value) return
+
+  const targetPane = paneTabsStore.activePane || 'left'
+  const connectionId = selectedSourceConnectionId.value
+  const database = sourceDatabase.value
+  const tableName = selectedSourceTableName.value
+  const schemaName = resolveSchemaForDialect(sourceDialect.value, sourceSchema.value)
+
+  if (!connectionId || !database || !tableName) return
+
+  navigationStore.setActiveConnectionId(connectionId)
+  connectionsStore.setCurrentConnection(connectionId)
+  navigationStore.expandConnection(connectionId)
+  navigationStore.expandDatabase(`${connectionId}:${database}`)
+  if (schemaName) {
+    navigationStore.expandSchema(`${connectionId}:${database}:${schemaName}`)
+  }
+  await navigationStore.ensureMetadata(connectionId, database)
+
+  navigationStore.selectObject(connectionId, database, schemaName, 'table', tableName)
+
+  if (targetPane === 'left') {
+    explorerViewStateStore.selectTable(connectionId, database, 'table', tableName, schemaName)
+  } else if (explorerViewStateStore.viewType !== 'table-data') {
+    explorerViewStateStore.selectDatabaseTabView(connectionId, database)
+  }
+
+  paneTabsStore.addTab(
+    targetPane,
+    {
+      id: `${connectionId}:${database}:${schemaName || ''}:${tableName}:table`,
+      connectionId,
+      database,
+      schema: schemaName,
+      name: tableName,
+      type: 'table',
+      tabType: 'database'
+    },
+    'preview'
+  )
+
+  await router.push({
+    name: 'DatabaseExplorer',
+    query: {
+      details: 'true',
+      db: database
+    }
+  })
+}
+
+async function openTargetInExplorer() {
+  if (!canOpenTargetInExplorer.value) return
+
+  const targetPane = paneTabsStore.activePane || 'left'
+  const connectionId = props.target.id
+  const database = targetDatabase.value
+  const tableName = selectedTargetParsed.value.table
+  const schemaName = resolveSchemaForDialect(
+    targetDialect.value,
+    selectedTargetParsed.value.schema,
+    targetTableMeta.value?.schema,
+    targetSchema.value
+  )
+
+  if (!connectionId || !database || !tableName) return
+
+  navigationStore.setActiveConnectionId(connectionId)
+  connectionsStore.setCurrentConnection(connectionId)
+  navigationStore.expandConnection(connectionId)
+  navigationStore.expandDatabase(`${connectionId}:${database}`)
+  if (schemaName) {
+    navigationStore.expandSchema(`${connectionId}:${database}:${schemaName}`)
+  }
+  await navigationStore.ensureMetadata(connectionId, database)
+
+  navigationStore.selectObject(connectionId, database, schemaName, 'table', tableName)
+
+  if (targetPane === 'left') {
+    explorerViewStateStore.selectTable(connectionId, database, 'table', tableName, schemaName)
+  } else if (explorerViewStateStore.viewType !== 'table-data') {
+    explorerViewStateStore.selectDatabaseTabView(connectionId, database)
+  }
+
+  paneTabsStore.addTab(
+    targetPane,
+    {
+      id: `${connectionId}:${database}:${schemaName || ''}:${tableName}:table`,
+      connectionId,
+      database,
+      schema: schemaName,
+      name: tableName,
+      type: 'table',
+      tabType: 'database'
+    },
+    'preview'
+  )
+
+  await router.push({
+    name: 'DatabaseExplorer',
+    query: {
+      details: 'true',
+      db: database
+    }
+  })
 }
 
 function buildTargetTableFolderName(): string {
@@ -1020,15 +1203,27 @@ async function selectTable(tableName: string) {
                 selectedSourceConnection.name
               }}</span>
             </div>
-            <div class="text-xs text-gray-600 dark:text-gray-400">
-              {{ sourceDatabase }}
-              <span v-if="sourceSchema && sourceSchema !== 'public'"> / {{ sourceSchema }} </span>
-              /
-              {{
-                selectedCompareItem?.kind === 'table'
-                  ? selectedSourceTableName
-                  : selectedCompareItem?.label
-              }}
+            <div class="flex items-center gap-2">
+              <div class="text-xs text-gray-600 dark:text-gray-400">
+                {{ sourceDatabase }}
+                <span v-if="sourceSchema && sourceSchema !== 'public'"> / {{ sourceSchema }} </span>
+                /
+                {{
+                  selectedCompareItem?.kind === 'table'
+                    ? selectedSourceTableName
+                    : selectedCompareItem?.label
+                }}
+              </div>
+              <button
+                type="button"
+                class="inline-flex items-center gap-1 rounded-md border border-blue-300/70 dark:border-blue-700/60 px-2 py-1 text-[11px] font-medium text-blue-700 dark:text-blue-300 hover:bg-blue-100/70 dark:hover:bg-blue-900/35 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                :disabled="!canOpenSourceInExplorer"
+                title="Open current source table in Data Explorer"
+                @click="openSourceInExplorer"
+              >
+                <ExternalLink class="h-3.5 w-3.5" />
+                Explorer
+              </button>
             </div>
           </div>
         </div>
@@ -1132,15 +1327,29 @@ async function selectTable(tableName: string) {
               </span>
               <span class="text-xs text-gray-600 dark:text-gray-400">{{ target.name }}</span>
             </div>
-            <div class="text-xs text-gray-600 dark:text-gray-400">
-              <template v-if="isFileTarget">
-                {{ targetFileDisplayName || `${selectedTargetObjectName}.${target.type}` }}
-              </template>
-              <template v-else>
-                {{ targetDatabase }}
-                <span v-if="targetSchema && targetSchema !== 'public'"> / {{ targetSchema }} </span>
-                / {{ selectedTargetObjectName }}
-              </template>
+            <div class="flex items-center gap-2">
+              <div class="text-xs text-gray-600 dark:text-gray-400">
+                <template v-if="isFileTarget">
+                  {{ targetFileDisplayName || `${selectedTargetObjectName}.${target.type}` }}
+                </template>
+                <template v-else>
+                  {{ targetDatabase }}
+                  <span v-if="targetSchema && targetSchema !== 'public'">
+                    / {{ targetSchema }}
+                  </span>
+                  / {{ selectedTargetObjectName }}
+                </template>
+              </div>
+              <button
+                type="button"
+                class="inline-flex items-center gap-1 rounded-md border border-emerald-300/70 dark:border-emerald-700/60 px-2 py-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100/70 dark:hover:bg-emerald-900/35 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                :disabled="!canOpenTargetInExplorer"
+                title="Open current target table in Data Explorer"
+                @click="openTargetInExplorer"
+              >
+                <ExternalLink class="h-3.5 w-3.5" />
+                Explorer
+              </button>
             </div>
           </div>
         </div>

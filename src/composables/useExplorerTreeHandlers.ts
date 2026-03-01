@@ -40,8 +40,9 @@ export function useExplorerTreeHandlers({
   tabManager,
   alwaysOpenNewTab
 }: UseExplorerTreeHandlersOptions) {
-  // Tree selection is derived from store (single source of truth)
-  const treeSelection = computed(() => viewState.treeSelection)
+  // Tree selection prefers explicit navigation selection (set by context/compare actions),
+  // falling back to persisted view-state selection.
+  const treeSelection = computed(() => navigationStore.selection || viewState.treeSelection)
   const { confirmLeavePaneIfDirty } = useUnsavedChangesGuard()
 
   function handleOpenFromTree(payload: {
