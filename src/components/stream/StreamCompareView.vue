@@ -65,6 +65,7 @@ interface CompareItem {
   alias?: string
   query?: string
   targetObjectName: string
+  sourcePath?: string
 }
 
 const props = defineProps<{
@@ -199,6 +200,54 @@ const compareItems = computed<CompareItem[]>(() => {
         targetObjectName: query.name
       })
     }
+
+    // S3/file sources: build source paths from stream config.
+    // Pair with monitoring store tableMetadata for authoritative table names.
+    // The backend processes selections in config order, so we match by position.
+    // Format detection is deferred to loadSourceFile() which uses fileExplorerStore
+    // (same code path as Data Explorer and stream wizard).
+    const s3Bucket = conn.s3?.bucket
+    const sourcePaths: string[] = []
+
+    for (const prefix of conn.s3?.prefixes || []) {
+      if (!prefix.replace(/\/+$/, '')) continue
+      sourcePaths.push(s3Bucket ? `s3://${s3Bucket}/${prefix}` : prefix)
+    }
+    for (const obj of conn.s3?.objects || []) {
+      const trimmed = obj.trim()
+      if (!trimmed) continue
+      sourcePaths.push(s3Bucket ? `s3://${s3Bucket}/${trimmed}` : trimmed)
+    }
+    const filesBasePath = conn.files?.basePath
+    for (const filePath of conn.files?.paths || []) {
+      const trimmed = filePath.trim()
+      if (!trimmed) continue
+      sourcePaths.push(filesBasePath ? joinPaths(filesBasePath, trimmed) : trimmed)
+    }
+
+    if (sourcePaths.length > 0) {
+      // Table names come from the monitoring store (backend-computed, reported via SSE).
+      // Backend processes selections in config order, so monitoring table names
+      // (excluding database tables already added above) map 1:1 by position.
+      const dbTableNames = new Set(items.map((it) => it.value))
+      const fileTableNames = Array.from(monitoringStore.tableMetadata.keys()).filter(
+        (name) => !dbTableNames.has(name)
+      )
+
+      for (let i = 0; i < sourcePaths.length; i++) {
+        const tableName = fileTableNames[i]
+        if (!tableName) continue
+        items.push({
+          value: tableName,
+          label: tableName,
+          kind: 'table',
+          connectionId: conn.connectionId,
+          alias,
+          targetObjectName: tableName,
+          sourcePath: sourcePaths[i]
+        })
+      }
+    }
   }
 
   return items
@@ -328,6 +377,15 @@ function resolveSchemaForDialect(
   }
   return undefined
 }
+
+// Check if source is file-based (S3, local files)
+const sourceKind = computed(() => getConnectionKindFromSpec(selectedSourceConnection.value?.spec))
+const isFileSource = computed(() => isFileBasedKind(sourceKind.value))
+
+// Source file state (for file-based sources: S3, local files)
+const sourceFileEntry = ref<FileSystemEntry | null>(null)
+const sourceFileMetadata = ref<FileMetadata | null>(null)
+const sourceFileError = ref<string | null>(null)
 
 // Check if target is file-based - spec is the ONLY source of truth
 const targetKind = computed(() => getConnectionKindFromSpec(props.target.spec))
@@ -502,6 +560,9 @@ watch(
       sourceQueryPreview.value = null
       sourceQueryError.value = null
       isLoadingSourceQuery.value = false
+      sourceFileEntry.value = null
+      sourceFileMetadata.value = null
+      sourceFileError.value = null
       targetTableMeta.value = null
       targetFileEntry.value = null
       targetFileMetadata.value = null
@@ -542,11 +603,18 @@ async function loadTableData() {
   if (!selectedTable.value) return
 
   // Load source and target simultaneously for better performance
-  await Promise.all([loadSourceTable(), isFileTarget.value ? loadTargetFile() : loadTargetTable()])
+  const sourceLoader = isFileSource.value ? loadSourceFile() : loadSourceTable()
+  const targetLoader = isFileTarget.value ? loadTargetFile() : loadTargetTable()
+  await Promise.all([sourceLoader, targetLoader])
 }
 
 async function loadSourceTable() {
   try {
+    // Clear source file state when loading database source
+    sourceFileEntry.value = null
+    sourceFileMetadata.value = null
+    sourceFileError.value = null
+
     if (selectedCompareItem.value?.kind === 'query') {
       sourceTableMeta.value = null
       await loadSourceQueryPreview()
@@ -598,6 +666,88 @@ async function loadSourceTable() {
   } catch (error) {
     console.error('Failed to load source table metadata:', error)
   }
+}
+
+async function loadSourceFile() {
+  try {
+    sourceFileError.value = null
+    sourceFileEntry.value = null
+    sourceFileMetadata.value = null
+    sourceTableMeta.value = null
+    sourceQueryPreview.value = null
+    sourceQueryError.value = null
+    isLoadingSourceQuery.value = false
+
+    const sourcePath = selectedCompareItem.value?.sourcePath
+    if (!sourcePath) {
+      sourceFileError.value = 'No source file path available for this item.'
+      return
+    }
+
+    const connectionId = selectedSourceConnectionId.value
+
+    // Reuse fileExplorerStore — same code path as Data Explorer and stream wizard.
+    // It loads S3/local entries, detects format from actual filenames, and provides metadata.
+    await fileExplorerStore.loadEntries(connectionId)
+
+    // The tree is lazy-loaded: only top-level entries are loaded initially.
+    // Walk down the path, loading each ancestor folder to reach the target entry
+    // (same approach as openTargetInExplorer uses for the sidebar).
+    const entry = await resolveFileEntry(connectionId, sourcePath)
+
+    if (!entry) {
+      sourceFileError.value = `Source path not found: ${sourcePath}`
+      return
+    }
+
+    // For table folders (directories with uniform data files), the entry already has
+    // format detected from actual filenames — same as the Data Explorer tree shows.
+    const metadata = await fileExplorerStore.loadFileMetadata(entry, true, connectionId)
+    if (!metadata) {
+      sourceFileError.value = 'Failed to load file metadata for source.'
+      return
+    }
+
+    sourceFileEntry.value = entry
+    sourceFileMetadata.value = metadata
+  } catch (error) {
+    console.error('Failed to load source file:', error)
+    sourceFileError.value =
+      error instanceof Error ? error.message : 'Failed to load source file metadata'
+  }
+}
+
+// Walk down the S3/file tree, loading folder contents at each level to find the target entry.
+// Paths may include trailing slashes for directories (e.g., "s3://bucket/sakila/customer/").
+async function resolveFileEntry(
+  connectionId: string,
+  targetPath: string
+): Promise<FileSystemEntry | null> {
+  const normalized = targetPath.replace(/\/+$/, '')
+  const entries = fileExplorerStore.getEntries(connectionId)
+
+  // Try direct lookup first (works if parent was already loaded).
+  let entry =
+    findFileEntryByPath(entries, normalized) || findFileEntryByPath(entries, normalized + '/')
+  if (entry) return entry
+
+  // Walk ancestors from the root down, loading each unloaded folder.
+  const segments = normalized.split('/')
+  for (let i = 3; i < segments.length; i++) {
+    // For s3://bucket/a/b/c, start from i=3 → "s3://bucket/a"
+    const ancestorPath = segments.slice(0, i).join('/')
+    const refreshed = fileExplorerStore.getEntries(connectionId)
+    const ancestor =
+      findFileEntryByPath(refreshed, ancestorPath) ||
+      findFileEntryByPath(refreshed, ancestorPath + '/')
+    if (ancestor && ancestor.type === 'dir' && !ancestor.isLoaded) {
+      await fileExplorerStore.loadFolderContents(connectionId, ancestor.path)
+    }
+  }
+
+  // Final lookup after all ancestors are loaded.
+  const final = fileExplorerStore.getEntries(connectionId)
+  return findFileEntryByPath(final, normalized) || findFileEntryByPath(final, normalized + '/')
 }
 
 async function loadSourceQueryPreview() {
@@ -1078,7 +1228,8 @@ async function syncToTarget(sourceState: GridState) {
   try {
     // Map state based on target type (database or file)
     const targetMeta = isFileTarget.value ? targetFileMetadata.value : targetTableMeta.value
-    const mappedState = mapGridState(sourceState, sourceTableMeta.value, targetMeta)
+    const sourceMeta = isFileSource.value ? sourceFileMetadata.value : sourceTableMeta.value
+    const mappedState = mapGridState(sourceState, sourceMeta, targetMeta)
 
     // Apply to target grid
     await targetGridRef.value.applyGridState(mappedState)
@@ -1100,7 +1251,8 @@ async function syncToSource(targetState: GridState) {
   try {
     // Map state
     const targetMeta = isFileTarget.value ? targetFileMetadata.value : targetTableMeta.value
-    const mappedState = mapGridState(targetState, targetMeta, sourceTableMeta.value)
+    const sourceMeta = isFileSource.value ? sourceFileMetadata.value : sourceTableMeta.value
+    const mappedState = mapGridState(targetState, targetMeta, sourceMeta)
 
     // Apply to source grid
     await sourceGridRef.value.applyGridState(mappedState)
@@ -1261,14 +1413,21 @@ async function selectTable(tableName: string) {
             </div>
             <div class="flex items-center gap-2">
               <div class="text-xs text-gray-600 dark:text-gray-400">
-                {{ sourceDatabase }}
-                <span v-if="sourceSchema && sourceSchema !== 'public'"> / {{ sourceSchema }} </span>
-                /
-                {{
-                  selectedCompareItem?.kind === 'table'
-                    ? selectedSourceTableName
-                    : selectedCompareItem?.label
-                }}
+                <template v-if="isFileSource">
+                  {{ selectedCompareItem?.label || selectedTable }}
+                </template>
+                <template v-else>
+                  {{ sourceDatabase }}
+                  <span v-if="sourceSchema && sourceSchema !== 'public'">
+                    / {{ sourceSchema }}
+                  </span>
+                  /
+                  {{
+                    selectedCompareItem?.kind === 'table'
+                      ? selectedSourceTableName
+                      : selectedCompareItem?.label
+                  }}
+                </template>
               </div>
               <button
                 type="button"
@@ -1340,6 +1499,30 @@ async function selectTable(tableName: string) {
               Query returned no rows.
             </div>
           </div>
+          <!-- File Source -->
+          <div
+            v-else-if="isFileSource && sourceFileEntry"
+            class="h-full transition-all duration-300"
+            :class="{ 'ring-2 ring-blue-400 ring-opacity-50': syncFlashSource }"
+          >
+            <AGGridFileDataView
+              :key="`compare-source-file-${stream.id}-${selectedTable}`"
+              ref="sourceGridRef"
+              :entry="sourceFileEntry"
+              :metadata="sourceFileMetadata"
+              :connection-id="selectedSourceConnectionId"
+              :object-key="`compare-source-file-${stream.id}-${selectedTable}`"
+              :show-toolbar-actions="false"
+              read-only
+            />
+          </div>
+          <div
+            v-else-if="isFileSource && sourceFileError"
+            class="h-full flex items-center justify-center text-center text-sm text-red-600 dark:text-red-300 px-4"
+          >
+            {{ sourceFileError }}
+          </div>
+          <!-- Database Source -->
           <div
             v-else-if="sourceTableMeta && sourceDatabase"
             class="h-full transition-all duration-300"
@@ -1362,7 +1545,7 @@ async function selectTable(tableName: string) {
             v-else
             class="h-full flex items-center justify-center text-gray-500 dark:text-gray-400 text-sm"
           >
-            Loading source table...
+            Loading source {{ isFileSource ? 'file' : 'table' }}...
           </div>
         </div>
       </div>
@@ -1400,7 +1583,11 @@ async function selectTable(tableName: string) {
                 type="button"
                 class="inline-flex items-center gap-1 rounded-md border border-emerald-300/70 dark:border-emerald-700/60 px-2 py-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100/70 dark:hover:bg-emerald-900/35 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 :disabled="!canOpenTargetInExplorer"
-                :title="isFileTarget ? 'Open target file in Data Explorer' : 'Open current target table in Data Explorer'"
+                :title="
+                  isFileTarget
+                    ? 'Open target file in Data Explorer'
+                    : 'Open current target table in Data Explorer'
+                "
                 @click="openTargetInExplorer"
               >
                 <ExternalLink class="h-3.5 w-3.5" />
