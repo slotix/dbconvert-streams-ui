@@ -661,8 +661,10 @@ export function useStreamWizard() {
       (fc) => !connectionsStore.connectionByID(fc.connectionId)
     )
 
-    // Track how many connections were removed (for user notification)
-    removedConnectionsCount.value = hasInvalidConnection ? originalConnections.length : 0
+    // Track how many source connections were removed (accumulate with any target removal above)
+    if (hasInvalidConnection) {
+      removedConnectionsCount.value += originalConnections.length
+    }
 
     // If ANY connection is invalid, clear ALL - user must select new ones
     const connectionsFromConfig: StreamConnectionMapping[] = hasInvalidConnection

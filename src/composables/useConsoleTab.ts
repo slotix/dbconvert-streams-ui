@@ -524,7 +524,7 @@ export function useConsoleTab(options: ConsoleTabOptions) {
   }
 
   // ========== Query Execution Helpers ==========
-  function setExecutionResult(result: ExecuteQueryResult) {
+  function setExecutionResult(result: ExecuteQueryResult, originTabId?: string) {
     hasExecutedQuery.value = true
     queryError.value = result.error || null
     queryResults.value = result.rows
@@ -533,8 +533,8 @@ export function useConsoleTab(options: ConsoleTabOptions) {
     lastQueryStats.value = result.stats || null
     currentPage.value = 1
 
-    // Cache results
-    const tabId = activeQueryTabId.value
+    // Cache results bound to the tab that initiated the query
+    const tabId = originTabId || activeQueryTabId.value
     if (tabId) {
       sqlConsoleStore.setResultCache(tabId, {
         columns: result.columns,
@@ -546,7 +546,7 @@ export function useConsoleTab(options: ConsoleTabOptions) {
     }
   }
 
-  function setExecutionError(error: string) {
+  function setExecutionError(error: string, originTabId?: string) {
     hasExecutedQuery.value = true
     queryError.value = error
     queryResults.value = []
@@ -555,8 +555,8 @@ export function useConsoleTab(options: ConsoleTabOptions) {
     lastQueryStats.value = null
     currentPage.value = 1
 
-    // Cache error
-    const tabId = activeQueryTabId.value
+    // Cache error bound to the tab that initiated the query
+    const tabId = originTabId || activeQueryTabId.value
     if (tabId) {
       sqlConsoleStore.setResultCache(tabId, {
         columns: [],

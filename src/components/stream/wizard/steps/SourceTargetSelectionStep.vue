@@ -36,9 +36,6 @@ import { computed, watch } from 'vue'
 import DualTreeSelector from '../DualTreeSelector.vue'
 import StreamNameField from '../StreamNameField.vue'
 import type { StreamConnectionMapping } from '@/types/streamConfig'
-import { useConnectionsStore } from '@/stores/connections'
-import { getConnectionKindFromSpec } from '@/types/specs'
-import { getSourceSelectionValue } from '@/components/stream/wizard/sourceMappings'
 
 interface Props {
   sourceConnectionId?: string | null
@@ -69,6 +66,7 @@ watch(
     () => props.targetConnectionId,
     () => props.sourceDatabase,
     () => props.targetDatabase,
+    () => props.targetPath,
     () => props.sourceConnections
   ],
   () => {
@@ -93,20 +91,6 @@ const emit = defineEmits<{
 const primarySourceId = computed(
   () => props.sourceConnections[0]?.connectionId || props.sourceConnectionId
 )
-const connectionsStore = useConnectionsStore()
-
-const primarySourceDatabase = computed(() => {
-  const primary = props.sourceConnections[0]
-  if (primary) {
-    const conn = connectionsStore.connectionByID(primary.connectionId)
-    const kind = getConnectionKindFromSpec(conn?.spec)
-    return getSourceSelectionValue(primary, kind)
-  }
-  return props.sourceDatabase
-})
-// Multiple sources = 2+ connections selected
-const hasMultipleSources = computed(() => props.sourceConnections.length > 1)
-
 function handleSourceUpdate(connectionId: string, database?: string, schema?: string) {
   emit('update:source-connection', connectionId, database, schema)
   updateCanProceed()
@@ -133,20 +117,18 @@ function handleClearAll() {
 }
 
 function updateCanProceed() {
-  // Source and target cannot be same connection+database (only checked for single source)
-  // With multiple sources, at least one differs from target
-  const isSameConnectionAndDatabase =
-    !hasMultipleSources.value &&
-    primarySourceId.value &&
-    props.targetConnectionId &&
-    primarySourceId.value === props.targetConnectionId &&
-    (primarySourceDatabase.value || props.sourceDatabase) === props.targetDatabase &&
-    (primarySourceDatabase.value || props.sourceDatabase)
+  // Check if ANY source matches the target (connection + database/bucket/path)
+  const hasSourceTargetConflict = props.sourceConnections.some((conn) => {
+    if (conn.connectionId !== props.targetConnectionId) return false
+    const sourceSelection = conn.database || conn.s3?.bucket || conn.files?.basePath
+    const targetSelection = props.targetDatabase || props.targetPath
+    return sourceSelection && targetSelection && sourceSelection === targetSelection
+  })
 
   const canProceed = Boolean(
     (props.sourceConnections.length > 0 || primarySourceId.value) &&
       props.targetConnectionId &&
-      !isSameConnectionAndDatabase
+      !hasSourceTargetConflict
   )
   emit('update:can-proceed', canProceed)
 }

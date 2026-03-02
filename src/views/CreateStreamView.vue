@@ -325,12 +325,10 @@ const targetFooterLabel = computed(() => {
 
 // Initialize
 onMounted(async () => {
-  // Load connections if not already loaded
-  if (!connectionsStore.connections.length) {
+  try {
     await connectionsStore.refreshConnections()
-  } else {
-    // Refresh connections in case new ones were added
-    await connectionsStore.refreshConnections()
+  } catch (err) {
+    console.error('Failed to load connections:', err)
   }
 
   if (isEditMode.value) {
@@ -623,7 +621,11 @@ function mergeWizardConnections(
       tables: existing?.tables,
       queries: existing?.queries,
       // Prefer wizard's s3 config (from bucket selection) over existing (for edit mode fallback)
-      s3: wizardConn.s3 || existing?.s3
+      s3: wizardConn.s3 || existing?.s3,
+      // Preserve files config: wizard has basePath, existing may have saved paths
+      files: wizardConn.files
+        ? { ...existing?.files, basePath: wizardConn.files.basePath }
+        : existing?.files
     }
   })
 }

@@ -396,8 +396,12 @@ function handleFormatRequest(mode?: FormatMode) {
 onMounted(async () => {
   initialize()
 
-  if (connectionsStore.connections.length === 0) {
-    await connectionsStore.refreshConnections()
+  try {
+    if (connectionsStore.connections.length === 0) {
+      await connectionsStore.refreshConnections()
+    }
+  } catch (err) {
+    console.error('Failed to load connections:', err)
   }
 
   restoreSelectedConnections()

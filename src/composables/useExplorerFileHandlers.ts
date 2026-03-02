@@ -110,7 +110,7 @@ export function useExplorerFileHandlers({
       fileExplorerStore.setSelectedPath(payload.connectionId, payload.path)
     }
 
-    const tabId = `file:${payload.path}`
+    const tabId = `file:${payload.connectionId}:${payload.path}`
 
     // Set loading state to prevent additional clicks
     isLoadingFile.value = true
@@ -149,6 +149,9 @@ export function useExplorerFileHandlers({
       .loadFileMetadata(payload.entry, !isS3, payload.connectionId)
       .then((metadata) => {
         paneTabsStore.updateTabFileMetadata(targetPane, tabId, metadata)
+      })
+      .catch((err) => {
+        console.warn('[Explorer] Failed to load file metadata in background:', err)
       })
   }
 

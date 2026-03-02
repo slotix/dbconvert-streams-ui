@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useLogsStore, type SystemLog } from '@/stores/logs'
+import {
+  STORAGE_KEYS,
+  getStorageValue,
+  setStorageValue,
+  removeStorageValue
+} from '@/constants/storageKeys'
 import { TransitionRoot, TransitionChild } from '@headlessui/vue'
 import {
   ArrowDown,
@@ -447,10 +453,13 @@ onMounted(() => {
   })
 
   // Load preferences from localStorage
-  const savedMessageTypes = localStorage.getItem('systemLogMessageTypes')
+  const savedMessageTypes = getStorageValue<string[] | null>(
+    STORAGE_KEYS.SYSTEM_LOG_MESSAGE_TYPES,
+    null
+  )
   if (savedMessageTypes) {
     try {
-      const parsed = JSON.parse(savedMessageTypes)
+      const parsed = savedMessageTypes
       selectedMessageTypes.value = new Set(parsed)
     } catch {
       // If parsing fails, use defaults
@@ -461,13 +470,13 @@ onMounted(() => {
   // Note: Do NOT persist selectedStreamId - start with clean state each session
   // This ensures users don't see stale stream filters after restart
   // Clear any stale stream filter from localStorage
-  localStorage.removeItem('systemLogStreamFilter')
+  removeStorageValue(STORAGE_KEYS.SYSTEM_LOG_STREAM_FILTER)
 
   // Setup watchers for persistence
   watch(
     selectedMessageTypes,
     (newValue) => {
-      localStorage.setItem('systemLogMessageTypes', JSON.stringify(Array.from(newValue)))
+      setStorageValue(STORAGE_KEYS.SYSTEM_LOG_MESSAGE_TYPES, Array.from(newValue))
     },
     { deep: true }
   )

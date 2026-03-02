@@ -607,12 +607,6 @@ export const useCommonStore = defineStore('common', {
         return 'failed'
       }
     },
-    setSelectedPlan(_planId: string) {
-      if (this.userData) {
-        //todo: implement this
-        // this.userData.subscription = _planId
-      }
-    },
     setBackendConnected(status: boolean) {
       this.isBackendConnected = status
 

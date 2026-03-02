@@ -8,7 +8,12 @@ export type ViewType =
   | 'file-browser' // Showing file explorer
   | null
 
-const STORAGE_KEY = 'explorer.viewState'
+const STORAGE_KEY_BASE = 'explorer.viewState'
+
+function getStorageKey(): string {
+  const apiUrl = window.ENV?.VITE_API_URL || import.meta.env.VITE_API_URL || '/api'
+  return `${STORAGE_KEY_BASE}:${apiUrl}`
+}
 
 interface PersistedState {
   viewType: ViewType
@@ -30,7 +35,7 @@ function loadPersistedState(): PersistedState | null {
   }
 
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY)
+    const raw = window.localStorage.getItem(getStorageKey())
     if (!raw) return null
     return JSON.parse(raw) as PersistedState
   } catch (error) {
@@ -45,7 +50,7 @@ function persistState(state: PersistedState) {
   }
 
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+    window.localStorage.setItem(getStorageKey(), JSON.stringify(state))
   } catch (error) {
     console.warn('Failed to persist explorer view state to localStorage:', error)
   }

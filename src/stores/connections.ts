@@ -311,7 +311,9 @@ export const useConnectionsStore = defineStore('connections', {
       this.isLoadingDatabases = true
       try {
         const databases = await api.getDatabases(connectionId)
-        this.currentConnection!.databasesInfo = databases
+        if (this.currentConnection) {
+          this.currentConnection.databasesInfo = databases
+        }
         // Schema handling moved to explorer/stream contexts
       } finally {
         this.isLoadingDatabases = false

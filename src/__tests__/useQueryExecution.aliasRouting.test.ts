@@ -124,11 +124,14 @@ describe('useQueryExecution alias routing', () => {
       connections: selectedConnections
     })
     expect(harness.setExecutionError).not.toHaveBeenCalled()
-    expect(harness.setExecutionResult).toHaveBeenCalledWith({
-      columns: ['actor_id'],
-      rows: [{ actor_id: 1 }],
-      stats: { rowCount: 1, duration: 12 }
-    })
+    expect(harness.setExecutionResult).toHaveBeenCalledWith(
+      {
+        columns: ['actor_id'],
+        rows: [{ actor_id: 1 }],
+        stats: { rowCount: 1, duration: 12 }
+      },
+      undefined
+    )
     expect(harness.saveToHistory).toHaveBeenCalledWith(
       query,
       expect.objectContaining({

@@ -122,11 +122,6 @@ const targetDialect = computed(() =>
   getSqlDialectFromConnection(props.target.spec, props.target.type)
 )
 
-function isMysqlEngineType(connectionType?: string): boolean {
-  const normalized = (connectionType || '').toLowerCase().trim()
-  return normalized === 'mysql' || normalized === 'mariadb'
-}
-
 function buildTargetObjectNameForTable(
   tableName: string,
   alias: string,
@@ -319,13 +314,6 @@ const sourceDialect = computed(() =>
     selectedSourceConnection.value?.type
   )
 )
-const isSourceMysql = computed(
-  () => sourceDialect.value === 'mysql' || isMysqlEngineType(selectedSourceConnection.value?.type)
-)
-const isTargetMysql = computed(
-  () => targetDialect.value === 'mysql' || isMysqlEngineType(props.target?.type)
-)
-
 function resolveSchemaForDialect(
   dialect: SqlDialect,
   ...candidates: Array<string | undefined>

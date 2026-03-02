@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { STORAGE_KEYS, getStorageValue, setStorageValue } from '@/constants/storageKeys'
 
 export type ThemeMode = 'light' | 'dark'
 
@@ -10,13 +11,13 @@ export const useThemeStore = defineStore('theme', () => {
 
   // Initialize theme from localStorage or system preference
   function initializeTheme() {
-    const stored = localStorage.getItem('theme-mode')
+    const stored = getStorageValue(STORAGE_KEYS.THEME_MODE, '' as string)
 
     if (stored === 'light' || stored === 'dark') {
       mode.value = stored
     } else if (stored === 'system') {
       mode.value = 'dark'
-      localStorage.setItem('theme-mode', mode.value)
+      setStorageValue(STORAGE_KEYS.THEME_MODE, mode.value)
     }
 
     updateTheme()
@@ -62,7 +63,7 @@ export const useThemeStore = defineStore('theme', () => {
   // Set theme mode
   function setTheme(newMode: ThemeMode) {
     mode.value = newMode
-    localStorage.setItem('theme-mode', newMode)
+    setStorageValue(STORAGE_KEYS.THEME_MODE, newMode)
     updateTheme()
   }
 

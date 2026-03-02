@@ -184,7 +184,6 @@ const treeShowTableSizes = computed(() => {
 })
 
 provide('treeShowTableSizes', treeShowTableSizes)
-const loadError = ref<string | null>(null)
 const searchQuery = computed(() => props.searchQuery || '')
 
 // Only apply filtering/highlighting when query meets minimum length.
@@ -710,6 +709,7 @@ async function hydrateExpandedDatabasesForConnection(connectionId: string) {
   await navigationStore.ensureDatabases(connectionId)
 
   const dbPrefix = `${connectionId}:`
+  const metadataLoads: Promise<void>[] = []
   for (const dbKey of navigationStore.expandedDatabases) {
     if (!dbKey.startsWith(dbPrefix)) continue
     const dbName = dbKey.slice(dbPrefix.length)
@@ -718,14 +718,16 @@ async function hydrateExpandedDatabasesForConnection(connectionId: string) {
     const isLoading = navigationStore.isMetadataLoading(connectionId, dbName)
     const hasMetadata = navigationStore.getMetadata(connectionId, dbName) !== null
     if (!isLoading && !hasMetadata) {
-      await navigationStore.ensureMetadata(connectionId, dbName)
+      metadataLoads.push(navigationStore.ensureMetadata(connectionId, dbName))
     }
   }
+  await Promise.all(metadataLoads)
 }
 
 async function hydrateExpandedConnections() {
   const expandedConnectionIds = new Set(navigationStore.expandedConnections)
 
+  const tasks: Promise<void>[] = []
   for (const connection of connectionsStore.connections) {
     if (!expandedConnectionIds.has(connection.id)) continue
 
@@ -734,18 +736,18 @@ async function hydrateExpandedConnections() {
       continue
     }
 
-    await hydrateExpandedDatabasesForConnection(connection.id)
+    tasks.push(hydrateExpandedDatabasesForConnection(connection.id))
   }
+  await Promise.all(tasks)
 }
 
 async function loadConnections() {
   isLoadingConnections.value = true
-  loadError.value = null
   try {
     await connectionsStore.refreshConnections()
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : 'Failed to load connections'
-    loadError.value = msg
+    toast.error(msg)
   } finally {
     isLoadingConnections.value = false
   }

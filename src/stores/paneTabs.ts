@@ -326,7 +326,7 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
   // Tab key generation for deduplication
   function generateTabKey(tab: PaneTab): string {
     if (tab.tabType === 'file') {
-      return `file:${tab.filePath}`
+      return `file:${tab.connectionId}:${tab.filePath}`
     }
     if (tab.tabType === 'file-console') {
       return `file-console:${tab.consoleSessionId || tab.id}`

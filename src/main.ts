@@ -114,10 +114,12 @@ window.addEventListener('unhandledrejection', (event) => {
   }
 })
 
-// Suppress browser's default context menu globally
-document.addEventListener('contextmenu', (event) => {
-  event.preventDefault()
-})
+// Suppress browser's default context menu in desktop mode only
+if (isWailsContext()) {
+  document.addEventListener('contextmenu', (event) => {
+    event.preventDefault()
+  })
+}
 
 const restoreDesktopRoute = async () => {
   const currentRoute = router.currentRoute.value

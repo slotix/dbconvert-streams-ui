@@ -58,6 +58,8 @@ export function useDatabaseExplorerController({
 
   // Skip tab restoration on initial load - let the persisted paneTabs state take precedence
   const isInitialLoad = ref(true)
+  // Staleness token: incremented on each file-sync trigger so superseded runs bail out
+  let fileSyncToken = 0
 
   // Initialize tab manager
   const tabManager = useExplorerTabManager({
@@ -313,8 +315,10 @@ export function useDatabaseExplorerController({
         const targetFilePath = state.filePath
 
         if (targetConnectionId && fileExplorerStore.isFilesConnectionType(targetConnectionId)) {
+          const myToken = ++fileSyncToken
           void (async () => {
             await fileExplorerStore.loadEntries(targetConnectionId)
+            if (fileSyncToken !== myToken) return // superseded by newer navigation
             if (!targetFilePath) return
 
             // Open/activate the tab for this file so the right-side content matches view state

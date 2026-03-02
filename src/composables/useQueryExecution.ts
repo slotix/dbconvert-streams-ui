@@ -60,10 +60,10 @@ export interface UseQueryExecutionOptions {
   sqlQuery: Ref<string>
   /** Active query tab ID for logging */
   activeQueryTabId: Ref<string | null>
-  /** Callback to set execution result */
-  setExecutionResult: (result: ExecutionResult) => void
-  /** Callback to set execution error */
-  setExecutionError: (error: string) => void
+  /** Callback to set execution result (originTabId binds cache to the tab that started execution) */
+  setExecutionResult: (result: ExecutionResult, originTabId?: string) => void
+  /** Callback to set execution error (originTabId binds cache to the tab that started execution) */
+  setExecutionError: (error: string, originTabId?: string) => void
   /** Callback to save query to history */
   saveToHistory: (query: string, context?: QueryHistoryContext) => void
   /** Optional confirmation callback for potentially destructive SQL */
@@ -101,10 +101,30 @@ function mapRowsToObjects(columns: string[], rowTuples: unknown[][]): Record<str
 }
 
 function splitSqlStatements(query: string): string[] {
-  return query
-    .split(';')
-    .map((statement) => statement.trim())
-    .filter(Boolean)
+  // Split on semicolons that are not inside string literals
+  const statements: string[] = []
+  let current = ''
+  let inSingle = false
+  let inDouble = false
+
+  for (let i = 0; i < query.length; i++) {
+    const ch = query[i]
+    if (ch === "'" && !inDouble) {
+      inSingle = !inSingle
+    } else if (ch === '"' && !inSingle) {
+      inDouble = !inDouble
+    } else if (ch === ';' && !inSingle && !inDouble) {
+      const trimmed = current.trim()
+      if (trimmed) statements.push(trimmed)
+      current = ''
+      continue
+    }
+    current += ch
+  }
+
+  const trimmed = current.trim()
+  if (trimmed) statements.push(trimmed)
+  return statements
 }
 
 function removeSqlComments(sql: string): string {
@@ -127,7 +147,11 @@ export function isPotentiallyDestructiveQuery(query: string): boolean {
   if (statements.length === 0) return false
 
   return statements.some((statement) => {
-    if (startsWithKeyword(statement, 'DROP') || startsWithKeyword(statement, 'TRUNCATE')) {
+    if (
+      startsWithKeyword(statement, 'DROP') ||
+      startsWithKeyword(statement, 'TRUNCATE') ||
+      startsWithKeyword(statement, 'ALTER')
+    ) {
       return true
     }
 
@@ -169,6 +193,9 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
   const singleSourceMappingValue = computed(() => singleSourceMapping?.value || null)
 
   const isExecuting = ref(false)
+  // Snapshot of the tab ID that initiated the current execution.
+  // Captured before any await to avoid reading a stale activeQueryTabId after tab switch.
+  let executionOriginTabId: string | null = null
   const shouldLogLocally = () => !sseLogsService.isActive()
 
   function stripSqlComments(sql: string): string {
@@ -278,6 +305,9 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
       return
     }
 
+    // Snapshot the originating tab ID before any async work
+    executionOriginTabId = activeQueryTabId.value
+
     const query = (queryOverride ?? sqlQuery.value).trim()
     if (!query) {
       return
@@ -354,17 +384,20 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
 
       const duration = result.duration || Date.now() - startTime
 
-      setExecutionResult({
-        columns,
-        rows,
-        stats: { rowCount: result.count || rows.length, duration }
-      })
+      setExecutionResult(
+        {
+          columns,
+          rows,
+          stats: { rowCount: result.count || rows.length, duration }
+        },
+        executionOriginTabId ?? undefined
+      )
 
       if (shouldLogLocally()) {
         logsStore.addSQLLog({
           id: `federated-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
           connectionId: 'federated',
-          tabId: activeQueryTabId.value || undefined,
+          tabId: executionOriginTabId || undefined,
           database: selectedConnections.value.map((c) => c.alias).join(', '),
           query,
           purpose: detectQueryPurpose(query),
@@ -387,13 +420,13 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
       const errorMsg = error instanceof Error ? error.message : 'Failed to execute federated query'
       const duration = Date.now() - startTime
 
-      setExecutionError(errorMsg)
+      setExecutionError(errorMsg, executionOriginTabId ?? undefined)
 
       if (shouldLogLocally()) {
         logsStore.addSQLLog({
           id: `federated-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
           connectionId: 'federated',
-          tabId: activeQueryTabId.value || undefined,
+          tabId: executionOriginTabId || undefined,
           database: selectedConnections.value.map((c) => c.alias).join(', '),
           query,
           purpose: detectQueryPurpose(query),
@@ -529,19 +562,22 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
 
     const totalRowCount = normalizedSets.reduce((acc, s) => acc + s.rows.length, 0)
     const duration = Date.now() - startTime
-    setExecutionResult({
-      columns: primary.columns,
-      rows: primary.rows,
-      resultSets: normalizedSets,
-      stats: { rowCount: totalRowCount, duration }
-    })
+    setExecutionResult(
+      {
+        columns: primary.columns,
+        rows: primary.rows,
+        resultSets: normalizedSets,
+        stats: { rowCount: totalRowCount, duration }
+      },
+      executionOriginTabId ?? undefined
+    )
 
     // Log the SQL query
     if (shouldLogLocally()) {
       logsStore.addSQLLog({
         id: `sql-console-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
         connectionId: executionContext?.connectionId || connectionIdValue.value,
-        tabId: activeQueryTabId.value || undefined,
+        tabId: executionOriginTabId || undefined,
         database: modeValue.value === 'file' ? '' : (executionContext?.database ?? ''),
         query: query,
         purpose: detectQueryPurpose(query),
@@ -563,13 +599,13 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
     const errorMsg = error instanceof Error ? error.message : 'Failed to execute query'
     const duration = Date.now() - startTime
 
-    setExecutionError(errorMsg)
+    setExecutionError(errorMsg, executionOriginTabId ?? undefined)
 
     if (shouldLogLocally()) {
       logsStore.addSQLLog({
         id: `sql-console-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
         connectionId: executionContext?.connectionId || connectionIdValue.value,
-        tabId: activeQueryTabId.value || undefined,
+        tabId: executionOriginTabId || undefined,
         database: modeValue.value === 'file' ? '' : (executionContext?.database ?? ''),
         query: query,
         purpose: detectQueryPurpose(query),

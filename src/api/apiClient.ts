@@ -113,7 +113,7 @@ apiClient.interceptors.response.use(
   },
   async (error: AxiosError) => {
     const commonStore = useCommonStore()
-    const config = error.config as ConfigWithRetry
+    const config = error.config as ConfigWithRetry | undefined
 
     // Handle 401 Unauthorized errors - invalid or expired API key
     if (error.response?.status === 401) {
@@ -128,9 +128,8 @@ apiClient.interceptors.response.use(
 
     // Only handle network/connection errors for retry logic
     if (
-      !error.response ||
-      error.code === 'ECONNABORTED' ||
-      error.message.includes('Network Error')
+      config &&
+      (!error.response || error.code === 'ECONNABORTED' || error.message.includes('Network Error'))
     ) {
       // Initialize retry count
       config.retryCount = config.retryCount ?? 0

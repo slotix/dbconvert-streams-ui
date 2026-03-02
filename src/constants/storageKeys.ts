@@ -71,7 +71,16 @@ export const STORAGE_KEYS = {
   LOGGING_SQL_CAPTURE_MODE: 'loggingSqlCaptureMode',
 
   /** Streams view selection + active tab */
-  STREAMS_VIEW_STATE: 'streamsViewState'
+  STREAMS_VIEW_STATE: 'streamsViewState',
+
+  /** Theme mode (light/dark/system) */
+  THEME_MODE: 'theme-mode',
+
+  /** System log message type filters */
+  SYSTEM_LOG_MESSAGE_TYPES: 'systemLogMessageTypes',
+
+  /** System log stream filter */
+  SYSTEM_LOG_STREAM_FILTER: 'systemLogStreamFilter'
 } as const
 
 /**
