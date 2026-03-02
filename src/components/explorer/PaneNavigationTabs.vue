@@ -1,6 +1,9 @@
 <template>
   <div
-    class="flex items-center border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-850 shrink-0"
+    :class="[
+      'flex items-center border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-850 shrink-0 border-t-2 transition-colors duration-150',
+      isActive ? 'border-t-teal-500/40 dark:border-t-teal-400/40' : 'border-t-transparent'
+    ]"
     :data-pane-id="paneId"
   >
     <div
