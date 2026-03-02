@@ -453,13 +453,17 @@ const targetSchema = computed(() => {
   return undefined
 })
 
-const canOpenSourceInExplorer = computed(
-  () =>
+const canOpenSourceInExplorer = computed(() => {
+  if (isFileSource.value) {
+    return Boolean(selectedSourceConnectionId.value && sourceFileEntry.value)
+  }
+  return (
     selectedCompareItem.value?.kind === 'table' &&
     Boolean(
       selectedSourceConnectionId.value && sourceDatabase.value && selectedSourceTableName.value
     )
-)
+  )
+})
 
 const canOpenTargetInExplorer = computed(() => {
   if (isFileTarget.value) {
@@ -938,13 +942,76 @@ async function loadTargetFile() {
 async function openSourceInExplorer() {
   if (!canOpenSourceInExplorer.value) return
 
-  const targetPane = paneTabsStore.activePane || 'left'
   const connectionId = selectedSourceConnectionId.value
+  if (!connectionId) return
+
+  // File-based source: open in file browser
+  if (isFileSource.value) {
+    const entry = sourceFileEntry.value
+    if (!entry) return
+
+    const targetPane = paneTabsStore.activePane || 'left'
+
+    navigationStore.setActiveConnectionId(connectionId)
+    connectionsStore.setCurrentConnection(connectionId)
+    navigationStore.expandConnection(connectionId)
+
+    await fileExplorerStore.loadEntries(connectionId, false)
+
+    // Walk from shallowest to deepest ancestor so lazy-loaded folders are expanded in order
+    const entries = fileExplorerStore.getEntries(connectionId)
+    const targetPath = entry.path
+    const pathSegments = targetPath.split('/')
+
+    for (let i = 1; i < pathSegments.length; i++) {
+      const ancestorPath = pathSegments.slice(0, i).join('/')
+      if (!ancestorPath) continue
+      const refreshed = fileExplorerStore.getEntries(connectionId)
+      const ancestorEntry =
+        findFileEntryByPath(refreshed, ancestorPath) ||
+        findFileEntryByPath(refreshed, ancestorPath + '/')
+      if (ancestorEntry && ancestorEntry.type === 'dir') {
+        fileExplorerStore.expandFolder(connectionId, ancestorEntry.path)
+        if (!ancestorEntry.isLoaded) {
+          await fileExplorerStore.loadFolderContents(connectionId, ancestorEntry.path)
+        }
+      }
+    }
+
+    fileExplorerStore.clearAllSelectionsExcept(connectionId)
+    fileExplorerStore.setSelectedPath(connectionId, targetPath)
+
+    if (targetPane === 'left') {
+      explorerViewStateStore.selectFile(connectionId, entry.path)
+    }
+
+    const tabId = `file:${connectionId}:${entry.path}`
+    paneTabsStore.addTab(
+      targetPane,
+      {
+        id: tabId,
+        connectionId,
+        name: entry.name,
+        filePath: entry.path,
+        fileEntry: entry,
+        fileMetadata: sourceFileMetadata.value,
+        fileType: entry.type,
+        tabType: 'file'
+      },
+      'preview'
+    )
+
+    await router.push({ name: 'DatabaseExplorer' })
+    return
+  }
+
+  // Database source: open in table view
+  const targetPane = paneTabsStore.activePane || 'left'
   const database = sourceDatabase.value
   const tableName = selectedSourceTableName.value
   const schemaName = resolveSchemaForDialect(sourceDialect.value, sourceSchema.value)
 
-  if (!connectionId || !database || !tableName) return
+  if (!database || !tableName) return
 
   navigationStore.setActiveConnectionId(connectionId)
   connectionsStore.setCurrentConnection(connectionId)
@@ -1433,7 +1500,11 @@ async function selectTable(tableName: string) {
                 type="button"
                 class="inline-flex items-center gap-1 rounded-md border border-blue-300/70 dark:border-blue-700/60 px-2 py-1 text-[11px] font-medium text-blue-700 dark:text-blue-300 hover:bg-blue-100/70 dark:hover:bg-blue-900/35 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 :disabled="!canOpenSourceInExplorer"
-                title="Open current source table in Data Explorer"
+                :title="
+                  isFileSource
+                    ? 'Open source file in Data Explorer'
+                    : 'Open current source table in Data Explorer'
+                "
                 @click="openSourceInExplorer"
               >
                 <ExternalLink class="h-3.5 w-3.5" />
