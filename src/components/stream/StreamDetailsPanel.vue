@@ -464,6 +464,9 @@ const isViewingOtherRunningStream = computed(() => {
 })
 
 const displayedStreamRunId = computed(() => {
+  if (hasActiveRun.value && monitoringStore.streamID) {
+    return monitoringStore.streamID
+  }
   if (hasGlobalRunningRun.value) {
     return monitoringStore.streamID
   }

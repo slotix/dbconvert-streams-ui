@@ -13,6 +13,7 @@ import { usePaneTabsStore } from '@/stores/paneTabs'
 import { useDatabaseOverviewStore } from '@/stores/databaseOverview'
 import { useMonitoringStore } from '@/stores/monitoring'
 import { useConnectionsStore } from '@/stores/connections'
+import { useFileExplorerStore } from '@/stores/fileExplorer'
 import { normalizeDataType } from '@/constants/databaseTypes'
 import type { StreamConfig } from '@/types/streamConfig'
 import type { Connection } from '@/types/connections'
@@ -29,6 +30,7 @@ import {
   getSqlDialectFromConnection,
   isFileBasedKind
 } from '@/types/specs'
+import { findFileEntryByPath } from '@/utils/fileEntryUtils'
 import type { SqlDialect } from '@/types/specs'
 
 interface GridState {
@@ -78,6 +80,7 @@ const paneTabsStore = usePaneTabsStore()
 const overviewStore = useDatabaseOverviewStore()
 const monitoringStore = useMonitoringStore()
 const connectionsStore = useConnectionsStore()
+const fileExplorerStore = useFileExplorerStore()
 
 function getCompareSelectionStorageKey(streamId?: string): string {
   return `stream-compare-selected-table:${streamId || 'unknown'}`
@@ -400,12 +403,15 @@ const canOpenSourceInExplorer = computed(
     )
 )
 
-const canOpenTargetInExplorer = computed(
-  () =>
+const canOpenTargetInExplorer = computed(() => {
+  if (isFileTarget.value) {
+    return Boolean(props.target.id && targetFileEntry.value)
+  }
+  return (
     selectedCompareItem.value?.kind === 'table' &&
-    !isFileTarget.value &&
     Boolean(props.target.id && targetDatabase.value && selectedTargetParsed.value.table)
-)
+  )
+})
 
 // Schema comparison (only for database targets, not files)
 const schemaComparison = computed((): SchemaComparison | null => {
@@ -721,8 +727,8 @@ async function loadTargetFile() {
     }
 
     // Get the stream execution ID from monitoring store
-    // The new file structure is: <outputRoot>/<streamID>/<table>/
-    const streamId = monitoringStore.streamID || monitoringStore.lastStreamId
+    // The file structure is: <outputRoot>/<streamID>/<table>/
+    const streamId = monitoringStore.streamID
     if (!streamId) {
       targetFileError.value = 'No stream execution ID available. Please run the stream first.'
       return
@@ -833,8 +839,70 @@ async function openSourceInExplorer() {
 async function openTargetInExplorer() {
   if (!canOpenTargetInExplorer.value) return
 
-  const targetPane = paneTabsStore.activePane || 'left'
   const connectionId = props.target.id
+
+  // File-based target: open in file browser
+  if (isFileTarget.value) {
+    const entry = targetFileEntry.value
+    if (!connectionId || !entry) return
+
+    const targetPane = paneTabsStore.activePane || 'left'
+
+    navigationStore.setActiveConnectionId(connectionId)
+    connectionsStore.setCurrentConnection(connectionId)
+    navigationStore.expandConnection(connectionId)
+
+    // Load file tree entries for the connection so the sidebar can show the file
+    await fileExplorerStore.loadEntries(connectionId, false)
+
+    // Walk up from the target path to find and expand each ancestor folder in the tree.
+    // Tree entries have full paths (e.g., "/exports/stream_xxx") - we match against them,
+    // not against blind path splits.
+    const entries = fileExplorerStore.getEntries(connectionId)
+    const targetPath = entry.path
+    const pathSegments = targetPath.split('/')
+
+    for (let i = pathSegments.length - 1; i > 0; i--) {
+      const ancestorPath = pathSegments.slice(0, i).join('/')
+      if (!ancestorPath) continue
+      const ancestorEntry = findFileEntryByPath(entries, ancestorPath)
+      if (ancestorEntry && ancestorEntry.type === 'dir') {
+        fileExplorerStore.expandFolder(connectionId, ancestorPath)
+        if (!ancestorEntry.isLoaded) {
+          await fileExplorerStore.loadFolderContents(connectionId, ancestorPath)
+        }
+      }
+    }
+
+    fileExplorerStore.clearAllSelectionsExcept(connectionId)
+    fileExplorerStore.setSelectedPath(connectionId, targetPath)
+
+    if (targetPane === 'left') {
+      explorerViewStateStore.selectFile(connectionId, entry.path)
+    }
+
+    const tabId = `file:${connectionId}:${entry.path}`
+    paneTabsStore.addTab(
+      targetPane,
+      {
+        id: tabId,
+        connectionId,
+        name: entry.name,
+        filePath: entry.path,
+        fileEntry: entry,
+        fileMetadata: targetFileMetadata.value,
+        fileType: entry.type,
+        tabType: 'file'
+      },
+      'preview'
+    )
+
+    await router.push({ name: 'DatabaseExplorer' })
+    return
+  }
+
+  // Database target: open in table view
+  const targetPane = paneTabsStore.activePane || 'left'
   const database = targetDatabase.value
   const tableName = selectedTargetParsed.value.table
   const schemaName = resolveSchemaForDialect(
@@ -1332,7 +1400,7 @@ async function selectTable(tableName: string) {
                 type="button"
                 class="inline-flex items-center gap-1 rounded-md border border-emerald-300/70 dark:border-emerald-700/60 px-2 py-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100/70 dark:hover:bg-emerald-900/35 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 :disabled="!canOpenTargetInExplorer"
-                title="Open current target table in Data Explorer"
+                :title="isFileTarget ? 'Open target file in Data Explorer' : 'Open current target table in Data Explorer'"
                 @click="openTargetInExplorer"
               >
                 <ExternalLink class="h-3.5 w-3.5" />

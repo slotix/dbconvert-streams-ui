@@ -82,7 +82,6 @@ interface State {
   maxLogs: number
   isLoadingStats: boolean
   statsError: Error | null
-  lastStreamId: string | null
   shouldShowMonitorTab: boolean
   aggregatedStats: AggregatedStatResponse | null
   tableMetadata: Map<string, TableMetadata>
@@ -139,7 +138,6 @@ export const useMonitoringStore = defineStore('monitoring', {
     maxLogs: 1000,
     isLoadingStats: false,
     statsError: null,
-    lastStreamId: null as string | null,
     shouldShowMonitorTab: false,
     aggregatedStats: null,
     tableMetadata: new Map(),
