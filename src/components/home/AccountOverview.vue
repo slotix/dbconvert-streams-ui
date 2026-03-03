@@ -288,30 +288,54 @@
         <div class="ml-4 flex-1">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm font-medium text-gray-500 dark:text-gray-400">API Key</p>
+              <p class="text-sm font-medium text-gray-500 dark:text-gray-400">API Credentials</p>
               <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                Use this key to authenticate your API requests
+                Use API Key and Install ID to authenticate your API requests
               </p>
             </div>
           </div>
           <div class="mt-3 space-y-3">
-            <div class="relative">
-              <input
-                type="text"
-                readonly
-                :value="maskedApiKey"
-                class="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 pr-10 text-sm font-mono text-gray-900 dark:text-gray-100 focus:ring-0 focus:outline-none focus:border-blue-300 dark:focus:border-blue-600 transition-colors"
-              />
-              <button
-                class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors group"
-                title="Copy API Key"
-                @click="copyApiKey"
-              >
-                <Copy
-                  class="h-4 w-4 text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300"
-                  :stroke-width="iconStroke"
+            <div>
+              <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1.5">API Key</p>
+              <div class="relative">
+                <input
+                  type="text"
+                  readonly
+                  :value="maskedApiKey"
+                  class="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 pr-10 text-sm font-mono text-gray-900 dark:text-gray-100 focus:ring-0 focus:outline-none focus:border-blue-300 dark:focus:border-blue-600 transition-colors"
                 />
-              </button>
+                <button
+                  class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors group"
+                  title="Copy API Key"
+                  @click="copyApiKey"
+                >
+                  <Copy
+                    class="h-4 w-4 text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300"
+                    :stroke-width="iconStroke"
+                  />
+                </button>
+              </div>
+            </div>
+            <div>
+              <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1.5">Install ID</p>
+              <div class="relative">
+                <input
+                  type="text"
+                  readonly
+                  :value="maskedInstallId"
+                  class="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 pr-10 text-sm font-mono text-gray-900 dark:text-gray-100 focus:ring-0 focus:outline-none focus:border-blue-300 dark:focus:border-blue-600 transition-colors"
+                />
+                <button
+                  class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors group"
+                  title="Copy Install ID"
+                  @click="copyInstallId"
+                >
+                  <Copy
+                    class="h-4 w-4 text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300"
+                    :stroke-width="iconStroke"
+                  />
+                </button>
+              </div>
             </div>
             <div class="flex items-center justify-end gap-3">
               <button
@@ -355,6 +379,7 @@ import {
 } from 'lucide-vue-next'
 import { formatDataSize } from '@/utils/formats'
 import { isWailsContext } from '@/composables/useWailsEvents'
+import { getOrCreateInstallId } from '@/utils/installId'
 
 const commonStore = useCommonStore()
 const confirmDialog = useConfirmDialogStore()
@@ -430,6 +455,15 @@ const maskedApiKey = computed(() => {
 
 const hasApiKey = computed(() => !!(commonStore.userData?.apiKey || commonStore.apiKey))
 
+const installId = computed(() => getOrCreateInstallId())
+
+const maskedInstallId = computed(() => {
+  const id = installId.value
+  if (!id) return ''
+  if (id.length <= 12) return id
+  return `${id.slice(0, 8)}${'•'.repeat(Math.max(4, id.length - 12))}${id.slice(-4)}`
+})
+
 onMounted(() => {
   void commonStore.refreshUserDataSilently()
 })
@@ -439,6 +473,14 @@ async function copyApiKey() {
   if (apiKey) {
     await navigator.clipboard.writeText(apiKey)
     commonStore.showNotification('API key copied to clipboard', 'success')
+  }
+}
+
+async function copyInstallId() {
+  const id = installId.value
+  if (id) {
+    await navigator.clipboard.writeText(id)
+    commonStore.showNotification('Install ID copied to clipboard', 'success')
   }
 }
 
