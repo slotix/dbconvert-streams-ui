@@ -22,32 +22,32 @@
           class="text-sm font-semibold text-slate-800 dark:text-gray-100 truncate leading-tight"
           :title="stream.name"
         >
-          {{ stream.name }}
+          <HighlightedText class="truncate" :text="stream.name" :query="searchQuery" />
         </h3>
       </div>
 
       <!-- Route + Mode Row -->
       <div class="flex items-center gap-1 text-xs min-w-0 mb-1">
-        <span :class="modeLabelClass">{{ stream.mode }}</span>
+        <HighlightedText :class="modeLabelClass" :text="stream.mode" :query="searchQuery" />
         <span class="shrink-0 text-slate-500/70 dark:text-gray-600">•</span>
-        <span
+        <HighlightedText
           class="truncate font-medium text-slate-700 dark:text-gray-300"
           :title="sourceDisplayName"
-        >
-          {{ sourceDisplayName }}
-        </span>
+          :text="sourceDisplayName"
+          :query="searchQuery"
+        />
         <ArrowRight class="h-3 w-3 shrink-0 text-slate-500/70 dark:text-gray-600" />
-        <span
+        <HighlightedText
           class="truncate font-medium text-slate-700 dark:text-gray-300"
           :title="targetDisplayName"
-        >
-          {{ targetDisplayName }}
-        </span>
+          :text="targetDisplayName"
+          :query="searchQuery"
+        />
       </div>
 
       <!-- Optional table/query summary -->
-      <div v-if="objectsSummaryLabel" class="text-xs text-slate-500 dark:text-gray-500">
-        {{ objectsSummaryLabel }}
+      <div v-if="objectsSummaryLabel" class="text-xs text-slate-500 dark:text-gray-500 truncate">
+        <HighlightedText :text="objectsSummaryLabel" :query="searchQuery" />
       </div>
     </div>
 
@@ -139,13 +139,17 @@ import { useMonitoringStore } from '@/stores/monitoring'
 import type { StreamConfig } from '@/types/streamConfig'
 import type { Connection } from '@/types/connections'
 import { STATUS } from '@/constants'
+import HighlightedText from '@/components/common/HighlightedText.vue'
 
 const props = defineProps<{
   stream: StreamConfig
   isSelected: boolean
   source?: Connection
   target?: Connection
+  searchQuery?: string
 }>()
+
+const searchQuery = computed(() => props.searchQuery || '')
 
 const emit = defineEmits<{
   (e: 'select', payload: { streamId: string }): void
