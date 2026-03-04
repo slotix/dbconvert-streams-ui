@@ -6,11 +6,7 @@ import type { Connection, DbType } from '@/types/connections'
 import { useExplorerNavigationStore } from './explorerNavigation'
 import { useFileExplorerStore } from './fileExplorer'
 import { getConnectionDatabase } from '@/utils/specBuilder'
-import {
-  getConnectionKindFromSpec,
-  isDatabaseKind,
-  matchesConnectionTypeFilter
-} from '@/types/specs'
+import { getConnectionKindFromSpec, isDatabaseKind } from '@/types/specs'
 
 type ConnectionSpecFactory = () => Connection['spec']
 
@@ -71,7 +67,6 @@ interface State {
   currentConnection: Connection | null
   sourceConnection: Connection | null
   targetConnection: Connection | null
-  currentFilter: string
   isLoadingConnections: boolean
   isUpdatingConnection: boolean
   isTestingConnection: boolean
@@ -107,7 +102,6 @@ export const useConnectionsStore = defineStore('connections', {
     currentConnection: null,
     sourceConnection: null,
     targetConnection: null,
-    currentFilter: '',
     isLoadingConnections: false,
     isUpdatingConnection: false,
     isTestingConnection: false,
@@ -117,22 +111,8 @@ export const useConnectionsStore = defineStore('connections', {
     allConnections(state: State): Connection[] {
       return state.connections
     },
-    countConnections(state: State): number {
-      return state.connections.filter((el) => {
-        const filter = state.currentFilter.toLowerCase()
-        return matchesConnectionTypeFilter(el.spec, el.type, filter)
-      }).length
-    },
     currentConnectionIndexInArray(state: State): number {
       return state.connections.indexOf(state.currentConnection!)
-    },
-    connectionsByType(state: State): Connection[] {
-      return state.connections
-        .filter((el) => {
-          const filter = state.currentFilter.toLowerCase()
-          return matchesConnectionTypeFilter(el.spec, el.type, filter)
-        })
-        .sort((a, b) => (b.created as number) - (a.created as number))
     }
   },
   actions: {
@@ -149,9 +129,6 @@ export const useConnectionsStore = defineStore('connections', {
     connectionByID(id: string): Connection | null {
       const connection = this.connections.find((c) => c.id === id)
       return connection || null
-    },
-    setFilter(filter: string) {
-      this.currentFilter = filter
     },
     updateConnectionParams(params: Partial<Connection>) {
       if (this.currentConnection && params) {

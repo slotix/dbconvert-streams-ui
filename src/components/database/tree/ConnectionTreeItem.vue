@@ -259,8 +259,16 @@ const visibleDatabases = computed(() => {
     return props.databases
   }
 
+  if (!props.searchMatches) {
+    // Connection-level match (e.g., connection name/host) without db-level paths.
+    return props.databases
+  }
+
   const matchedDbNames = getMatchedDatabaseNames(props.searchMatches)
-  if (matchedDbNames.size === 0) return []
+  if (matchedDbNames.size === 0) {
+    // Keep children visible until backend provides narrowed matched paths.
+    return props.databases
+  }
   return props.databases.filter((db) => matchedDbNames.has(normalized(db.name)))
 })
 
@@ -308,41 +316,115 @@ function getDatabaseSearchMatches(dbName: string): ConnectionDatabaseSearchMatch
   }
 }
 
-function entryMatchesBackendPath(entry: FileSystemEntry, matchedPaths: string[]): boolean {
-  if (matchedPaths.length === 0) return false
-  const entryPath = normalized(entry.path)
-  const entryName = normalized(entry.name)
+type FileMatchIndex = {
+  values: Set<string>
+  pathValues: string[]
+}
+
+function normalizePath(value: string | undefined | null): string {
+  const replaced = normalized(value).replace(/\\/g, '/')
+  if (!replaced) return ''
+
+  const schemeSeparator = '://'
+  const schemeIndex = replaced.indexOf(schemeSeparator)
+  if (schemeIndex >= 0) {
+    const scheme = replaced.slice(0, schemeIndex)
+    const rest = replaced.slice(schemeIndex + schemeSeparator.length).replace(/\/+/g, '/')
+    return `${scheme}${schemeSeparator}${rest}`
+  }
+
+  return replaced.replace(/\/+/g, '/')
+}
+
+function trimPathTrailingSlash(value: string): string {
+  if (!value) return ''
+  if (value === '/' || /^[a-z]:\/$/i.test(value) || value.endsWith('://')) {
+    return value
+  }
+  return value.endsWith('/') ? value.replace(/\/+$/, '') : value
+}
+
+function canonicalPathVariants(rawValue: string | undefined | null): string[] {
+  const normalizedPath = trimPathTrailingSlash(normalizePath(rawValue))
+  if (!normalizedPath) return []
+
+  const variants = new Set<string>([normalizedPath])
+  if (normalizedPath.startsWith('s3://')) {
+    variants.add(trimPathTrailingSlash(normalizedPath.slice('s3://'.length)))
+  }
+  if (normalizedPath.startsWith('/')) {
+    variants.add(trimPathTrailingSlash(normalizedPath.slice(1)))
+  }
+  return Array.from(variants).filter(Boolean)
+}
+
+function isPathPrefix(prefix: string, value: string): boolean {
+  if (!prefix || !value) return false
+  if (prefix === value) return true
+  return value.startsWith(`${prefix}/`)
+}
+
+function buildFileMatchIndex(matchedPaths: string[]): FileMatchIndex {
+  const values = new Set<string>()
+  const pathValuesSet = new Set<string>()
 
   for (const rawPath of matchedPaths) {
-    const candidate = normalized(rawPath)
-    if (!candidate) continue
-
-    if (
-      entryPath &&
-      (candidate === entryPath || candidate.includes(entryPath) || entryPath.includes(candidate))
-    ) {
-      return true
+    const normalizedValue = normalized(rawPath)
+    if (normalizedValue) {
+      values.add(normalizedValue)
     }
-    if (
-      entryName &&
-      (candidate === entryName || candidate.includes(entryName) || entryName.includes(candidate))
-    ) {
+
+    for (const variant of canonicalPathVariants(rawPath)) {
+      values.add(variant)
+      if (variant.includes('/')) {
+        pathValuesSet.add(variant)
+      }
+    }
+  }
+
+  return {
+    values,
+    pathValues: Array.from(pathValuesSet)
+  }
+}
+
+function entryMatchesBackendPath(entry: FileSystemEntry, matchIndex: FileMatchIndex): boolean {
+  const entryName = normalized(entry.name)
+  if (entryName && matchIndex.values.has(entryName)) {
+    return true
+  }
+
+  const entryPathVariants = canonicalPathVariants(entry.path)
+  for (const entryPath of entryPathVariants) {
+    if (matchIndex.values.has(entryPath)) {
       return true
     }
   }
+
+  for (const candidatePath of matchIndex.pathValues) {
+    if (entryName && candidatePath.endsWith(`/${entryName}`)) {
+      return true
+    }
+    for (const entryPath of entryPathVariants) {
+      if (isPathPrefix(entryPath, candidatePath) || isPathPrefix(candidatePath, entryPath)) {
+        return true
+      }
+    }
+  }
+
   return false
 }
 
 function filterFileTreeEntriesByBackendMatches(
   entries: FileSystemEntry[],
-  matchedPaths: string[]
+  matchIndex: FileMatchIndex
 ): FileSystemEntry[] {
   const filtered: FileSystemEntry[] = []
 
   for (const entry of entries) {
-    const ownMatch = entryMatchesBackendPath(entry, matchedPaths)
+    const ownMatch = entryMatchesBackendPath(entry, matchIndex)
     const filteredChildren = entry.children
-      ? filterFileTreeEntriesByBackendMatches(entry.children, matchedPaths)
+      ? filterFileTreeEntriesByBackendMatches(entry.children, matchIndex)
       : []
     const hasMatchingChildren = filteredChildren.length > 0
 
@@ -367,12 +449,15 @@ const visibleFileEntries = computed(() => {
   if (!hasActiveSearch.value) {
     return fileEntries.value
   }
-  if (!hasSearchMatches(props.searchMatches)) {
-    return []
+
+  const fileMatches = props.searchMatches?.files || []
+  if (!props.searchMatches || !hasSearchMatches(props.searchMatches) || fileMatches.length === 0) {
+    // Connection-level match or warmup not ready: keep full tree visible.
+    return fileEntries.value
   }
-  const matchedPaths = props.searchMatches?.files || []
-  if (!matchedPaths.length) return []
-  return filterFileTreeEntriesByBackendMatches(fileEntries.value, matchedPaths)
+
+  const matchIndex = buildFileMatchIndex(fileMatches)
+  return filterFileTreeEntriesByBackendMatches(fileEntries.value, matchIndex)
 })
 
 // Generate tooltip with full connection details
