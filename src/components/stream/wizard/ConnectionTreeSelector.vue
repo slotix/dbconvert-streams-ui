@@ -289,6 +289,7 @@ import { useFileExplorerStore } from '@/stores/fileExplorer'
 import { useConnectionsStore } from '@/stores/connections'
 import { normalizeConnectionType, getConnectionTooltip } from '@/utils/connectionUtils'
 import { getConnectionHost, getConnectionPort } from '@/utils/specBuilder'
+import type { ConnectionSearchPathMatches } from '@/api/connections'
 import { listS3Buckets } from '@/api/files'
 import {
   getConnectionKindFromSpec,
@@ -309,6 +310,7 @@ interface Props {
   selectedPath?: string | null
   mode: 'source' | 'target'
   searchQuery?: string
+  searchMatches?: Record<string, ConnectionSearchPathMatches>
   enableMultiSelect?: boolean
   sourceConnections?: StreamConnectionMapping[]
 }
@@ -319,6 +321,7 @@ const props = withDefaults(defineProps<Props>(), {
   selectedSchema: null,
   selectedPath: null,
   searchQuery: '',
+  searchMatches: () => ({}),
   mode: 'source',
   enableMultiSelect: false,
   sourceConnections: () => []
@@ -955,55 +958,71 @@ watch(
   { immediate: true }
 )
 
-// Auto-load databases and metadata when search query changes (like data explorer does)
-watch(
-  () => props.searchQuery,
-  async (query) => {
-    if (!query.trim()) {
-      return
+// For search mode, backend provides matched paths. Expand only matched branches instead of
+// loading every database and metadata tree client-side.
+watch([() => props.searchQuery, () => props.searchMatches], async ([query, matches]) => {
+  if (!query.trim()) {
+    return
+  }
+
+  const filteredConns = props.connections
+
+  for (const conn of filteredConns) {
+    addToSet(expandedConnections, conn.id)
+
+    if (isFileConnection(conn)) {
+      if (isLocalFileConnection(conn)) {
+        void fileExplorerStore.loadEntries(conn.id)
+      }
+      continue
     }
 
-    // Get the filtered connections list
-    const filteredConns = props.connections
-    const normalizedQuery = query.toLowerCase()
+    const connectionMatches = matches[conn.id]
+    if (!connectionMatches) {
+      continue
+    }
 
-    // Expand all filtered connections and ensure their databases are loaded
-    for (const conn of filteredConns) {
-      if (isFileConnection(conn)) {
-        continue
-      }
+    const matchedDatabaseNames = new Set<string>(connectionMatches.databases || [])
+    Object.keys(connectionMatches.schemas || {}).forEach((dbName) =>
+      matchedDatabaseNames.add(dbName)
+    )
+    Object.keys(connectionMatches.tables || {}).forEach((dbName) =>
+      matchedDatabaseNames.add(dbName)
+    )
+    Object.keys(connectionMatches.views || {}).forEach((dbName) => matchedDatabaseNames.add(dbName))
+    Object.keys(connectionMatches.functions || {}).forEach((dbName) =>
+      matchedDatabaseNames.add(dbName)
+    )
+    Object.keys(connectionMatches.procedures || {}).forEach((dbName) =>
+      matchedDatabaseNames.add(dbName)
+    )
+    Object.keys(connectionMatches.sequences || {}).forEach((dbName) =>
+      matchedDatabaseNames.add(dbName)
+    )
 
-      addToSet(expandedConnections, conn.id)
+    if (matchedDatabaseNames.size === 0) {
+      continue
+    }
 
-      // Load databases if not already loading or loaded
+    if (!navigationStore.isDatabasesLoading(conn.id) && !navigationStore.databasesState[conn.id]) {
+      await navigationStore.ensureDatabases(conn.id).catch(() => {})
+    }
+
+    for (const dbName of matchedDatabaseNames) {
+      addToSet(expandedConnections, `${conn.id}:${dbName}`)
+
       if (
-        !navigationStore.isDatabasesLoading(conn.id) &&
-        !navigationStore.databasesState[conn.id]
+        !navigationStore.isMetadataLoading(conn.id, dbName) &&
+        !navigationStore.getMetadata(conn.id, dbName)
       ) {
-        await navigationStore.ensureDatabases(conn.id)
+        await navigationStore.ensureMetadata(conn.id, dbName).catch(() => {})
       }
 
-      // Load metadata for ALL databases so we can search through tables and views
-      // (The search query might match a table or view inside a database, not just the database name)
-      const databases = navigationStore.databasesState[conn.id] || []
-      for (const db of databases) {
-        const key = `${conn.id}:${db.name}`
-
-        // Expand database even if query doesn't match database name
-        // (might match a table inside it)
-        if (db.name.toLowerCase().includes(normalizedQuery)) {
-          addToSet(expandedConnections, key)
-        }
-
-        // Load metadata if not already loading or loaded
-        if (
-          !navigationStore.isMetadataLoading(conn.id, db.name) &&
-          !navigationStore.getMetadata(conn.id, db.name)
-        ) {
-          await navigationStore.ensureMetadata(conn.id, db.name).catch(() => {})
-        }
+      const matchedSchemas = connectionMatches.schemas?.[dbName] || []
+      for (const schemaName of matchedSchemas) {
+        addToSet(expandedConnections, `${conn.id}:${dbName}:${schemaName}`)
       }
     }
   }
-)
+})
 </script>

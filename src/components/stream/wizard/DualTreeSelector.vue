@@ -50,6 +50,7 @@
         <div class="flex-1 overflow-y-auto p-3 bg-white dark:bg-gray-900/60">
           <ConnectionTreeSelector
             :connections="filteredSourceConnections"
+            :search-matches="sourceSearchMatches"
             :selected-connection-id="primarySourceId"
             :selected-database="primarySourceDatabase"
             :selected-schema="sourceSchema"
@@ -116,6 +117,7 @@
         <div class="flex-1 overflow-y-auto p-3 bg-white dark:bg-gray-900/60">
           <ConnectionTreeSelector
             :connections="filteredTargetConnections"
+            :search-matches="targetSearchMatches"
             :selected-connection-id="targetConnectionId"
             :selected-database="targetDatabase"
             :selected-schema="targetSchema"
@@ -162,8 +164,11 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import connectionsApi, {
+  type ConnectionListResponse,
+  type ConnectionSearchPathMatches
+} from '@/api/connections'
 import { useConnectionsStore } from '@/stores/connections'
-import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import BaseButton from '@/components/base/BaseButton.vue'
 import ConnectionTreeSelector from './ConnectionTreeSelector.vue'
 import StreamConnectionFilter from './StreamConnectionFilter.vue'
@@ -176,8 +181,7 @@ import {
   getConnectionTypeLabel,
   isDatabaseKind,
   matchesConnectionTypeFilter,
-  type ConnectionKind,
-  type ConnectionSpec
+  type ConnectionKind
 } from '@/types/specs'
 
 interface Props {
@@ -217,11 +221,14 @@ const emit = defineEmits<{
 }>()
 
 const connectionsStore = useConnectionsStore()
-const navigationStore = useExplorerNavigationStore()
 const sourceConnectionSearch = ref('')
 const targetConnectionSearch = ref('')
 const sourceConnectionType = ref<string | null>(null)
 const targetConnectionType = ref<string | null>(null)
+const sourceSearchResult = ref<ConnectionListResponse | null>(null)
+const targetSearchResult = ref<ConnectionListResponse | null>(null)
+let sourceSearchRequestSequence = 0
+let targetSearchRequestSequence = 0
 
 // Source connections state (auto-detects multi-source when length > 1)
 const localSourceConnections = ref<StreamConnectionMapping[]>([...props.sourceConnections])
@@ -306,96 +313,134 @@ function matchesTypeFilter(conn: Connection, typeFilter: string | null): boolean
   return matchesConnectionTypeFilter(conn.spec, undefined, typeFilter)
 }
 
-// Helper function to normalize text for case-insensitive search
-function normalize(text: string): string {
-  return text.toLowerCase()
+function normalizeSearchQuery(query: string): string {
+  return query.trim().toLowerCase()
 }
 
-// Deep search function - searches through connection, databases, tables, views
-function connectionMatchesDeepSearch(
-  connection: { id: string; name?: string; type?: string; spec?: unknown },
-  query: string
-): boolean {
-  if (!query.trim()) return true
-
-  const normalizedQuery = normalize(query)
-
-  // Search in connection basic info
-  type ConnectionSpecLike = {
-    database?: { host?: string }
-    snowflake?: { account?: string }
-  }
-
-  const spec = (connection.spec ?? undefined) as ConnectionSpecLike | undefined
-  const host = spec?.database?.host || spec?.snowflake?.account || ''
-  const typeLabel = getConnectionTypeLabel(spec as ConnectionSpec | undefined) || ''
-  const connectionLabel = `${connection.name || ''} ${host} ${typeLabel}`
-  if (normalize(connectionLabel).includes(normalizedQuery)) return true
-
-  // Search in database names
-  const databases = navigationStore.databasesState[connection.id] || []
-  if (databases.some((db) => normalize(db.name).includes(normalizedQuery))) return true
-
-  // Search in metadata (tables and views)
-  const metadataByDatabase = navigationStore.metadataState[connection.id] || {}
-  for (const databaseName in metadataByDatabase) {
-    const metadata = metadataByDatabase[databaseName]
-
-    // Search in tables
-    const hasTableMatch = Object.values(metadata.tables || {}).some(
-      (table: { name?: string; schema?: string }) =>
-        normalize(table.name || '').includes(normalizedQuery) ||
-        (table.schema && normalize(table.schema).includes(normalizedQuery))
-    )
-    if (hasTableMatch) return true
-
-    // Search in views
-    const hasViewMatch = Object.values(metadata.views || {}).some(
-      (view: { name?: string; schema?: string }) =>
-        normalize(view.name || '').includes(normalizedQuery) ||
-        (view.schema && normalize(view.schema).includes(normalizedQuery))
-    )
-    if (hasViewMatch) return true
-  }
-
-  return false
-}
-
-const filteredSourceConnections = computed(() => {
-  let filtered = connections.value.filter((conn) =>
-    matchesTypeFilter(conn, sourceConnectionType.value)
-  )
-
-  // Sort by creation date (newest first) then by name
-  filtered = filtered.sort((a, b) => {
+function sortConnectionsByRecency(conns: Connection[]): Connection[] {
+  return [...conns].sort((a, b) => {
     const ac = Number(a.created || 0)
     const bc = Number(b.created || 0)
     if (bc !== ac) return bc - ac
     return (a.name || '').localeCompare(b.name || '')
   })
+}
 
-  const query = sourceConnectionSearch.value
-
-  return filtered.filter((conn) => connectionMatchesDeepSearch(conn, query))
+const sourceSearchMatches = computed<Record<string, ConnectionSearchPathMatches>>(() => {
+  const query = normalizeSearchQuery(sourceConnectionSearch.value)
+  if (!query) return {}
+  const result = sourceSearchResult.value
+  if (!result || normalizeSearchQuery(result.search || '') !== query) return {}
+  return result.matchedPaths || {}
 })
 
-const filteredTargetConnections = computed(() => {
-  let filtered = connections.value.filter((conn) =>
-    matchesTypeFilter(conn, targetConnectionType.value)
-  )
-
-  // Sort by creation date (newest first) then by name
-  filtered = filtered.sort((a, b) => {
-    const ac = Number(a.created || 0)
-    const bc = Number(b.created || 0)
-    if (bc !== ac) return bc - ac
-    return (a.name || '').localeCompare(b.name || '')
-  })
-
-  const query = targetConnectionSearch.value
-
-  return filtered.filter((conn) => connectionMatchesDeepSearch(conn, query))
+const targetSearchMatches = computed<Record<string, ConnectionSearchPathMatches>>(() => {
+  const query = normalizeSearchQuery(targetConnectionSearch.value)
+  if (!query) return {}
+  const result = targetSearchResult.value
+  if (!result || normalizeSearchQuery(result.search || '') !== query) return {}
+  return result.matchedPaths || {}
 })
+
+const sourceSearchItems = computed(() => {
+  const query = normalizeSearchQuery(sourceConnectionSearch.value)
+  if (!query) return sortConnectionsByRecency(connections.value)
+  const result = sourceSearchResult.value
+  if (!result || normalizeSearchQuery(result.search || '') !== query) return []
+  return result.items || []
+})
+
+const targetSearchItems = computed(() => {
+  const query = normalizeSearchQuery(targetConnectionSearch.value)
+  if (!query) return sortConnectionsByRecency(connections.value)
+  const result = targetSearchResult.value
+  if (!result || normalizeSearchQuery(result.search || '') !== query) return []
+  return result.items || []
+})
+
+const filteredSourceConnections = computed(() =>
+  sourceSearchItems.value.filter((conn) => matchesTypeFilter(conn, sourceConnectionType.value))
+)
+
+const filteredTargetConnections = computed(() =>
+  targetSearchItems.value.filter((conn) => matchesTypeFilter(conn, targetConnectionType.value))
+)
+
+async function fetchSourceSearchResults(query: string) {
+  const normalized = normalizeSearchQuery(query)
+  if (!normalized) {
+    sourceSearchResult.value = null
+    return
+  }
+
+  const requestID = ++sourceSearchRequestSequence
+  sourceSearchResult.value = null
+  try {
+    const response = await connectionsApi.getConnections({ search: query.trim() })
+    if (requestID !== sourceSearchRequestSequence) return
+    sourceSearchResult.value = response
+  } catch (error) {
+    if (requestID !== sourceSearchRequestSequence) return
+    console.error('Failed to search source connections:', error)
+    sourceSearchResult.value = {
+      items: [],
+      total: connections.value.length,
+      filtered: 0,
+      search: normalized
+    }
+  }
+}
+
+async function fetchTargetSearchResults(query: string) {
+  const normalized = normalizeSearchQuery(query)
+  if (!normalized) {
+    targetSearchResult.value = null
+    return
+  }
+
+  const requestID = ++targetSearchRequestSequence
+  targetSearchResult.value = null
+  try {
+    const response = await connectionsApi.getConnections({ search: query.trim() })
+    if (requestID !== targetSearchRequestSequence) return
+    targetSearchResult.value = response
+  } catch (error) {
+    if (requestID !== targetSearchRequestSequence) return
+    console.error('Failed to search target connections:', error)
+    targetSearchResult.value = {
+      items: [],
+      total: connections.value.length,
+      filtered: 0,
+      search: normalized
+    }
+  }
+}
+
+watch(
+  () => sourceConnectionSearch.value,
+  (query) => {
+    void fetchSourceSearchResults(query)
+  }
+)
+
+watch(
+  () => targetConnectionSearch.value,
+  (query) => {
+    void fetchTargetSearchResults(query)
+  }
+)
+
+watch(
+  () => connections.value,
+  () => {
+    if (normalizeSearchQuery(sourceConnectionSearch.value)) {
+      void fetchSourceSearchResults(sourceConnectionSearch.value)
+    }
+    if (normalizeSearchQuery(targetConnectionSearch.value)) {
+      void fetchTargetSearchResults(targetConnectionSearch.value)
+    }
+  }
+)
 
 // Effective target selection: database for DB connections, path for file connections, bucket for S3
 const effectiveTargetSelection = computed(() => {
