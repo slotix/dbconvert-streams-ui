@@ -33,7 +33,6 @@ interface State {
   streamConfigs: StreamConfig[]
   currentStreamConfig: StreamConfig | null
   currentStep: Step | null
-  currentFilter: string
 }
 
 function normalizeSource(source: StreamConfig['source']): StreamConfig['source'] {
@@ -132,7 +131,8 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
   // Include ID and created if they exist
   if (stream.id) filteredStream.id = stream.id
   if (stream.created) filteredStream.created = stream.created
-  if (stream.description) filteredStream.description = stream.description
+  const description = stream.description?.trim()
+  if (description) filteredStream.description = description
 
   // Handle reportingInterval - always include if defined (even if it matches default)
   if (stream.reportingInterval !== undefined) {
@@ -540,7 +540,6 @@ export const useStreamsStore = defineStore('streams', {
     streamConfigs: [],
     currentStreamConfig: null,
     currentStep: null,
-    currentFilter: '',
     generateDefaultStreamConfigName: function (
       _sourceConnections: StreamConnectionMapping[],
       _targetConnectionId: string,
@@ -560,19 +559,6 @@ export const useStreamsStore = defineStore('streams', {
       return state.streamConfigs
         ? state.streamConfigs.slice().sort((a, b) => (b.created as number) - (a.created as number))
         : []
-    },
-
-    streamsByType(state: State): StreamConfig[] {
-      return state.streamConfigs
-        .filter((el) => {
-          // Filter by stream name or mode
-          const filterLower = state.currentFilter.toLowerCase()
-          return (
-            el.name?.toLowerCase().includes(filterLower) ||
-            el.mode?.toLowerCase().includes(filterLower)
-          )
-        })
-        .reverse()
     },
     currentStreamIndexInArray(state: State): number {
       return state.streamConfigs.indexOf(this.currentStreamConfig!)
@@ -735,9 +721,6 @@ export const useStreamsStore = defineStore('streams', {
         this.currentStreamConfig.target.id = targetId
         // Note: fileFormat is set in target.spec by prepareStreamData() and StreamSettings component
       }
-    },
-    setFilter(filter: string) {
-      this.currentFilter = filter
     },
     addStream() {
       this.resetCurrentStream()
@@ -1043,8 +1026,8 @@ export const useStreamsStore = defineStore('streams', {
     },
     async refreshStreams() {
       try {
-        const streams = await api.getStreams()
-        this.streamConfigs = streams.map((cfg) => normalizeStreamConfig(cfg))
+        const response = await api.getStreams()
+        this.streamConfigs = response.items.map((cfg) => normalizeStreamConfig(cfg))
       } catch (err) {
         console.error('Failed to fetch streams:', err)
       }
@@ -1209,8 +1192,8 @@ export const useStreamsStore = defineStore('streams', {
     },
     async getStreamConfigById(configId: string): Promise<StreamConfig | null> {
       try {
-        const streamConfigs = await api.getStreams()
-        const normalized = streamConfigs.map((cfg) => normalizeStreamConfig(cfg))
+        const response = await api.getStreams()
+        const normalized = response.items.map((cfg) => normalizeStreamConfig(cfg))
         return normalized.find((config) => config.id === configId) || null
       } catch (error) {
         console.error('Failed to get stream config by ID:', error)

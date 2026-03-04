@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-3">
+  <div :class="listRootClass" :style="listRootStyle">
     <DataSelectionToolbar
       v-if="showToolbar"
       :selected-count="checkedTablesCount"
@@ -252,13 +252,36 @@ const emit = defineEmits<{
 
 const stickyHeader = computed(() => props.stickyHeader)
 const showToolbar = computed(() => props.showToolbar)
+const isFillHeightWithToolbar = computed(() => Boolean(props.listHeight && showToolbar.value))
+const listRootClass = computed(() =>
+  isFillHeightWithToolbar.value ? 'h-full min-h-0 flex flex-col gap-3' : 'space-y-3'
+)
+const listRootStyle = computed(() => {
+  if (isFillHeightWithToolbar.value) {
+    return {
+      height: props.listHeight
+    }
+  }
+  return undefined
+})
 const listContainerClass = computed(() =>
-  props.embedded
-    ? 'overflow-hidden overflow-y-auto'
-    : 'bg-white dark:bg-gray-850 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden overflow-y-auto'
+  [
+    props.embedded
+      ? 'overflow-hidden overflow-y-auto'
+      : 'bg-white dark:bg-gray-850 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden overflow-y-auto',
+    'min-h-0',
+    isFillHeightWithToolbar.value ? 'flex-1' : ''
+  ]
+    .filter(Boolean)
+    .join(' ')
 )
 
 const listContainerStyle = computed(() => {
+  if (isFillHeightWithToolbar.value) {
+    return {
+      maxHeight: 'none'
+    }
+  }
   if (props.listHeight) {
     return {
       height: props.listHeight,

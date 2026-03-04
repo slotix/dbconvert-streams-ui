@@ -21,6 +21,12 @@
           FEDERATED
         </span>
       </div>
+      <p
+        v-if="streamDescription"
+        class="mt-2 text-sm text-gray-700 dark:text-gray-300 rounded-md bg-gray-50 dark:bg-gray-900/40 border border-gray-200 dark:border-gray-700 px-3 py-2"
+      >
+        {{ streamDescription }}
+      </p>
     </div>
 
     <!-- Side-by-side layout for Source(s) and Target -->
@@ -148,6 +154,7 @@ const allQueries = computed(() => {
   return queries
 })
 const streamCreated = computed(() => formatDateTime(props.stream?.created || 0))
+const streamDescription = computed(() => props.stream?.description?.trim() || '')
 
 function getLogo(connection?: Connection) {
   const typeLabel = getConnectionTypeLabel(connection?.spec, connection?.type)

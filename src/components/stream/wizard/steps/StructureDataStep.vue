@@ -11,7 +11,7 @@
     </div>
 
     <!-- Dataset Section -->
-    <div class="flex-1 min-h-0 flex flex-col">
+    <div class="flex-1 min-h-0 flex flex-col overflow-hidden">
       <!-- Tab-based Data Source Selector -->
       <div
         v-if="!isFileSourceConnection"
@@ -66,11 +66,11 @@
       </div>
 
       <!-- Tab Content -->
-      <div class="flex-1 min-h-0 flex flex-col">
+      <div class="flex-1 min-h-0 flex flex-col overflow-hidden">
         <!-- Tables / Source Objects Tab Content -->
         <div
           v-if="isFileSourceConnection || activeDataTab === 'tables'"
-          class="h-full min-h-0 flex flex-col"
+          class="flex-1 min-h-0 flex flex-col overflow-hidden"
           :class="showCombinedObjectsToolbar ? 'overflow-y-auto pr-1 gap-6' : ''"
         >
           <DataSelectionToolbar
@@ -156,7 +156,10 @@
     </div>
 
     <!-- Structure Options Section - Only show for database targets -->
-    <div v-if="isTargetDatabase" class="shrink-0 overflow-visible">
+    <div
+      v-if="isTargetDatabase"
+      class="shrink-0 border-t border-gray-200/70 dark:border-gray-700/70 bg-white dark:bg-gray-900 pt-3"
+    >
       <!-- Warning when nothing is selected -->
       <div
         v-if="!anyStructureEnabled && !copyData"
@@ -185,7 +188,9 @@
 
       <div class="grid grid-cols-2 gap-4 overflow-visible">
         <!-- Create Structure Column -->
-        <div class="rounded-lg border border-gray-200 dark:border-gray-700 p-4 overflow-visible">
+        <div
+          class="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-850 p-4 overflow-visible"
+        >
           <!-- Checkbox Header -->
           <div class="flex items-center gap-2.5">
             <input
@@ -326,7 +331,9 @@
         </div>
 
         <!-- Copy Data Column -->
-        <div class="rounded-lg border border-gray-200 dark:border-gray-700 p-4 overflow-visible">
+        <div
+          class="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-850 p-4 overflow-visible"
+        >
           <!-- Checkbox Header -->
           <div class="flex items-center gap-2.5">
             <input
@@ -614,8 +621,8 @@ const hasFileSourceGroups = computed(() => fileSourceConnections.value.length > 
 const showCombinedObjectsToolbar = computed(() => hasFileSourceGroups.value)
 const sourceObjectsContainerClass = computed(() =>
   showCombinedObjectsToolbar.value
-    ? 'rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-850 overflow-hidden'
-    : ''
+    ? 'flex-1 min-h-0 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-850 overflow-hidden'
+    : 'flex-1 min-h-0 overflow-hidden'
 )
 
 const combinedObjectSelectedCount = computed(() => {

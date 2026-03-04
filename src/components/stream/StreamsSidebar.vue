@@ -21,13 +21,19 @@
 
     <!-- Toolbar row 2: search -->
     <div class="px-2 pb-2 border-b border-slate-200/70 dark:border-gray-700/80">
-      <SearchInput v-model="searchQuery" placeholder="Filter..." size="xs" class="w-full" />
+      <SearchInput
+        v-model="searchQuery"
+        placeholder="Filter..."
+        size="xs"
+        :debounce="180"
+        class="w-full"
+      />
     </div>
 
     <!-- Streams List -->
     <div class="flex-1 overflow-y-auto p-2 scrollbar-thin">
       <!-- Enhanced loading state with gradient spinner -->
-      <div v-if="isLoading" class="flex flex-col items-center justify-center py-16">
+      <div v-if="isListLoading" class="flex flex-col items-center justify-center py-16">
         <div
           class="relative w-16 h-16 mb-4 animate-spin rounded-full bg-linear-to-tr from-blue-500 to-teal-500 p-1"
         >
@@ -39,7 +45,7 @@
 
       <!-- Enhanced empty state -->
       <div
-        v-else-if="filteredStreams.length === 0"
+        v-else-if="displayedStreams.length === 0"
         class="flex flex-col items-center justify-center py-20 px-6"
       >
         <div
@@ -48,10 +54,10 @@
           <RefreshCw class="h-10 w-10 text-slate-400 dark:text-gray-600" />
         </div>
         <p class="text-base font-semibold text-slate-700 dark:text-gray-300 mb-2">
-          {{ searchQuery ? 'No streams found' : 'No stream configurations yet' }}
+          {{ hasActiveSearch ? 'No streams found' : 'No stream configurations yet' }}
         </p>
         <p class="text-sm text-slate-500 dark:text-gray-500 text-center">
-          {{ searchQuery ? 'Try adjusting your search' : 'Create one to get started' }}
+          {{ hasActiveSearch ? 'Try adjusting your search' : 'Create one to get started' }}
         </p>
       </div>
 
@@ -61,7 +67,7 @@
         class="overflow-hidden rounded-md border border-slate-200/60 dark:border-white/[0.06] divide-y divide-slate-200/60 dark:divide-white/[0.06]"
       >
         <StreamListItem
-          v-for="stream in filteredStreams"
+          v-for="stream in displayedStreams"
           :key="stream.id"
           :stream="stream"
           :is-selected="selectedStreamId === stream.id"
@@ -113,9 +119,10 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, computed, inject } from 'vue'
+import { ref, computed, inject, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Menu, Plus, RefreshCw } from 'lucide-vue-next'
+import streamsApi, { type StreamListResponse } from '@/api/streams'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
 import { useStreamActions } from '@/composables/useStreamActions'
@@ -145,37 +152,40 @@ const streamActions = useStreamActions()
 const contextMenu = useStreamContextMenu()
 
 const isLoading = ref(false)
+const isSearchLoading = ref(false)
 const showDeleteConfirm = ref(false)
 const pendingDeleteStream = ref<StreamConfig | null>(null)
 const searchQuery = ref('')
+const searchResult = ref<StreamListResponse | null>(null)
+let searchRequestSequence = 0
 
 const selectedStreamId = computed(() => props.selectedStreamId || '')
+const hasActiveSearch = computed(() => searchQuery.value.trim().length > 0)
+const isListLoading = computed(() => isLoading.value || isSearchLoading.value)
 
-const filteredStreams = computed<StreamConfig[]>(() => {
-  const query = searchQuery.value.toLowerCase()
-  let streams = streamsStore.streamConfigs || []
-
-  // Filter by search query if present
-  if (query) {
-    streams = streams.filter((stream) => {
-      return stream.name.toLowerCase().includes(query) || stream.mode.toLowerCase().includes(query)
-    })
-  }
-
-  // Sort by creation date (newest first)
-  return [...streams].sort((a, b) => {
+const sortedStoreStreams = computed<StreamConfig[]>(() => {
+  return [...(streamsStore.streamConfigs || [])].sort((a, b) => {
     const timeA = a.created || 0
     const timeB = b.created || 0
-    return timeB - timeA // Descending order (newest first)
+    return timeB - timeA
   })
 })
 
+const displayedStreams = computed<StreamConfig[]>(() => {
+  if (!hasActiveSearch.value) {
+    return sortedStoreStreams.value
+  }
+  return searchResult.value?.items || []
+})
+
 const streamCountLabel = computed(() => {
-  const filtered = filteredStreams.value.length
-  const total = streamsStore.countStreams
-  if (searchQuery.value && filtered !== total) {
+  if (hasActiveSearch.value) {
+    const filtered = searchResult.value?.filtered ?? displayedStreams.value.length
+    const total = searchResult.value?.total ?? streamsStore.countStreams
     return `${filtered} of ${total} stream config${total === 1 ? '' : 's'}`
   }
+
+  const total = streamsStore.countStreams
   return `${total} stream config${total === 1 ? '' : 's'}`
 })
 
@@ -184,13 +194,71 @@ function connectionByID(id?: string): Connection | undefined {
   return connectionsStore.connections.find((conn) => conn.id === id)
 }
 
+async function fetchSearchResults(query: string) {
+  const trimmed = query.trim()
+  if (!trimmed) {
+    searchResult.value = null
+    isSearchLoading.value = false
+    return
+  }
+
+  const requestID = ++searchRequestSequence
+  isSearchLoading.value = true
+  try {
+    const response = await streamsApi.getStreams({ search: trimmed })
+    if (requestID !== searchRequestSequence) return
+    searchResult.value = response
+  } catch (error) {
+    if (requestID !== searchRequestSequence) return
+    console.error('Failed to search streams:', error)
+    searchResult.value = {
+      items: [],
+      total: streamsStore.countStreams,
+      filtered: 0,
+      search: trimmed
+    }
+  } finally {
+    if (requestID === searchRequestSequence) {
+      isSearchLoading.value = false
+    }
+  }
+}
+
+async function refreshSearchResultsIfNeeded() {
+  if (!hasActiveSearch.value) return
+  await fetchSearchResults(searchQuery.value)
+}
+
+watch(
+  () => searchQuery.value,
+  async (next) => {
+    const trimmed = next.trim()
+    if (!trimmed) {
+      searchRequestSequence += 1
+      isSearchLoading.value = false
+      searchResult.value = null
+      return
+    }
+    await fetchSearchResults(trimmed)
+  }
+)
+
+watch(
+  () => streamsStore.streamConfigs,
+  async () => {
+    await refreshSearchResultsIfNeeded()
+  }
+)
+
 function handleSelectStream(payload: { streamId: string }) {
   emit('select-stream', payload)
 }
 
 async function handleStartStream(payload: { streamId: string }) {
   try {
-    const stream = streamsStore.streamConfigs.find((s) => s.id === payload.streamId)
+    const stream =
+      displayedStreams.value.find((s) => s.id === payload.streamId) ||
+      streamsStore.streamConfigs.find((s) => s.id === payload.streamId)
     if (!stream) return
 
     const streamID = await streamActions.startStream(stream)
@@ -221,7 +289,9 @@ async function handleResumeStream() {
 }
 
 function handleDeleteStream(payload: { streamId: string }) {
-  const stream = streamsStore.streamConfigs.find((s) => s.id === payload.streamId)
+  const stream =
+    displayedStreams.value.find((s) => s.id === payload.streamId) ||
+    streamsStore.streamConfigs.find((s) => s.id === payload.streamId)
   if (stream) {
     pendingDeleteStream.value = stream
     showDeleteConfirm.value = true
@@ -235,6 +305,7 @@ function handleEditStream(payload: { streamId: string }) {
 async function handleCloneStream(payload: { streamId: string }) {
   try {
     await streamsStore.cloneStreamConfig(payload.streamId)
+    await refreshSearchResultsIfNeeded()
     // Notification will be shown by the API call
   } catch (error) {
     console.error('Failed to clone stream:', error)
@@ -247,6 +318,7 @@ async function confirmDelete() {
   try {
     isLoading.value = true
     await streamsStore.deleteStreamConfig(pendingDeleteStream.value.id)
+    await refreshSearchResultsIfNeeded()
     emit('delete-stream', { streamId: pendingDeleteStream.value.id })
     showDeleteConfirm.value = false
     pendingDeleteStream.value = null

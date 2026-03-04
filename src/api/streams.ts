@@ -25,9 +25,38 @@ export type ConstraintsActionResponse = {
   violations?: FKViolationDetail[]
 }
 
-const getStreams = async (): Promise<StreamConfig[]> => {
+export type GetStreamsParams = {
+  search?: string
+  limit?: number
+  offset?: number
+}
+
+export type StreamListResponse = {
+  items: StreamConfig[]
+  total: number
+  filtered: number
+  search?: string
+  limit?: number
+  offset?: number
+}
+
+const getStreams = async (params: GetStreamsParams = {}): Promise<StreamListResponse> => {
   try {
-    const response: AxiosResponse<StreamConfig[]> = await apiClient.get('/stream-configs')
+    const query: Record<string, string | number> = {}
+    const normalizedSearch = params.search?.trim() || ''
+    if (normalizedSearch) {
+      query.search = normalizedSearch
+    }
+    if (typeof params.limit === 'number') {
+      query.limit = params.limit
+    }
+    if (typeof params.offset === 'number') {
+      query.offset = params.offset
+    }
+
+    const response: AxiosResponse<StreamListResponse> = await apiClient.get('/stream-configs', {
+      params: query
+    })
     return response.data
   } catch (error) {
     throw handleApiError(error)

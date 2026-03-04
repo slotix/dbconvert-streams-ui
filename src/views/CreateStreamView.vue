@@ -116,7 +116,7 @@
             </div>
 
             <!-- Step 2: Structure & Data -->
-            <div v-if="currentStepIndex === 1" class="h-full min-h-0">
+            <div v-if="currentStepIndex === 1" class="h-full min-h-0 overflow-hidden">
               <StructureDataStep
                 :target-connection-id="wizard.selection.value.targetConnectionId"
                 :create-tables="wizard.createTables.value"
