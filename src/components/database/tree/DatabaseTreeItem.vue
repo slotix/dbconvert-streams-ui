@@ -60,15 +60,6 @@ const isSelected = computed(() => {
   )
 })
 
-// Check if the database name matches the search query
-// When true, we show all tables/views without filtering them by search
-const databaseNameMatchesSearch = computed(() => {
-  const query = searchQuery.value?.trim().toLowerCase()
-  if (!query) return false
-  return props.database.name.toLowerCase().includes(query)
-})
-
-const hasSearch = computed(() => !!searchQuery.value?.trim())
 const tablesOpen = ref(true)
 const viewsOpen = ref(true)
 const functionsOpen = ref(true)
@@ -76,10 +67,10 @@ const proceduresOpen = ref(true)
 const highlightedSection = ref<'tables' | 'views' | 'functions' | 'procedures' | null>(null)
 let sectionHighlightTimeout: ReturnType<typeof setTimeout> | null = null
 
-const tablesExpanded = computed(() => (hasSearch.value ? true : tablesOpen.value))
-const viewsExpanded = computed(() => (hasSearch.value ? true : viewsOpen.value))
-const functionsExpanded = computed(() => (hasSearch.value ? true : functionsOpen.value))
-const proceduresExpanded = computed(() => (hasSearch.value ? true : proceduresOpen.value))
+const tablesExpanded = computed(() => tablesOpen.value)
+const viewsExpanded = computed(() => viewsOpen.value)
+const functionsExpanded = computed(() => functionsOpen.value)
+const proceduresExpanded = computed(() => proceduresOpen.value)
 
 function highlightSection(section: 'tables' | 'views' | 'functions' | 'procedures') {
   highlightedSection.value = section
@@ -313,7 +304,6 @@ function handleFlatObjectContextMenu(payload: {
             :database="database.name"
             :is-expanded="isSchemaExpanded(schema.name)"
             :table-sizes="tableSizes"
-            :database-name-matches-search="databaseNameMatchesSearch"
             @toggle="handleSchemaToggle(schema.name)"
             @open-object="handleObjectOpen"
             @contextmenu-schema="handleSchemaContextMenu"
@@ -351,7 +341,6 @@ function handleFlatObjectContextMenu(payload: {
             :depth="2"
             :explorer-obj-prefix="`${connectionId}:${database.name}:`"
             :table-sizes="tableSizes"
-            :parent-matches-search="databaseNameMatchesSearch"
             @click="(p) => handleObjectOpen({ type: 'table', ...p })"
             @dblclick="(p) => handleObjectOpen({ type: 'table', ...p })"
             @middleclick="(p) => handleObjectOpen({ type: 'table', ...p })"
@@ -385,7 +374,6 @@ function handleFlatObjectContextMenu(payload: {
             :database="database.name"
             :depth="2"
             :explorer-obj-prefix="`${connectionId}:${database.name}:`"
-            :parent-matches-search="databaseNameMatchesSearch"
             @click="(p) => handleObjectOpen({ type: 'view', ...p })"
             @dblclick="(p) => handleObjectOpen({ type: 'view', ...p })"
             @middleclick="(p) => handleObjectOpen({ type: 'view', ...p })"
@@ -420,7 +408,6 @@ function handleFlatObjectContextMenu(payload: {
             :database="database.name"
             :depth="2"
             :explorer-obj-prefix="`${connectionId}:${database.name}:`"
-            :parent-matches-search="databaseNameMatchesSearch"
             @click="(p) => handleObjectOpen({ type: 'function', ...p })"
             @dblclick="(p) => handleObjectOpen({ type: 'function', ...p })"
             @middleclick="(p) => handleObjectOpen({ type: 'function', ...p })"
@@ -455,7 +442,6 @@ function handleFlatObjectContextMenu(payload: {
             :database="database.name"
             :depth="2"
             :explorer-obj-prefix="`${connectionId}:${database.name}:`"
-            :parent-matches-search="databaseNameMatchesSearch"
             @click="(p) => handleObjectOpen({ type: 'procedure', ...p })"
             @dblclick="(p) => handleObjectOpen({ type: 'procedure', ...p })"
             @middleclick="(p) => handleObjectOpen({ type: 'procedure', ...p })"

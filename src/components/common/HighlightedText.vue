@@ -30,25 +30,56 @@ const props = withDefaults(defineProps<Props>(), {
 
 const attrs = useAttrs()
 
-// Inline text highlighting logic
+function tokenizeQuery(query: string): string[] {
+  if (!query) return []
+
+  const tokens = query
+    .trim()
+    .split(/\s+/)
+    .map((token) => token.trim())
+    .filter(Boolean)
+
+  const seen = new Set<string>()
+  const uniqueTokens: string[] = []
+  for (const token of tokens) {
+    const normalized = token.toLowerCase()
+    if (seen.has(normalized)) continue
+    seen.add(normalized)
+    uniqueTokens.push(token)
+  }
+
+  return uniqueTokens
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+// Inline text highlighting logic (tokenized, case-insensitive)
 function highlightParts(text: string, query: string): Array<{ text: string; match: boolean }> {
-  if (!query || !text) {
+  if (!text) {
     return [{ text, match: false }]
   }
 
+  const tokens = tokenizeQuery(query)
+  if (!tokens.length) {
+    return [{ text, match: false }]
+  }
+
+  // Prefer longer tokens when there is overlap ("postgres" before "post")
+  const sortedTokens = [...tokens].sort((a, b) => b.length - a.length)
+  const regex = new RegExp(`(${sortedTokens.map((token) => escapeRegExp(token)).join('|')})`, 'gi')
+  const tokenSet = new Set(sortedTokens.map((token) => token.toLowerCase()))
+
   const parts: Array<{ text: string; match: boolean }> = []
-  const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi')
   const matches = text.split(regex)
 
   for (const part of matches) {
-    if (part) {
-      parts.push({
-        text: part,
-        match: regex.test(part)
-      })
-      // Reset regex lastIndex for next iteration
-      regex.lastIndex = 0
-    }
+    if (!part) continue
+    parts.push({
+      text: part,
+      match: tokenSet.has(part.toLowerCase())
+    })
   }
 
   return parts

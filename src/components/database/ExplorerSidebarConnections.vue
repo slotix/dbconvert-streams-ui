@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, inject, watch, onMounted, onUnmounted, nextTick, provide } from 'vue'
-import { useDebounceFn, useResizeObserver } from '@vueuse/core'
+import { useResizeObserver } from '@vueuse/core'
 import { Boxes, ChevronsDown, ChevronsUp, Loader2, Menu, Plus } from 'lucide-vue-next'
 import { useConnectionsStore } from '@/stores/connections'
 import ConnectionTypeFilter from '@/components/common/ConnectionTypeFilter.vue'
@@ -12,16 +12,15 @@ import { useConnectionTreeLogic } from '@/composables/useConnectionTreeLogic'
 import { useTreeContextMenu } from '@/composables/useTreeContextMenu'
 import { useConnectionActions } from '@/composables/useConnectionActions'
 import { useDatabaseCapabilities } from '@/composables/useDatabaseCapabilities'
-import { useTreeSearch } from '@/composables/useTreeSearch'
 import { useSqlConsoleActions } from '@/composables/useSqlConsoleActions'
 import { useDesktopMode } from '@/composables/useDesktopMode'
 import { useExplorerContextMenuActions } from '@/composables/useExplorerContextMenuActions'
-import { useExplorerSearchExpansion } from '@/composables/useExplorerSearchExpansion'
 import { useToast } from 'vue-toastification'
 import type { Connection } from '@/types/connections'
 import type { ShowDiagramPayload } from '@/types/diagram'
 import type { SQLRoutineMeta, SQLSequenceMeta, SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
+import connectionsApi, { type ConnectionListResponse } from '@/api/connections'
 import { getConnectionKindFromSpec, getConnectionTypeLabel, isDatabaseKind } from '@/types/specs'
 import { parseRoutineName } from '@/utils/routineUtils'
 import { getTreeKeyboardIntent, type TreeKeyboardNodeState } from '@/utils/treeKeyboardNavigation'
@@ -161,6 +160,9 @@ const deleteConfirmMessage = computed(() => {
 })
 
 const isLoadingConnections = ref(false)
+const isSearchLoading = ref(false)
+const searchResult = ref<ConnectionListResponse | null>(null)
+let searchRequestSequence = 0
 
 // Hide table size labels when the sidebar is narrow so table names stay readable.
 // Measured on the outer sidebar card element (includes padding).
@@ -192,6 +194,7 @@ const effectiveSearchQuery = computed(() => {
   const trimmed = searchQuery.value.trim()
   return trimmed.length >= MIN_SEARCH_LENGTH ? searchQuery.value : ''
 })
+const hasActiveSearch = computed(() => effectiveSearchQuery.value.trim().length > 0)
 
 // Provide search query, caret class, and selection info to child components (avoid prop drilling)
 provide('treeSearchQuery', effectiveSearchQuery)
@@ -200,13 +203,6 @@ provide(
   'treeSelection',
   computed(() => props.selected || {})
 )
-
-// Single source of truth for tree search - used by ExplorerSidebarConnections
-// and provided to children (ConnectionTreeItem) via inject
-const treeSearch = useTreeSearch(() => effectiveSearchQuery.value, {
-  typeFilters: () => props.typeFilters
-})
-provide('treeSearch', treeSearch)
 
 // Computed for context menu
 const canCopyDDL = computed(() => {
@@ -264,31 +260,6 @@ const searchTooShort = computed(() => {
   return len > 0 && len < MIN_SEARCH_LENGTH
 })
 
-// Load file entries for all file-type connections when search is active
-// This ensures S3/file connections are searchable
-const loadFileEntriesForSearch = useDebounceFn(async () => {
-  const query = searchQuery.value.trim()
-  if (query.length < MIN_SEARCH_LENGTH) return
-
-  // Get all file-type connections
-  const fileConnections = connectionsStore.connections.filter((conn) =>
-    treeLogic.isFileConnection(conn.id)
-  )
-
-  // Load entries for each file connection that hasn't been loaded yet
-  for (const conn of fileConnections) {
-    const entries = fileExplorerStore.getEntries(conn.id)
-    if (entries.length === 0 && !fileExplorerStore.isLoading(conn.id)) {
-      void fileExplorerStore.loadEntries(conn.id)
-    }
-  }
-}, 300)
-
-// Trigger file entry loading when search query changes
-watch(searchQuery, () => {
-  void loadFileEntriesForSearch()
-})
-
 // Sort connections by creation date (newest first), with name as tiebreaker
 const sortConnections = (connections: Connection[]): Connection[] => {
   return [...connections].sort((a, b) => {
@@ -299,18 +270,152 @@ const sortConnections = (connections: Connection[]): Connection[] => {
   })
 }
 
+async function fetchConnectionSearchResults(query: string) {
+  const trimmed = query.trim()
+  if (!trimmed) {
+    searchResult.value = null
+    isSearchLoading.value = false
+    return
+  }
+
+  const requestID = ++searchRequestSequence
+  isSearchLoading.value = true
+  try {
+    const response = await connectionsApi.getConnections({ search: trimmed })
+    if (requestID !== searchRequestSequence) return
+    searchResult.value = response
+  } catch (error) {
+    if (requestID !== searchRequestSequence) return
+    console.error('Failed to search connections:', error)
+    searchResult.value = {
+      items: [],
+      total: connectionsStore.connections.length,
+      filtered: 0,
+      search: trimmed
+    }
+  } finally {
+    if (requestID === searchRequestSequence) {
+      isSearchLoading.value = false
+    }
+  }
+}
+
+async function refreshSearchResultsIfNeeded() {
+  if (!hasActiveSearch.value) return
+  await fetchConnectionSearchResults(effectiveSearchQuery.value)
+}
+
 // Computed for filtered connections using composable
 const filteredConnections = computed<Connection[]>(() => {
-  const base = connectionsStore.connections
-  const typeFiltered =
-    props.typeFilters && props.typeFilters.length
-      ? base.filter((conn) => treeLogic.matchesTypeFilters(conn, props.typeFilters!))
-      : base
+  const base = hasActiveSearch.value
+    ? searchResult.value?.items || []
+    : connectionsStore.connections
+  const ordered = hasActiveSearch.value ? [...base] : sortConnections(base)
+  return props.typeFilters && props.typeFilters.length
+    ? ordered.filter((conn) => treeLogic.matchesTypeFilters(conn, props.typeFilters!))
+    : ordered
+})
 
-  // If query is below minimum length, treat as "no search" but still sort
-  if (!effectiveSearchQuery.value.trim()) return sortConnections(typeFiltered)
+let searchAutoExpandSequence = 0
 
-  return treeSearch.filterConnections(typeFiltered)
+async function autoExpandTreeForSearch(query: string) {
+  const trimmed = query.trim()
+  if (!trimmed || !filteredConnections.value.length) return
+
+  const callSequence = ++searchAutoExpandSequence
+
+  for (const conn of filteredConnections.value) {
+    if (callSequence !== searchAutoExpandSequence) return
+
+    if (!navigationStore.isConnectionExpanded(conn.id)) {
+      navigationStore.expandConnection(conn.id)
+    }
+
+    if (treeLogic.isFileConnection(conn.id)) {
+      if (!fileExplorerStore.isLoading(conn.id) && !fileExplorerStore.getDirectoryPath(conn.id)) {
+        emit('request-file-entries', { connectionId: conn.id })
+      }
+      continue
+    }
+
+    await navigationStore.ensureDatabases(conn.id)
+    if (callSequence !== searchAutoExpandSequence) return
+  }
+
+  await nextTick()
+  syncTreeTabStop(findSelectedNodeElement())
+}
+
+watch(
+  () => effectiveSearchQuery.value,
+  async (query) => {
+    const trimmed = query.trim()
+    if (!trimmed) {
+      searchAutoExpandSequence += 1
+      searchRequestSequence += 1
+      isSearchLoading.value = false
+      searchResult.value = null
+      return
+    }
+    await fetchConnectionSearchResults(trimmed)
+  }
+)
+
+watch(
+  () => connectionsStore.connections,
+  async () => {
+    await refreshSearchResultsIfNeeded()
+  }
+)
+
+watch(
+  [
+    () => effectiveSearchQuery.value,
+    () => filteredConnections.value.map((conn) => conn.id).join('|'),
+    () => searchResult.value?.search || '',
+    () => isSearchLoading.value
+  ],
+  async ([query, , responseSearch, loading]) => {
+    const trimmed = query.trim()
+    if (!trimmed || loading) return
+    if (responseSearch && responseSearch !== trimmed) return
+    await autoExpandTreeForSearch(trimmed)
+  }
+)
+
+const hasTypeFilters = computed(() => !!(props.typeFilters && props.typeFilters.length > 0))
+const databaseSearchCoverage = computed(() => searchResult.value?.databaseSearchCoverage || null)
+const hasIncompleteDatabaseSearchCoverage = computed(() => {
+  if (!hasActiveSearch.value) return false
+  const coverage = databaseSearchCoverage.value
+  return !!coverage && coverage.totalConnections > 0 && !coverage.complete
+})
+const databaseSearchCoverageLabel = computed(() => {
+  const coverage = databaseSearchCoverage.value
+  if (!coverage) return ''
+  return `${coverage.indexedConnections}/${coverage.totalConnections}`
+})
+const databaseSearchCoverageTitle = computed(() => {
+  const coverage = databaseSearchCoverage.value
+  if (!coverage) return ''
+  return `Database index warmup: ${coverage.indexedConnections}/${coverage.totalConnections} indexed`
+})
+
+const connectionCountLabel = computed(() => {
+  const total = connectionsStore.connections.length
+  if (hasActiveSearch.value) {
+    const matched = searchResult.value?.filtered ?? filteredConnections.value.length
+    if (hasTypeFilters.value) {
+      return `${filteredConnections.value.length} of ${matched}`
+    }
+    return `${matched} of ${total}`
+  }
+
+  if (hasTypeFilters.value) {
+    return `${filteredConnections.value.length} of ${total}`
+  }
+
+  return `${total} connection${total === 1 ? '' : 's'}`
 })
 
 const hasExpandedFileFolders = computed(() =>
@@ -977,10 +1082,33 @@ watch(
     if (!sel) return
     const connId = sel.connectionId
     if (!connId) return
+    const hasDeeperSelection = !!(
+      sel.filePath ||
+      sel.database ||
+      sel.schema ||
+      sel.type ||
+      sel.name
+    )
+
+    // Keep pure connection selection collapsed; expand only when we need to reveal a deeper node.
+    if (!hasDeeperSelection) {
+      await nextTick()
+      const selectedNode = findSelectedNodeElement()
+      if (selectedNode) {
+        focusTreeNode(selectedNode)
+      }
+      syncTreeTabStop(selectedNode)
+      return
+    }
 
     // Skip database operations for file connections
     if (treeLogic.isFileConnection(connId)) {
-      navigationStore.expandConnection(connId)
+      await nextTick()
+      const selectedNode = findSelectedNodeElement()
+      if (selectedNode) {
+        focusTreeNode(selectedNode)
+      }
+      syncTreeTabStop(selectedNode)
       return
     }
 
@@ -1023,29 +1151,6 @@ watch(
   { immediate: false }
 )
 
-const { isSearchExpanding } = useExplorerSearchExpansion({
-  searchQuery,
-  effectiveSearchQuery,
-  typeFilters: computed(() => props.typeFilters),
-  minSearchLength: MIN_SEARCH_LENGTH,
-  connections: computed(() => connectionsStore.connections),
-  matchesTypeFilters: (connection, filters) => treeLogic.matchesTypeFilters(connection, filters),
-  isFileConnection: (connectionId) => treeLogic.isFileConnection(connectionId),
-  hasSchemas: (connectionId) => treeLogic.hasSchemas(connectionId),
-  requestFileEntries: (connectionId) => emit('request-file-entries', { connectionId }),
-  matchesDatabaseFilter: (connectionId, database) =>
-    effectiveSearchQuery.value.trim().length === 0
-      ? true
-      : treeSearch.matchesDatabaseFilter(connectionId, database),
-  navigationStore,
-  fileExplorerStore
-})
-
-function matchesDbFilter(connId: string, dbName: string): boolean {
-  if (!effectiveSearchQuery.value.trim()) return true
-  return treeSearch.matchesDatabaseFilter(connId, dbName)
-}
-
 watch(
   () => filteredConnections.value.map((conn) => conn.id).join('|'),
   async () => {
@@ -1056,19 +1161,6 @@ watch(
 
 // Search input ref for keyboard shortcut focus (exposed to parent)
 const internalSearchInputRef = ref<InstanceType<typeof SearchInput> | null>(null)
-
-// Count label for sidebar toolbar
-const connectionCountLabel = computed(() => {
-  const filtered = filteredConnections.value.length
-  const total = connectionsStore.connections.length
-  if (
-    (props.searchQuery || (props.typeFilters && props.typeFilters.length > 0)) &&
-    filtered !== total
-  ) {
-    return `${filtered} of ${total}`
-  }
-  return `${total} connection${total === 1 ? '' : 's'}`
-})
 
 defineExpose({ focus: () => internalSearchInputRef.value?.focus() })
 </script>
@@ -1113,7 +1205,7 @@ defineExpose({ focus: () => internalSearchInputRef.value?.focus() })
       />
       <!-- Match count (shown while searching) -->
       <Loader2
-        v-if="isSearchExpanding"
+        v-if="isSearchLoading"
         class="h-3 w-3 text-gray-400 dark:text-gray-500 animate-spin shrink-0"
       />
       <span
@@ -1122,6 +1214,13 @@ defineExpose({ focus: () => internalSearchInputRef.value?.focus() })
         :title="`${filteredConnections.length} matching connection${filteredConnections.length === 1 ? '' : 's'}`"
         >{{ filteredConnections.length }}</span
       >
+      <span
+        v-if="hasIncompleteDatabaseSearchCoverage"
+        class="text-[10px] tabular-nums text-amber-500 dark:text-amber-400 shrink-0 select-none"
+        :title="databaseSearchCoverageTitle"
+      >
+        {{ databaseSearchCoverageLabel }} idx
+      </span>
       <button
         type="button"
         class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded text-slate-500 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700 hover:text-slate-700 dark:hover:text-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
@@ -1164,14 +1263,11 @@ defineExpose({ focus: () => internalSearchInputRef.value?.focus() })
         <!-- Empty/searching state -->
         <template v-if="!filteredConnections.length">
           <div
-            v-if="isSearchExpanding"
+            v-if="isSearchLoading"
             class="flex flex-col items-center justify-center py-20 px-6 text-slate-500 dark:text-slate-400"
           >
             <Loader2 class="animate-spin h-8 w-8 text-slate-400 mb-3" />
             <p class="text-sm font-medium">Searching connections…</p>
-            <p class="text-xs mt-1 text-center">
-              Loading metadata that matches "{{ searchQuery }}"
-            </p>
           </div>
           <div v-else class="flex flex-col items-center justify-center py-20 px-6 text-center">
             <div
@@ -1201,11 +1297,7 @@ defineExpose({ focus: () => internalSearchInputRef.value?.focus() })
             :connection="conn"
             :is-expanded="navigationStore.isConnectionExpanded(conn.id)"
             :is-file-connection="treeLogic.isFileConnection(conn.id)"
-            :databases="
-              (navigationStore.getDatabases(conn.id) || []).filter((d) =>
-                matchesDbFilter(conn.id, d.name)
-              )
-            "
+            :databases="navigationStore.getDatabases(conn.id) || []"
             @toggle-connection="handleToggleConnection(conn)"
             @select-connection="$emit('select-connection', $event)"
             @toggle-database="(dbName) => handleToggleDatabase(conn, dbName)"

@@ -111,8 +111,10 @@ export function useStreamExport() {
     if (storedConnectionId) {
       // Verify the connection still exists
       try {
-        const connections = await connectionsApi.getConnections()
-        const existingConnection = connections.find((c: Connection) => c.id === storedConnectionId)
+        const response = await connectionsApi.getConnections()
+        const existingConnection = response.items.find(
+          (c: Connection) => c.id === storedConnectionId
+        )
         if (existingConnection) {
           const existingBasePath = existingConnection.spec?.files?.basePath || ''
           if (normalizedBasePath && existingBasePath !== normalizedBasePath) {

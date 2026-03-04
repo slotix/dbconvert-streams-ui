@@ -7,9 +7,34 @@ import { type DatabaseMetadata, type DatabaseSummary } from '@/types/metadata'
 import { type DatabaseOverview } from '@/types/overview'
 import { OPERATION_TIMEOUTS } from '@/constants'
 
-const getConnections = async (): Promise<Connection[]> => {
+export type GetConnectionsParams = {
+  search?: string
+}
+
+export type ConnectionListResponse = {
+  items: Connection[]
+  total: number
+  filtered: number
+  search?: string
+  databaseSearchCoverage?: {
+    indexedConnections: number
+    totalConnections: number
+    complete: boolean
+  }
+}
+
+const getConnections = async (
+  params: GetConnectionsParams = {}
+): Promise<ConnectionListResponse> => {
   try {
-    const response: AxiosResponse<Connection[]> = await apiClient.get('/connections', {
+    const query: Record<string, string> = {}
+    const normalizedSearch = params.search?.trim() || ''
+    if (normalizedSearch) {
+      query.search = normalizedSearch
+    }
+
+    const response: AxiosResponse<ConnectionListResponse> = await apiClient.get('/connections', {
+      params: query,
       timeout: OPERATION_TIMEOUTS.getConnections
     })
     return response.data

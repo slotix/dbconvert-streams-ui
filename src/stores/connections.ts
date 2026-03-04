@@ -163,7 +163,7 @@ export const useConnectionsStore = defineStore('connections', {
       this.isLoadingConnections = true
       try {
         const response = await api.getConnections()
-        this.connections = response
+        this.connections = response.items
         // No longer saving to localStorage - always fetch fresh from API
 
         // Cleanup stale connection references in explorerNavigation store

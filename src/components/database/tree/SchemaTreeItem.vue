@@ -21,7 +21,6 @@ const props = defineProps<{
   database: string
   isExpanded: boolean
   tableSizes?: Record<string, number>
-  databaseNameMatchesSearch?: boolean // When database name matches search
 }>()
 
 // Inject search query, caret class, and selection from parent
@@ -47,19 +46,6 @@ const isSelected = computed(() => {
   )
 })
 
-// Check if the schema name matches the search query
-const schemaNameMatchesSearch = computed(() => {
-  const query = searchQuery.value?.trim().toLowerCase()
-  if (!query) return false
-  return (props.schema.name || '').toLowerCase().includes(query)
-})
-
-// Parent matches search if database name or schema name matches
-const parentMatchesSearch = computed(() => {
-  return props.databaseNameMatchesSearch || schemaNameMatchesSearch.value
-})
-
-const hasSearch = computed(() => !!searchQuery.value?.trim())
 const tablesOpen = ref(true)
 const viewsOpen = ref(true)
 const functionsOpen = ref(true)
@@ -70,11 +56,11 @@ const highlightedSection = ref<
 >(null)
 let sectionHighlightTimeout: ReturnType<typeof setTimeout> | null = null
 
-const tablesExpanded = computed(() => (hasSearch.value ? true : tablesOpen.value))
-const viewsExpanded = computed(() => (hasSearch.value ? true : viewsOpen.value))
-const functionsExpanded = computed(() => (hasSearch.value ? true : functionsOpen.value))
-const proceduresExpanded = computed(() => (hasSearch.value ? true : proceduresOpen.value))
-const sequencesExpanded = computed(() => (hasSearch.value ? true : sequencesOpen.value))
+const tablesExpanded = computed(() => tablesOpen.value)
+const viewsExpanded = computed(() => viewsOpen.value)
+const functionsExpanded = computed(() => functionsOpen.value)
+const proceduresExpanded = computed(() => proceduresOpen.value)
+const sequencesExpanded = computed(() => sequencesOpen.value)
 
 function highlightSection(section: 'tables' | 'views' | 'functions' | 'procedures' | 'sequences') {
   highlightedSection.value = section
@@ -255,7 +241,6 @@ function handleObjectContextMenu(payload: {
         :depth="3"
         :explorer-obj-prefix="`${connectionId}:${database}:${schema.name || ''}`"
         :table-sizes="tableSizes"
-        :parent-matches-search="parentMatchesSearch"
         @click="(p) => handleObjectOpen('table', p)"
         @dblclick="(p) => handleObjectOpen('table', p)"
         @middleclick="(p) => handleObjectOpen('table', p)"
@@ -290,7 +275,6 @@ function handleObjectContextMenu(payload: {
         :schema="schema.name"
         :depth="3"
         :explorer-obj-prefix="`${connectionId}:${database}:${schema.name || ''}`"
-        :parent-matches-search="parentMatchesSearch"
         @click="(p) => handleObjectOpen('view', p)"
         @dblclick="(p) => handleObjectOpen('view', p)"
         @middleclick="(p) => handleObjectOpen('view', p)"
@@ -326,7 +310,6 @@ function handleObjectContextMenu(payload: {
         :schema="schema.name"
         :depth="3"
         :explorer-obj-prefix="`${connectionId}:${database}:${schema.name || ''}`"
-        :parent-matches-search="parentMatchesSearch"
         @click="(p) => handleObjectOpen('function', p)"
         @dblclick="(p) => handleObjectOpen('function', p)"
         @middleclick="(p) => handleObjectOpen('function', p)"
@@ -362,7 +345,6 @@ function handleObjectContextMenu(payload: {
         :schema="schema.name"
         :depth="3"
         :explorer-obj-prefix="`${connectionId}:${database}:${schema.name || ''}`"
-        :parent-matches-search="parentMatchesSearch"
         @click="(p) => handleObjectOpen('procedure', p)"
         @dblclick="(p) => handleObjectOpen('procedure', p)"
         @middleclick="(p) => handleObjectOpen('procedure', p)"
@@ -398,7 +380,6 @@ function handleObjectContextMenu(payload: {
         :schema="schema.name"
         :depth="3"
         :explorer-obj-prefix="`${connectionId}:${database}:${schema.name || ''}`"
-        :parent-matches-search="parentMatchesSearch"
         @click="(p) => handleObjectOpen('sequence', p)"
         @dblclick="(p) => handleObjectOpen('sequence', p)"
         @middleclick="(p) => handleObjectOpen('sequence', p)"

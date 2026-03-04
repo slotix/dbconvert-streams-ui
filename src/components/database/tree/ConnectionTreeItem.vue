@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, inject, watch } from 'vue'
+import { computed, inject } from 'vue'
 import type { ComputedRef } from 'vue'
 import { ChevronDown, ChevronRight } from 'lucide-vue-next'
 import DatabaseTreeItem from './DatabaseTreeItem.vue'
@@ -27,7 +27,7 @@ const props = defineProps<{
   databases: DatabaseInfo[]
 }>()
 
-// Inject search query, caret class, selection, and treeSearch from parent (single source of truth)
+// Inject search query, caret class, and selection from parent
 const searchQuery = inject<ComputedRef<string>>('treeSearchQuery')!
 const caretClass = inject<string>('treeCaretClass')!
 const treeSelection = inject<
@@ -40,9 +40,6 @@ const treeSelection = inject<
     filePath?: string
   }>
 >('treeSelection')!
-// Inject treeSearch from ExplorerSidebarConnections - single source of truth for filtering
-const treeSearch =
-  inject<ReturnType<typeof import('@/composables/useTreeSearch').useTreeSearch>>('treeSearch')!
 
 // Check if this connection is selected (connection selected but no database/table/file)
 const isSelected = computed(() => {
@@ -232,33 +229,7 @@ async function handleExpandFolder(payload: { entry: FileSystemEntry }) {
   }
 }
 
-const visibleFileEntries = computed(() => {
-  return treeSearch.filterFileEntries(fileEntries.value)
-})
-
-function expandMatchingFolders(entries: FileSystemEntry[]) {
-  for (const entry of entries) {
-    if (entry.type === 'dir') {
-      fileExplorerStore.expandFolder(props.connection.id, entry.path)
-      if (entry.children && entry.children.length > 0) {
-        expandMatchingFolders(entry.children)
-      }
-    }
-  }
-}
-
-// When searching, auto-expand the matching subtree so deep matches are visible.
-watch(
-  [() => searchQuery.value, () => visibleFileEntries.value],
-  ([query, entries]) => {
-    if (!props.isFileConnection) return
-    if (!query) return
-    if (!entries || entries.length === 0) return
-
-    expandMatchingFolders(entries)
-  },
-  { immediate: true }
-)
+const visibleFileEntries = computed(() => fileEntries.value)
 
 // Generate tooltip with full connection details
 const connectionTooltip = computed(() => {
