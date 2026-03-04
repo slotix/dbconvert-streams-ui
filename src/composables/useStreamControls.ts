@@ -123,6 +123,14 @@ export function useStreamControls(stream: Ref<StreamConfig>) {
     await streamActions.forceStopStream(monitoringStore.streamID)
   }
 
+  async function stopBlockedActiveStreams() {
+    await streamActions.stopBlockedActiveStreams()
+  }
+
+  async function forceStopBlockedActiveStreams() {
+    await streamActions.forceStopBlockedActiveStreams()
+  }
+
   async function runConstraints() {
     if (!stream.value.id) return
     try {
@@ -164,6 +172,8 @@ export function useStreamControls(stream: Ref<StreamConfig>) {
     resumeStream,
     stopStream,
     forceStopStream,
+    stopBlockedActiveStreams,
+    forceStopBlockedActiveStreams,
     runConstraints
   }
 }

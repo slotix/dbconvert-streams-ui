@@ -87,6 +87,10 @@ interface State {
   tableMetadata: Map<string, TableMetadata>
   evaluationWarning: EvaluationWarning | null
   forceStopRecommended: boolean
+  blockedActiveStreamIDs: string[]
+  activeStreamGateMessage: string
+  logTransportDegraded: boolean
+  logTransportDegradedMessage: string
 }
 
 export const useMonitoringStore = defineStore('monitoring', {
@@ -142,7 +146,11 @@ export const useMonitoringStore = defineStore('monitoring', {
     aggregatedStats: null,
     tableMetadata: new Map(),
     evaluationWarning: null,
-    forceStopRecommended: false
+    forceStopRecommended: false,
+    blockedActiveStreamIDs: [],
+    activeStreamGateMessage: '',
+    logTransportDegraded: false,
+    logTransportDegradedMessage: ''
   }),
   getters: {
     currentStage(state: State): Stage | null {
@@ -618,6 +626,21 @@ export const useMonitoringStore = defineStore('monitoring', {
     },
     setForceStopRecommended(recommended: boolean) {
       this.forceStopRecommended = recommended
+    },
+    setActiveStreamGate(streamIDs: string[], message = '') {
+      const ids = Array.from(
+        new Set(streamIDs.map((id) => id.trim()).filter((id) => id.length > 0))
+      )
+      this.blockedActiveStreamIDs = ids
+      this.activeStreamGateMessage = message
+    },
+    clearActiveStreamGate() {
+      this.blockedActiveStreamIDs = []
+      this.activeStreamGateMessage = ''
+    },
+    setLogTransportDegraded(degraded: boolean, message = '') {
+      this.logTransportDegraded = degraded
+      this.logTransportDegradedMessage = degraded ? message : ''
     },
     addLog(log: Log) {
       if (this.logs.length >= this.maxLogs) {

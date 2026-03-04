@@ -197,6 +197,19 @@ function normalizeRuntimeLoggingSettings(input: Partial<LoggingSettings>): Runti
   }
 }
 
+function isStructuredLogsTransportFailure(message: string): boolean {
+  const normalized = message.toLowerCase()
+  if (!normalized.includes('logs.structured')) {
+    return false
+  }
+
+  return (
+    normalized.includes('failed to publish message') ||
+    normalized.includes('context deadline exceeded') ||
+    normalized.includes('no response from stream')
+  )
+}
+
 export const useLogsStore = defineStore('logs', {
   state: () => {
     const savedRuntimeSettings = normalizeRuntimeLoggingSettings({
@@ -811,12 +824,17 @@ export const useLogsStore = defineStore('logs', {
 
     // Structured logging methods for new SSE service
     addSystemLog(log: StandardLogEntry) {
+      const monitoringStore = useMonitoringStore()
+
+      if (isStructuredLogsTransportFailure(log.message)) {
+        monitoringStore.setLogTransportDegraded(true, log.message)
+      }
+
       if (log.extra?.event === 'evaluation_warning') {
         const commonStore = useCommonStore()
         const level = log.level === 'warn' ? 'warning' : log.level === 'error' ? 'error' : 'info'
         commonStore.showNotification(log.message, level)
 
-        const monitoringStore = useMonitoringStore()
         const mode = log.extra?.mode
         const threshold = Number(log.extra?.threshold ?? log.extra?.percent ?? 0)
         const percent = Number(log.extra?.percent ?? threshold)

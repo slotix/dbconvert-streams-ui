@@ -2,22 +2,87 @@ import { useStreamsStore } from '@/stores/streamConfig'
 import { useMonitoringStore } from '@/stores/monitoring'
 import { useCommonStore } from '@/stores/common'
 import type { StreamConfig } from '@/types/streamConfig'
+import { ApiError } from '@/utils/errorHandler'
 
-function isActiveStreamsError(error: unknown): boolean {
-  if (!(error instanceof Error)) return false
-  return error.message.includes('active streams') || error.message.includes('stream_state')
+function isActiveStreamsError(error: unknown): error is ApiError {
+  return error instanceof ApiError && error.details?.field === 'stream_state'
 }
 
-function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => {
-    window.setTimeout(resolve, ms)
-  })
+function parseActiveStreamIDs(error: unknown): string[] {
+  if (error instanceof ApiError && error.details) {
+    const details = error.details
+    const value = details.value
+    if (Array.isArray(value)) {
+      return Array.from(new Set(value.map((id) => String(id).trim()).filter((id) => id.length > 0)))
+    }
+    if (typeof value === 'string' && value.trim().length > 0) {
+      return [value.trim()]
+    }
+  }
+
+  return []
+}
+
+function formatActiveStreamsLabel(streamIDs: string[]): string {
+  if (streamIDs.length === 0) {
+    return 'another active stream'
+  }
+  return streamIDs.join(', ')
 }
 
 export function useStreamActions() {
   const streamsStore = useStreamsStore()
   const monitoringStore = useMonitoringStore()
   const commonStore = useCommonStore()
+
+  function removeBlockedStreamID(streamID: string) {
+    const remaining = monitoringStore.blockedActiveStreamIDs.filter((id) => id !== streamID)
+    if (remaining.length === 0) {
+      monitoringStore.clearActiveStreamGate()
+      monitoringStore.setForceStopRecommended(false)
+      return
+    }
+    monitoringStore.setActiveStreamGate(remaining, monitoringStore.activeStreamGateMessage)
+  }
+
+  async function stopBlockedStreams(force = false): Promise<void> {
+    const blockedStreamIDs = [...monitoringStore.blockedActiveStreamIDs]
+    if (blockedStreamIDs.length === 0) {
+      commonStore.showNotification('No blocked active streams were detected', 'warning')
+      return
+    }
+
+    const failed: string[] = []
+    for (const blockedStreamID of blockedStreamIDs) {
+      try {
+        if (force) {
+          await streamsStore.forceStopStream(blockedStreamID)
+        } else {
+          await streamsStore.stopStream(blockedStreamID)
+        }
+        removeBlockedStreamID(blockedStreamID)
+      } catch {
+        failed.push(blockedStreamID)
+      }
+    }
+
+    const stoppedCount = blockedStreamIDs.length - failed.length
+    if (stoppedCount > 0) {
+      const modeLabel = force ? 'Force-stopped' : 'Stopped'
+      commonStore.showNotification(`${modeLabel} ${stoppedCount} active stream(s)`, 'success')
+    }
+
+    if (failed.length > 0) {
+      monitoringStore.setActiveStreamGate(failed, monitoringStore.activeStreamGateMessage)
+      const modeLabel = force ? 'force-stop' : 'stop'
+      commonStore.showNotification(`Failed to ${modeLabel}: ${failed.join(', ')}`, 'error')
+      return
+    }
+
+    monitoringStore.clearActiveStreamGate()
+    monitoringStore.setForceStopRecommended(false)
+    monitoringStore.requestShowMonitorTab()
+  }
 
   async function startStream(stream: StreamConfig): Promise<string | null> {
     if (!stream.id) return null
@@ -30,6 +95,7 @@ export function useStreamActions() {
     async function runStart(): Promise<string> {
       const streamID = await streamsStore.startStream(stream.id!)
       monitoringStore.setForceStopRecommended(false)
+      monitoringStore.clearActiveStreamGate()
       commonStore.showNotification('Stream started', 'success')
       monitoringStore.setStream(streamID, stream)
       monitoringStore.requestShowMonitorTab()
@@ -40,22 +106,15 @@ export function useStreamActions() {
       return await runStart()
     } catch (err: unknown) {
       if (isActiveStreamsError(err)) {
+        const activeStreamIDs = parseActiveStreamIDs(err)
+        const blockingStreamsLabel = formatActiveStreamsLabel(activeStreamIDs)
         monitoringStore.setForceStopRecommended(true)
+        monitoringStore.setActiveStreamGate(activeStreamIDs, err.message)
         commonStore.showNotification(
-          'Please wait for the current stream to finish before starting a new one',
+          `Start blocked by ${blockingStreamsLabel}. Stop or force-stop the active run first.`,
           'warning'
         )
-        await delay(2000)
-        try {
-          return await runStart()
-        } catch (retryErr) {
-          if (isActiveStreamsError(retryErr)) {
-            monitoringStore.setForceStopRecommended(true)
-          }
-          if (retryErr instanceof Error) {
-            commonStore.showNotification(retryErr.message, 'error')
-          }
-        }
+        return null
       } else if (err instanceof Error) {
         commonStore.showNotification(err.message, 'error')
       } else {
@@ -97,7 +156,7 @@ export function useStreamActions() {
     if (!id) return
     try {
       await streamsStore.stopStream(id)
-      monitoringStore.setForceStopRecommended(false)
+      removeBlockedStreamID(id)
       commonStore.showNotification('Stream stopped', 'success')
       monitoringStore.requestShowMonitorTab()
     } catch (error) {
@@ -111,7 +170,7 @@ export function useStreamActions() {
     if (!id) return
     try {
       await streamsStore.forceStopStream(id)
-      monitoringStore.setForceStopRecommended(false)
+      removeBlockedStreamID(id)
       commonStore.showNotification('Stream force-stopped', 'success')
       monitoringStore.requestShowMonitorTab()
     } catch (error) {
@@ -120,11 +179,21 @@ export function useStreamActions() {
     }
   }
 
+  async function stopBlockedActiveStreams(): Promise<void> {
+    await stopBlockedStreams(false)
+  }
+
+  async function forceStopBlockedActiveStreams(): Promise<void> {
+    await stopBlockedStreams(true)
+  }
+
   return {
     startStream,
     pauseStream,
     resumeStream,
     stopStream,
-    forceStopStream
+    forceStopStream,
+    stopBlockedActiveStreams,
+    forceStopBlockedActiveStreams
   }
 }

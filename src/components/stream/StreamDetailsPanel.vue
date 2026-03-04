@@ -48,14 +48,8 @@
             Clone Config
           </BaseButton>
           <BaseButton
-            v-tooltip="
-              isStreamRunning && !isStreamFinished
-                ? 'Stream is currently running'
-                : historyRuns.length > 0
-                  ? 'Run a new stream'
-                  : 'Start the stream'
-            "
-            :disabled="isStreamRunning && !isStreamFinished"
+            v-tooltip="startActionTooltip"
+            :disabled="isStartDisabled"
             variant="primary"
             @click="startStream"
           >
@@ -146,6 +140,53 @@
           }}</span>
         </div>
         <div
+          v-if="monitoringStore.logTransportDegraded"
+          class="rounded-lg border border-amber-300/80 dark:border-amber-500/60 bg-gray-50 dark:bg-gray-900/40 px-4 py-3 text-sm text-gray-700 dark:text-gray-200"
+        >
+          <div class="flex items-start justify-between gap-3">
+            <div class="space-y-1">
+              <div class="font-semibold">Transport health: degraded</div>
+              <div class="text-xs text-gray-600 dark:text-gray-300">
+                Structured log forwarding is timing out. Stream execution can still succeed, but
+                Monitor updates may lag or be incomplete.
+              </div>
+              <div
+                v-if="monitoringStore.logTransportDegradedMessage"
+                class="text-xs font-mono text-gray-600 dark:text-gray-300"
+              >
+                {{ monitoringStore.logTransportDegradedMessage }}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          v-if="hasActiveStreamGate"
+          class="rounded-lg border border-amber-300/80 dark:border-amber-500/60 bg-gray-50 dark:bg-gray-900/40 px-4 py-3 text-sm text-gray-700 dark:text-gray-200"
+        >
+          <div class="flex items-start justify-between gap-3">
+            <div class="space-y-1">
+              <div class="font-semibold">Start blocked by active stream(s)</div>
+              <div class="text-xs font-mono text-gray-600 dark:text-gray-300">
+                {{ monitoringStore.blockedActiveStreamIDs.join(', ') }}
+              </div>
+              <div
+                v-if="monitoringStore.activeStreamGateMessage"
+                class="text-xs text-gray-600 dark:text-gray-300"
+              >
+                {{ monitoringStore.activeStreamGateMessage }}
+              </div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <BaseButton variant="secondary" @click="stopBlockedActiveStreams">
+                Stop Active Streams
+              </BaseButton>
+              <BaseButton variant="danger" @click="forceStopBlockedActiveStreams">
+                Force Stop Active Streams
+              </BaseButton>
+            </div>
+          </div>
+        </div>
+        <div
           v-if="isViewingOtherRunningStream"
           class="rounded-lg border border-amber-300/80 dark:border-amber-500/60 bg-gray-50 dark:bg-gray-900/40 px-4 py-3 text-sm text-gray-700 dark:text-gray-200 flex items-center justify-between gap-3"
         >
@@ -165,9 +206,9 @@
         </div>
         <div class="flex items-center gap-2 ml-4">
           <BaseButton
-            v-tooltip="'Run a new stream from this configuration'"
+            v-tooltip="rerunActionTooltip"
             variant="primary"
-            :disabled="isStreamRunning && !isStreamFinished"
+            :disabled="isStartDisabled"
             @click="startStream"
           >
             <Play class="h-4 w-4" :stroke-width="iconStroke" />
@@ -185,9 +226,9 @@
         </div>
         <div class="flex items-center gap-2 ml-4">
           <BaseButton
-            v-tooltip="'Run a new stream from this configuration'"
+            v-tooltip="rerunActionTooltip"
             variant="primary"
-            :disabled="isStreamRunning && !isStreamFinished"
+            :disabled="isStartDisabled"
             @click="startStream"
           >
             <Play class="h-4 w-4" :stroke-width="iconStroke" />
@@ -420,7 +461,9 @@ const {
   pauseStream,
   resumeStream,
   stopStream,
-  forceStopStream
+  forceStopStream,
+  stopBlockedActiveStreams,
+  forceStopBlockedActiveStreams
 } = useStreamControls(streamRef)
 
 const dbTypes = computed(() => connectionsStore.dbTypes)
@@ -477,6 +520,10 @@ const showForceStopButton = computed(() => {
   return monitoringStore.forceStopRecommended && hasActiveRun.value && !isStreamRunning.value
 })
 
+const hasActiveStreamGate = computed(() => {
+  return monitoringStore.blockedActiveStreamIDs.length > 0
+})
+
 function switchToActiveRun() {
   const runningConfigID = monitoringStore.runningConfigID
   if (!runningConfigID) return
@@ -502,6 +549,34 @@ const { historyRuns, handleDeleteRun, handleClearAll } = useStreamHistory({
   streamId: streamIdRef,
   activeTab,
   isStreamFinished
+})
+
+const isStartBlockedByOtherRun = computed(() => {
+  return hasGlobalRunningRun.value && !isRunOwner.value
+})
+
+const isStartDisabled = computed(() => {
+  return isStartBlockedByOtherRun.value || (isStreamRunning.value && !isStreamFinished.value)
+})
+
+const startActionTooltip = computed(() => {
+  if (isStartBlockedByOtherRun.value) {
+    return 'Another stream is currently running'
+  }
+  if (isStreamRunning.value && !isStreamFinished.value) {
+    return 'Stream is currently running'
+  }
+  return historyRuns.value.length > 0 ? 'Run a new stream' : 'Start the stream'
+})
+
+const rerunActionTooltip = computed(() => {
+  if (isStartBlockedByOtherRun.value) {
+    return 'Another stream is currently running'
+  }
+  if (isStreamRunning.value && !isStreamFinished.value) {
+    return 'Stream is currently running'
+  }
+  return 'Run a new stream from this configuration'
 })
 
 interface StreamTab {
