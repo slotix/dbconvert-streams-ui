@@ -15,6 +15,10 @@ import { useFileExplorerStore } from '@/stores/fileExplorer'
 import { useExplorerNavigationStore, type ObjectType } from '@/stores/explorerNavigation'
 import type { Connection } from '@/types/connections'
 import type { FileSystemEntry } from '@/api/fileSystem'
+import {
+  type ConnectionDatabaseSearchMatches,
+  type ConnectionSearchPathMatches
+} from '@/api/connections'
 
 interface DatabaseInfo {
   name: string
@@ -25,6 +29,7 @@ const props = defineProps<{
   isExpanded: boolean
   isFileConnection: boolean
   databases: DatabaseInfo[]
+  searchMatches?: ConnectionSearchPathMatches | null
 }>()
 
 // Inject search query, caret class, and selection from parent
@@ -55,6 +60,7 @@ const navigationStore = useExplorerNavigationStore()
 // Get file entries and selected path from store
 const fileEntries = computed(() => fileExplorerStore.getEntries(props.connection.id))
 const selectedFilePath = computed(() => fileExplorerStore.getSelectedPath(props.connection.id))
+const hasActiveSearch = computed(() => (searchQuery.value || '').trim().length > 0)
 
 // Get database error state
 const databaseError = computed(() => navigationStore.getDatabasesError(props.connection.id))
@@ -229,7 +235,145 @@ async function handleExpandFolder(payload: { entry: FileSystemEntry }) {
   }
 }
 
-const visibleFileEntries = computed(() => fileEntries.value)
+function normalized(value: string | undefined | null): string {
+  return (value || '').trim().toLowerCase()
+}
+
+function getMatchedDatabaseNames(
+  matches: ConnectionSearchPathMatches | null | undefined
+): Set<string> {
+  const result = new Set<string>()
+  if (!matches) return result
+  ;(matches.databases || []).forEach((dbName) => result.add(normalized(dbName)))
+  Object.keys(matches.schemas || {}).forEach((dbName) => result.add(normalized(dbName)))
+  Object.keys(matches.tables || {}).forEach((dbName) => result.add(normalized(dbName)))
+  Object.keys(matches.views || {}).forEach((dbName) => result.add(normalized(dbName)))
+  Object.keys(matches.functions || {}).forEach((dbName) => result.add(normalized(dbName)))
+  Object.keys(matches.procedures || {}).forEach((dbName) => result.add(normalized(dbName)))
+  Object.keys(matches.sequences || {}).forEach((dbName) => result.add(normalized(dbName)))
+  return result
+}
+
+const visibleDatabases = computed(() => {
+  if (!hasActiveSearch.value) {
+    return props.databases
+  }
+
+  const matchedDbNames = getMatchedDatabaseNames(props.searchMatches)
+  if (matchedDbNames.size === 0) return []
+  return props.databases.filter((db) => matchedDbNames.has(normalized(db.name)))
+})
+
+function getMatchesForDatabase<T>(
+  values: Record<string, T> | undefined,
+  dbName: string,
+  fallback: T
+): T {
+  if (!values) return fallback
+  if (dbName in values) return values[dbName]
+  const target = normalized(dbName)
+  for (const [key, value] of Object.entries(values)) {
+    if (normalized(key) === target) {
+      return value
+    }
+  }
+  return fallback
+}
+
+function hasSearchMatches(matches: ConnectionSearchPathMatches | null | undefined): boolean {
+  if (!matches) return false
+  return (
+    (matches.databases?.length || 0) > 0 ||
+    Object.keys(matches.schemas || {}).length > 0 ||
+    Object.keys(matches.tables || {}).length > 0 ||
+    Object.keys(matches.views || {}).length > 0 ||
+    Object.keys(matches.functions || {}).length > 0 ||
+    Object.keys(matches.procedures || {}).length > 0 ||
+    Object.keys(matches.sequences || {}).length > 0 ||
+    (matches.files?.length || 0) > 0
+  )
+}
+
+function getDatabaseSearchMatches(dbName: string): ConnectionDatabaseSearchMatches | null {
+  const matches = props.searchMatches
+  if (!matches) return null
+
+  return {
+    schemas: getMatchesForDatabase(matches.schemas, dbName, []),
+    tables: getMatchesForDatabase(matches.tables, dbName, []),
+    views: getMatchesForDatabase(matches.views, dbName, []),
+    functions: getMatchesForDatabase(matches.functions, dbName, []),
+    procedures: getMatchesForDatabase(matches.procedures, dbName, []),
+    sequences: getMatchesForDatabase(matches.sequences, dbName, [])
+  }
+}
+
+function entryMatchesBackendPath(entry: FileSystemEntry, matchedPaths: string[]): boolean {
+  if (matchedPaths.length === 0) return false
+  const entryPath = normalized(entry.path)
+  const entryName = normalized(entry.name)
+
+  for (const rawPath of matchedPaths) {
+    const candidate = normalized(rawPath)
+    if (!candidate) continue
+
+    if (
+      entryPath &&
+      (candidate === entryPath || candidate.includes(entryPath) || entryPath.includes(candidate))
+    ) {
+      return true
+    }
+    if (
+      entryName &&
+      (candidate === entryName || candidate.includes(entryName) || entryName.includes(candidate))
+    ) {
+      return true
+    }
+  }
+  return false
+}
+
+function filterFileTreeEntriesByBackendMatches(
+  entries: FileSystemEntry[],
+  matchedPaths: string[]
+): FileSystemEntry[] {
+  const filtered: FileSystemEntry[] = []
+
+  for (const entry of entries) {
+    const ownMatch = entryMatchesBackendPath(entry, matchedPaths)
+    const filteredChildren = entry.children
+      ? filterFileTreeEntriesByBackendMatches(entry.children, matchedPaths)
+      : []
+    const hasMatchingChildren = filteredChildren.length > 0
+
+    if (!ownMatch && !hasMatchingChildren) {
+      continue
+    }
+
+    filtered.push(
+      hasMatchingChildren
+        ? {
+            ...entry,
+            children: filteredChildren
+          }
+        : entry
+    )
+  }
+
+  return filtered
+}
+
+const visibleFileEntries = computed(() => {
+  if (!hasActiveSearch.value) {
+    return fileEntries.value
+  }
+  if (!hasSearchMatches(props.searchMatches)) {
+    return []
+  }
+  const matchedPaths = props.searchMatches?.files || []
+  if (!matchedPaths.length) return []
+  return filterFileTreeEntriesByBackendMatches(fileEntries.value, matchedPaths)
+})
 
 // Generate tooltip with full connection details
 const connectionTooltip = computed(() => {
@@ -393,14 +537,14 @@ const connectionPort = computed(() => getConnectionPort(props.connection))
         <ConnectionErrorState v-if="databaseError" :error="databaseError" />
         <!-- Empty state when loaded but no databases -->
         <div
-          v-else-if="!databases.length"
+          v-else-if="!visibleDatabases.length"
           class="text-xs text-slate-500 dark:text-gray-400 px-3 py-1.5"
         >
           No databases
         </div>
         <!-- Database list -->
         <DatabaseTreeItem
-          v-for="db in databases"
+          v-for="db in visibleDatabases"
           :key="db.name"
           :database="db"
           :connection-id="connection.id"
@@ -411,8 +555,7 @@ const connectionPort = computed(() => getConnectionPort(props.connection))
           :flat-views="treeLogic.getFlatViews(connection.id, db.name)"
           :flat-functions="treeLogic.getFlatFunctions(connection.id, db.name)"
           :flat-procedures="treeLogic.getFlatProcedures(connection.id, db.name)"
-          :search-query="searchQuery"
-          :caret-class="caretClass"
+          :search-matches="getDatabaseSearchMatches(db.name)"
           :metadata-loaded="treeLogic.isMetadataLoaded(connection.id, db.name)"
           @toggle-database="handleDatabaseToggle(db.name)"
           @toggle-schema="(schemaName) => handleSchemaToggle(db.name, schemaName)"

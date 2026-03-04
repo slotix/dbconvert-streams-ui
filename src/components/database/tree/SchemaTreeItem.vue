@@ -61,6 +61,57 @@ const viewsExpanded = computed(() => viewsOpen.value)
 const functionsExpanded = computed(() => functionsOpen.value)
 const proceduresExpanded = computed(() => proceduresOpen.value)
 const sequencesExpanded = computed(() => sequencesOpen.value)
+const hasActiveSearch = computed(() => (searchQuery.value || '').trim().length > 0)
+const filteredTables = computed(() => props.schema.tables)
+const filteredViews = computed(() => props.schema.views)
+const filteredFunctions = computed(() => props.schema.functions)
+const filteredProcedures = computed(() => props.schema.procedures)
+const filteredSequences = computed(() => props.schema.sequences)
+
+const showTablesSection = computed(() =>
+  hasActiveSearch.value ? filteredTables.value.length > 0 : true
+)
+const showViewsSection = computed(() =>
+  hasActiveSearch.value ? filteredViews.value.length > 0 : true
+)
+const showFunctionsSection = computed(() =>
+  hasActiveSearch.value ? filteredFunctions.value.length > 0 : props.schema.functions.length > 0
+)
+const showProceduresSection = computed(() =>
+  hasActiveSearch.value ? filteredProcedures.value.length > 0 : props.schema.procedures.length > 0
+)
+const showSequencesSection = computed(() =>
+  hasActiveSearch.value ? filteredSequences.value.length > 0 : props.schema.sequences.length > 0
+)
+
+const tablesCount = computed(() =>
+  hasActiveSearch.value ? filteredTables.value.length : props.schema.tables.length
+)
+const viewsCount = computed(() =>
+  hasActiveSearch.value ? filteredViews.value.length : props.schema.views.length
+)
+const functionsCount = computed(() =>
+  hasActiveSearch.value ? filteredFunctions.value.length : props.schema.functions.length
+)
+const proceduresCount = computed(() =>
+  hasActiveSearch.value ? filteredProcedures.value.length : props.schema.procedures.length
+)
+const sequencesCount = computed(() =>
+  hasActiveSearch.value ? filteredSequences.value.length : props.schema.sequences.length
+)
+
+const sectionsAutoExpanded = computed(() => hasActiveSearch.value)
+const tablesSectionExpanded = computed(() => sectionsAutoExpanded.value || tablesExpanded.value)
+const viewsSectionExpanded = computed(() => sectionsAutoExpanded.value || viewsExpanded.value)
+const functionsSectionExpanded = computed(
+  () => sectionsAutoExpanded.value || functionsExpanded.value
+)
+const proceduresSectionExpanded = computed(
+  () => sectionsAutoExpanded.value || proceduresExpanded.value
+)
+const sequencesSectionExpanded = computed(
+  () => sectionsAutoExpanded.value || sequencesExpanded.value
+)
 
 function highlightSection(section: 'tables' | 'views' | 'functions' | 'procedures' | 'sequences') {
   highlightedSection.value = section
@@ -212,28 +263,29 @@ function handleObjectContextMenu(payload: {
       class="ml-4 border-l border-gray-200 dark:border-gray-700 pl-2"
     >
       <button
+        v-if="showTablesSection"
         type="button"
         class="w-full text-left text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-1 flex items-center justify-between hover:text-gray-500 dark:hover:text-gray-400"
         :class="{
           'animate-pulse text-teal-600 dark:text-teal-300': highlightedSection === 'tables'
         }"
-        :aria-expanded="tablesExpanded"
+        :aria-expanded="tablesSectionExpanded"
         @click.stop="tablesOpen = !tablesOpen"
       >
         <span class="flex items-center gap-1">
           <component
-            :is="tablesExpanded ? ChevronDown : ChevronRight"
+            :is="tablesSectionExpanded ? ChevronDown : ChevronRight"
             class="h-3 w-3 text-gray-400 dark:text-gray-500"
           />
           <span>Tables</span>
         </span>
         <span class="text-[11px] font-medium text-gray-500 dark:text-gray-400 normal-case">
-          {{ schema.tables.length }}
+          {{ tablesCount }}
         </span>
       </button>
       <ObjectList
-        v-if="tablesExpanded"
-        :items="schema.tables"
+        v-if="showTablesSection && tablesSectionExpanded"
+        :items="filteredTables"
         object-type="table"
         :connection-id="connectionId"
         :database="database"
@@ -247,28 +299,29 @@ function handleObjectContextMenu(payload: {
         @contextmenu="handleObjectContextMenu"
       />
       <button
+        v-if="showViewsSection"
         type="button"
         class="w-full text-left text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-2 flex items-center justify-between hover:text-gray-500 dark:hover:text-gray-400"
         :class="{
           'animate-pulse text-teal-600 dark:text-teal-300': highlightedSection === 'views'
         }"
-        :aria-expanded="viewsExpanded"
+        :aria-expanded="viewsSectionExpanded"
         @click.stop="viewsOpen = !viewsOpen"
       >
         <span class="flex items-center gap-1">
           <component
-            :is="viewsExpanded ? ChevronDown : ChevronRight"
+            :is="viewsSectionExpanded ? ChevronDown : ChevronRight"
             class="h-3 w-3 text-gray-400 dark:text-gray-500"
           />
           <span>Views</span>
         </span>
         <span class="text-[11px] font-medium text-gray-500 dark:text-gray-400 normal-case">
-          {{ schema.views.length }}
+          {{ viewsCount }}
         </span>
       </button>
       <ObjectList
-        v-if="viewsExpanded"
-        :items="schema.views"
+        v-if="showViewsSection && viewsSectionExpanded"
+        :items="filteredViews"
         object-type="view"
         :connection-id="connectionId"
         :database="database"
@@ -281,29 +334,29 @@ function handleObjectContextMenu(payload: {
         @contextmenu="handleObjectContextMenu"
       />
       <button
-        v-if="schema.functions.length"
+        v-if="showFunctionsSection"
         type="button"
         class="w-full text-left text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-2 flex items-center justify-between hover:text-gray-500 dark:hover:text-gray-400"
         :class="{
           'animate-pulse text-teal-600 dark:text-teal-300': highlightedSection === 'functions'
         }"
-        :aria-expanded="functionsExpanded"
+        :aria-expanded="functionsSectionExpanded"
         @click.stop="functionsOpen = !functionsOpen"
       >
         <span class="flex items-center gap-1">
           <component
-            :is="functionsExpanded ? ChevronDown : ChevronRight"
+            :is="functionsSectionExpanded ? ChevronDown : ChevronRight"
             class="h-3 w-3 text-gray-400 dark:text-gray-500"
           />
           <span>Functions</span>
         </span>
         <span class="text-[11px] font-medium text-gray-500 dark:text-gray-400 normal-case">
-          {{ schema.functions.length }}
+          {{ functionsCount }}
         </span>
       </button>
       <ObjectList
-        v-if="schema.functions.length && functionsExpanded"
-        :items="schema.functions"
+        v-if="showFunctionsSection && functionsSectionExpanded"
+        :items="filteredFunctions"
         object-type="function"
         :connection-id="connectionId"
         :database="database"
@@ -316,29 +369,29 @@ function handleObjectContextMenu(payload: {
         @contextmenu="handleObjectContextMenu"
       />
       <button
-        v-if="schema.procedures.length"
+        v-if="showProceduresSection"
         type="button"
         class="w-full text-left text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-2 flex items-center justify-between hover:text-gray-500 dark:hover:text-gray-400"
         :class="{
           'animate-pulse text-teal-600 dark:text-teal-300': highlightedSection === 'procedures'
         }"
-        :aria-expanded="proceduresExpanded"
+        :aria-expanded="proceduresSectionExpanded"
         @click.stop="proceduresOpen = !proceduresOpen"
       >
         <span class="flex items-center gap-1">
           <component
-            :is="proceduresExpanded ? ChevronDown : ChevronRight"
+            :is="proceduresSectionExpanded ? ChevronDown : ChevronRight"
             class="h-3 w-3 text-gray-400 dark:text-gray-500"
           />
           <span>Procedures</span>
         </span>
         <span class="text-[11px] font-medium text-gray-500 dark:text-gray-400 normal-case">
-          {{ schema.procedures.length }}
+          {{ proceduresCount }}
         </span>
       </button>
       <ObjectList
-        v-if="schema.procedures.length && proceduresExpanded"
-        :items="schema.procedures"
+        v-if="showProceduresSection && proceduresSectionExpanded"
+        :items="filteredProcedures"
         object-type="procedure"
         :connection-id="connectionId"
         :database="database"
@@ -351,29 +404,29 @@ function handleObjectContextMenu(payload: {
         @contextmenu="handleObjectContextMenu"
       />
       <button
-        v-if="schema.sequences.length"
+        v-if="showSequencesSection"
         type="button"
         class="w-full text-left text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-2 flex items-center justify-between hover:text-gray-500 dark:hover:text-gray-400"
         :class="{
           'animate-pulse text-teal-600 dark:text-teal-300': highlightedSection === 'sequences'
         }"
-        :aria-expanded="sequencesExpanded"
+        :aria-expanded="sequencesSectionExpanded"
         @click.stop="sequencesOpen = !sequencesOpen"
       >
         <span class="flex items-center gap-1">
           <component
-            :is="sequencesExpanded ? ChevronDown : ChevronRight"
+            :is="sequencesSectionExpanded ? ChevronDown : ChevronRight"
             class="h-3 w-3 text-gray-400 dark:text-gray-500"
           />
           <span>Sequences</span>
         </span>
         <span class="text-[11px] font-medium text-gray-500 dark:text-gray-400 normal-case">
-          {{ schema.sequences.length }}
+          {{ sequencesCount }}
         </span>
       </button>
       <ObjectList
-        v-if="schema.sequences.length && sequencesExpanded"
-        :items="schema.sequences"
+        v-if="showSequencesSection && sequencesSectionExpanded"
+        :items="filteredSequences"
         object-type="sequence"
         :connection-id="connectionId"
         :database="database"

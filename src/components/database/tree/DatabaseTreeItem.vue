@@ -7,6 +7,7 @@ import ObjectList from './ObjectList.vue'
 import HighlightedText from '@/components/common/HighlightedText.vue'
 import { useDatabaseOverviewStore } from '@/stores/databaseOverview'
 import { useExplorerNavigationStore, type ObjectType } from '@/stores/explorerNavigation'
+import type { ConnectionDatabaseSearchMatches, ConnectionSearchObjectRef } from '@/api/connections'
 
 const overviewStore = useDatabaseOverviewStore()
 const navigationStore = useExplorerNavigationStore()
@@ -34,6 +35,7 @@ const props = defineProps<{
   flatViews: string[]
   flatFunctions: string[]
   flatProcedures: string[]
+  searchMatches?: ConnectionDatabaseSearchMatches | null
   metadataLoaded: boolean
 }>()
 
@@ -71,6 +73,177 @@ const tablesExpanded = computed(() => tablesOpen.value)
 const viewsExpanded = computed(() => viewsOpen.value)
 const functionsExpanded = computed(() => functionsOpen.value)
 const proceduresExpanded = computed(() => proceduresOpen.value)
+const hasActiveSearch = computed(() => (searchQuery.value || '').trim().length > 0)
+
+function normalized(value: string | undefined | null): string {
+  return (value || '').trim().toLowerCase()
+}
+
+function dedupeNames(values: string[]): string[] {
+  const result: string[] = []
+  const seen = new Set<string>()
+  for (const value of values) {
+    const trimmed = (value || '').trim()
+    if (!trimmed) continue
+    const key = trimmed.toLowerCase()
+    if (seen.has(key)) continue
+    seen.add(key)
+    result.push(trimmed)
+  }
+  return result
+}
+
+function dedupeObjectRefs(
+  refs: ConnectionSearchObjectRef[] | undefined
+): ConnectionSearchObjectRef[] {
+  if (!refs || !refs.length) return []
+  const result: ConnectionSearchObjectRef[] = []
+  const seen = new Set<string>()
+  for (const ref of refs) {
+    const name = (ref.name || '').trim()
+    if (!name) continue
+    const schema = (ref.schema || '').trim()
+    const key = `${schema.toLowerCase()}::${name.toLowerCase()}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    result.push({ name, schema: schema || undefined })
+  }
+  return result
+}
+
+function matchedFlatNames(
+  refs: ConnectionSearchObjectRef[] | undefined,
+  fallback: string[]
+): string[] {
+  if (!hasActiveSearch.value) return fallback
+  if (!props.searchMatches) return []
+  return dedupeNames((refs || []).map((ref) => ref.name))
+}
+
+function refsForSchema(
+  refs: ConnectionSearchObjectRef[] | undefined,
+  schemaName: string
+): ConnectionSearchObjectRef[] {
+  const target = normalized(schemaName)
+  return dedupeObjectRefs(refs).filter((ref) => normalized(ref.schema) === target)
+}
+
+const filteredFlatTables = computed(() =>
+  matchedFlatNames(props.searchMatches?.tables, props.flatTables)
+)
+const filteredFlatViews = computed(() =>
+  matchedFlatNames(props.searchMatches?.views, props.flatViews)
+)
+const filteredFlatFunctions = computed(() =>
+  matchedFlatNames(props.searchMatches?.functions, props.flatFunctions)
+)
+const filteredFlatProcedures = computed(() =>
+  matchedFlatNames(props.searchMatches?.procedures, props.flatProcedures)
+)
+
+const filteredSchemas = computed<SchemaInfo[]>(() => {
+  if (!hasActiveSearch.value) return props.schemas
+  if (!props.searchMatches) return []
+
+  const explicitSchemas = dedupeNames(props.searchMatches.schemas || [])
+  const tableRefs = dedupeObjectRefs(props.searchMatches.tables)
+  const viewRefs = dedupeObjectRefs(props.searchMatches.views)
+  const functionRefs = dedupeObjectRefs(props.searchMatches.functions)
+  const procedureRefs = dedupeObjectRefs(props.searchMatches.procedures)
+  const sequenceRefs = dedupeObjectRefs(props.searchMatches.sequences)
+
+  const schemaSet = new Set<string>()
+  explicitSchemas.forEach((schemaName) => schemaSet.add(normalized(schemaName)))
+  for (const ref of [
+    ...tableRefs,
+    ...viewRefs,
+    ...functionRefs,
+    ...procedureRefs,
+    ...sequenceRefs
+  ]) {
+    if (ref.schema) {
+      schemaSet.add(normalized(ref.schema))
+    }
+  }
+
+  const schemaByName = new Map<string, SchemaInfo>()
+  for (const schema of props.schemas) {
+    schemaByName.set(normalized(schema.name), schema)
+  }
+
+  const orderedSchemaNames: string[] = []
+  for (const schema of props.schemas) {
+    const key = normalized(schema.name)
+    if (schemaSet.has(key)) {
+      orderedSchemaNames.push(schema.name)
+      schemaSet.delete(key)
+    }
+  }
+  for (const schemaName of explicitSchemas) {
+    const key = normalized(schemaName)
+    if (schemaSet.has(key)) {
+      orderedSchemaNames.push(schemaName)
+      schemaSet.delete(key)
+    }
+  }
+
+  return orderedSchemaNames.map((schemaName) => {
+    const base = schemaByName.get(normalized(schemaName)) || {
+      name: schemaName,
+      tables: [],
+      views: [],
+      functions: [],
+      procedures: [],
+      sequences: []
+    }
+
+    return {
+      ...base,
+      name: base.name || schemaName,
+      tables: dedupeNames(refsForSchema(tableRefs, schemaName).map((ref) => ref.name)),
+      views: dedupeNames(refsForSchema(viewRefs, schemaName).map((ref) => ref.name)),
+      functions: dedupeNames(refsForSchema(functionRefs, schemaName).map((ref) => ref.name)),
+      procedures: dedupeNames(refsForSchema(procedureRefs, schemaName).map((ref) => ref.name)),
+      sequences: dedupeNames(refsForSchema(sequenceRefs, schemaName).map((ref) => ref.name))
+    }
+  })
+})
+
+const showTablesSection = computed(() =>
+  hasActiveSearch.value ? filteredFlatTables.value.length > 0 : true
+)
+const showViewsSection = computed(() =>
+  hasActiveSearch.value ? filteredFlatViews.value.length > 0 : true
+)
+const showFunctionsSection = computed(() =>
+  hasActiveSearch.value ? filteredFlatFunctions.value.length > 0 : props.flatFunctions.length > 0
+)
+const showProceduresSection = computed(() =>
+  hasActiveSearch.value ? filteredFlatProcedures.value.length > 0 : props.flatProcedures.length > 0
+)
+
+const tablesCount = computed(() =>
+  hasActiveSearch.value ? filteredFlatTables.value.length : props.flatTables.length
+)
+const viewsCount = computed(() =>
+  hasActiveSearch.value ? filteredFlatViews.value.length : props.flatViews.length
+)
+const functionsCount = computed(() =>
+  hasActiveSearch.value ? filteredFlatFunctions.value.length : props.flatFunctions.length
+)
+const proceduresCount = computed(() =>
+  hasActiveSearch.value ? filteredFlatProcedures.value.length : props.flatProcedures.length
+)
+
+const sectionsAutoExpanded = computed(() => hasActiveSearch.value)
+const tablesSectionExpanded = computed(() => sectionsAutoExpanded.value || tablesExpanded.value)
+const viewsSectionExpanded = computed(() => sectionsAutoExpanded.value || viewsExpanded.value)
+const functionsSectionExpanded = computed(
+  () => sectionsAutoExpanded.value || functionsExpanded.value
+)
+const proceduresSectionExpanded = computed(
+  () => sectionsAutoExpanded.value || proceduresExpanded.value
+)
 
 function highlightSection(section: 'tables' | 'views' | 'functions' | 'procedures') {
   highlightedSection.value = section
@@ -297,12 +470,12 @@ function handleFlatObjectContextMenu(payload: {
         <!-- Show schemas only for PostgreSQL & Snowflake -->
         <div v-if="hasSchemas">
           <SchemaTreeItem
-            v-for="schema in schemas"
+            v-for="schema in filteredSchemas"
             :key="schema.name || 'default'"
             :schema="schema"
             :connection-id="connectionId"
             :database="database.name"
-            :is-expanded="isSchemaExpanded(schema.name)"
+            :is-expanded="hasActiveSearch ? true : isSchemaExpanded(schema.name)"
             :table-sizes="tableSizes"
             @toggle="handleSchemaToggle(schema.name)"
             @open-object="handleObjectOpen"
@@ -313,28 +486,29 @@ function handleFlatObjectContextMenu(payload: {
         <div v-else>
           <!-- Flat lists for DBs without schemas (e.g., MySQL) -->
           <button
+            v-if="showTablesSection"
             type="button"
             class="w-full text-left text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-1 flex items-center justify-between hover:text-gray-500 dark:hover:text-gray-400"
             :class="{
               'animate-pulse text-teal-600 dark:text-teal-300': highlightedSection === 'tables'
             }"
-            :aria-expanded="tablesExpanded"
+            :aria-expanded="tablesSectionExpanded"
             @click.stop="tablesOpen = !tablesOpen"
           >
             <span class="flex items-center gap-1">
               <component
-                :is="tablesExpanded ? ChevronDown : ChevronRight"
+                :is="tablesSectionExpanded ? ChevronDown : ChevronRight"
                 class="h-3 w-3 text-gray-400 dark:text-gray-500"
               />
               <span>Tables</span>
             </span>
             <span class="text-[11px] font-medium text-gray-500 dark:text-gray-400 normal-case">
-              {{ flatTables.length }}
+              {{ tablesCount }}
             </span>
           </button>
           <ObjectList
-            v-if="tablesExpanded"
-            :items="flatTables"
+            v-if="showTablesSection && tablesSectionExpanded"
+            :items="filteredFlatTables"
             object-type="table"
             :connection-id="connectionId"
             :database="database.name"
@@ -347,28 +521,29 @@ function handleFlatObjectContextMenu(payload: {
             @contextmenu="handleFlatObjectContextMenu"
           />
           <button
+            v-if="showViewsSection"
             type="button"
             class="w-full text-left text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-2 flex items-center justify-between hover:text-gray-500 dark:hover:text-gray-400"
             :class="{
               'animate-pulse text-teal-600 dark:text-teal-300': highlightedSection === 'views'
             }"
-            :aria-expanded="viewsExpanded"
+            :aria-expanded="viewsSectionExpanded"
             @click.stop="viewsOpen = !viewsOpen"
           >
             <span class="flex items-center gap-1">
               <component
-                :is="viewsExpanded ? ChevronDown : ChevronRight"
+                :is="viewsSectionExpanded ? ChevronDown : ChevronRight"
                 class="h-3 w-3 text-gray-400 dark:text-gray-500"
               />
               <span>Views</span>
             </span>
             <span class="text-[11px] font-medium text-gray-500 dark:text-gray-400 normal-case">
-              {{ flatViews.length }}
+              {{ viewsCount }}
             </span>
           </button>
           <ObjectList
-            v-if="viewsExpanded"
-            :items="flatViews"
+            v-if="showViewsSection && viewsSectionExpanded"
+            :items="filteredFlatViews"
             object-type="view"
             :connection-id="connectionId"
             :database="database.name"
@@ -380,29 +555,29 @@ function handleFlatObjectContextMenu(payload: {
             @contextmenu="handleFlatObjectContextMenu"
           />
           <button
-            v-if="flatFunctions.length"
+            v-if="showFunctionsSection"
             type="button"
             class="w-full text-left text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-2 flex items-center justify-between hover:text-gray-500 dark:hover:text-gray-400"
             :class="{
               'animate-pulse text-teal-600 dark:text-teal-300': highlightedSection === 'functions'
             }"
-            :aria-expanded="functionsExpanded"
+            :aria-expanded="functionsSectionExpanded"
             @click.stop="functionsOpen = !functionsOpen"
           >
             <span class="flex items-center gap-1">
               <component
-                :is="functionsExpanded ? ChevronDown : ChevronRight"
+                :is="functionsSectionExpanded ? ChevronDown : ChevronRight"
                 class="h-3 w-3 text-gray-400 dark:text-gray-500"
               />
               <span>Functions</span>
             </span>
             <span class="text-[11px] font-medium text-gray-500 dark:text-gray-400 normal-case">
-              {{ flatFunctions.length }}
+              {{ functionsCount }}
             </span>
           </button>
           <ObjectList
-            v-if="flatFunctions.length && functionsExpanded"
-            :items="flatFunctions"
+            v-if="showFunctionsSection && functionsSectionExpanded"
+            :items="filteredFlatFunctions"
             object-type="function"
             :connection-id="connectionId"
             :database="database.name"
@@ -414,29 +589,29 @@ function handleFlatObjectContextMenu(payload: {
             @contextmenu="handleFlatObjectContextMenu"
           />
           <button
-            v-if="flatProcedures.length"
+            v-if="showProceduresSection"
             type="button"
             class="w-full text-left text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-2 flex items-center justify-between hover:text-gray-500 dark:hover:text-gray-400"
             :class="{
               'animate-pulse text-teal-600 dark:text-teal-300': highlightedSection === 'procedures'
             }"
-            :aria-expanded="proceduresExpanded"
+            :aria-expanded="proceduresSectionExpanded"
             @click.stop="proceduresOpen = !proceduresOpen"
           >
             <span class="flex items-center gap-1">
               <component
-                :is="proceduresExpanded ? ChevronDown : ChevronRight"
+                :is="proceduresSectionExpanded ? ChevronDown : ChevronRight"
                 class="h-3 w-3 text-gray-400 dark:text-gray-500"
               />
               <span>Procedures</span>
             </span>
             <span class="text-[11px] font-medium text-gray-500 dark:text-gray-400 normal-case">
-              {{ flatProcedures.length }}
+              {{ proceduresCount }}
             </span>
           </button>
           <ObjectList
-            v-if="flatProcedures.length && proceduresExpanded"
-            :items="flatProcedures"
+            v-if="showProceduresSection && proceduresSectionExpanded"
+            :items="filteredFlatProcedures"
             object-type="procedure"
             :connection-id="connectionId"
             :database="database.name"

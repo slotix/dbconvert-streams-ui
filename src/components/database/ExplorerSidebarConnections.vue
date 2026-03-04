@@ -20,7 +20,10 @@ import type { Connection } from '@/types/connections'
 import type { ShowDiagramPayload } from '@/types/diagram'
 import type { SQLRoutineMeta, SQLSequenceMeta, SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
-import connectionsApi, { type ConnectionListResponse } from '@/api/connections'
+import connectionsApi, {
+  type ConnectionListResponse,
+  type ConnectionSearchPathMatches
+} from '@/api/connections'
 import { getConnectionKindFromSpec, getConnectionTypeLabel, isDatabaseKind } from '@/types/specs'
 import { parseRoutineName } from '@/utils/routineUtils'
 import { getTreeKeyboardIntent, type TreeKeyboardNodeState } from '@/utils/treeKeyboardNavigation'
@@ -164,6 +167,15 @@ const isSearchLoading = ref(false)
 const searchResult = ref<ConnectionListResponse | null>(null)
 let searchRequestSequence = 0
 
+type SearchExpansionSnapshot = {
+  expandedConnections: string[]
+  expandedDatabases: string[]
+  expandedSchemas: string[]
+  expandedFileFolders: Record<string, string[]>
+}
+
+const searchExpansionSnapshot = ref<SearchExpansionSnapshot | null>(null)
+
 // Hide table size labels when the sidebar is narrow so table names stay readable.
 // Measured on the outer sidebar card element (includes padding).
 const sidebarCardRef = ref<HTMLElement | null>(null)
@@ -305,6 +317,49 @@ async function refreshSearchResultsIfNeeded() {
   await fetchConnectionSearchResults(effectiveSearchQuery.value)
 }
 
+function captureSearchExpansionSnapshot() {
+  if (searchExpansionSnapshot.value) return
+
+  const expandedFileFolders: Record<string, string[]> = {}
+  for (const [connectionId, folders] of Object.entries(
+    fileExplorerStore.expandedFoldersByConnection
+  )) {
+    expandedFileFolders[connectionId] = Array.from(folders)
+  }
+
+  searchExpansionSnapshot.value = {
+    expandedConnections: Array.from(navigationStore.expandedConnections),
+    expandedDatabases: Array.from(navigationStore.expandedDatabases),
+    expandedSchemas: Array.from(navigationStore.expandedSchemas),
+    expandedFileFolders
+  }
+}
+
+function restoreSearchExpansionSnapshot() {
+  const snapshot = searchExpansionSnapshot.value
+  if (!snapshot) return
+
+  navigationStore.collapseAllExpansions()
+  for (const connectionId of snapshot.expandedConnections) {
+    navigationStore.expandConnection(connectionId)
+  }
+  for (const dbKey of snapshot.expandedDatabases) {
+    navigationStore.expandDatabase(dbKey)
+  }
+  for (const schemaKey of snapshot.expandedSchemas) {
+    navigationStore.expandSchema(schemaKey)
+  }
+
+  fileExplorerStore.collapseAllFolders()
+  for (const [connectionId, folders] of Object.entries(snapshot.expandedFileFolders)) {
+    for (const folderPath of folders) {
+      fileExplorerStore.expandFolder(connectionId, folderPath)
+    }
+  }
+
+  searchExpansionSnapshot.value = null
+}
+
 // Computed for filtered connections using composable
 const filteredConnections = computed<Connection[]>(() => {
   const base = hasActiveSearch.value
@@ -314,6 +369,10 @@ const filteredConnections = computed<Connection[]>(() => {
   return props.typeFilters && props.typeFilters.length
     ? ordered.filter((conn) => treeLogic.matchesTypeFilters(conn, props.typeFilters!))
     : ordered
+})
+
+const searchMatchesByConnection = computed<Record<string, ConnectionSearchPathMatches>>(() => {
+  return searchResult.value?.matchedPaths || {}
 })
 
 let searchAutoExpandSequence = 0
@@ -340,6 +399,37 @@ async function autoExpandTreeForSearch(query: string) {
 
     await navigationStore.ensureDatabases(conn.id)
     if (callSequence !== searchAutoExpandSequence) return
+
+    const matches = searchMatchesByConnection.value[conn.id]
+    if (!matches) {
+      continue
+    }
+
+    const matchedDatabaseNames = new Set<string>(matches.databases || [])
+    Object.keys(matches.schemas || {}).forEach((dbName) => matchedDatabaseNames.add(dbName))
+    Object.keys(matches.tables || {}).forEach((dbName) => matchedDatabaseNames.add(dbName))
+    Object.keys(matches.views || {}).forEach((dbName) => matchedDatabaseNames.add(dbName))
+    Object.keys(matches.functions || {}).forEach((dbName) => matchedDatabaseNames.add(dbName))
+    Object.keys(matches.procedures || {}).forEach((dbName) => matchedDatabaseNames.add(dbName))
+    Object.keys(matches.sequences || {}).forEach((dbName) => matchedDatabaseNames.add(dbName))
+
+    for (const dbName of matchedDatabaseNames) {
+      if (callSequence !== searchAutoExpandSequence) return
+
+      navigationStore.expandDatabase(`${conn.id}:${dbName}`)
+
+      const isMetadataLoading = navigationStore.isMetadataLoading(conn.id, dbName)
+      const hasMetadata = navigationStore.getMetadata(conn.id, dbName) !== null
+      if (!isMetadataLoading && !hasMetadata) {
+        await navigationStore.ensureMetadata(conn.id, dbName)
+        if (callSequence !== searchAutoExpandSequence) return
+      }
+
+      const matchedSchemas = matches.schemas?.[dbName] || []
+      for (const schemaName of matchedSchemas) {
+        navigationStore.expandSchema(`${conn.id}:${dbName}:${schemaName}`)
+      }
+    }
   }
 
   await nextTick()
@@ -355,8 +445,10 @@ watch(
       searchRequestSequence += 1
       isSearchLoading.value = false
       searchResult.value = null
+      restoreSearchExpansionSnapshot()
       return
     }
+    captureSearchExpansionSnapshot()
     await fetchConnectionSearchResults(trimmed)
   }
 )
@@ -823,7 +915,7 @@ async function hydrateExpandedDatabasesForConnection(connectionId: string) {
     const isLoading = navigationStore.isMetadataLoading(connectionId, dbName)
     const hasMetadata = navigationStore.getMetadata(connectionId, dbName) !== null
     if (!isLoading && !hasMetadata) {
-      metadataLoads.push(navigationStore.ensureMetadata(connectionId, dbName))
+      metadataLoads.push(navigationStore.ensureMetadata(connectionId, dbName).then(() => {}))
     }
   }
   await Promise.all(metadataLoads)
@@ -1069,6 +1161,7 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  restoreSearchExpansionSnapshot()
   if (focusedTreeNode.value) {
     delete focusedTreeNode.value.dataset.treeFocused
   }
@@ -1295,6 +1388,7 @@ defineExpose({ focus: () => internalSearchInputRef.value?.focus() })
             :is-expanded="navigationStore.isConnectionExpanded(conn.id)"
             :is-file-connection="treeLogic.isFileConnection(conn.id)"
             :databases="navigationStore.getDatabases(conn.id) || []"
+            :search-matches="hasActiveSearch ? searchMatchesByConnection[conn.id] || null : null"
             @toggle-connection="handleToggleConnection(conn)"
             @select-connection="$emit('select-connection', $event)"
             @toggle-database="(dbName) => handleToggleDatabase(conn, dbName)"

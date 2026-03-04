@@ -11,11 +11,37 @@ export type GetConnectionsParams = {
   search?: string
 }
 
+export type ConnectionSearchObjectRef = {
+  name: string
+  schema?: string
+}
+
+export type ConnectionDatabaseSearchMatches = {
+  schemas?: string[]
+  tables?: ConnectionSearchObjectRef[]
+  views?: ConnectionSearchObjectRef[]
+  functions?: ConnectionSearchObjectRef[]
+  procedures?: ConnectionSearchObjectRef[]
+  sequences?: ConnectionSearchObjectRef[]
+}
+
+export type ConnectionSearchPathMatches = {
+  databases?: string[]
+  schemas?: Record<string, string[]>
+  tables?: Record<string, ConnectionSearchObjectRef[]>
+  views?: Record<string, ConnectionSearchObjectRef[]>
+  functions?: Record<string, ConnectionSearchObjectRef[]>
+  procedures?: Record<string, ConnectionSearchObjectRef[]>
+  sequences?: Record<string, ConnectionSearchObjectRef[]>
+  files?: string[]
+}
+
 export type ConnectionListResponse = {
   items: Connection[]
   total: number
   filtered: number
   search?: string
+  matchedPaths?: Record<string, ConnectionSearchPathMatches>
   databaseSearchCoverage?: {
     indexedConnections: number
     totalConnections: number
