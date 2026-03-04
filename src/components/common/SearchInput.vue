@@ -9,6 +9,7 @@ const props = defineProps<{
   autoFocus?: boolean
   size?: 'xs' | 'sm' | 'md'
   debounce?: number // Optional debounce delay in milliseconds (0 = no debounce)
+  trailingBadge?: string | number | null
 }>()
 
 const emit = defineEmits<{
@@ -65,6 +66,16 @@ const iconSizes = {
 const iconClass = computed(() => iconSizes[props.size || 'sm'])
 
 const showClear = computed(() => (local.value || '').length > 0)
+const showTrailingBadge = computed(() => {
+  if (props.trailingBadge === null || props.trailingBadge === undefined) return false
+  const value = String(props.trailingBadge).trim()
+  return value.length > 0
+})
+const trailingBadgeText = computed(() => {
+  if (!showTrailingBadge.value) return ''
+  return String(props.trailingBadge).trim()
+})
+const inputRightPaddingClass = computed(() => (showTrailingBadge.value ? 'pr-16' : 'pr-8'))
 
 function clear() {
   // Cancel any pending debounced emit
@@ -111,13 +122,19 @@ defineExpose({
     >
       <X :class="iconClass" />
     </button>
+    <span
+      v-if="showTrailingBadge"
+      class="pointer-events-none absolute right-7 top-1/2 -translate-y-1/2 rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium leading-none text-gray-600 dark:bg-gray-800 dark:text-gray-300"
+    >
+      {{ trailingBadgeText }}
+    </span>
     <input
       ref="inputRef"
       v-model="local"
       type="text"
       :placeholder="props.placeholder || 'Filter...'"
       class="border border-gray-300 dark:border-gray-700 rounded focus:outline-none focus:ring-1 focus:ring-slate-400 dark:focus:ring-gray-600 w-full pl-8 pr-8 bg-white dark:bg-gray-850 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
-      :class="sizes[props.size || 'sm']"
+      :class="[sizes[props.size || 'sm'], inputRightPaddingClass]"
       @keydown="handleKeydown"
     />
   </div>

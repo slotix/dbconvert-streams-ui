@@ -398,7 +398,7 @@ const databaseSearchCoverageLabel = computed(() => {
 const databaseSearchCoverageTitle = computed(() => {
   const coverage = databaseSearchCoverage.value
   if (!coverage) return ''
-  return `Database index warmup: ${coverage.indexedConnections}/${coverage.totalConnections} indexed`
+  return `Search index warmup: ${coverage.indexedConnections}/${coverage.totalConnections} indexed`
 })
 
 const connectionCountLabel = computed(() => {
@@ -1198,6 +1198,9 @@ defineExpose({ focus: () => internalSearchInputRef.value?.focus() })
       <SearchInput
         ref="internalSearchInputRef"
         :model-value="searchQuery"
+        :trailing-badge="
+          effectiveSearchQuery && !isSearchLoading ? filteredConnections.length : null
+        "
         placeholder="Filter..."
         size="xs"
         class="flex-1 min-w-0"
@@ -1208,12 +1211,6 @@ defineExpose({ focus: () => internalSearchInputRef.value?.focus() })
         v-if="isSearchLoading"
         class="h-3 w-3 text-gray-400 dark:text-gray-500 animate-spin shrink-0"
       />
-      <span
-        v-else-if="effectiveSearchQuery"
-        class="text-[10px] tabular-nums text-gray-400 dark:text-gray-500 shrink-0 select-none"
-        :title="`${filteredConnections.length} matching connection${filteredConnections.length === 1 ? '' : 's'}`"
-        >{{ filteredConnections.length }}</span
-      >
       <span
         v-if="hasIncompleteDatabaseSearchCoverage"
         class="text-[10px] tabular-nums text-amber-500 dark:text-amber-400 shrink-0 select-none"

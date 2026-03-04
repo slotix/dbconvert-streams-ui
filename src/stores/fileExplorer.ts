@@ -350,7 +350,7 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
         if (kind !== 'files') {
           throw new Error('Unsupported file explorer connection type')
         }
-        const response = await listDirectory(folderPath, kind)
+        const response = await listDirectory(folderPath, kind, connectionId)
         // Keep both files AND directories for nested browsing
         const entries = response.entries
 
@@ -795,7 +795,7 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
         if (kind !== 'files') {
           throw new Error('Unsupported file explorer connection type')
         }
-        const response = await listDirectory(folderPath, kind)
+        const response = await listDirectory(folderPath, kind, connectionId)
 
         // Update folder children immutably (single source of truth)
         const currentEntries = entriesByConnection.value[connectionId] || []

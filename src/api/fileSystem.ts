@@ -33,11 +33,13 @@ export interface WritableCheckResponse {
  */
 export async function listDirectory(
   path?: string,
-  connectionType?: string
+  connectionType?: string,
+  connectionId?: string
 ): Promise<DirectoryListResponse> {
   const params: Record<string, string> = {}
   if (path) params.path = path
   if (connectionType) params.connectionType = connectionType
+  if (connectionId) params.connectionId = connectionId
   const response = await apiClient.get('/fs/list', { params })
   return response.data
 }
