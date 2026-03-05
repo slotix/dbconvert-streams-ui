@@ -3,11 +3,15 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 import NotFound from '@/views/NotFound.vue'
 
+const loadHomeView = () => import('@/views/HomeView.vue')
+const loadStreamsView = () => import('@/views/StreamsView.vue')
+const loadDatabaseExplorerView = () => import('@/views/DatabaseExplorerView.vue')
+
 const routes = [
   {
     path: '/',
     name: 'Overview',
-    component: () => import('@/views/HomeView.vue')
+    component: loadHomeView
   },
   {
     path: '/explorer/add',
@@ -30,7 +34,7 @@ const routes = [
   {
     path: '/explorer',
     name: 'DatabaseExplorer',
-    component: () => import('@/views/DatabaseExplorerView.vue')
+    component: loadDatabaseExplorerView
   },
   {
     path: '/federated',
@@ -39,7 +43,7 @@ const routes = [
   {
     path: '/streams',
     name: 'Streams',
-    component: () => import('@/views/StreamsView.vue')
+    component: loadStreamsView
   },
   {
     path: '/streams/create',
@@ -62,5 +66,29 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes
 })
+
+let workspaceViewsPrefetched = false
+
+export function prefetchWorkspaceViews(activeRouteName?: string | symbol | null): void {
+  if (workspaceViewsPrefetched || typeof window === 'undefined') {
+    return
+  }
+
+  workspaceViewsPrefetched = true
+
+  const loaders = [
+    { name: 'Streams', load: loadStreamsView },
+    { name: 'DatabaseExplorer', load: loadDatabaseExplorerView }
+  ]
+
+  window.setTimeout(() => {
+    for (const loader of loaders) {
+      if (loader.name === activeRouteName) {
+        continue
+      }
+      void loader.load()
+    }
+  }, 200)
+}
 
 export default router

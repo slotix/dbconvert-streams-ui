@@ -5,7 +5,7 @@ import 'vue-toastification/dist/index.css'
 
 import './assets/style.css'
 import App from './App.vue'
-import router from './router'
+import router, { prefetchWorkspaceViews } from './router'
 // import { logEnvironment } from '@/utils/environment'
 import { vTooltip } from '@/directives/tooltip'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
@@ -156,4 +156,5 @@ const restoreDesktopRoute = async () => {
 router.isReady().then(async () => {
   await restoreDesktopRoute()
   app.mount('#app')
+  prefetchWorkspaceViews(router.currentRoute.value.name)
 })
