@@ -345,7 +345,8 @@ export function getSqlDialectFromConnection(
 
 /**
  * Match a single connection against a type filter string.
- * Uses spec kind as the source of truth for file vs database.
+ * Uses spec kind as the source of truth for database vs storage and
+ * distinguishes local files from cloud/object storage kinds.
  */
 export function matchesConnectionTypeFilter(
   spec: ConnectionSpec | undefined,

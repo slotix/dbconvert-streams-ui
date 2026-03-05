@@ -3,9 +3,9 @@
     <div class="flex flex-wrap items-center gap-2">
       <ConnectionTypeFilter
         :key="`stream-filter-${instanceId}`"
-        :selected-type="selectedType"
+        :selected-types="selectedTypes"
         :persistent="false"
-        @update:selected-type="handleTypeChange"
+        @update:selected-types="handleTypeChange"
       />
       <div class="flex-1 min-w-[120px]">
         <SearchInput v-model="connectionSearch" placeholder="Filter..." size="sm" />
@@ -42,16 +42,15 @@ const connectionSearch = computed({
   set: (value) => emit('update:connectionSearch', value)
 })
 
-// Local state for the type filter - independent per instance
-const selectedType = ref<string | null>(null)
+// Keep stream wizard behavior single-select while adapting to the shared multi-select filter API.
+const selectedTypes = ref<string[]>([])
 
-// Watch selectedType and emit changes to parent
-const handleTypeChange = (newType: string | null) => {
-  selectedType.value = newType
-  emit('update:selectedType', newType)
+const handleTypeChange = (newTypes: string[]) => {
+  selectedTypes.value = newTypes.slice(0, 1)
+  emit('update:selectedType', selectedTypes.value[0] || null)
 }
 
 defineExpose({
-  selectedType
+  selectedType: computed(() => selectedTypes.value[0] || null)
 })
 </script>
