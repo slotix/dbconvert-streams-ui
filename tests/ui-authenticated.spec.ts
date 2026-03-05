@@ -6,37 +6,32 @@ import { test, expect } from '@playwright/test'
 test('homepage loads correctly', async ({ page }) => {
   await page.goto('/')
 
-  // Check that the page has the DBConvert Streams title or logo
-  await expect(page.locator('img[alt*="DBConvert"], img[src*="logo"]')).toBeVisible()
-
-  // Check navigation is present
   await expect(page.locator('nav, [role="navigation"]')).toBeVisible()
+  await expect(page.locator('body')).toContainText(
+    /Account Overview|Connect your account|Enter API key/i
+  )
 })
 
-test('connections page loads', async ({ page }) => {
-  await page.goto('/connections')
+test('create stream page loads', async ({ page }) => {
+  await page.goto('/streams/create')
 
-  // Check for connections page content - just verify the page loads
-  await expect(page).toHaveURL(/.*connections.*/)
+  await expect(page).toHaveURL(/.*streams\/create.*/)
 })
 
 test('streams page loads', async ({ page }) => {
   await page.goto('/streams')
 
-  // Check for streams page content - just verify the page loads
   await expect(page).toHaveURL(/.*streams.*/)
+  await expect(page.locator('body')).toContainText(
+    /No Stream Configurations Yet|No stream selected|Create Stream Configuration/i
+  )
 })
 
 test('data explorer loads', async ({ page }) => {
   await page.goto('/explorer')
 
-  // Check for explorer page content - just verify the page loads
   await expect(page).toHaveURL(/.*explorer.*/)
-})
-
-test('monitor page loads', async ({ page }) => {
-  await page.goto('/monitor')
-
-  // Check for monitor page content - just verify the page loads
-  await expect(page).toHaveURL(/.*monitor.*/)
+  await expect(page.locator('body')).toContainText(
+    /Select a connection|No object selected|Add Connection|No Connections Yet/i
+  )
 })

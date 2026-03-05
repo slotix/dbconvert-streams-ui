@@ -39,22 +39,30 @@
       </RouteGuard>
     </div>
 
-    <LogsPanel />
+    <LogsPanel v-if="logsStore.isLogsPanelOpen" />
     <LinuxChatFallback />
 
     <!-- About Dialog -->
-    <AboutDialog v-model:isOpen="showAboutDialog" />
+    <AboutDialog v-if="showAboutDialog" v-model:isOpen="showAboutDialog" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, provide, ref, watch, watchEffect } from 'vue'
+import {
+  computed,
+  defineAsyncComponent,
+  onMounted,
+  onUnmounted,
+  provide,
+  ref,
+  watch,
+  watchEffect
+} from 'vue'
 import { RouterView, useRouter } from 'vue-router'
 import { useCommonStore } from '@/stores/common'
 import { useConfirmDialogStore } from '@/stores/confirmDialog'
+import { useLogsStore } from '@/stores/logs'
 import ApiKeyInput from '@/components/ApiKeyInput.vue'
-import LogsPanel from '@/components/logs/LogsPanel.vue'
-import AboutDialog from '@/components/common/AboutDialog.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import RouteGuard from '@/components/common/RouteGuard.vue'
 import { useWailsAppCloseEvents, useWailsMenuEvents } from '@/composables/useWailsEvents'
@@ -68,10 +76,15 @@ import DegradedModeBanner from '@/components/layout/DegradedModeBanner.vue'
 import InitializingOverlay from '@/components/layout/InitializingOverlay.vue'
 import SidebarMobile from '@/components/layout/SidebarMobile.vue'
 import SidebarDesktop from '@/components/layout/SidebarDesktop.vue'
-import LinuxChatFallback from '@/components/layout/LinuxChatFallback.vue'
+const LogsPanel = defineAsyncComponent(() => import('@/components/logs/LogsPanel.vue'))
+const AboutDialog = defineAsyncComponent(() => import('@/components/common/AboutDialog.vue'))
+const LinuxChatFallback = defineAsyncComponent(
+  () => import('@/components/layout/LinuxChatFallback.vue')
+)
 
 const commonStore = useCommonStore()
 const confirmDialog = useConfirmDialogStore()
+const logsStore = useLogsStore()
 const router = useRouter()
 
 const isSidebarExpanded = ref(false)

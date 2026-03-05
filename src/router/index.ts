@@ -1,17 +1,13 @@
 // src/router/index.ts
 import { createRouter, createWebHistory } from 'vue-router'
 
-// Static imports for stability during development
-import HomeView from '@/views/HomeView.vue'
-import StreamsView from '@/views/StreamsView.vue'
-import DatabaseExplorerView from '@/views/DatabaseExplorerView.vue'
 import NotFound from '@/views/NotFound.vue'
 
 const routes = [
   {
     path: '/',
     name: 'Overview',
-    component: HomeView
+    component: () => import('@/views/HomeView.vue')
   },
   {
     path: '/explorer/add',
@@ -34,7 +30,7 @@ const routes = [
   {
     path: '/explorer',
     name: 'DatabaseExplorer',
-    component: DatabaseExplorerView
+    component: () => import('@/views/DatabaseExplorerView.vue')
   },
   {
     path: '/federated',
@@ -43,7 +39,7 @@ const routes = [
   {
     path: '/streams',
     name: 'Streams',
-    component: StreamsView
+    component: () => import('@/views/StreamsView.vue')
   },
   {
     path: '/streams/create',

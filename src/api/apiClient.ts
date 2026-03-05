@@ -1,4 +1,9 @@
-import axios, { type AxiosInstance, type AxiosError, type AxiosRequestConfig } from 'axios'
+import axios, {
+  AxiosHeaders,
+  type AxiosInstance,
+  type AxiosError,
+  type AxiosRequestConfig
+} from 'axios'
 import { handleApiError } from '@/utils/errorHandler'
 import { type UserData } from '@/types/user'
 import { type ServiceStatusResponse, type SystemDefaults } from '@/types/common'
@@ -27,7 +32,12 @@ interface RetryConfig {
 
 interface ConfigWithRetry extends AxiosRequestConfig {
   retryCount?: number
+  retryable?: boolean
+  idempotencyKey?: string
 }
+
+const IDEMPOTENT_RETRY_METHODS = new Set(['get', 'head', 'options'])
+const MUTATING_METHODS = new Set(['post', 'put', 'patch', 'delete'])
 
 // Log environment configuration
 // logEnvironment()
@@ -105,6 +115,45 @@ const defaultRetryConfig: RetryConfig = {
   delayMs: API_RETRY.DEFAULT_DELAY
 }
 
+function getRequestMethod(config: AxiosRequestConfig | undefined): string {
+  return (config?.method || 'get').toLowerCase()
+}
+
+function canRetryRequest(config: ConfigWithRetry): boolean {
+  const method = getRequestMethod(config)
+
+  if (IDEMPOTENT_RETRY_METHODS.has(method)) {
+    return true
+  }
+
+  if (!MUTATING_METHODS.has(method)) {
+    return false
+  }
+
+  if (!config.retryable) {
+    return false
+  }
+
+  return typeof config.idempotencyKey === 'string' && config.idempotencyKey.trim().length > 0
+}
+
+function applyIdempotencyKeyHeader(config: ConfigWithRetry): void {
+  const method = getRequestMethod(config)
+  if (!MUTATING_METHODS.has(method)) {
+    return
+  }
+
+  if (!config.retryable || !config.idempotencyKey?.trim()) {
+    return
+  }
+
+  const headers = AxiosHeaders.from(
+    config.headers as unknown as string | AxiosHeaders | Record<string, string> | undefined
+  )
+  headers.set('Idempotency-Key', config.idempotencyKey)
+  config.headers = headers
+}
+
 apiClient.interceptors.response.use(
   (response) => {
     const commonStore = useCommonStore()
@@ -131,6 +180,12 @@ apiClient.interceptors.response.use(
       config &&
       (!error.response || error.code === 'ECONNABORTED' || error.message.includes('Network Error'))
     ) {
+      if (!canRetryRequest(config)) {
+        return Promise.reject(error)
+      }
+
+      applyIdempotencyKeyHeader(config)
+
       // Initialize retry count
       config.retryCount = config.retryCount ?? 0
 

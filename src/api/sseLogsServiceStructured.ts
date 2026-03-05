@@ -142,7 +142,6 @@ class SSELogsService {
     try {
       this.eventSource = new EventSource(url)
       this.setupEventHandlers(this.eventSource, logsStore, url)
-      this.reconnectAttempts = 0
     } catch (error) {
       // Only log if backend is expected to be available
       if (this.backendAvailable) {

@@ -39,15 +39,9 @@ export default defineConfig({
           'd3-viz': ['d3'],
           'export-libs': ['html2canvas', 'jspdf']
         }
-      },
-      // Suppress warnings for large libraries that are lazy-loaded
-      onwarn(warning, warn) {
-        // Ignore chunk size warnings since we've properly code-split
-        if (warning.code === 'CHUNK_SIZE_WARNING') return
-        warn(warning)
       }
     },
-    // Large libraries are lazy-loaded and split into dedicated chunks
-    chunkSizeWarningLimit: 4000
+    // Keep warnings visible so bundle-size regressions are noticed in CI.
+    chunkSizeWarningLimit: 1200
   }
 })

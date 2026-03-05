@@ -1,21 +1,31 @@
 import { test, expect } from '@playwright/test'
 
-test('playwright basic functionality test', async ({ page }) => {
-  // Test against a simple public website to verify Playwright is working
-  await page.goto('https://example.com')
+test('internal app smoke test', async ({ page }) => {
+  const routes = [
+    {
+      path: '/',
+      url: /\/$/,
+      marker: /Account Overview|Connect your account|Enter API key/i
+    },
+    {
+      path: '/streams',
+      url: /\/streams$/,
+      marker: /No Stream Configurations Yet|No stream selected|Create Stream Configuration/i
+    },
+    {
+      path: '/explorer',
+      url: /\/explorer$/,
+      marker: /Select a connection|No object selected|Add Connection|No Connections Yet/i
+    }
+  ]
 
-  // Wait for the page to load
-  await page.waitForLoadState('networkidle')
+  for (const route of routes) {
+    await page.goto(route.path)
+    await page.waitForLoadState('domcontentloaded')
+    await expect(page).toHaveURL(route.url)
+    await expect(page.locator('nav, [role="navigation"]')).toBeVisible()
+    await expect(page.locator('body')).toContainText(route.marker)
+  }
 
-  // Check that the page has the expected title
-  await expect(page).toHaveTitle(/Example Domain/i)
-
-  // Check that the page contains expected content
-  const heading = page.locator('h1')
-  await expect(heading).toContainText('Example Domain')
-
-  // Take a screenshot to verify visual rendering is working
-  await page.screenshot({ path: 'tests/screenshots/example-com.png' })
-
-  console.log('✅ Playwright is working correctly!')
+  await page.screenshot({ path: 'tests/screenshots/internal-smoke.png' })
 })

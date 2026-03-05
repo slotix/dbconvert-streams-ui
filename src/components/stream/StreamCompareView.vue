@@ -959,7 +959,6 @@ async function openSourceInExplorer() {
     await fileExplorerStore.loadEntries(connectionId, false)
 
     // Walk from shallowest to deepest ancestor so lazy-loaded folders are expanded in order
-    const entries = fileExplorerStore.getEntries(connectionId)
     const targetPath = entry.path
     const pathSegments = targetPath.split('/')
 
