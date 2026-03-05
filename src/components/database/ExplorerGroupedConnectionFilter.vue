@@ -125,6 +125,7 @@ import {
 import { ChevronDown, X } from 'lucide-vue-next'
 import { useConnectionsStore } from '@/stores/connections'
 import type { DbType } from '@/types/connections'
+import { matchesConnectionTypeFilter } from '@/types/specs'
 
 type FilterGroupKey = 'database' | 'file'
 
@@ -199,15 +200,26 @@ function groupSelectedTypes(group: FilterGroupKey): string[] {
   return selectedTypes.value.filter((type) => groupTypeNames.has(type))
 }
 
+function groupMatchedConnectionCount(group: FilterGroupKey): number {
+  const activeTypes = groupSelectedTypes(group)
+  if (activeTypes.length === 0) return 0
+
+  return connectionsStore.connections.filter((connection) =>
+    activeTypes.some((type) => matchesConnectionTypeFilter(connection.spec, connection.type, type))
+  ).length
+}
+
 function groupLabel(group: FilterGroupKey): string {
-  const count = groupSelectedTypes(group).length
-  return count > 0 ? `${groupTitle(group)} (${count})` : groupTitle(group)
+  const count = groupMatchedConnectionCount(group)
+  return groupSelectedTypes(group).length > 0
+    ? `${groupTitle(group)} (${count})`
+    : groupTitle(group)
 }
 
 function groupTooltip(group: FilterGroupKey): string {
   const activeTypes = groupSelectedTypes(group)
   return activeTypes.length > 0
-    ? `${groupTitle(group)}: ${activeTypes.join(', ')}`
+    ? `${groupTitle(group)}: ${activeTypes.join(', ')} · ${groupMatchedConnectionCount(group)} matching`
     : `Filter ${groupTitle(group).toLowerCase()}`
 }
 

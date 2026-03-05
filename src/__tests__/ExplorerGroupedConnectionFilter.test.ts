@@ -2,20 +2,59 @@ import { mount } from '@vue/test-utils'
 import { createPinia } from 'pinia'
 import { afterEach, describe, expect, it } from 'vitest'
 import ExplorerGroupedConnectionFilter from '@/components/database/ExplorerGroupedConnectionFilter.vue'
+import { useConnectionsStore } from '@/stores/connections'
+import type { Connection } from '@/types/connections'
 
 function mountFilter(selectedTypes: string[] = []) {
+  const pinia = createPinia()
+  const connectionsStore = useConnectionsStore(pinia)
+  connectionsStore.connections = buildConnectionsFixture()
+
   return mount(ExplorerGroupedConnectionFilter, {
     attachTo: document.body,
     props: {
       selectedTypes
     },
     global: {
-      plugins: [createPinia()],
+      plugins: [pinia],
       stubs: {
         teleport: true
       }
     }
   })
+}
+
+function buildConnectionsFixture(): Connection[] {
+  return [
+    {
+      id: 'pg-1',
+      name: 'postgres-main',
+      type: 'postgresql',
+      databasesInfo: [],
+      spec: { database: { host: 'localhost', port: 5432, username: 'postgres', database: 'app' } }
+    },
+    {
+      id: 'mysql-1',
+      name: 'mysql-main',
+      type: 'mysql',
+      databasesInfo: [],
+      spec: { database: { host: 'localhost', port: 3306, username: 'root', database: 'app' } }
+    },
+    {
+      id: 'files-1',
+      name: 'exports',
+      type: 'files',
+      databasesInfo: [],
+      spec: { files: { basePath: '/tmp/exports' } }
+    },
+    {
+      id: 's3-1',
+      name: 'bucket',
+      type: 's3',
+      databasesInfo: [],
+      spec: { s3: { region: 'us-east-1' } }
+    }
+  ]
 }
 
 async function syncSelectedTypes(wrapper: ReturnType<typeof mount>, selectedTypes?: string[]) {
@@ -62,7 +101,7 @@ describe('ExplorerGroupedConnectionFilter', () => {
       'Databases (2)'
     )
     expect(wrapper.get('[data-testid="explorer-filter-chip-database"]').attributes('title')).toBe(
-      'Databases: MySQL, PostgreSQL'
+      'Databases: MySQL, PostgreSQL · 2 matching'
     )
   })
 
@@ -71,8 +110,17 @@ describe('ExplorerGroupedConnectionFilter', () => {
 
     expect(wrapper.get('[data-testid="explorer-filter-chip-file"]').text()).toContain('Storage (1)')
     expect(wrapper.get('[data-testid="explorer-filter-chip-file"]').attributes('title')).toBe(
-      'Storage: Files'
+      'Storage: Files · 1 matching'
     )
+  })
+
+  it('shows matching connection counts rather than selected option counts', () => {
+    const wrapper = mountFilter(['PostgreSQL', 'MySQL', 'Files', 'S3'])
+
+    expect(wrapper.get('[data-testid="explorer-filter-chip-database"]').text()).toContain(
+      'Databases (2)'
+    )
+    expect(wrapper.get('[data-testid="explorer-filter-chip-file"]').text()).toContain('Storage (2)')
   })
 
   it('clears only the active group when the chip clear button is pressed', async () => {
