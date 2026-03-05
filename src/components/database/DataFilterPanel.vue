@@ -1,31 +1,4 @@
 <template>
-  <div
-    v-if="hasValidModifications && !isExpanded"
-    class="border-b border-gray-200 dark:border-gray-700"
-  >
-    <!-- Collapsed State: Single-line SQL preview -->
-    <div
-      class="flex items-center gap-2 px-3 py-1.5 bg-gray-50 dark:bg-gray-800/50 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-      @click="toggleExpanded"
-    >
-      <ChevronRight class="w-4 h-4 text-gray-400 shrink-0" />
-      <code
-        class="flex-1 text-xs text-gray-600 dark:text-gray-300 font-mono truncate"
-        :title="collapsedSqlPreview"
-      >
-        {{ collapsedSqlPreview }}
-      </code>
-      <button
-        type="button"
-        class="p-1 text-gray-400 hover:text-red-500 transition-colors shrink-0"
-        title="Clear all filters"
-        @click.stop="clearAll"
-      >
-        <X class="w-3.5 h-3.5" />
-      </button>
-    </div>
-  </div>
-
   <SlideOverPanel
     :open="isExpanded"
     title="Data Filter"
@@ -126,7 +99,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
-import { ArrowUpDown, ChevronRight, Columns2, Play, Plus, X } from 'lucide-vue-next'
+import { ArrowUpDown, Columns2, Play, Plus } from 'lucide-vue-next'
 import type { ColDef, SortModelItem } from 'ag-grid-community'
 import { useObjectTabStateStore, type FilterConfig, type SortConfig } from '@/stores/objectTabState'
 import {
@@ -187,57 +160,12 @@ const normalizedColumns = computed<ColumnDef[]>(() =>
     }))
 )
 
-// Collapsed SQL preview (single line)
-const collapsedSqlPreview = computed(() => {
-  const parts: string[] = []
-
-  const {
-    where,
-    orderBy,
-    orderDir,
-    limit: limitValue
-  } = buildPanelClauses({
-    filters: filters.value,
-    sorts: sorts.value,
-    limit: limit.value,
-    dialect: props.dialect,
-    quoteColumns: false
-  })
-
-  if (where) {
-    parts.push(`WHERE ${where}`)
-  }
-
-  if (orderBy) {
-    const columns = orderBy.split(',')
-    const directions = orderDir.split(',')
-    const sortClauses = columns.map((col, i) => {
-      const direction = directions[i] || 'ASC'
-      return `${col} ${direction}`
-    })
-    parts.push(`ORDER BY ${sortClauses.join(', ')}`)
-  }
-
-  if (limitValue) {
-    parts.push(`LIMIT ${limitValue}`)
-  }
-
-  return parts.join(' ')
-})
-
 // Check for modifications
 const hasModifications = computed(() => {
   const hasFilters = filters.value.some((f) => f.column && (isUnaryOperator(f.operator) || f.value))
   const hasSorts = sorts.value.some((s) => s.column)
   const hasLimit = limit.value !== null && limit.value > 0
   return hasFilters || hasSorts || hasLimit
-})
-
-// More lenient check - includes incomplete filters
-const hasValidModifications = computed(() => {
-  const hasAnyFilters = filters.value.some((f) => f.column)
-  const hasAnySorts = sorts.value.some((s) => s.column)
-  return hasAnyFilters || hasAnySorts || hasModifications.value
 })
 
 const canAddSort = computed(() => {
@@ -437,6 +365,27 @@ function clearAll() {
 // Computed for active state (for header button indicators)
 const hasActiveFilters = computed(() => filters.value.length > 0)
 const hasActiveSorts = computed(() => sorts.value.length > 0)
+const activeFilterCount = computed(
+  () => filters.value.filter((f) => f.column && (isUnaryOperator(f.operator) || f.value)).length
+)
+const activeSortCount = computed(() => sorts.value.filter((s) => s.column).length)
+const activeLimitValue = computed(() =>
+  limit.value !== null && limit.value > 0 ? limit.value : null
+)
+const summaryTooltip = computed(() => {
+  const parts: string[] = []
+  if (activeFilterCount.value > 0) {
+    parts.push(`${activeFilterCount.value} filter${activeFilterCount.value === 1 ? '' : 's'}`)
+  }
+  if (activeSortCount.value > 0) {
+    parts.push(`${activeSortCount.value} sort${activeSortCount.value === 1 ? '' : 's'}`)
+  }
+  if (activeLimitValue.value !== null) {
+    parts.push(`limit ${activeLimitValue.value}`)
+  }
+  if (parts.length === 0) return 'Open data filter'
+  return `Active: ${parts.join(' • ')}`
+})
 
 // Expose methods to parent
 defineExpose({
@@ -451,6 +400,7 @@ defineExpose({
   selectedColumns,
   hasActiveFilters,
   hasActiveSorts,
+  summaryTooltip,
   columns: () => props.columns
 })
 </script>

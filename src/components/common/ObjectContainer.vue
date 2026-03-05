@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch, defineAsyncComponent, type Component } from 'vue'
-import { Filter, RefreshCw, Share2, Terminal } from 'lucide-vue-next'
+import { RefreshCw, Share2, Terminal } from 'lucide-vue-next'
 import type { SQLRoutineMeta, SQLSequenceMeta, SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import { type FileSystemEntry } from '@/api/fileSystem'
 import { type FileMetadata } from '@/types/files'
@@ -284,22 +284,7 @@ function onTabChange(i: number) {
 
 // Keep refs to the rendered child components so parent can trigger refresh
 type Refreshable = { refresh?: () => Promise<void> | void }
-type FilterPanelMethods = {
-  openPanel?: () => void
-  addFilter?: () => void
-  addSort?: () => void
-  toggleColumnSelector?: () => void
-  canAddSort?: { value: boolean }
-  showColumnSelector?: { value: boolean }
-  hasActiveFilters?: { value: boolean }
-  hasActiveSorts?: { value: boolean }
-  selectedColumns?: { value: string[] }
-  columns?: () => { field?: string }[]
-}
-type DataViewComponent = Refreshable & {
-  filterPanelRef?: FilterPanelMethods | { value: FilterPanelMethods | null }
-}
-const panelRefs = ref<DataViewComponent[]>([])
+const panelRefs = ref<Refreshable[]>([])
 const isRefreshing = ref(false)
 
 const activeTabName = computed(() => tabs.value[selectedIndex.value]?.name || '')
@@ -317,37 +302,6 @@ const supportsFileFilters = computed(() => {
 const showFilterControls = computed(
   () => selectedIndex.value === 0 && (isDataObject.value || supportsFileFilters.value)
 )
-
-// Get the current data view's filter panel ref (handles both ref and direct value)
-function getFilterPanel(): FilterPanelMethods | null {
-  const dataView = panelRefs.value[0] as DataViewComponent | undefined
-  if (!dataView?.filterPanelRef) return null
-  // Handle case where filterPanelRef is a ref (computed) or direct value
-  const panel = dataView.filterPanelRef
-  if ('value' in panel && panel.value !== undefined) {
-    return panel.value as FilterPanelMethods
-  }
-  return panel as FilterPanelMethods
-}
-
-const hasActiveFilters = computed(() => {
-  const panel = getFilterPanel()
-  return panel?.hasActiveFilters?.value ?? false
-})
-
-const hasActiveSorts = computed(() => {
-  const panel = getFilterPanel()
-  return panel?.hasActiveSorts?.value ?? false
-})
-
-const hasAnyFilterActivity = computed(() => hasActiveFilters.value || hasActiveSorts.value)
-
-function openFilterPanel() {
-  const panel = getFilterPanel()
-  if (panel?.openPanel) {
-    panel.openPanel()
-  }
-}
 
 async function onRefreshClick() {
   try {
@@ -416,11 +370,11 @@ function onOpenDiagram() {
       $attrs.class ? $attrs.class : 'ring-1 ring-gray-900/5 dark:ring-gray-700'
     ]"
   >
-    <!-- Header with segmented control tabs, filter controls, and refresh button -->
+    <!-- Header with segmented control tabs and refresh button -->
     <div class="border-b border-gray-200 dark:border-gray-700 px-4 py-2.5">
       <div class="flex items-center justify-between">
-        <!-- Left: Tabs + Filter Controls -->
-        <div class="flex items-center gap-4">
+        <!-- Left: Tabs -->
+        <div class="flex items-center gap-2">
           <!-- Data/Structure tabs -->
           <div v-if="tabs.length > 1" class="inline-flex rounded-sm shadow-sm" role="group">
             <button
@@ -440,24 +394,6 @@ function onOpenDiagram() {
               @click="onTabChange(i)"
             >
               {{ tab.name }}
-            </button>
-          </div>
-
-          <!-- Filter Action Buttons (only shown on Data tab) -->
-          <div v-if="showFilterControls" class="flex items-center gap-1">
-            <button
-              type="button"
-              class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded transition-colors"
-              :class="
-                hasAnyFilterActivity
-                  ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700'
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 border border-transparent'
-              "
-              title="Open data filter"
-              @click="openFilterPanel"
-            >
-              <Filter class="w-4 h-4" />
-              <span>Filter</span>
             </button>
           </div>
         </div>

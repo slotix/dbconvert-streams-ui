@@ -29,7 +29,7 @@ import { useAgGridRowChangeTracking } from '@/composables/useAgGridRowChangeTrac
 import { useExactRowCount } from '@/composables/useExactRowCount'
 import { useAgGridSelectionActions } from '@/composables/useAgGridSelectionActions'
 import { buildRowChangeRows } from '@/utils/rowChangeRows'
-import { ClipboardList, Plus, Download, ChevronDown } from 'lucide-vue-next'
+import { ClipboardList, Plus, Download, ChevronDown, Filter } from 'lucide-vue-next'
 import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/vue'
 import { useLucideIcons } from '@/composables/useLucideIcons'
 
@@ -556,6 +556,46 @@ function clearAllFilters() {
 // Reference to filter panel
 const filterPanelRef = ref<InstanceType<typeof DataFilterPanel> | null>(null)
 
+const hasAnyFilterActivity = computed(() => {
+  const panel = filterPanelRef.value as
+    | (InstanceType<typeof DataFilterPanel> & {
+        hasActiveFilters?: boolean | { value?: boolean }
+        hasActiveSorts?: boolean | { value?: boolean }
+      })
+    | null
+  if (!panel) return false
+
+  const activeFilters =
+    typeof panel.hasActiveFilters === 'boolean'
+      ? panel.hasActiveFilters
+      : Boolean(panel.hasActiveFilters?.value)
+  const activeSorts =
+    typeof panel.hasActiveSorts === 'boolean'
+      ? panel.hasActiveSorts
+      : Boolean(panel.hasActiveSorts?.value)
+
+  return activeFilters || activeSorts
+})
+
+const filterButtonTooltip = computed(() => {
+  const panel = filterPanelRef.value as
+    | (InstanceType<typeof DataFilterPanel> & {
+        summaryTooltip?: string | { value?: string }
+      })
+    | null
+  if (!panel) return 'Open data filter'
+
+  if (typeof panel.summaryTooltip === 'string' && panel.summaryTooltip.length > 0) {
+    return panel.summaryTooltip
+  }
+
+  return panel.summaryTooltip?.value || 'Open data filter'
+})
+
+function openFilterPanel() {
+  filterPanelRef.value?.openPanel?.()
+}
+
 // Handle filter panel apply - applies custom WHERE/ORDER BY/LIMIT from the panel
 function onFilterPanelApply(payload: {
   where: string
@@ -703,6 +743,16 @@ defineExpose({
 })
 </script>
 
+<script lang="ts">
+import { vTooltip } from '@/directives/tooltip'
+
+export default {
+  directives: {
+    tooltip: vTooltip
+  }
+}
+</script>
+
 <template>
   <div class="flex flex-col h-full min-h-0">
     <!-- Toolbar with Filter Panel and Export -->
@@ -724,17 +774,22 @@ defineExpose({
         v-if="props.showToolbarActions"
         class="toolbar-container flex items-center justify-between px-3 py-1.5 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700"
       >
-        <!-- Left side: Status badges -->
+        <!-- Left side: Filter -->
         <div v-if="props.showToolbarActions" class="flex items-center gap-2">
-          <!-- Selection count -->
-          <span
-            v-if="baseGrid.selectedRowCount.value > 0"
-            class="stat-badge stat-badge-gray"
-            title="Selected rows"
+          <button
+            v-tooltip="filterButtonTooltip"
+            type="button"
+            class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded transition-colors"
+            :class="
+              hasAnyFilterActivity
+                ? 'bg-transparent text-amber-600 dark:text-amber-400 border border-amber-500/80 dark:border-amber-500 hover:bg-amber-50/30 dark:hover:bg-amber-500/10'
+                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 border border-transparent'
+            "
+            @click="openFilterPanel"
           >
-            {{ baseGrid.selectedRowCount.value }}
-            <span class="badge-text">selected</span>
-          </span>
+            <Filter class="h-3.5 w-3.5" :stroke-width="iconStroke" />
+            <span class="badge-text">Filter</span>
+          </button>
         </div>
 
         <!-- Right side: Actions -->
@@ -749,6 +804,15 @@ defineExpose({
             <Plus class="h-3.5 w-3.5" :stroke-width="iconStroke" />
             <span class="badge-text">Add row</span>
           </button>
+
+          <span
+            v-if="baseGrid.selectedRowCount.value > 0"
+            class="stat-badge stat-badge-gray"
+            title="Selected rows"
+          >
+            {{ baseGrid.selectedRowCount.value }}
+            <span class="badge-text">selected</span>
+          </span>
 
           <template v-if="hasUnsavedChanges">
             <button

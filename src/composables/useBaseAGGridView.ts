@@ -261,16 +261,29 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
 
   // AG Grid options for Infinite Row Model
   // Sorting is enabled and synchronized with panel state; filtering remains panel-driven only.
-  // Fix AG Grid popup positioning. Same pattern as StreamContextMenu / ColumnContextMenu:
-  // use position:fixed + coord/zoom. getBoundingClientRect() returns visual pixels;
-  // dividing by zoom converts to CSS layout pixels for fixed positioning under html{zoom:N}.
+  // Fix AG Grid popup positioning for non-100% zoom.
   const postProcessPopup = (params: PostProcessPopupParams) => {
-    if (!params.ePopup || !params.eventSource) return
+    if (!params.ePopup) {
+      return
+    }
 
-    // In WebKitGTK, getBoundingClientRect() returns CSS layout pixels (not visual pixels)
-    // under html{zoom:N}. position:fixed also uses CSS layout pixel coordinates.
-    // So we use raw getBoundingClientRect() values directly — no zoom division needed.
-    // (contrast: MouseEvent.clientX returns visual pixels, requiring /zoom for menus)
+    const zoom =
+      parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--app-zoom')) || 1
+
+    // AG Grid tooltips are positioned from mouseEvent.clientX/clientY (visual px).
+    // Under CSS zoom, convert to layout px for correct absolute positioning.
+    if (params.type === 'tooltip' && zoom !== 1) {
+      const left = Number.parseFloat(params.ePopup.style.left)
+      const top = Number.parseFloat(params.ePopup.style.top)
+      if (Number.isFinite(left)) params.ePopup.style.left = `${left / zoom}px`
+      if (Number.isFinite(top)) params.ePopup.style.top = `${top / zoom}px`
+      return
+    }
+
+    if (!params.eventSource || !(params.eventSource instanceof HTMLElement)) {
+      return
+    }
+
     const anchorRect = params.eventSource.getBoundingClientRect()
     const popupHeight = params.ePopup.getBoundingClientRect().height
     const popupWidth = params.ePopup.getBoundingClientRect().width
@@ -280,21 +293,14 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
     if (top < 0) top = anchorRect.bottom
 
     let left = anchorRect.left
-    // window.innerWidth/Height and getBoundingClientRect are both in CSS layout px.
     if (left + popupWidth > window.innerWidth) left = window.innerWidth - popupWidth
     if (left < 0) left = 0
     if (top + popupHeight > window.innerHeight) top = window.innerHeight - popupHeight
     if (top < 0) top = 0
 
-    // WebKitGTK coordinate quirk: at zoom < 1, getBoundingClientRect() returns visual pixels
-    // and position:fixed needs CSS layout px (visual / zoom). At zoom >= 1, getBoundingClientRect()
-    // already returns CSS layout px and no division is needed.
-    const zoom =
-      parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--app-zoom')) || 1
-    const divisor = zoom < 1 ? zoom : 1
     params.ePopup.style.position = 'fixed'
-    params.ePopup.style.left = `${left / divisor}px`
-    params.ePopup.style.top = `${top / divisor}px`
+    params.ePopup.style.left = `${left}px`
+    params.ePopup.style.top = `${top}px`
   }
 
   const gridOptions = computed<GridOptions>(() => ({
