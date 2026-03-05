@@ -166,6 +166,8 @@ const isLoadingConnections = ref(false)
 const isSearchLoading = ref(false)
 const searchResult = ref<ConnectionListResponse | null>(null)
 let searchRequestSequence = 0
+const SEARCH_REFRESH_INTERVAL_MS = 1500
+let searchRefreshTimer: ReturnType<typeof setTimeout> | null = null
 
 type SearchExpansionSnapshot = {
   expandedConnections: string[]
@@ -312,9 +314,47 @@ async function fetchConnectionSearchResults(query: string) {
   }
 }
 
+function stopSearchResultRefresh() {
+  if (searchRefreshTimer) {
+    clearTimeout(searchRefreshTimer)
+    searchRefreshTimer = null
+  }
+}
+
+function shouldPollSearchResults(query: string): boolean {
+  const trimmed = query.trim()
+  if (!trimmed) return false
+  if (effectiveSearchQuery.value.trim() !== trimmed) return false
+
+  const responseSearch = (searchResult.value?.search || '').trim()
+  if (responseSearch && responseSearch !== trimmed) return false
+
+  const coverage = searchResult.value?.databaseSearchCoverage
+  return !!coverage && coverage.totalConnections > 0 && !coverage.complete
+}
+
+function scheduleSearchResultRefresh(query: string) {
+  if (isSearchLoading.value || searchRefreshTimer || !shouldPollSearchResults(query)) {
+    return
+  }
+
+  searchRefreshTimer = setTimeout(async () => {
+    searchRefreshTimer = null
+    if (!shouldPollSearchResults(query)) {
+      return
+    }
+
+    await fetchConnectionSearchResults(query)
+    scheduleSearchResultRefresh(query)
+  }, SEARCH_REFRESH_INTERVAL_MS)
+}
+
 async function refreshSearchResultsIfNeeded() {
   if (!hasActiveSearch.value) return
-  await fetchConnectionSearchResults(effectiveSearchQuery.value)
+  const query = effectiveSearchQuery.value.trim()
+  stopSearchResultRefresh()
+  await fetchConnectionSearchResults(query)
+  scheduleSearchResultRefresh(query)
 }
 
 function captureSearchExpansionSnapshot() {
@@ -440,6 +480,7 @@ watch(
   () => effectiveSearchQuery.value,
   async (query) => {
     const trimmed = query.trim()
+    stopSearchResultRefresh()
     if (!trimmed) {
       searchAutoExpandSequence += 1
       searchRequestSequence += 1
@@ -450,6 +491,7 @@ watch(
     }
     captureSearchExpansionSnapshot()
     await fetchConnectionSearchResults(trimmed)
+    scheduleSearchResultRefresh(trimmed)
   }
 )
 
@@ -477,21 +519,26 @@ watch(
 
 const hasTypeFilters = computed(() => !!(props.typeFilters && props.typeFilters.length > 0))
 const databaseSearchCoverage = computed(() => searchResult.value?.databaseSearchCoverage || null)
-const hasIncompleteDatabaseSearchCoverage = computed(() => {
-  if (!hasActiveSearch.value) return false
-  const coverage = databaseSearchCoverage.value
-  return !!coverage && coverage.totalConnections > 0 && !coverage.complete
-})
-const databaseSearchCoverageLabel = computed(() => {
-  const coverage = databaseSearchCoverage.value
-  if (!coverage) return ''
-  return `${coverage.indexedConnections}/${coverage.totalConnections}`
-})
-const databaseSearchCoverageTitle = computed(() => {
-  const coverage = databaseSearchCoverage.value
-  if (!coverage) return ''
-  return `Search index warmup: ${coverage.indexedConnections}/${coverage.totalConnections} indexed`
-})
+watch(
+  [
+    () => effectiveSearchQuery.value,
+    () => databaseSearchCoverage.value?.complete ?? true,
+    () => searchResult.value?.search || '',
+    () => isSearchLoading.value
+  ],
+  ([query, complete, responseSearch, loading]) => {
+    const trimmed = query.trim()
+    if (!trimmed || loading || (responseSearch && responseSearch !== trimmed)) {
+      stopSearchResultRefresh()
+      return
+    }
+    if (complete) {
+      stopSearchResultRefresh()
+      return
+    }
+    scheduleSearchResultRefresh(trimmed)
+  }
+)
 
 const connectionCountLabel = computed(() => {
   const total = connectionsStore.connections.length
@@ -1161,6 +1208,7 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  stopSearchResultRefresh()
   restoreSearchExpansionSnapshot()
   if (focusedTreeNode.value) {
     delete focusedTreeNode.value.dataset.treeFocused
@@ -1304,13 +1352,6 @@ defineExpose({ focus: () => internalSearchInputRef.value?.focus() })
         v-if="isSearchLoading"
         class="h-3 w-3 text-gray-400 dark:text-gray-500 animate-spin shrink-0"
       />
-      <span
-        v-if="hasIncompleteDatabaseSearchCoverage"
-        class="text-[10px] tabular-nums text-amber-500 dark:text-amber-400 shrink-0 select-none"
-        :title="databaseSearchCoverageTitle"
-      >
-        {{ databaseSearchCoverageLabel }} idx
-      </span>
       <button
         type="button"
         class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded text-slate-500 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700 hover:text-slate-700 dark:hover:text-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
