@@ -2,8 +2,8 @@
  * Base composable for AG Grid data views
  * Provides shared logic for database tables and file data grids
  *
- * SIMPLIFIED: Query Filter Panel is the single source of truth for filtering/sorting.
- * AG-Grid only displays data - it does not manage filter or sort state.
+ * Query Filter Panel is the single source of truth for filtering/sorting.
+ * AG Grid header sorting is enabled, but it syncs back to panel state.
  */
 
 import { ref, computed, watch, onBeforeUnmount, type Ref } from 'vue'
@@ -87,6 +87,29 @@ export interface BaseAGGridViewOptions {
 
   /** Optional stable row id function (must be set at init; cannot be updated later) */
   getRowId?: GridOptions['getRowId']
+}
+
+function normalizeSortModel(sortModel: SortModelItem[]): SortModelItem[] {
+  return sortModel
+    .filter(
+      (
+        sort
+      ): sort is {
+        colId: string
+        sort: 'asc' | 'desc'
+      } => Boolean(sort?.colId) && (sort.sort === 'asc' || sort.sort === 'desc')
+    )
+    .map((sort) => ({
+      colId: sort.colId,
+      sort: sort.sort
+    }))
+}
+
+function sortModelsEqual(left: SortModelItem[], right: SortModelItem[]): boolean {
+  if (left.length !== right.length) return false
+  return left.every(
+    (item, index) => item.colId === right[index]?.colId && item.sort === right[index]?.sort
+  )
 }
 
 function resolveEffectiveTotalCount(params: {
@@ -192,6 +215,7 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
   const gridContainerRef = ref<HTMLElement | null>(null)
   const { setManagedTimeout, clearManagedTimeout, clearAllManagedTimeouts } = useManagedTimeout()
   let contextMenuListenerAttachTimer: ReturnType<typeof setTimeout> | null = null
+  let isSyncingSortState = false
 
   // SQL banner dimensions
   const sqlBannerHeight = computed(() =>
@@ -236,7 +260,7 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
   }))
 
   // AG Grid options for Infinite Row Model
-  // Note: sortable and filter are disabled - Query Filter Panel is the single source of truth
+  // Sorting is enabled and synchronized with panel state; filtering remains panel-driven only.
   // Fix AG Grid popup positioning. Same pattern as StreamContextMenu / ColumnContextMenu:
   // use position:fixed + coord/zoom. getBoundingClientRect() returns visual pixels;
   // dividing by zoom converts to CSS layout pixels for fixed positioning under html{zoom:N}.
@@ -299,20 +323,54 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
     maxConcurrentDatasourceRequests: 2,
     infiniteInitialRowCount: 100,
     maxBlocksInCache: 20,
+    multiSortKey: 'ctrl',
+    alwaysMultiSort: false,
     suppressMenuHide: true,
     // Attach popups to document.body so AG Grid's coordinate math (sourceRect - parentRect)
     // uses a 0,0 origin, making it correct regardless of the grid's nesting depth.
     popupParent: document.body,
     postProcessPopup,
     defaultColDef: {
-      // Disable native sorting/filtering - Query Filter Panel controls these
-      sortable: false,
+      // Native filtering is disabled; sorting syncs with panel state.
+      sortable: true,
       filter: false,
       resizable: true,
       suppressHeaderFilterButton: true,
       suppressHeaderMenuButton: false
     }
   }))
+
+  function getGridSortModel(api: GridApi): SortModelItem[] {
+    const gridSortModel = api
+      .getColumnState()
+      .filter((state) => state.sort === 'asc' || state.sort === 'desc')
+      .sort((left, right) => (left.sortIndex ?? 0) - (right.sortIndex ?? 0))
+      .map((state) => ({
+        colId: state.colId,
+        sort: state.sort as 'asc' | 'desc'
+      }))
+    return normalizeSortModel(gridSortModel)
+  }
+
+  function applyPanelSortModelToGrid(api: GridApi, sortModel: SortModelItem[]) {
+    const normalizedSortModel = normalizeSortModel(sortModel)
+    const currentGridSortModel = getGridSortModel(api)
+    if (sortModelsEqual(currentGridSortModel, normalizedSortModel)) return
+
+    isSyncingSortState = true
+    try {
+      api.applyColumnState({
+        state: normalizedSortModel.map((sort, index) => ({
+          colId: sort.colId,
+          sort: sort.sort,
+          sortIndex: index
+        })),
+        defaultState: { sort: null }
+      })
+    } finally {
+      isSyncingSortState = false
+    }
+  }
 
   /**
    * Create datasource for Infinite Row Model
@@ -519,6 +577,9 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
   watch(
     () => panelSortModel.value,
     () => {
+      if (gridApi.value && !gridApi.value.isDestroyed()) {
+        applyPanelSortModelToGrid(gridApi.value, panelSortModel.value)
+      }
       onSortChanged?.()
       refresh()
     },
@@ -568,6 +629,16 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
     params.api.addEventListener('bodyScroll', updateVisibleRows)
     params.api.addEventListener('modelUpdated', updateVisibleRows)
     params.api.addEventListener('firstDataRendered', updateVisibleRows)
+    params.api.addEventListener('sortChanged', () => {
+      if (isSyncingSortState || !gridApi.value || gridApi.value.isDestroyed()) return
+
+      const nextSortModel = getGridSortModel(gridApi.value)
+      const currentPanelSortModel = normalizeSortModel(panelSortModel.value)
+
+      if (sortModelsEqual(currentPanelSortModel, nextSortModel)) return
+
+      setPanelFilters(panelWhereSQL.value, nextSortModel, panelLimit.value)
+    })
 
     // Add context menu listener for column headers
     contextMenuListenerAttachTimer = setManagedTimeout(() => {
@@ -597,6 +668,8 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
       // Panel filters/limit are restored by DataFilterPanel (objectTabState.filterPanelState)
       // to avoid hidden/stale limits from duplicate persisted sources.
     }
+
+    applyPanelSortModelToGrid(params.api, panelSortModel.value)
 
     // Set datasource for infinite row model
     params.api.setGridOption('datasource', createDatasource())

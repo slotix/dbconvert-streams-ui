@@ -291,6 +291,14 @@ const columnSelectOptions = computed<SelectOption[]>(() =>
   }))
 )
 
+function sortConditionsEqual(left: SortCondition[], right: SortCondition[]): boolean {
+  if (left.length !== right.length) return false
+  return left.every(
+    (sort, index) =>
+      sort.column === right[index]?.column && sort.direction === right[index]?.direction
+  )
+}
+
 // Filter ID generator
 let filterId = 0
 const generateId = () => `filter-${++filterId}`
@@ -499,11 +507,12 @@ watch(
 watch(
   () => props.initialSorts,
   (newSorts) => {
-    if (newSorts && newSorts.length > 0 && sorts.value.length === 0) {
-      sorts.value = newSorts.map((s) => ({ ...s }))
-    }
+    const nextSorts = (newSorts || []).map((s) => ({ ...s }))
+    if (sortConditionsEqual(sorts.value, nextSorts)) return
+    sorts.value = nextSorts
+    isDirty.value = false
   },
-  { immediate: true }
+  { immediate: true, deep: true }
 )
 
 watch(

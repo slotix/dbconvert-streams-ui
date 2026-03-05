@@ -28,7 +28,7 @@ export type UseAgGridDataViewColumnDefsOptions = {
 }
 
 // Generate column definitions from table metadata.
-// Note: sortable and filter are disabled - Query Filter Panel is the single source of truth.
+// Header sorting is enabled and synced with the Query Filter panel state.
 export function useAgGridDataViewColumnDefs(options: UseAgGridDataViewColumnDefsOptions) {
   const columnDefs = computed<ColDef[]>(() => {
     const columns = options.columns.value
@@ -74,8 +74,8 @@ export function useAgGridDataViewColumnDefs(options: UseAgGridDataViewColumnDefs
       return {
         field: col.name,
         headerName: col.name,
-        // Disable AG-Grid native sorting/filtering - Query Filter Panel is the single source of truth
-        sortable: false,
+        // Native filtering is disabled; sorting syncs with Query Filter panel state.
+        sortable: true,
         filter: false,
         floatingFilter: false,
         suppressHeaderMenuButton: false,
@@ -91,7 +91,7 @@ export function useAgGridDataViewColumnDefs(options: UseAgGridDataViewColumnDefs
           if (!rowId || !field) return undefined
           return options.getEditedCellTooltip(rowId, field, col.dataType) || undefined
         },
-        headerTooltip: `${col.dataType}${col.isNullable ? '' : ' NOT NULL'} - Use Query Filter panel to sort/filter`,
+        headerTooltip: `${col.dataType}${col.isNullable ? '' : ' NOT NULL'} - Click header to sort (Ctrl+Click multi-sort) or use Query Filter panel`,
         wrapText: false,
         autoHeight: false,
         editable: (p: { data: Record<string, unknown>; node?: { rowPinned?: string | null } }) => {

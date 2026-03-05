@@ -127,7 +127,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
 import { ArrowUpDown, ChevronRight, Columns2, Play, Plus, X } from 'lucide-vue-next'
-import type { ColDef } from 'ag-grid-community'
+import type { ColDef, SortModelItem } from 'ag-grid-community'
 import { useObjectTabStateStore, type FilterConfig, type SortConfig } from '@/stores/objectTabState'
 import {
   FilterBuilderShell,
@@ -245,6 +245,36 @@ const canAddSort = computed(() => {
   return props.columns.some((col) => col.field && !usedColumns.has(col.field))
 })
 
+function normalizeExternalSortModel(sortModel: SortModelItem[]): SortConfig[] {
+  return sortModel
+    .filter(
+      (
+        sort
+      ): sort is {
+        colId: string
+        sort: 'asc' | 'desc'
+      } => Boolean(sort?.colId) && (sort.sort === 'asc' || sort.sort === 'desc')
+    )
+    .map((sort) => ({
+      column: sort.colId,
+      direction: sort.sort.toUpperCase() as 'ASC' | 'DESC'
+    }))
+}
+
+function sortConfigsEqual(left: SortConfig[], right: SortConfig[]): boolean {
+  if (left.length !== right.length) return false
+  return left.every(
+    (sort, index) =>
+      sort.column === right[index]?.column && sort.direction === right[index]?.direction
+  )
+}
+
+const appliedSortModelFromStore = computed<SortModelItem[]>(() => {
+  const key = props.objectKey
+  if (!key) return []
+  return tabStateStore.tabStates[key]?.agGridData?.sortModel || []
+})
+
 // Save state to store
 function saveState() {
   if (!props.objectKey) return
@@ -309,6 +339,17 @@ watch(
     }
   },
   { immediate: true }
+)
+
+watch(
+  appliedSortModelFromStore,
+  (newSortModel) => {
+    const syncedSorts = normalizeExternalSortModel(newSortModel || [])
+    if (sortConfigsEqual(sorts.value, syncedSorts)) return
+    sorts.value = syncedSorts
+    saveState()
+  },
+  { deep: true, immediate: true }
 )
 
 // Initialize selectedColumns with all columns when columns become available

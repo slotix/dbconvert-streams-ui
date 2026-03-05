@@ -2,8 +2,8 @@
  * Composable for AG Grid filtering state and logic
  * Used by both database table views and file data views
  *
- * SIMPLIFIED: Query Filter Panel is the single source of truth for filtering/sorting.
- * AG-Grid only displays data - it does not manage filter or sort state.
+ * Query Filter Panel is the single source of truth for filtering/sorting.
+ * AG Grid sorting changes are synchronized back to this state.
  */
 
 import { ref, computed } from 'vue'
@@ -16,8 +16,8 @@ interface UseAGGridFilteringOptions {
 }
 
 /**
- * Shared AG Grid filtering state and computed properties
- * Query Filter Panel is the single source of truth - no AG-Grid sync needed
+ * Shared AG Grid filtering state and computed properties.
+ * Query Filter Panel is the single source of truth for filtering/sorting.
  */
 export function useAGGridFiltering(options: UseAGGridFilteringOptions = {}) {
   const sqlBannerMaxLength = options.sqlBannerMaxLength || SQL_BANNER_MAX_LENGTH
