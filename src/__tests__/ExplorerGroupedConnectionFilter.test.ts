@@ -108,9 +108,11 @@ describe('ExplorerGroupedConnectionFilter', () => {
   it('shows a storage count when a storage type is selected', () => {
     const wrapper = mountFilter(['Files'])
 
-    expect(wrapper.get('[data-testid="explorer-filter-chip-file"]').text()).toContain('Storage (1)')
+    expect(wrapper.get('[data-testid="explorer-filter-chip-file"]').text()).toContain(
+      'Files and S3 (1)'
+    )
     expect(wrapper.get('[data-testid="explorer-filter-chip-file"]').attributes('title')).toBe(
-      'Storage: Files · 1 matching'
+      'Files and S3: Files · 1 matching'
     )
   })
 
@@ -120,7 +122,9 @@ describe('ExplorerGroupedConnectionFilter', () => {
     expect(wrapper.get('[data-testid="explorer-filter-chip-database"]').text()).toContain(
       'Databases (2)'
     )
-    expect(wrapper.get('[data-testid="explorer-filter-chip-file"]').text()).toContain('Storage (2)')
+    expect(wrapper.get('[data-testid="explorer-filter-chip-file"]').text()).toContain(
+      'Files and S3 (2)'
+    )
   })
 
   it('clears only the active group when the chip clear button is pressed', async () => {

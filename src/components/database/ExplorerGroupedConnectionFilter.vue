@@ -23,6 +23,7 @@
         :title="groupTooltip(group.key)"
         @click="toggleDropdown(group.key)"
       >
+        <component :is="group.icon" class="mr-1.5 h-3.5 w-3.5 shrink-0" />
         <span class="truncate">{{ groupLabel(group.key) }}</span>
         <ChevronDown
           class="ml-1 h-3.5 w-3.5 shrink-0 transition-transform"
@@ -122,7 +123,7 @@ import {
   watch,
   type ComponentPublicInstance
 } from 'vue'
-import { ChevronDown, X } from 'lucide-vue-next'
+import { ChevronDown, Database, FolderArchive, X } from 'lucide-vue-next'
 import { useConnectionsStore } from '@/stores/connections'
 import type { DbType } from '@/types/connections'
 import { matchesConnectionTypeFilter } from '@/types/specs'
@@ -151,8 +152,8 @@ const chipRefs: Record<FilterGroupKey, HTMLElement | null> = {
 }
 
 const filterGroups = [
-  { key: 'database' as const, title: 'Databases' },
-  { key: 'file' as const, title: 'Storage' }
+  { key: 'database' as const, title: 'Databases', icon: Database },
+  { key: 'file' as const, title: 'Files and S3', icon: FolderArchive }
 ]
 
 const groupTypeMap = computed<Record<FilterGroupKey, DbType[]>>(() => ({
