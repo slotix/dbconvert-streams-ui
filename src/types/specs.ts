@@ -359,7 +359,7 @@ export function matchesConnectionTypeFilter(
   if (!kind) return false
 
   if (normalizedFilter === 'files') {
-    return isFileBasedKind(kind)
+    return kind === 'files'
   }
   if (normalizedFilter === 's3') {
     return kind === 's3'

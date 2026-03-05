@@ -3,7 +3,6 @@ import { ref, computed, inject, watch, onMounted, onUnmounted, nextTick, provide
 import { useResizeObserver } from '@vueuse/core'
 import { Boxes, ChevronsDown, ChevronsUp, Loader2, Menu, Plus } from 'lucide-vue-next'
 import { useConnectionsStore } from '@/stores/connections'
-import ConnectionTypeFilter from '@/components/common/ConnectionTypeFilter.vue'
 import SearchInput from '@/components/common/SearchInput.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import { useExplorerNavigationStore, type ObjectType } from '@/stores/explorerNavigation'
@@ -28,6 +27,7 @@ import { getConnectionKindFromSpec, getConnectionTypeLabel, isDatabaseKind } fro
 import { parseRoutineName } from '@/utils/routineUtils'
 import { getTreeKeyboardIntent, type TreeKeyboardNodeState } from '@/utils/treeKeyboardNavigation'
 import ExplorerContextMenu from './ExplorerContextMenu.vue'
+import ExplorerGroupedConnectionFilter from './ExplorerGroupedConnectionFilter.vue'
 import ConnectionTreeItem from './tree/ConnectionTreeItem.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
@@ -1327,15 +1327,8 @@ defineExpose({ focus: () => internalSearchInputRef.value?.focus() })
       </BaseButton>
     </div>
 
-    <!-- Toolbar row 2: type filter + search + expand/collapse -->
-    <div
-      class="px-2 pb-2 border-b border-slate-200/70 dark:border-gray-700/80 flex items-center gap-1"
-    >
-      <ConnectionTypeFilter
-        :selected-types="typeFilters ?? []"
-        :persistent="false"
-        @update:selected-types="$emit('update:typeFilters', $event)"
-      />
+    <!-- Toolbar row 2: search + expand/collapse -->
+    <div class="px-2 pt-1 pb-1 flex items-center gap-1">
       <SearchInput
         ref="internalSearchInputRef"
         :model-value="searchQuery"
@@ -1363,6 +1356,14 @@ defineExpose({ focus: () => internalSearchInputRef.value?.focus() })
         <ChevronsUp v-if="hasExpandedTreeState" class="h-4 w-4" />
         <ChevronsDown v-else class="h-4 w-4" />
       </button>
+    </div>
+
+    <!-- Toolbar row 3: grouped type filter -->
+    <div class="px-2 pb-2 border-b border-slate-200/70 dark:border-gray-700/80">
+      <ExplorerGroupedConnectionFilter
+        :selected-types="typeFilters ?? []"
+        @update:selected-types="$emit('update:typeFilters', $event)"
+      />
     </div>
     <!-- Scrollable tree content area with smooth scrolling and custom scrollbar -->
     <div

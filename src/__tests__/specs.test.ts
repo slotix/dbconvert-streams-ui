@@ -4,6 +4,7 @@ import {
   isFileBasedKind,
   isCloudStorageKind,
   isDatabaseKind,
+  matchesConnectionTypeFilter,
   type ConnectionSpec
 } from '../types/specs'
 
@@ -134,5 +135,31 @@ describe('isDatabaseKind', () => {
 
   it('returns false for null', () => {
     expect(isDatabaseKind(null)).toBe(false)
+  })
+})
+
+describe('matchesConnectionTypeFilter', () => {
+  it('matches Files only for local file connections', () => {
+    const filesSpec: ConnectionSpec = {
+      files: { basePath: '/tmp/files' }
+    }
+    const s3Spec: ConnectionSpec = {
+      s3: { region: 'us-east-1' }
+    }
+
+    expect(matchesConnectionTypeFilter(filesSpec, 'files', 'Files')).toBe(true)
+    expect(matchesConnectionTypeFilter(s3Spec, 's3', 'Files')).toBe(false)
+  })
+
+  it('matches S3 only for s3 connections', () => {
+    const filesSpec: ConnectionSpec = {
+      files: { basePath: '/tmp/files' }
+    }
+    const s3Spec: ConnectionSpec = {
+      s3: { region: 'us-east-1' }
+    }
+
+    expect(matchesConnectionTypeFilter(s3Spec, 's3', 'S3')).toBe(true)
+    expect(matchesConnectionTypeFilter(filesSpec, 'files', 'S3')).toBe(false)
   })
 })
