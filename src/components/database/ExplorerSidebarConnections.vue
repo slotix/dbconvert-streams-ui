@@ -1309,19 +1309,24 @@ defineExpose({ focus: () => internalSearchInputRef.value?.focus() })
 <template>
   <div ref="sidebarCardRef" class="overflow-hidden h-full flex flex-col">
     <!-- Toolbar row 1: count + New Connection -->
-    <div class="px-3 pt-2.5 pb-1 flex items-center gap-2">
+    <div class="px-3 pt-2.5 pb-1 flex flex-wrap items-center gap-2">
       <button
         type="button"
-        class="lg:hidden flex items-center justify-center p-1.5 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700"
+        class="lg:hidden shrink-0 flex items-center justify-center p-1.5 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700"
         @click="sidebarMenuToggle?.openSidebar()"
       >
         <Menu class="h-4 w-4" aria-hidden="true" />
         <span class="sr-only">Open sidebar</span>
       </button>
-      <span class="text-xs font-medium text-gray-500 dark:text-gray-400 truncate flex-1">
+      <span class="min-w-0 flex-1 text-xs font-medium text-gray-500 dark:text-gray-400 truncate">
         {{ connectionCountLabel }}
       </span>
-      <BaseButton variant="primary" size="sm" @click="$emit('add-connection')">
+      <BaseButton
+        variant="primary"
+        size="sm"
+        class="ml-auto shrink-0"
+        @click="$emit('add-connection')"
+      >
         <Plus class="h-3.5 w-3.5" />
         <span>New Connection</span>
       </BaseButton>
@@ -1337,7 +1342,7 @@ defineExpose({ focus: () => internalSearchInputRef.value?.focus() })
         "
         placeholder="Filter..."
         size="xs"
-        class="flex-1 min-w-0"
+        class="min-w-0 flex-1"
         @update:model-value="$emit('update:searchQuery', $event as string)"
       />
       <!-- Match count (shown while searching) -->
@@ -1359,8 +1364,9 @@ defineExpose({ focus: () => internalSearchInputRef.value?.focus() })
     </div>
 
     <!-- Toolbar row 3: grouped type filter -->
-    <div class="px-2 pb-2 border-b border-slate-200/70 dark:border-gray-700/80">
+    <div class="@container/filter-row px-2 pb-2 border-b border-slate-200/70 dark:border-gray-700/80">
       <ExplorerGroupedConnectionFilter
+        class="min-w-0 flex-1"
         :selected-types="typeFilters ?? []"
         @update:selected-types="$emit('update:typeFilters', $event)"
       />

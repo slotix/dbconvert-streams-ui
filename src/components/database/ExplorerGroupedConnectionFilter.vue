@@ -1,5 +1,5 @@
 <template>
-  <div class="flex items-center gap-1 shrink-0">
+  <div class="flex min-w-0 flex-nowrap items-center gap-1 overflow-hidden">
     <button
       type="button"
       data-testid="explorer-filter-chip-all"
@@ -12,19 +12,25 @@
       All
     </button>
 
-    <div v-for="group in filterGroups" :key="group.key" class="relative shrink-0">
+    <div v-for="group in filterGroups" :key="group.key" class="relative min-w-0 shrink">
       <button
         :ref="(el) => setChipRef(group.key, el)"
         type="button"
         :data-testid="`explorer-filter-chip-${group.key}`"
-        class="inline-flex h-8 items-center rounded-md border pl-3 text-xs font-medium transition-colors"
+        class="inline-flex h-8 max-w-full min-w-0 items-center rounded-md border pl-2.5 text-xs font-medium transition-colors"
         :class="groupChipClass(group.key)"
         :aria-pressed="groupSelectedTypes(group.key).length > 0 ? 'true' : 'false'"
         :title="groupTooltip(group.key)"
         @click="toggleDropdown(group.key)"
       >
-        <component :is="group.icon" class="mr-1.5 h-3.5 w-3.5 shrink-0" />
-        <span class="truncate">{{ groupLabel(group.key) }}</span>
+        <component :is="group.icon" class="h-3.5 w-3.5 shrink-0 @[560px]/filter-row:mr-1.5" />
+        <span class="hidden truncate @[560px]/filter-row:inline">{{ groupLabel(group.key) }}</span>
+        <span
+          v-if="groupSelectedTypes(group.key).length > 0"
+          class="ml-1 shrink-0 rounded-full bg-slate-200 px-1.5 py-0.5 text-[10px] leading-none text-slate-700 dark:bg-slate-600/70 dark:text-slate-100 @[560px]/filter-row:hidden"
+        >
+          {{ groupMatchedConnectionCount(group.key) }}
+        </span>
         <ChevronDown
           class="ml-1 h-3.5 w-3.5 shrink-0 transition-transform"
           :class="openGroup === group.key ? 'rotate-180' : ''"
