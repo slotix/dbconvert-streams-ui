@@ -1284,8 +1284,6 @@ watch(
     if (selectedNode) {
       focusTreeNode(selectedNode)
       selectedNode.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' })
-      selectedNode.classList.add('ring-1', 'ring-slate-300')
-      setTimeout(() => selectedNode.classList.remove('ring-1', 'ring-slate-300'), 600)
     }
     syncTreeTabStop(selectedNode)
   },
@@ -1364,7 +1362,9 @@ defineExpose({ focus: () => internalSearchInputRef.value?.focus() })
     </div>
 
     <!-- Toolbar row 3: grouped type filter -->
-    <div class="@container/filter-row px-2 pb-2 border-b border-slate-200/70 dark:border-gray-700/80">
+    <div
+      class="@container/filter-row px-2 pb-2 border-b border-slate-200/70 dark:border-gray-700/80"
+    >
       <ExplorerGroupedConnectionFilter
         class="min-w-0 flex-1"
         :selected-types="typeFilters ?? []"
@@ -1523,20 +1523,9 @@ defineExpose({ focus: () => internalSearchInputRef.value?.focus() })
 
 :deep([data-tree-node='true']:focus) {
   outline: none;
-  box-shadow: 0 0 0 2px rgb(20 184 166 / 0.55);
-}
-
-:deep(.dark [data-tree-node='true']:focus) {
-  box-shadow: 0 0 0 2px rgb(45 212 191 / 0.55);
 }
 
 :deep([data-tree-node='true'][data-tree-focused='true']) {
-  background: rgb(15 118 110 / 0.12);
-  box-shadow: 0 0 0 2px rgb(20 184 166 / 0.7);
-}
-
-:deep(.dark [data-tree-node='true'][data-tree-focused='true']) {
-  background: rgb(20 184 166 / 0.16);
-  box-shadow: 0 0 0 2px rgb(45 212 191 / 0.8);
+  box-shadow: none;
 }
 </style>

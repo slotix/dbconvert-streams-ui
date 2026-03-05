@@ -570,11 +570,7 @@ function s3BucketRowClass(connectionId: string, bucket: string): string {
     return 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/50'
   }
 
-  if (props.mode === 'source') {
-    return 'bg-gradient-to-r from-sky-50 via-sky-100/60 to-transparent dark:from-sky-900/30 dark:via-sky-900/15 dark:to-transparent text-sky-900 dark:text-sky-100 font-semibold ring-1 ring-sky-200 dark:ring-sky-500/30 border border-sky-100/70 dark:border-sky-800/40 pl-2 shadow-inner shadow-sky-900/5'
-  } else {
-    return 'bg-gradient-to-r from-emerald-50 via-emerald-100/60 to-transparent dark:from-emerald-900/30 dark:via-emerald-900/15 dark:to-transparent text-emerald-900 dark:text-emerald-100 font-semibold ring-1 ring-emerald-200 dark:ring-emerald-500/30 border border-emerald-100/70 dark:border-emerald-800/40 pl-2 shadow-inner shadow-emerald-900/5'
-  }
+  return `${flatSelectedRowClass} pl-2`
 }
 
 function getFileCount(connectionId: string): number {
@@ -631,6 +627,11 @@ function getConnectionHostValue(connection: Connection): string {
 // Use imported getConnectionTooltip from utils/connectionUtils.ts
 const connectionTooltip = getConnectionTooltip
 
+const flatSelectedRowClass =
+  'bg-slate-100/90 dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 font-semibold'
+
+const flatSelectedCardClass = 'bg-slate-100/80 dark:bg-slate-800/75 shadow-sm'
+
 function connectionCardClass(connectionId: string): string {
   const base =
     'border border-transparent hover:border-gray-200/60 dark:hover:border-gray-700/60 transition-all duration-200 bg-transparent'
@@ -649,14 +650,7 @@ function connectionCardClass(connectionId: string): string {
   // For database connections, only highlight the card if no database is selected yet
   // Once a database is selected, only the database row should be highlighted
   if (!props.selectedDatabase) {
-    if (props.mode === 'source') {
-      const sourceHighlight =
-        'bg-gradient-to-r from-sky-50/90 via-sky-100/70 to-white dark:from-sky-900/40 dark:via-sky-900/20 dark:to-transparent border-sky-200/80 dark:border-sky-700/60 ring-1 ring-sky-300/60 dark:ring-sky-500/30 shadow-lg shadow-sky-900/10 dark:shadow-sky-900/40'
-      return `${base} ${sourceHighlight}`
-    }
-    const targetHighlight =
-      'bg-gradient-to-r from-emerald-50/90 via-emerald-100/70 to-white dark:from-emerald-900/40 dark:via-emerald-900/20 dark:to-transparent border-emerald-200/80 dark:border-emerald-700/60 ring-1 ring-emerald-300/60 dark:ring-emerald-500/30 shadow-lg shadow-emerald-900/10 dark:shadow-emerald-900/40'
-    return `${base} ${targetHighlight}`
+    return `${base} ${flatSelectedCardClass}`
   }
 
   // Database is selected - don't highlight the connection card, only the database row
@@ -684,9 +678,7 @@ function connectionHeaderClass(connectionId: string): string {
     return defaultClass
   }
 
-  return props.mode === 'source'
-    ? 'bg-transparent text-sky-800 dark:text-sky-100 font-semibold'
-    : 'bg-transparent text-emerald-700 dark:text-emerald-100 font-semibold'
+  return 'bg-transparent text-slate-900 dark:text-slate-100 font-semibold'
 }
 
 function filePathClass(connectionId: string): string {
@@ -696,12 +688,7 @@ function filePathClass(connectionId: string): string {
     return 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/50 bg-transparent'
   }
 
-  // Selected file path styling (same as database row for consistency)
-  if (props.mode === 'source') {
-    return 'bg-gradient-to-r from-sky-50 via-sky-100/60 to-transparent dark:from-sky-900/30 dark:via-sky-900/15 dark:to-transparent text-sky-900 dark:text-sky-100 font-semibold ring-1 ring-sky-200 dark:ring-sky-500/30 border border-sky-100/70 dark:border-sky-800/40 pl-2 shadow-inner shadow-sky-900/5'
-  } else {
-    return 'bg-gradient-to-r from-emerald-50 via-emerald-100/60 to-transparent dark:from-emerald-900/30 dark:via-emerald-900/15 dark:to-transparent text-emerald-900 dark:text-emerald-100 font-semibold ring-1 ring-emerald-200 dark:ring-emerald-500/30 border border-emerald-100/70 dark:border-emerald-800/40 pl-2 shadow-inner shadow-emerald-900/5'
-  }
+  return `${flatSelectedRowClass} pl-2`
 }
 
 function databaseRowClass(connectionId: string, database: string): string {
@@ -711,11 +698,7 @@ function databaseRowClass(connectionId: string, database: string): string {
     return 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/50'
   }
 
-  if (props.mode === 'source') {
-    return 'bg-gradient-to-r from-sky-50 via-sky-100/60 to-transparent dark:from-sky-900/30 dark:via-sky-900/15 dark:to-transparent text-sky-900 dark:text-sky-100 font-semibold ring-1 ring-sky-200 dark:ring-sky-500/30 border border-sky-100/70 dark:border-sky-800/40 pl-2 shadow-inner shadow-sky-900/5'
-  } else {
-    return 'bg-gradient-to-r from-emerald-50 via-emerald-100/60 to-transparent dark:from-emerald-900/30 dark:via-emerald-900/15 dark:to-transparent text-emerald-900 dark:text-emerald-100 font-semibold ring-1 ring-emerald-200 dark:ring-emerald-500/30 border border-emerald-100/70 dark:border-emerald-800/40 pl-2 shadow-inner shadow-emerald-900/5'
-  }
+  return `${flatSelectedRowClass} pl-2`
 }
 
 function schemaRowClass(connectionId: string, database: string, schema: string): string {
@@ -728,9 +711,7 @@ function schemaRowClass(connectionId: string, database: string, schema: string):
     return 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/50'
   }
 
-  return props.mode === 'source'
-    ? 'bg-gradient-to-r from-sky-50 via-sky-100/60 to-transparent dark:from-sky-900/30 dark:via-sky-900/15 dark:to-transparent text-sky-900 dark:text-sky-100 font-semibold ring-1 ring-sky-200 dark:ring-sky-500/30 border border-sky-100/70 dark:border-sky-800/40 shadow-inner shadow-sky-900/5'
-    : 'bg-gradient-to-r from-emerald-50 via-emerald-100/60 to-transparent dark:from-emerald-900/30 dark:via-emerald-900/15 dark:to-transparent text-emerald-900 dark:text-emerald-100 font-semibold ring-1 ring-emerald-200 dark:ring-emerald-500/30 border border-emerald-100/70 dark:border-emerald-800/40 shadow-inner shadow-emerald-900/5'
+  return flatSelectedRowClass
 }
 
 function isConnectionExpanded(connectionId: string): boolean {
