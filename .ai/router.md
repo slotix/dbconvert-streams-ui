@@ -14,7 +14,9 @@ Choose exactly one primary skill:
    - `.ai/skills/investigation/SKILL.md`
 4. Code implementation, bug fix, refactor, or code-adjacent docs:
    - `.ai/skills/task-delivery/SKILL.md`
-5. Architecture/tradeoff or policy-level decision:
+5. Skill creation or skill maintenance task:
+   - `.ai/skills/skill-creator/SKILL.md`
+6. Architecture/tradeoff or policy-level decision:
    - `.ai/skills/engineering-principles/SKILL.md`
 
 ## Rules

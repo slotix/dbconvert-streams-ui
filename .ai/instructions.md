@@ -17,6 +17,15 @@ To make routing observable to the user, every task response must include:
 
 If `Primary skill` is missing, treat the response as incomplete and correct it before finishing.
 
+## Skill Authoring Workflow
+
+When the task is to create or maintain skills, use `.ai/skills/skill-creator/SKILL.md` as the primary skill.
+
+- Keep skills concise and trigger-focused (`name` + `description` frontmatter, clear usage contexts).
+- Update `.ai/router.md` whenever a new skill should be selectable.
+- If `.ai/instructions.md` changes, regenerate `AGENTS.md` with `scripts/sync-agents-md.sh`.
+- For cross-repo skill workflow updates, keep this repo aligned with `../dbconvert-stream` and `../dbconvert-streams-website` unless explicitly scoped otherwise.
+
 ## Engineering Principles
 
 Core repo preferences (simplicity-first, DRY, and no transitional compatibility by default):
