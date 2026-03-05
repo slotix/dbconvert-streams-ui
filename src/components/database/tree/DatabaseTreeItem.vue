@@ -436,7 +436,7 @@ function handleFlatObjectContextMenu(payload: {
     <div
       :class="[
         'group flex items-center gap-2 px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer select-none',
-        isSelected ? 'bg-teal-100/80 dark:bg-teal-900/40' : ''
+        isSelected ? 'bg-slate-100/90 dark:bg-slate-800/85' : ''
       ]"
       :data-explorer-db="`${connectionId}:${database.name}`"
       data-tree-node="true"
@@ -490,7 +490,7 @@ function handleFlatObjectContextMenu(payload: {
             type="button"
             class="w-full text-left text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-1 flex items-center justify-between hover:text-gray-500 dark:hover:text-gray-400"
             :class="{
-              'animate-pulse text-teal-600 dark:text-teal-300': highlightedSection === 'tables'
+              'animate-pulse text-slate-600 dark:text-slate-300': highlightedSection === 'tables'
             }"
             :aria-expanded="tablesSectionExpanded"
             @click.stop="tablesOpen = !tablesOpen"
@@ -525,7 +525,7 @@ function handleFlatObjectContextMenu(payload: {
             type="button"
             class="w-full text-left text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-2 flex items-center justify-between hover:text-gray-500 dark:hover:text-gray-400"
             :class="{
-              'animate-pulse text-teal-600 dark:text-teal-300': highlightedSection === 'views'
+              'animate-pulse text-slate-600 dark:text-slate-300': highlightedSection === 'views'
             }"
             :aria-expanded="viewsSectionExpanded"
             @click.stop="viewsOpen = !viewsOpen"
@@ -559,7 +559,7 @@ function handleFlatObjectContextMenu(payload: {
             type="button"
             class="w-full text-left text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-2 flex items-center justify-between hover:text-gray-500 dark:hover:text-gray-400"
             :class="{
-              'animate-pulse text-teal-600 dark:text-teal-300': highlightedSection === 'functions'
+              'animate-pulse text-slate-600 dark:text-slate-300': highlightedSection === 'functions'
             }"
             :aria-expanded="functionsSectionExpanded"
             @click.stop="functionsOpen = !functionsOpen"
@@ -593,7 +593,8 @@ function handleFlatObjectContextMenu(payload: {
             type="button"
             class="w-full text-left text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-2 flex items-center justify-between hover:text-gray-500 dark:hover:text-gray-400"
             :class="{
-              'animate-pulse text-teal-600 dark:text-teal-300': highlightedSection === 'procedures'
+              'animate-pulse text-slate-600 dark:text-slate-300':
+                highlightedSection === 'procedures'
             }"
             :aria-expanded="proceduresSectionExpanded"
             @click.stop="proceduresOpen = !proceduresOpen"

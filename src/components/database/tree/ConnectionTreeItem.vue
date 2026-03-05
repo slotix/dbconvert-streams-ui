@@ -490,7 +490,7 @@ const connectionPort = computed(() => getConnectionPort(props.connection))
         'hover:shadow-sm hover:scale-[1.02] hover:-translate-y-0.5',
         'active:scale-[0.98]',
         // Highlight when connection is selected (but no database/table selected)
-        isSelected ? 'bg-teal-100/80 dark:bg-teal-900/40 shadow-sm' : ''
+        isSelected ? 'bg-slate-100/90 dark:bg-slate-800/85 shadow-sm' : ''
       ]"
       :title="connectionTooltip"
       @click="handleConnectionClick"
@@ -501,7 +501,7 @@ const connectionPort = computed(() => getConnectionPort(props.connection))
         :is="isExpanded ? ChevronDown : ChevronRight"
         :class="[
           caretClass,
-          'transition-transform duration-200 group-hover:text-teal-600 dark:group-hover:text-teal-400'
+          'transition-transform duration-200 group-hover:text-slate-600 dark:group-hover:text-slate-300'
         ]"
       />
       <DatabaseIcon
@@ -513,7 +513,7 @@ const connectionPort = computed(() => getConnectionPort(props.connection))
       <div class="flex-1 min-w-0 flex flex-col gap-0.5">
         <div class="flex items-center gap-1.5">
           <HighlightedText
-            class="font-semibold truncate text-slate-800 dark:text-gray-100 group-hover:text-teal-900 dark:group-hover:text-teal-300"
+            class="font-semibold truncate text-slate-800 dark:text-gray-100 group-hover:text-slate-900 dark:group-hover:text-white"
             :text="connection.name || connectionHost || 'Connection'"
             :query="searchQuery"
           />
@@ -527,7 +527,7 @@ const connectionPort = computed(() => getConnectionPort(props.connection))
         </div>
         <div
           v-if="connectionHost && connectionPort"
-          class="text-xs text-slate-500 dark:text-gray-400 truncate leading-tight group-hover:text-slate-600 dark:group-hover:text-gray-300"
+          class="text-xs text-slate-500 dark:text-gray-400 truncate leading-tight group-hover:text-slate-700 dark:group-hover:text-gray-300"
         >
           {{ connectionHost }}:{{ connectionPort }}
         </div>

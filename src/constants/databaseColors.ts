@@ -226,182 +226,237 @@ export function getDatabaseTextColor(type: string): string {
  * Applied only to root connection icons, not nested elements
  */
 export interface IconColorScheme {
-  /** Background color for icon container (light mode) */
+  /** Background color for icon container */
   iconBg: string
-  /** Background color for icon container (dark mode) */
-  iconBgDark?: string
+  /** Ring/border color for icon container */
+  iconRing: string
   /** Icon filter/tint color (optional) */
   iconTint?: string
 }
 
 /**
- * Muted icon-specific color mappings
- * Subtle, desaturated colors for visual grouping by source type
- * Used only on root connection icons in tree views
+ * Icon-specific color mappings for connection chips.
+ * Tuned for dark sidebars so each connection family reads distinctly at a glance.
  */
 export const DATABASE_ICON_COLORS: Record<string, IconColorScheme> = {
-  // PostgreSQL - Sky Blue
+  // PostgreSQL - Deeper slate blue
   [DATABASE_TYPES.POSTGRESQL]: {
-    iconBg: 'bg-sky-100 dark:bg-sky-500/10',
+    iconBg: 'bg-[#dce6f7] dark:bg-[#23385A]',
+    iconRing: 'ring-[#bed0ea] dark:ring-[#456A9E]/50',
     iconTint: 'brightness-100 saturate-90 dark:invert'
   },
   postgresql: {
-    iconBg: 'bg-sky-100 dark:bg-sky-500/10',
+    iconBg: 'bg-[#dce6f7] dark:bg-[#23385A]',
+    iconRing: 'ring-[#bed0ea] dark:ring-[#456A9E]/50',
     iconTint: 'brightness-100 saturate-90 dark:invert'
   },
   postgres: {
-    iconBg: 'bg-sky-100 dark:bg-sky-500/10',
+    iconBg: 'bg-[#dce6f7] dark:bg-[#23385A]',
+    iconRing: 'ring-[#bed0ea] dark:ring-[#456A9E]/50',
     iconTint: 'brightness-100 saturate-90 dark:invert'
   },
   pg: {
-    iconBg: 'bg-sky-100 dark:bg-sky-500/10',
+    iconBg: 'bg-[#dce6f7] dark:bg-[#23385A]',
+    iconRing: 'ring-[#bed0ea] dark:ring-[#456A9E]/50',
     iconTint: 'brightness-100 saturate-90 dark:invert'
   },
 
-  // MySQL - Muted Blue-Gray (balanced with PostgreSQL)
+  // MySQL - Teal blue so it stops blending into PostgreSQL
   [DATABASE_TYPES.MYSQL]: {
-    iconBg: 'bg-blue-100 dark:bg-blue-500/10',
+    iconBg: 'bg-[#d7e7eb] dark:bg-[#113B49]',
+    iconRing: 'ring-[#b7cfd5] dark:ring-[#1F5E74]/55',
     iconTint: 'brightness-100 saturate-90 dark:invert'
   },
   mysql: {
-    iconBg: 'bg-blue-100 dark:bg-blue-500/10',
+    iconBg: 'bg-[#d7e7eb] dark:bg-[#113B49]',
+    iconRing: 'ring-[#b7cfd5] dark:ring-[#1F5E74]/55',
     iconTint: 'brightness-100 saturate-90 dark:invert'
   },
 
-  // MariaDB - Muted Blue-Gray (similar to MySQL)
+  // MariaDB - Same family as MySQL
   [DATABASE_TYPES.MARIADB]: {
-    iconBg: 'bg-blue-100 dark:bg-blue-500/10',
+    iconBg: 'bg-[#d7e7eb] dark:bg-[#113B49]',
+    iconRing: 'ring-[#b7cfd5] dark:ring-[#1F5E74]/55',
     iconTint: 'brightness-100 saturate-90 dark:invert'
   },
   mariadb: {
-    iconBg: 'bg-blue-100 dark:bg-blue-500/10',
+    iconBg: 'bg-[#d7e7eb] dark:bg-[#113B49]',
+    iconRing: 'ring-[#b7cfd5] dark:ring-[#1F5E74]/55',
     iconTint: 'brightness-100 saturate-90 dark:invert'
   },
 
-  // MongoDB - Muted Green (more visible)
+  // MongoDB - Forest green
   [DATABASE_TYPES.MONGODB]: {
-    iconBg: 'bg-emerald-100 dark:bg-emerald-500/10',
+    iconBg: 'bg-[#d9ede1] dark:bg-[#123d2b]',
+    iconRing: 'ring-[#bdddc9] dark:ring-[#2c7a55]/50',
     iconTint: 'brightness-100 saturate-90 dark:invert'
   },
   mongo: {
-    iconBg: 'bg-emerald-100 dark:bg-emerald-500/10',
+    iconBg: 'bg-[#d9ede1] dark:bg-[#123d2b]',
+    iconRing: 'ring-[#bdddc9] dark:ring-[#2c7a55]/50',
     iconTint: 'brightness-100 saturate-90 dark:invert'
   },
   mongodb: {
-    iconBg: 'bg-emerald-100 dark:bg-emerald-500/10',
+    iconBg: 'bg-[#d9ede1] dark:bg-[#123d2b]',
+    iconRing: 'ring-[#bdddc9] dark:ring-[#2c7a55]/50',
     iconTint: 'brightness-100 saturate-90 dark:invert'
   },
 
-  // Redis - Muted Rose (more visible)
+  // Redis - Brick red
   [DATABASE_TYPES.REDIS]: {
-    iconBg: 'bg-rose-100 dark:bg-rose-500/10',
+    iconBg: 'bg-[#f3dfe1] dark:bg-[#522127]',
+    iconRing: 'ring-[#e7c2c6] dark:ring-[#a74254]/45',
     iconTint: 'brightness-100 saturate-90 dark:invert'
   },
   redis: {
-    iconBg: 'bg-rose-100 dark:bg-rose-500/10',
+    iconBg: 'bg-[#f3dfe1] dark:bg-[#522127]',
+    iconRing: 'ring-[#e7c2c6] dark:ring-[#a74254]/45',
     iconTint: 'brightness-100 saturate-90 dark:invert'
   },
 
-  // SQLite - Muted Gray
+  // SQLite - Neutral graphite
   [DATABASE_TYPES.SQLITE]: {
-    iconBg: 'bg-slate-100 dark:bg-slate-500/10',
+    iconBg: 'bg-[#e8eaed] dark:bg-[#34383f]',
+    iconRing: 'ring-[#cfd5dd] dark:ring-[#59606a]/55',
     iconTint: 'brightness-100 saturate-75 dark:invert'
   },
   sqlite: {
-    iconBg: 'bg-slate-100 dark:bg-slate-500/10',
+    iconBg: 'bg-[#e8eaed] dark:bg-[#34383f]',
+    iconRing: 'ring-[#cfd5dd] dark:ring-[#59606a]/55',
     iconTint: 'brightness-100 saturate-75 dark:invert'
   },
 
-  // SQL Server / MSSQL - Muted Blue (more visible)
+  // SQL Server / MSSQL - Steel blue
   [DATABASE_TYPES.SQL_SERVER]: {
-    iconBg: 'bg-sky-100 dark:bg-sky-500/10',
+    iconBg: 'bg-[#dde8f1] dark:bg-[#1d3f53]',
+    iconRing: 'ring-[#bfd2e1] dark:ring-[#3f7597]/50',
     iconTint: 'brightness-100 saturate-90 dark:invert'
   },
   [DATABASE_TYPES.MSSQL]: {
-    iconBg: 'bg-sky-100 dark:bg-sky-500/10',
+    iconBg: 'bg-[#dde8f1] dark:bg-[#1d3f53]',
+    iconRing: 'ring-[#bfd2e1] dark:ring-[#3f7597]/50',
     iconTint: 'brightness-100 saturate-90 dark:invert'
   },
   sqlserver: {
-    iconBg: 'bg-sky-100 dark:bg-sky-500/10',
+    iconBg: 'bg-[#dde8f1] dark:bg-[#1d3f53]',
+    iconRing: 'ring-[#bfd2e1] dark:ring-[#3f7597]/50',
     iconTint: 'brightness-100 saturate-90 dark:invert'
   },
   mssql: {
-    iconBg: 'bg-sky-100 dark:bg-sky-500/10',
+    iconBg: 'bg-[#dde8f1] dark:bg-[#1d3f53]',
+    iconRing: 'ring-[#bfd2e1] dark:ring-[#3f7597]/50',
     iconTint: 'brightness-100 saturate-90 dark:invert'
   },
 
-  // Oracle - Muted Amber (more visible)
+  // Oracle - Burnt amber
   [DATABASE_TYPES.ORACLE]: {
-    iconBg: 'bg-amber-100 dark:bg-gray-800',
+    iconBg: 'bg-[#f2e3ce] dark:bg-[#50391d]',
+    iconRing: 'ring-[#e2caab] dark:ring-[#9c6d29]/50',
     iconTint: 'brightness-100 saturate-90 dark:invert'
   },
   oracle: {
-    iconBg: 'bg-amber-100 dark:bg-gray-800',
+    iconBg: 'bg-[#f2e3ce] dark:bg-[#50391d]',
+    iconRing: 'ring-[#e2caab] dark:ring-[#9c6d29]/50',
     iconTint: 'brightness-100 saturate-90 dark:invert'
   },
 
-  // Cassandra - Muted Purple (more visible)
+  // Cassandra - Plum
   [DATABASE_TYPES.CASSANDRA]: {
-    iconBg: 'bg-purple-100 dark:bg-purple-500/10',
+    iconBg: 'bg-[#ece2f4] dark:bg-[#47315f]',
+    iconRing: 'ring-[#d9c6e8] dark:ring-[#8d63b8]/45',
     iconTint: 'brightness-100 saturate-90 dark:invert'
   },
   cassandra: {
-    iconBg: 'bg-purple-100 dark:bg-purple-500/10',
+    iconBg: 'bg-[#ece2f4] dark:bg-[#47315f]',
+    iconRing: 'ring-[#d9c6e8] dark:ring-[#8d63b8]/45',
     iconTint: 'brightness-100 saturate-90 dark:invert'
   },
 
-  // Elasticsearch - Muted Yellow (more visible)
+  // Elasticsearch - Mustard
   [DATABASE_TYPES.ELASTICSEARCH]: {
-    iconBg: 'bg-yellow-100 dark:bg-yellow-500/10',
+    iconBg: 'bg-[#f5edc8] dark:bg-[#4e4516]',
+    iconRing: 'ring-[#e8dc98] dark:ring-[#9b8a26]/50',
     iconTint: 'brightness-100 saturate-90 dark:invert'
   },
   elasticsearch: {
-    iconBg: 'bg-yellow-100 dark:bg-yellow-500/10',
+    iconBg: 'bg-[#f5edc8] dark:bg-[#4e4516]',
+    iconRing: 'ring-[#e8dc98] dark:ring-[#9b8a26]/50',
     iconTint: 'brightness-100 saturate-90 dark:invert'
   },
 
-  // ClickHouse - Muted Yellow
+  // ClickHouse - Warm gold
   [DATABASE_TYPES.CLICKHOUSE]: {
-    iconBg: 'bg-yellow-100 dark:bg-yellow-500/10',
+    iconBg: 'bg-[#f4e8c4] dark:bg-[#544116]',
+    iconRing: 'ring-[#e4d39d] dark:ring-[#a78424]/50',
     iconTint: 'brightness-100 saturate-90 dark:invert'
   },
   clickhouse: {
-    iconBg: 'bg-yellow-100 dark:bg-yellow-500/10',
+    iconBg: 'bg-[#f4e8c4] dark:bg-[#544116]',
+    iconRing: 'ring-[#e4d39d] dark:ring-[#a78424]/50',
     iconTint: 'brightness-100 saturate-90 dark:invert'
   },
 
-  // Snowflake - Muted Cyan (more visible)
+  // Snowflake - Cool cyan
   [DATABASE_TYPES.SNOWFLAKE]: {
-    iconBg: 'bg-blue-100 dark:bg-cyan-500/10',
+    iconBg: 'bg-[#d9edf3] dark:bg-[#0F4656]',
+    iconRing: 'ring-[#b9d9e3] dark:ring-[#19839F]/50',
     iconTint: 'brightness-100 saturate-90 dark:invert'
   },
   snowflake: {
-    iconBg: 'bg-blue-100 dark:bg-cyan-500/10',
+    iconBg: 'bg-[#d9edf3] dark:bg-[#0F4656]',
+    iconRing: 'ring-[#b9d9e3] dark:ring-[#19839F]/50',
     iconTint: 'brightness-100 saturate-90 dark:invert'
   },
 
-  // File Types - Neutral Gray
+  // File Types - Neutral graphite
   [DATABASE_TYPES.FILES]: {
-    iconBg: 'bg-gray-50 dark:bg-gray-500/10',
+    iconBg: 'bg-[#ececef] dark:bg-[#2B2D31]',
+    iconRing: 'ring-[#d5d7db] dark:ring-[#4B5058]/55',
     iconTint: 'brightness-95 saturate-50 dark:invert'
   },
   file: {
-    iconBg: 'bg-gray-50 dark:bg-gray-500/10',
+    iconBg: 'bg-[#ececef] dark:bg-[#2B2D31]',
+    iconRing: 'ring-[#d5d7db] dark:ring-[#4B5058]/55',
     iconTint: 'brightness-95 saturate-50 dark:invert'
   },
   files: {
-    iconBg: 'bg-gray-50 dark:bg-gray-500/10',
+    iconBg: 'bg-[#ececef] dark:bg-[#2B2D31]',
+    iconRing: 'ring-[#d5d7db] dark:ring-[#4B5058]/55',
     iconTint: 'brightness-95 saturate-50 dark:invert'
   },
 
-  // S3 / Cloud Storage - Teal (cloud/sky theme)
+  // S3 / Object storage - Green-leaning teal
   [DATABASE_TYPES.S3]: {
-    iconBg: 'bg-teal-50 dark:bg-teal-900/30',
+    iconBg: 'bg-[#d9ece6] dark:bg-[#12473D]',
+    iconRing: 'ring-[#bcd9d1] dark:ring-[#1E6B5A]/55',
     iconTint: 'dark:brightness-0 dark:invert dark:opacity-80'
   },
   s3: {
-    iconBg: 'bg-teal-50 dark:bg-teal-900/30',
+    iconBg: 'bg-[#d9ece6] dark:bg-[#12473D]',
+    iconRing: 'ring-[#bcd9d1] dark:ring-[#1E6B5A]/55',
     iconTint: 'dark:brightness-0 dark:invert dark:opacity-80'
+  },
+
+  // Other object stores - stay in the storage family with distinct hues
+  gcs: {
+    iconBg: 'bg-[#dce7f6] dark:bg-[#1d365d]',
+    iconRing: 'ring-[#c2d3eb] dark:ring-[#4b6ea7]/50',
+    iconTint: 'brightness-100 saturate-90 dark:invert'
+  },
+  azure: {
+    iconBg: 'bg-[#deebf4] dark:bg-[#153d57]',
+    iconRing: 'ring-[#c6d9e7] dark:ring-[#2f6e97]/50',
+    iconTint: 'brightness-100 saturate-90 dark:invert'
+  },
+  duckdb: {
+    iconBg: 'bg-[#f2e4c8] dark:bg-[#4B3A14]',
+    iconRing: 'ring-[#e3cea4] dark:ring-[#7B5F1C]/55',
+    iconTint: 'brightness-100 saturate-90 dark:invert'
+  },
+  db2: {
+    iconBg: 'bg-[#dfe6f4] dark:bg-[#2d3d61]',
+    iconRing: 'ring-[#c8d2e8] dark:ring-[#5b76ab]/50',
+    iconTint: 'brightness-100 saturate-90 dark:invert'
   }
 }
 
@@ -409,7 +464,8 @@ export const DATABASE_ICON_COLORS: Record<string, IconColorScheme> = {
  * Default icon color scheme for unknown types
  */
 export const DEFAULT_ICON_COLOR: IconColorScheme = {
-  iconBg: 'bg-gray-50 dark:bg-gray-500/10',
+  iconBg: 'bg-[#ececef] dark:bg-[#2B2D31]',
+  iconRing: 'ring-[#d5d7db] dark:ring-[#4B5058]/55',
   iconTint: 'brightness-95 saturate-50 dark:invert'
 }
 
@@ -426,6 +482,13 @@ export function getDatabaseIconColors(type: string): IconColorScheme {
  */
 export function getDatabaseIconBgColor(type: string): string {
   return getDatabaseIconColors(type).iconBg
+}
+
+/**
+ * Get icon ring color class for a database type
+ */
+export function getDatabaseIconRingColor(type: string): string {
+  return getDatabaseIconColors(type).iconRing
 }
 
 /**
