@@ -43,32 +43,21 @@ describe('PaneBreadcrumb file console context switching', () => {
     activeTab = null
   })
 
-  it('hides breadcrumb for file-console tab retargeted to another source context', () => {
-    activeTab = {
-      id: 'file-console-1',
-      tabType: 'file-console',
-      connectionId: 'files-1',
-      name: 'mysql-localhost-root',
-      basePath: '/home/dm3/.local/share/dbconvert-streams/exports',
-      pinned: true
+  it.each([
+    {
+      testName: 'retargeted to another source context',
+      tabName: 'mysql-localhost-root'
+    },
+    {
+      testName: 'on its origin context',
+      tabName: 'Data Explorer Exports'
     }
-
-    const wrapper = shallowMount(PaneBreadcrumb, {
-      props: {
-        paneId: 'left'
-      }
-    })
-
-    const breadcrumb = wrapper.findComponent({ name: 'ExplorerBreadcrumb' })
-    expect(breadcrumb.exists()).toBe(false)
-  })
-
-  it('hides breadcrumb for file-console on its origin context', () => {
+  ])('hides breadcrumb for file-console tab $testName', ({ tabName }) => {
     activeTab = {
       id: 'file-console-1',
       tabType: 'file-console',
       connectionId: 'files-1',
-      name: 'Data Explorer Exports',
+      name: tabName,
       basePath: '/home/dm3/.local/share/dbconvert-streams/exports',
       pinned: true
     }

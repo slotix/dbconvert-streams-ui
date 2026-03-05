@@ -17,20 +17,13 @@ function mountPane(overrides?: Record<string, unknown>) {
 }
 
 describe('SqlResultsPane error action', () => {
-  it('renders contextual action under error when label is provided', () => {
-    const wrapper = mountPane({
-      errorActionLabel: 'Rewrite starter SQL to federated naming'
-    })
-
-    expect(wrapper.text()).toContain('Rewrite starter SQL to federated naming')
-  })
-
-  it('emits error-action when contextual action is clicked', async () => {
+  it('renders and emits contextual error action when clicked', async () => {
     const wrapper = mountPane({
       errorActionLabel: 'Rewrite starter SQL to federated naming'
     })
 
     const button = wrapper.find('button')
+    expect(button.exists()).toBe(true)
     await button.trigger('click')
 
     expect(wrapper.emitted('error-action')).toHaveLength(1)

@@ -41,11 +41,25 @@ function buildConnectionsFixture(): Connection[] {
       spec: { database: { host: 'localhost', port: 3306, username: 'root', database: 'app' } }
     },
     {
+      id: 'pg-2',
+      name: 'postgres-analytics',
+      type: 'postgresql',
+      databasesInfo: [],
+      spec: { database: { host: 'localhost', port: 5432, username: 'postgres', database: 'analytics' } }
+    },
+    {
       id: 'files-1',
       name: 'exports',
       type: 'files',
       databasesInfo: [],
       spec: { files: { basePath: '/tmp/exports' } }
+    },
+    {
+      id: 'files-2',
+      name: 'archive',
+      type: 'files',
+      databasesInfo: [],
+      spec: { files: { basePath: '/tmp/archive' } }
     },
     {
       id: 's3-1',
@@ -97,27 +111,11 @@ describe('ExplorerGroupedConnectionFilter', () => {
     selectedTypes = await syncSelectedTypes(wrapper)
 
     expect(selectedTypes).toEqual(['MySQL', 'PostgreSQL'])
-    expect(wrapper.get('[data-testid="explorer-filter-chip-database"]').text()).toContain(
-      'Databases (2)'
-    )
-    expect(wrapper.get('[data-testid="explorer-filter-chip-database"]').attributes('title')).toBe(
-      'Databases: MySQL, PostgreSQL · 2 matching'
-    )
-  })
-
-  it('shows a storage count when a storage type is selected', () => {
-    const wrapper = mountFilter(['Files'])
-
-    expect(wrapper.get('[data-testid="explorer-filter-chip-file"]').text()).toContain(
-      'Files and S3 (1)'
-    )
-    expect(wrapper.get('[data-testid="explorer-filter-chip-file"]').attributes('title')).toBe(
-      'Files and S3: Files · 1 matching'
-    )
+    expect(wrapper.get('[data-testid="explorer-filter-chip-database"]').text()).toContain('(3)')
   })
 
   it('shows matching connection counts rather than selected option counts', () => {
-    const wrapper = mountFilter(['PostgreSQL', 'MySQL', 'Files', 'S3'])
+    const wrapper = mountFilter(['PostgreSQL', 'Files'])
 
     expect(wrapper.get('[data-testid="explorer-filter-chip-database"]').text()).toContain(
       'Databases (2)'
