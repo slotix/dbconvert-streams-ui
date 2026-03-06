@@ -1,5 +1,5 @@
 <template>
-  <div class="mb-4 mt-8 mr-4">
+  <div class="space-y-2">
     <FormInput
       v-model="connectionString"
       label="Connection String (Optional)"

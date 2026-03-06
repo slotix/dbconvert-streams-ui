@@ -325,6 +325,44 @@ const isEdit = computed(() => !!connection.value?.id)
 // Flag to skip preset application during edit mode load
 const isLoadingEditData = ref(false)
 
+function hydrateFromS3Spec() {
+  const s3Spec = connection.value?.spec?.s3
+  if (!s3Spec) return
+
+  region.value = s3Spec.region || 'us-east-1'
+  endpoint.value = s3Spec.endpoint || ''
+
+  if (s3Spec.endpoint?.includes('localhost') || s3Spec.endpoint?.includes('127.0.0.1')) {
+    selectedProvider.value = 'MinIO'
+  } else if (s3Spec.endpoint?.includes('digitaloceanspaces')) {
+    selectedProvider.value = 'DigitalOcean Spaces'
+  } else if (s3Spec.endpoint?.includes('storage.googleapis.com')) {
+    selectedProvider.value = 'Google Cloud Storage'
+  } else if (s3Spec.endpoint?.includes('backblazeb2')) {
+    selectedProvider.value = 'Backblaze B2'
+  } else if (s3Spec.endpoint?.includes('r2.cloudflarestorage')) {
+    selectedProvider.value = 'Cloudflare R2'
+  } else if (!s3Spec.endpoint) {
+    selectedProvider.value = 'AWS S3'
+  } else {
+    selectedProvider.value = 'Custom'
+  }
+
+  bucket.value = s3Spec.scope?.bucket || ''
+  prefix.value = s3Spec.scope?.prefix || ''
+  credentialSource.value = s3Spec.credentials ? 'static' : 'aws'
+
+  if (s3Spec.credentials) {
+    accessKeyId.value = s3Spec.credentials.accessKey || connection.value?.username || ''
+    secretAccessKey.value = s3Spec.credentials.secretKey || connection.value?.password || ''
+    sessionToken.value = s3Spec.credentials.sessionToken || ''
+  } else {
+    accessKeyId.value = ''
+    secretAccessKey.value = ''
+    sessionToken.value = ''
+  }
+}
+
 // Apply provider preset when selected (skip during edit mode load)
 watch(selectedProvider, (provider) => {
   if (isLoadingEditData.value) return
@@ -379,47 +417,9 @@ const applyConnectionDefaults = (_connectionType: string) => {
     // S3 connections should have type="files" with spec.s3
     connection.value.type = 'files'
 
-    // Load existing S3 config if in edit mode
-    if (isEdit.value) {
+    if (connection.value.spec?.s3) {
       isLoadingEditData.value = true
-
-      // Load from spec.s3 (new format)
-      const s3Spec = connection.value.spec?.s3
-      if (s3Spec) {
-        region.value = s3Spec.region || 'us-east-1'
-        endpoint.value = s3Spec.endpoint || ''
-
-        // Detect provider preset from endpoint
-        if (s3Spec.endpoint?.includes('localhost') || s3Spec.endpoint?.includes('127.0.0.1')) {
-          selectedProvider.value = 'MinIO'
-        } else if (s3Spec.endpoint?.includes('digitaloceanspaces')) {
-          selectedProvider.value = 'DigitalOcean Spaces'
-        } else if (s3Spec.endpoint?.includes('storage.googleapis.com')) {
-          selectedProvider.value = 'Google Cloud Storage'
-        } else if (s3Spec.endpoint?.includes('backblazeb2')) {
-          selectedProvider.value = 'Backblaze B2'
-        } else if (s3Spec.endpoint?.includes('r2.cloudflarestorage')) {
-          selectedProvider.value = 'Cloudflare R2'
-        } else if (!s3Spec.endpoint) {
-          selectedProvider.value = 'AWS S3'
-        } else {
-          selectedProvider.value = 'Custom'
-        }
-
-        // Load scope (bucket/prefix)
-        bucket.value = s3Spec.scope?.bucket || ''
-        prefix.value = s3Spec.scope?.prefix || ''
-
-        // Determine credential source
-        credentialSource.value = s3Spec.credentials ? 'static' : 'aws'
-
-        // Load credentials
-        if (s3Spec.credentials) {
-          accessKeyId.value = s3Spec.credentials.accessKey || connection.value.username || ''
-          secretAccessKey.value = s3Spec.credentials.secretKey || connection.value.password || ''
-          sessionToken.value = s3Spec.credentials.sessionToken || ''
-        }
-      }
+      hydrateFromS3Spec()
 
       // Reset flag after loading (use nextTick to ensure watchers have processed)
       nextTick(() => {

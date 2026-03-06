@@ -206,7 +206,7 @@ const applyConnectionDefaults = (connectionType: string) => {
 
     // Only clear database if it's not already set (preserve parsed values from connection string)
     if (!connection.value.spec.database.database) {
-      connection.value.spec.database.database = '' // Empty for new wizard flow
+      connection.value.spec.database.database = ''
     }
 
     // Only set host to localhost if it's empty (don't override existing values)

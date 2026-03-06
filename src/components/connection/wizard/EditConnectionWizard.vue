@@ -4,7 +4,6 @@
     <div class="space-y-6">
       <ConnectionDetailsStep
         :connectionType="connection?.type"
-        :hideTypeDisplay="true"
         @update:can-proceed="updateCanProceed"
       />
 

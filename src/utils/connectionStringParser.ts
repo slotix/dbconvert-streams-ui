@@ -48,7 +48,8 @@ export function parseConnectionString(connectionString: string): ParsedConnectio
       oracle: 'Oracle',
       sqlserver: 'SQLServer',
       db2: 'DB2',
-      file: 'files'
+      file: 'files',
+      s3: 's3'
     }
 
     // Handle file:// protocol specially
@@ -61,6 +62,19 @@ export function parseConnectionString(connectionString: string): ParsedConnectio
         password: '',
         database: '',
         path: url.pathname,
+        params
+      }
+    }
+
+    if (type === 's3') {
+      return {
+        type: 's3',
+        host: url.hostname,
+        port: 443,
+        username: decodeURIComponent(url.username),
+        password: decodeURIComponent(url.password),
+        database: url.hostname,
+        path: url.pathname.replace(/^\/+/, ''),
         params
       }
     }

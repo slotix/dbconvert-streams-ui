@@ -1,263 +1,132 @@
 <template>
-  <div class="space-y-6">
-    <!-- Databases Section -->
-    <div>
-      <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 text-center">
-        Databases
-      </h3>
-      <div class="flex flex-wrap justify-center gap-4">
-        <button
-          v-for="dbType in databaseTypes"
-          :key="dbType.id"
-          :disabled="isComingSoon(dbType)"
-          :aria-selected="selectedDBType?.id === dbType.id"
-          :class="[
-            isComingSoon(dbType)
-              ? 'opacity-50 cursor-not-allowed border-gray-300 dark:border-gray-700'
-              : selectedDBType?.id === dbType.id
-                ? 'border-teal-500 dark:border-teal-400 bg-teal-50 dark:bg-teal-900/20 shadow-sm dark:shadow-black/20'
-                : 'border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800',
-            'relative p-4 border rounded-xl flex flex-col items-center text-center bg-white dark:bg-gray-850 focus:outline-none focus-visible:outline-none focus-visible:border-teal-500 dark:focus-visible:border-teal-400 focus-visible:bg-teal-50/60 dark:focus-visible:bg-teal-900/20 transition-all duration-200'
-          ]"
-          @click="!isComingSoon(dbType) && selectDBType(dbType)"
-          @dblclick.prevent="!isComingSoon(dbType) && selectDBTypeAndProceed(dbType)"
-        >
-          <img
-            :src="dbType.logo"
-            :alt="dbType.type + ' logo'"
-            class="h-12 w-12 object-contain mb-3 dark:brightness-0 dark:invert dark:opacity-70"
-          />
-          <span class="text-sm font-medium text-gray-900 dark:text-gray-100">{{
-            dbType.type
-          }}</span>
-
-          <!-- Coming Soon badge -->
-          <span
-            v-if="isComingSoon(dbType)"
-            class="mt-1 inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300"
-          >
-            Coming Soon
-          </span>
-
-          <!-- Selection indicator -->
-          <div
-            v-if="selectedDBType?.id === dbType.id"
-            class="absolute top-2 right-2 w-5 h-5 bg-teal-600 dark:bg-teal-400 rounded-full flex items-center justify-center shadow-sm"
-          >
-            <Check class="w-3 h-3 text-white dark:text-gray-900" />
-          </div>
-        </button>
-      </div>
+  <div class="flex h-full min-h-0 flex-col">
+    <div class="pb-4">
+      <h2 class="text-sm font-semibold text-gray-900 dark:text-gray-100">Connection Type</h2>
+      <p class="mt-1 text-xs leading-5 text-gray-500 dark:text-gray-400">
+        Pick the source you want to configure.
+      </p>
     </div>
 
-    <!-- Divider -->
-    <div class="relative">
-      <div class="absolute inset-0 flex items-center">
-        <div class="w-full border-t border-gray-300 dark:border-gray-700" />
-      </div>
-      <div class="relative flex justify-center text-sm">
-        <span class="px-2 bg-white dark:bg-gray-900 text-gray-500">or</span>
-      </div>
-    </div>
-
-    <!-- Files Section -->
-    <div>
-      <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6 text-center">
-        Files &amp; Object Storage
-      </h3>
-
-      <!-- File Connection Button and Info Side by Side -->
-      <div class="flex flex-col lg:flex-row justify-center items-start gap-6 max-w-4xl mx-auto">
-        <!-- File Connection Buttons -->
-        <div class="flex flex-wrap justify-center gap-4 flex-1">
-          <button
-            v-for="dbType in fileTypes"
-            :key="dbType.id"
-            :aria-selected="selectedDBType?.id === dbType.id"
-            :class="[
-              selectedDBType?.id === dbType.id
-                ? 'border-teal-500 dark:border-teal-400 bg-teal-50 dark:bg-teal-900/20 shadow-sm dark:shadow-black/20'
-                : 'border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800',
-              'relative p-6 border rounded-xl flex flex-col items-center text-center bg-white dark:bg-gray-850 focus:outline-none focus-visible:outline-none focus-visible:border-teal-500 dark:focus-visible:border-teal-400 focus-visible:bg-teal-50/60 dark:focus-visible:bg-teal-900/20 transition-all duration-200 min-w-[160px]'
-            ]"
-            @click="selectDBType(dbType)"
-            @dblclick.prevent="selectDBTypeAndProceed(dbType)"
-          >
-            <img
-              :src="dbType.logo"
-              :alt="dbType.type + ' logo'"
-              class="h-12 w-12 object-contain mb-3 dark:brightness-0 dark:invert dark:opacity-70"
-            />
-            <span class="text-base font-medium text-gray-900 dark:text-gray-100">{{
-              dbType.type
-            }}</span>
-            <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              {{ dbType.description || 'File-based source' }}
-            </div>
-
-            <!-- Selection indicator -->
-            <div
-              v-if="selectedDBType?.id === dbType.id"
-              class="absolute top-3 right-3 w-5 h-5 bg-teal-600 dark:bg-teal-400 rounded-full flex items-center justify-center shadow-sm"
+    <div class="flex-1 overflow-y-auto">
+      <div class="space-y-5">
+        <section v-for="group in groupedTypes" :key="group.label">
+          <div class="mb-2 px-2">
+            <h3
+              class="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400"
             >
-              <Check class="w-3 h-3 text-white dark:text-gray-900" />
-            </div>
-          </button>
-        </div>
-
-        <!-- Supported Formats Info -->
-        <div
-          class="w-full lg:w-auto max-w-xs bg-linear-to-br from-slate-50 to-gray-50 dark:from-gray-800 dark:to-gray-850 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm dark:shadow-gray-900/30"
-        >
-          <h4 class="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
-            Supported Formats
-          </h4>
-
-          <!-- Format badges -->
-          <div class="flex flex-wrap gap-2 mb-3">
-            <span
-              class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300 shadow-sm"
-            >
-              CSV
-            </span>
-            <span
-              class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-100 dark:bg-teal-900 text-teal-800 dark:text-teal-300 shadow-sm"
-            >
-              JSON
-            </span>
-            <span
-              class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-cyan-100 dark:bg-cyan-900 text-cyan-800 dark:text-cyan-300 shadow-sm"
-            >
-              JSONL
-            </span>
-            <span
-              class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300 shadow-sm"
-            >
-              Parquet
-            </span>
-
-            <span
-              class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-300 shadow-sm"
-            >
-              .zst
-            </span>
-            <span
-              class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300 shadow-sm"
-            >
-              .gz
-            </span>
+              {{ group.label }}
+            </h3>
           </div>
 
-          <!-- Additional info -->
-          <div class="text-xs text-gray-700 dark:text-gray-300 space-y-1">
-            <div>✓ Compressed files (.zst, .gz) supported</div>
-            <div>✓ Mixed formats in same folder allowed</div>
+          <div class="space-y-2">
+            <button
+              v-for="dbType in group.items"
+              :key="dbType.id"
+              type="button"
+              :disabled="isComingSoon(dbType)"
+              :aria-pressed="isSelected(dbType)"
+              :class="[
+                'flex w-full items-center gap-3 rounded-xl border px-3 py-3 text-left transition-colors',
+                isComingSoon(dbType)
+                  ? 'cursor-not-allowed border-gray-200/80 bg-gray-50/60 opacity-70 dark:border-gray-800 dark:bg-gray-900/50'
+                  : isSelected(dbType)
+                    ? 'border-gray-300 bg-gray-100/80 dark:border-gray-700 dark:bg-gray-800/90'
+                    : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:hover:border-gray-700 dark:hover:bg-gray-850'
+              ]"
+              @click="selectType(dbType)"
+            >
+              <DatabaseIcon
+                :dbType="dbType.type"
+                :logoSrc="dbType.logo"
+                size="BASE"
+                containerClass="rounded-lg"
+              />
+
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-2">
+                  <span class="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
+                    {{ dbType.type }}
+                  </span>
+                  <span
+                    v-if="isComingSoon(dbType)"
+                    class="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                  >
+                    Coming soon
+                  </span>
+                </div>
+                <p class="mt-1 text-xs leading-5 text-gray-500 dark:text-gray-400">
+                  {{ getTypeDescription(dbType) }}
+                </p>
+              </div>
+            </button>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Divider -->
-    <div class="relative">
-      <div class="absolute inset-0 flex items-center">
-        <div class="w-full border-t border-gray-300 dark:border-gray-700" />
-      </div>
-      <div class="relative flex justify-center text-sm">
-        <span class="px-2 bg-white dark:bg-gray-900 text-gray-500">or</span>
-      </div>
-    </div>
-
-    <!-- Connection String Section -->
-    <div>
-      <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 text-center">
-        Connection String
-      </h3>
-      <div class="max-w-2xl mx-auto">
-        <ConnectionStringInput
-          :connectionType="selectedDBType?.type"
-          @update:connection-params="updateConnectionParams"
-        />
+        </section>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { Check } from 'lucide-vue-next'
-import ConnectionStringInput from '../../ConnectionStringInput.vue'
+import { computed } from 'vue'
+import DatabaseIcon from '@/components/base/DatabaseIcon.vue'
 import { useConnectionsStore } from '@/stores/connections'
-import { type DbType, type Connection, getConnectionCategory } from '@/types/connections'
+import { type DbType, getConnectionCategory } from '@/types/connections'
 
 interface Props {
-  initialSelectedType?: string
+  selectedType?: string | null
 }
 
-const props = defineProps<Props>()
-
-const connectionsStore = useConnectionsStore()
-
-const selectedDBType = ref<DbType | null>(null)
-
-// Get database types from store, separated by category
-const databaseTypes = computed(() =>
-  connectionsStore.dbTypes.filter((dbType) => getConnectionCategory(dbType) === 'database')
-)
-
-const fileTypes = computed(() =>
-  connectionsStore.dbTypes.filter((dbType) => getConnectionCategory(dbType) === 'file')
-)
+const props = withDefaults(defineProps<Props>(), {
+  selectedType: null
+})
 
 const emit = defineEmits<{
-  'update:selected-db-type': [dbType: DbType | null]
-  'update:can-proceed': [canProceed: boolean]
-  proceed: []
+  'update:selected-db-type': [dbType: DbType]
 }>()
 
+const connectionsStore = useConnectionsStore()
 const comingSoonTypes = new Set(['Snowflake'])
+
+const groupedTypes = computed(() => {
+  const groups = [
+    {
+      label: 'Databases',
+      items: connectionsStore.dbTypes.filter((dbType) => getConnectionCategory(dbType) === 'database')
+    },
+    {
+      label: 'Files and Storage',
+      items: connectionsStore.dbTypes.filter((dbType) => getConnectionCategory(dbType) === 'file')
+    }
+  ]
+
+  return groups.filter((group) => group.items.length > 0)
+})
 
 function isComingSoon(dbType: DbType): boolean {
   return comingSoonTypes.has(dbType.type)
 }
 
-function selectDBType(dbType: DbType) {
-  selectedDBType.value = dbType
-  emit('update:selected-db-type', dbType)
-  updateCanProceed()
+function isSelected(dbType: DbType): boolean {
+  return props.selectedType?.toLowerCase() === dbType.type.toLowerCase()
 }
 
-function selectDBTypeAndProceed(dbType: DbType) {
-  selectedDBType.value = dbType
-  emit('update:selected-db-type', dbType)
-  updateCanProceed()
-  emit('proceed')
-}
-
-function updateCanProceed() {
-  const canProceed = !!selectedDBType.value
-  emit('update:can-proceed', canProceed)
-}
-
-function updateConnectionParams(params: Connection) {
-  const dbType = connectionsStore.dbTypes.find((dbType) => dbType.type === params.type)
-  if (dbType) {
-    selectedDBType.value = dbType
-    emit('update:selected-db-type', dbType)
-    connectionsStore.ensureSpecForType(dbType.type)
-    connectionsStore.updateConnectionParams(params)
-    updateCanProceed()
+function selectType(dbType: DbType) {
+  if (isComingSoon(dbType)) {
+    return
   }
+
+  emit('update:selected-db-type', dbType)
 }
 
-// Initialize with the initial selected type if provided
-onMounted(() => {
-  if (props.initialSelectedType) {
-    const dbType = connectionsStore.dbTypes.find((db) => db.type === props.initialSelectedType)
-    if (dbType) {
-      selectedDBType.value = dbType
-      emit('update:selected-db-type', dbType)
-    }
+function getTypeDescription(dbType: DbType): string {
+  const descriptions: Record<string, string> = {
+    PostgreSQL: 'Configure host, credentials, and SSL options.',
+    MySQL: 'Configure host, credentials, and default database settings.',
+    Snowflake: 'Warehouse-style setup is planned for a later release.',
+    Files: 'Point the app at a local folder with supported data files.',
+    S3: 'Connect to AWS S3 or another S3-compatible object store.'
   }
-  updateCanProceed()
-})
+
+  return descriptions[dbType.type] || dbType.description || 'Set up a new connection.'
+}
 </script>
