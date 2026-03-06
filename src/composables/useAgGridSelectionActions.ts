@@ -1,4 +1,4 @@
-import { computed, ref, type ComputedRef, type Ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, type ComputedRef, type Ref } from 'vue'
 import type { GridApi } from 'ag-grid-community'
 import { formatRowsForClipboard, type CopyFormat } from '@/utils/agGridClipboard'
 import { exportData, type ExportFormat } from '@/composables/useDataExport'
@@ -160,6 +160,38 @@ export function useAgGridSelectionActions(options: UseAgGridSelectionActionsOpti
       api.redrawRows()
     }
   }
+
+  function isEditableTarget(target: EventTarget | null): boolean {
+    if (!(target instanceof HTMLElement)) return false
+    if (target.isContentEditable) return true
+    const tagName = target.tagName
+    return (
+      tagName === 'INPUT' ||
+      tagName === 'TEXTAREA' ||
+      tagName === 'SELECT' ||
+      target.closest('[contenteditable="true"]') !== null
+    )
+  }
+
+  function handleDeleteShortcut(event: KeyboardEvent) {
+    if (event.key !== 'Delete') return
+    if (event.defaultPrevented) return
+    if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return
+    if (!options.isTableEditable.value) return
+    if (options.selectedRowCount.value === 0) return
+    if (isEditableTarget(event.target)) return
+
+    event.preventDefault()
+    deleteSelectedRows()
+  }
+
+  onMounted(() => {
+    document.addEventListener('keydown', handleDeleteShortcut)
+  })
+
+  onBeforeUnmount(() => {
+    document.removeEventListener('keydown', handleDeleteShortcut)
+  })
 
   function getVisibleData(): { columns: string[]; rows: Record<string, unknown>[] } {
     const api = options.gridApi.value

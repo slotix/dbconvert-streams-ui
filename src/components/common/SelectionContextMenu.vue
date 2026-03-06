@@ -23,6 +23,7 @@ const emit = defineEmits<{
   (e: 'select-all'): void
   (e: 'deselect-all'): void
   (e: 'copy', format: CopyFormat): void
+  (e: 'add-row'): void
   (e: 'delete'): void
   (e: 'revert-cell'): void
 }>()
@@ -88,6 +89,11 @@ function copyAndClose(format: CopyFormat) {
 
 function deleteAndClose() {
   emit('delete')
+  emit('close')
+}
+
+function addRowAndClose() {
+  emit('add-row')
   emit('close')
 }
 
@@ -158,6 +164,13 @@ function revertCellAndClose() {
 
       <template v-if="isEditable">
         <div class="my-1 border-t border-gray-200 dark:border-gray-700"></div>
+        <button
+          type="button"
+          class="w-full text-left px-3 py-2 text-sm text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-colors"
+          @click="addRowAndClose"
+        >
+          Add row
+        </button>
         <button
           type="button"
           class="w-full text-left px-3 py-2 text-sm text-red-600 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"

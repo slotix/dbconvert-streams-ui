@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, computed, onMounted } from 'vue'
 import { AgGridVue } from 'ag-grid-vue3'
-import { ClipboardList, Plus, Filter } from 'lucide-vue-next'
+import { PanelLeftOpen, Plus, Trash2, Filter } from 'lucide-vue-next'
 import { type FileSystemEntry } from '@/api/fileSystem'
 import { type FileMetadata } from '@/types/files'
 import type { SQLColumnMeta } from '@/types/metadata'
@@ -598,6 +598,25 @@ watch(
 // Reference to filter panel
 const filterPanelRef = ref<InstanceType<typeof DataFilterPanel> | null>(null)
 
+function resolveMaybeRefBoolean(value: boolean | { value?: boolean } | undefined): boolean {
+  if (typeof value === 'boolean') return value
+  if (value && typeof value === 'object' && 'value' in value) {
+    return Boolean(value.value)
+  }
+  return false
+}
+
+function resolveMaybeRefString(
+  value: string | { value?: string } | undefined,
+  fallback: string
+): string {
+  if (typeof value === 'string') return value || fallback
+  if (value && typeof value === 'object' && 'value' in value && typeof value.value === 'string') {
+    return value.value || fallback
+  }
+  return fallback
+}
+
 const hasAnyFilterActivity = computed(() => {
   const panel = filterPanelRef.value as
     | (InstanceType<typeof DataFilterPanel> & {
@@ -607,14 +626,8 @@ const hasAnyFilterActivity = computed(() => {
     | null
   if (!panel) return false
 
-  const activeFilters =
-    typeof panel.hasActiveFilters === 'boolean'
-      ? panel.hasActiveFilters
-      : Boolean(panel.hasActiveFilters?.value)
-  const activeSorts =
-    typeof panel.hasActiveSorts === 'boolean'
-      ? panel.hasActiveSorts
-      : Boolean(panel.hasActiveSorts?.value)
+  const activeFilters = resolveMaybeRefBoolean(panel.hasActiveFilters)
+  const activeSorts = resolveMaybeRefBoolean(panel.hasActiveSorts)
 
   return activeFilters || activeSorts
 })
@@ -627,11 +640,7 @@ const filterButtonTooltip = computed(() => {
     | null
   if (!panel) return 'Open data filter'
 
-  if (typeof panel.summaryTooltip === 'string' && panel.summaryTooltip.length > 0) {
-    return panel.summaryTooltip
-  }
-
-  return panel.summaryTooltip?.value || 'Open data filter'
+  return resolveMaybeRefString(panel.summaryTooltip, 'Open data filter')
 })
 
 function openFilterPanel() {
@@ -771,13 +780,13 @@ export default {
     <!-- Grid Actions Toolbar -->
     <div
       v-if="!isUnsupportedFile && props.showToolbarActions"
-      class="toolbar-container flex items-center justify-between px-3 py-1.5 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700"
+      class="toolbar-container flex flex-wrap items-start justify-between gap-2 px-3 py-1.5 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700"
     >
-      <div v-if="props.showToolbarActions" class="flex items-center gap-2">
+      <div v-if="props.showToolbarActions" class="flex items-center gap-2 min-w-0">
         <button
           v-tooltip="filterButtonTooltip"
           type="button"
-          class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded transition-colors"
+          class="inline-flex shrink-0 whitespace-nowrap items-center gap-1 px-2.5 py-1 text-xs font-medium rounded transition-colors"
           :class="
             hasAnyFilterActivity
               ? 'bg-transparent text-amber-600 dark:text-amber-400 border border-amber-500/80 dark:border-amber-500 hover:bg-amber-50/30 dark:hover:bg-amber-500/10'
@@ -790,16 +799,28 @@ export default {
         </button>
       </div>
 
-      <div class="flex items-center gap-2">
+      <div class="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2">
         <button
           v-if="isTableEditable"
           type="button"
-          class="text-xs rounded-md px-2.5 py-1 border border-sky-400 bg-sky-50 text-sky-900 hover:bg-sky-100 disabled:opacity-50 disabled:cursor-not-allowed dark:border-sky-400/50 dark:bg-sky-900/20 dark:text-sky-100 dark:hover:bg-sky-900/30 inline-flex items-center gap-1"
+          class="text-xs rounded-md px-2.5 py-1 border border-sky-400 bg-sky-50 text-sky-900 hover:bg-sky-100 disabled:opacity-50 disabled:cursor-not-allowed dark:border-sky-400/50 dark:bg-sky-900/20 dark:text-sky-100 dark:hover:bg-sky-900/30 inline-flex shrink-0 whitespace-nowrap items-center gap-1"
           title="Stage a new row for insert"
           @click="openInsertRowPanelForNew"
         >
           <Plus class="h-3.5 w-3.5" :stroke-width="iconStroke" />
           <span class="badge-text">Add row</span>
+        </button>
+
+        <button
+          v-if="isTableEditable"
+          type="button"
+          class="text-xs rounded-md px-2.5 py-1 border border-red-300 bg-transparent text-red-700 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-red-500/40 dark:bg-transparent dark:text-red-200 dark:hover:bg-red-900/20 inline-flex shrink-0 whitespace-nowrap items-center gap-1"
+          :disabled="baseGrid.selectedRowCount.value === 0"
+          title="Stage selected rows for delete (Delete)"
+          @click="deleteSelectedRows"
+        >
+          <Trash2 class="h-3.5 w-3.5" :stroke-width="iconStroke" />
+          <span class="badge-text">Delete</span>
         </button>
 
         <span
@@ -814,25 +835,29 @@ export default {
         <template v-if="hasUnsavedChanges">
           <button
             type="button"
-            class="text-xs rounded-md px-2.5 py-1 border border-teal-500 text-teal-700 bg-transparent hover:bg-teal-50 dark:border-teal-500/60 dark:text-teal-300 dark:hover:bg-teal-900/20 inline-flex items-center gap-1.5 transition-colors"
-            title="Review pending changes"
-            @click="openFirstEditedRowPanel"
-          >
-            <ClipboardList class="h-3.5 w-3.5 shrink-0" />
-            {{ pendingInsertCount + pendingEditCount + pendingDeleteCount }} changes
-          </button>
-          <button
-            type="button"
-            class="text-xs rounded-md px-2.5 py-1 border border-teal-600 bg-teal-600 text-white hover:bg-teal-700 hover:border-teal-700 disabled:opacity-50 disabled:cursor-not-allowed dark:border-teal-500 dark:bg-teal-600 dark:hover:bg-teal-700"
+            class="text-xs rounded-md px-2.5 py-1 border border-teal-600 bg-teal-600 text-white hover:bg-teal-700 hover:border-teal-700 disabled:opacity-50 disabled:cursor-not-allowed dark:border-teal-500 dark:bg-teal-600 dark:hover:bg-teal-700 shrink-0 whitespace-nowrap"
             title="Save pending changes"
             :disabled="isSaving"
             @click="saveChanges"
           >
-            {{ isSaving ? 'Saving…' : 'Save' }}
+            {{
+              isSaving
+                ? 'Saving…'
+                : `Save (${pendingInsertCount + pendingEditCount + pendingDeleteCount})`
+            }}
           </button>
           <button
             type="button"
-            class="text-xs rounded-md px-2.5 py-1 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="text-xs rounded-md p-1.5 border border-teal-500 text-teal-700 bg-transparent hover:bg-teal-50 dark:border-teal-500/60 dark:text-teal-300 dark:hover:bg-teal-900/20 inline-flex shrink-0 items-center justify-center transition-colors"
+            title="Review pending changes"
+            aria-label="Review pending changes"
+            @click="openFirstEditedRowPanel"
+          >
+            <PanelLeftOpen class="h-3.5 w-3.5 shrink-0" :stroke-width="iconStroke" />
+          </button>
+          <button
+            type="button"
+            class="text-xs rounded-md px-2.5 py-1 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed shrink-0 whitespace-nowrap"
             title="Discard pending changes"
             :disabled="isSaving"
             @click="cancelChanges"
@@ -975,6 +1000,7 @@ export default {
       @select-all="selectAllOnCurrentPage"
       @deselect-all="deselectAll"
       @copy="copySelectedRows"
+      @add-row="openInsertRowPanelForNew"
       @delete="deleteSelectedRows"
       @revert-cell="revertContextCell"
     />
@@ -1133,7 +1159,7 @@ export default {
   display: inline;
 }
 
-@container toolbar (min-width: 700px) {
+@container toolbar (min-width: 860px) {
   .badge-text {
     display: inline;
   }
