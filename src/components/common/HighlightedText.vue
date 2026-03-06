@@ -25,7 +25,7 @@ const props = withDefaults(defineProps<Props>(), {
   tag: 'span',
   highlightTag: 'mark',
   highlightClass:
-    'bg-yellow-200 dark:bg-amber-500/30 text-gray-900 dark:text-gray-100 font-semibold rounded px-0.5'
+    'bg-teal-500/18 text-teal-50 dark:bg-teal-400/20 dark:text-teal-50 ring-1 ring-inset ring-teal-300/25 dark:ring-teal-300/20 font-semibold rounded px-0.5'
 })
 
 const attrs = useAttrs()
