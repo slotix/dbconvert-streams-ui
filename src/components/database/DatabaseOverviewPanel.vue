@@ -709,10 +709,7 @@ async function handleCreateSchema() {
     <div v-else-if="error" class="text-sm text-red-600 dark:text-red-300 py-8 text-center">
       {{ error }}
     </div>
-    <div
-      v-else-if="overview"
-      class="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(240px,1fr))]"
-    >
+    <div v-else-if="overview" class="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-4">
       <!-- Essentials -->
       <div class="ui-surface-panel p-4">
         <div class="flex items-center gap-2 mb-3">
@@ -727,7 +724,7 @@ async function handleCreateSchema() {
 
         <div class="space-y-3">
           <!-- Stats Grid -->
-          <div class="grid gap-2 [grid-template-columns:repeat(auto-fit,minmax(140px,1fr))]">
+          <div class="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-2">
             <div v-if="overview.encoding">
               <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
                 >Encoding</label
@@ -832,7 +829,7 @@ async function handleCreateSchema() {
           </span>
         </div>
 
-        <div class="grid gap-2 [grid-template-columns:repeat(auto-fit,minmax(140px,1fr))]">
+        <div class="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-2">
           <template v-if="overview.engine === 'mysql'">
             <div>
               <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
@@ -911,7 +908,7 @@ async function handleCreateSchema() {
           <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Activity</span>
         </div>
 
-        <div class="grid gap-2 [grid-template-columns:repeat(auto-fit,minmax(140px,1fr))]">
+        <div class="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-2">
           <div>
             <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
               >Connections</label

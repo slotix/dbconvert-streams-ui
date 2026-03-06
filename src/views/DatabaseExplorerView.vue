@@ -302,7 +302,7 @@ function handleOpenFileConsole(payload: {
               flexGrow: 0,
               flexShrink: 0
             }"
-            class="min-w-[80px] min-h-0"
+            class="min-h-0 min-w-20"
           >
             <ExplorerSidebarConnections
               ref="sidebarConnectionsRef"
@@ -330,7 +330,7 @@ function handleOpenFileConsole(payload: {
             v-if="sidebar.sidebarVisible.value"
             role="separator"
             aria-orientation="vertical"
-            class="relative z-20 w-[8px] shrink-0 cursor-col-resize select-none group"
+            class="group relative z-20 w-2 shrink-0 cursor-col-resize select-none"
             title="Drag to resize • Double-click to collapse"
             @mousedown.prevent="sidebar.onSidebarDividerMouseDown"
             @dblclick="sidebar.toggleSidebar"
@@ -345,7 +345,7 @@ function handleOpenFileConsole(payload: {
             v-if="!sidebar.sidebarVisible.value"
             role="separator"
             aria-orientation="vertical"
-            class="relative z-20 w-[8px] shrink-0 cursor-col-resize select-none group"
+            class="group relative z-20 w-2 shrink-0 cursor-col-resize select-none"
             title="Click to restore sidebar"
             @click="sidebar.toggleSidebar"
           >

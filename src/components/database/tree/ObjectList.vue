@@ -156,12 +156,12 @@ function getTableSize(tableName: string): string | null {
       @contextmenu.stop.prevent="handleContextMenu($event, item)"
     >
       <div class="flex items-center min-w-0 flex-1">
-        <ObjectIcon :object-type="objectType" class="mr-2 flex-shrink-0" />
+        <ObjectIcon :object-type="objectType" class="mr-2 shrink-0" />
         <HighlightedText class="truncate" :text="item" :query="searchQuery" />
       </div>
       <span
         v-if="showTableSizesInTree && getTableSize(item)"
-        class="ml-2 text-xs text-gray-400 dark:text-gray-500 group-hover:text-gray-500 dark:group-hover:text-gray-400 flex-shrink-0"
+        class="ml-2 shrink-0 text-xs text-gray-400 group-hover:text-gray-500 dark:text-gray-500 dark:group-hover:text-gray-400"
         >{{ getTableSize(item) }}</span
       >
     </div>
@@ -203,12 +203,12 @@ function getTableSize(tableName: string): string | null {
         @contextmenu.stop.prevent="handleContextMenu($event, item)"
       >
         <div class="flex items-center min-w-0 flex-1">
-          <ObjectIcon :object-type="objectType" class="mr-2 flex-shrink-0" />
+          <ObjectIcon :object-type="objectType" class="mr-2 shrink-0" />
           <HighlightedText class="truncate" :text="item" :query="searchQuery" />
         </div>
         <span
           v-if="showTableSizesInTree && getTableSize(item)"
-          class="ml-2 text-xs text-gray-400 dark:text-gray-500 group-hover:text-gray-500 dark:group-hover:text-gray-400 flex-shrink-0"
+          class="ml-2 shrink-0 text-xs text-gray-400 group-hover:text-gray-500 dark:text-gray-500 dark:group-hover:text-gray-400"
           >{{ getTableSize(item) }}</span
         >
       </div>

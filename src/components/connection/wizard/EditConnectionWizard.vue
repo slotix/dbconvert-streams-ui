@@ -50,7 +50,7 @@
             @update:can-proceed="updateCanProceed"
           />
 
-          <div v-else class="flex min-h-[320px] items-center justify-center">
+          <div v-else class="flex min-h-80 items-center justify-center">
             <div class="text-sm text-gray-500 dark:text-gray-400">Loading connection...</div>
           </div>
 

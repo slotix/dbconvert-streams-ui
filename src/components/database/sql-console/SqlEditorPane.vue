@@ -38,7 +38,7 @@
         <div
           v-if="showFormatMenu"
           ref="formatMenuRef"
-          class="absolute left-0 top-full mt-1 min-w-[140px] rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg z-[210] overflow-hidden"
+          class="absolute left-0 top-full z-210 mt-1 min-w-[140px] overflow-hidden rounded-md border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
         >
           <button
             type="button"
@@ -111,7 +111,7 @@
         <div
           v-if="showHistory && history.length > 0"
           ref="historyMenuRef"
-          class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-[210] overflow-hidden flex flex-col"
+          class="z-210 flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-800"
           :style="historyMenuStyle"
         >
           <div class="px-3 pt-2.5 pb-2 border-b border-gray-200 dark:border-gray-700/80">
