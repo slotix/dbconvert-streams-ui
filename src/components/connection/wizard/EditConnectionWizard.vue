@@ -1,16 +1,111 @@
 <template>
-  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <!-- Connection Details -->
-    <div class="space-y-6">
-      <ConnectionDetailsStep
-        :connectionType="connection?.type"
-        @update:can-proceed="updateCanProceed"
-      />
+  <div class="mx-auto flex min-h-[calc(100vh-65px)] max-w-[1600px] flex-col px-4 sm:px-6 lg:px-8">
+    <div class="flex-1 py-6">
+      <div class="border-b border-gray-200 py-5 dark:border-gray-800">
+        <div v-if="connection" class="flex items-start gap-3">
+          <div class="flex items-start gap-3">
+            <DatabaseIcon
+              :dbType="displayConnectionType"
+              :logoSrc="connectionLogo"
+              size="LG"
+              containerClass="rounded-xl"
+            />
+            <div>
+              <p
+                class="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400"
+              >
+                Edit Connection
+              </p>
+              <h2 class="mt-1 text-xl font-semibold text-gray-900 dark:text-gray-100">
+                {{ connection.name || displayConnectionType }}
+              </h2>
+              <p class="mt-1 text-sm leading-6 text-gray-500 dark:text-gray-400">
+                {{ connectionDescription }}
+              </p>
+            </div>
+          </div>
+        </div>
 
-      <!-- Action Buttons -->
-      <div class="flex justify-between">
-        <BaseButton variant="secondary" @click="cancelWizard"> Cancel </BaseButton>
-        <div class="flex space-x-3">
+        <div v-else class="py-2">
+          <p
+            class="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400"
+          >
+            Edit Connection
+          </p>
+          <h2 class="mt-1 text-xl font-semibold text-gray-900 dark:text-gray-100">
+            Loading connection
+          </h2>
+          <p class="mt-1 text-sm leading-6 text-gray-500 dark:text-gray-400">
+            Fetching the current connection settings.
+          </p>
+        </div>
+      </div>
+
+      <div class="flex-1 overflow-y-auto">
+        <div class="space-y-5 py-5">
+          <ConnectionDetailsStep
+            v-if="connection"
+            :connectionType="connection.type"
+            layout="workspace"
+            @update:can-proceed="updateCanProceed"
+          />
+
+          <div v-else class="flex min-h-[320px] items-center justify-center">
+            <div class="text-sm text-gray-500 dark:text-gray-400">Loading connection...</div>
+          </div>
+
+          <div
+            v-if="testResult"
+            :class="[
+              'rounded-lg border p-4',
+              testResult.success
+                ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20'
+                : 'border-red-200 bg-red-50 dark:border-red-700/70 dark:bg-red-900/30'
+            ]"
+          >
+            <div class="flex items-center">
+              <CheckCircle
+                v-if="testResult.success"
+                class="mr-3 h-5 w-5 text-green-600 dark:text-green-400"
+              />
+              <XCircle v-else class="mr-3 h-5 w-5 text-red-600 dark:text-red-300" />
+              <div>
+                <p
+                  :class="[
+                    'font-medium',
+                    testResult.success
+                      ? 'text-green-800 dark:text-green-300'
+                      : 'text-red-800 dark:text-red-200'
+                  ]"
+                >
+                  {{ testResult.success ? 'Connection Successful' : 'Connection Failed' }}
+                </p>
+                <p
+                  :class="[
+                    'text-sm',
+                    testResult.success
+                      ? 'text-green-700 dark:text-green-400'
+                      : 'text-red-700 dark:text-red-100/95'
+                  ]"
+                >
+                  {{ testResult.message }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="sticky bottom-0 z-20 -mx-4 border-t border-slate-200/80 bg-white/92 backdrop-blur sm:-mx-6 lg:-mx-8 dark:border-gray-700/80 dark:bg-gray-900/92"
+    >
+      <div
+        class="mx-auto flex max-w-[1600px] flex-col gap-3 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8"
+      >
+        <BaseButton variant="secondary" @click="cancelWizard">Cancel</BaseButton>
+
+        <div class="flex flex-wrap items-center justify-end gap-3">
           <BaseButton
             variant="secondary"
             :disabled="!canProceed || isTestingConnection"
@@ -31,47 +126,6 @@
           </BaseButton>
         </div>
       </div>
-
-      <!-- Test Result -->
-      <div
-        v-if="testResult"
-        :class="[
-          'border rounded-lg p-4',
-          testResult.success
-            ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20'
-            : 'border-red-200 dark:border-red-700/70 bg-red-50 dark:bg-red-900/30'
-        ]"
-      >
-        <div class="flex items-center">
-          <CheckCircle
-            v-if="testResult.success"
-            class="h-5 w-5 text-green-600 dark:text-green-400 mr-3"
-          />
-          <XCircle v-else class="h-5 w-5 text-red-600 dark:text-red-300 mr-3" />
-          <div>
-            <p
-              :class="[
-                'font-medium',
-                testResult.success
-                  ? 'text-green-800 dark:text-green-300'
-                  : 'text-red-800 dark:text-red-200'
-              ]"
-            >
-              {{ testResult.success ? 'Connection Successful' : 'Connection Failed' }}
-            </p>
-            <p
-              :class="[
-                'text-sm',
-                testResult.success
-                  ? 'text-green-700 dark:text-green-400'
-                  : 'text-red-700 dark:text-red-100/95'
-              ]"
-            >
-              {{ testResult.message }}
-            </p>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 </template>
@@ -82,6 +136,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { CheckCircle, XCircle } from 'lucide-vue-next'
 import ConnectionDetailsStep from './steps/ConnectionDetailsStep.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
+import DatabaseIcon from '@/components/base/DatabaseIcon.vue'
 import { useConnectionsStore } from '@/stores/connections'
 import { useCommonStore } from '@/stores/common'
 
@@ -97,19 +152,49 @@ interface Props {
 
 const props = defineProps<Props>()
 
-// Form state
 const canProceed = ref(false)
 const testResult = ref<{ success: boolean; message: string } | undefined>(undefined)
 
-// Computed properties
 const connection = computed(() => connectionsStore.currentConnection)
 const isUpdatingConnection = computed(() => connectionsStore.isUpdatingConnection)
 const isTestingConnection = computed(() => connectionsStore.isTestingConnection)
+const displayConnectionType = computed(() => {
+  const current = connection.value
+  if (!current) {
+    return 'connection'
+  }
+  if (current.spec?.s3) {
+    return 'S3'
+  }
+  if (current.spec?.files) {
+    return 'Files'
+  }
+  const normalizedType = current.type?.toLowerCase()
+  return (
+    connectionsStore.dbTypes.find((dbType) => dbType.type.toLowerCase() === normalizedType)?.type ||
+    current.type
+  )
+})
+const connectionLogo = computed(() => {
+  const normalizedType = displayConnectionType.value.toLowerCase()
+  return (
+    connectionsStore.dbTypes.find((dbType) => dbType.type.toLowerCase() === normalizedType)?.logo ||
+    '/images/db-logos/default.svg'
+  )
+})
+const connectionDescription = computed(() => {
+  const descriptions: Record<string, string> = {
+    PostgreSQL: 'Update host, credentials, SSL, and database defaults for this connection.',
+    MySQL: 'Update host, credentials, SSL, and default database settings for this connection.',
+    Files: 'Adjust the local file source path and related settings.',
+    S3: 'Adjust bucket, prefix, credentials, and object storage settings.'
+  }
 
-// Get connection ID from props or route params
+  return descriptions[displayConnectionType.value] || 'Update the saved connection settings.'
+})
+
 const connectionId = computed(() => props.connectionId || (route.params.id as string))
 
-// Load the connection to edit
 async function loadConnectionForEdit() {
   const id = connectionId.value
   if (!id) {
@@ -119,11 +204,9 @@ async function loadConnectionForEdit() {
   }
 
   try {
-    // Try to find connection in existing list first
     let existingConnection = connectionsStore.connectionByID(id)
 
     if (!existingConnection) {
-      // If not found, refresh connections and try again
       await connectionsStore.refreshConnections()
       existingConnection = connectionsStore.connectionByID(id)
     }
@@ -132,9 +215,8 @@ async function loadConnectionForEdit() {
       throw new Error('Connection not found')
     }
 
-    // Set the current connection for editing
     connectionsStore.setCurrentConnection(id)
-    canProceed.value = true // Enable proceed since we have valid connection data
+    canProceed.value = true
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'An unknown error occurred'
     commonStore.showNotification(`Failed to load connection: ${message}`, 'error')
@@ -142,13 +224,12 @@ async function loadConnectionForEdit() {
   }
 }
 
-// Event handlers
 function updateCanProceed(canProceedValue: boolean) {
   canProceed.value = canProceedValue
 }
 
 async function testConnection() {
-  testResult.value = undefined // Clear previous results first
+  testResult.value = undefined
   try {
     await connectionsStore.testConnection()
     testResult.value = {
@@ -175,7 +256,6 @@ async function updateConnection() {
     commonStore.showNotification('Connection updated successfully', 'success')
     await connectionsStore.refreshConnections()
 
-    // Navigate back to explorer and refocus the connection
     if (connectionId.value) {
       sessionStorage.setItem('explorerFocusConnectionId', connectionId.value)
       router.push('/explorer')
@@ -189,9 +269,7 @@ async function updateConnection() {
 }
 
 function cancelWizard() {
-  // Reset current connection to avoid affecting other operations
   connectionsStore.currentConnection = null
-  // Navigate back to connection details view
   if (connectionId.value) {
     sessionStorage.setItem('explorerFocusConnectionId', connectionId.value)
     router.push('/explorer')
@@ -200,14 +278,12 @@ function cancelWizard() {
   }
 }
 
-// Keyboard event handler
 function handleKeydown(event: KeyboardEvent) {
   if (event.key === 'Escape') {
     cancelWizard()
   }
 }
 
-// Initialize when component mounts
 onMounted(async () => {
   window.addEventListener('keydown', handleKeydown)
   await loadConnectionForEdit()

@@ -380,14 +380,14 @@ function onOpenDiagram() {
             <button
               v-for="(tab, i) in tabs"
               :key="tab.name"
-            :class="[
-              'px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-all duration-200',
-              'focus:outline-none focus:z-10',
-              'border',
-              i === 0 ? 'rounded-l-sm' : '',
-              i === tabs.length - 1 ? 'rounded-r-sm' : '',
-              i !== 0 ? '-ml-px' : '',
-              selectedIndex === i
+              :class="[
+                'px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-all duration-200',
+                'focus:outline-none focus:z-10',
+                'border',
+                i === 0 ? 'rounded-l-sm' : '',
+                i === tabs.length - 1 ? 'rounded-r-sm' : '',
+                i !== 0 ? '-ml-px' : '',
+                selectedIndex === i
                   ? 'bg-teal-600 dark:bg-teal-900 text-white border-teal-600 dark:border-teal-600 hover:bg-teal-700 dark:hover:bg-teal-800 focus-visible:bg-teal-700 dark:focus-visible:bg-teal-800 z-10'
                   : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100 focus-visible:border-teal-500 dark:focus-visible:border-teal-400 focus-visible:bg-teal-50/60 dark:focus-visible:bg-teal-900/20'
               ]"

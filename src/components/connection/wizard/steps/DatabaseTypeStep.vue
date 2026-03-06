@@ -91,7 +91,9 @@ const groupedTypes = computed(() => {
   const groups = [
     {
       label: 'Databases',
-      items: connectionsStore.dbTypes.filter((dbType) => getConnectionCategory(dbType) === 'database')
+      items: connectionsStore.dbTypes.filter(
+        (dbType) => getConnectionCategory(dbType) === 'database'
+      )
     },
     {
       label: 'Files and Storage',

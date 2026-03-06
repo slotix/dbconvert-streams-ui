@@ -129,7 +129,10 @@
               />
             </div>
 
-            <div v-else class="flex h-full min-h-[420px] items-center justify-center py-8 text-center">
+            <div
+              v-else
+              class="flex h-full min-h-[420px] items-center justify-center py-8 text-center"
+            >
               <div class="max-w-md">
                 <div
                   class="mx-auto flex h-14 w-14 items-center justify-center rounded-xl border border-gray-200 bg-gray-50 text-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-500"
@@ -329,7 +332,10 @@ function handleConnectionStringPrefill(params: ParsedConnectionPayload) {
               sessionToken: sessionToken || undefined
             }
           : undefined,
-        scope: bucket || prefix ? { bucket: bucket || undefined, prefix: prefix || undefined } : undefined
+        scope:
+          bucket || prefix
+            ? { bucket: bucket || undefined, prefix: prefix || undefined }
+            : undefined
       }
     }
     connection.username = accessKey || 'aws-default'

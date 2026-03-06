@@ -9,12 +9,7 @@
 
   <div v-else>
     <nav :class="tabsContainerClass">
-      <button
-        v-for="tab in tabs"
-        :key="tab"
-        :class="getTabClass(tab)"
-        @click="changeTab(tab)"
-      >
+      <button v-for="tab in tabs" :key="tab" :class="getTabClass(tab)" @click="changeTab(tab)">
         <Plug v-if="tab === 'Direct'" class="w-4 h-4" />
         <ShieldCheck v-else-if="tab === 'SSL'" class="w-4 h-4" />
         {{ tab }}

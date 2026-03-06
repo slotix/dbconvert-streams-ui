@@ -1,6 +1,5 @@
 <template>
   <div class="h-screen flex flex-col overflow-hidden">
-    <!-- Header -->
     <header
       class="sticky top-0 z-30 bg-white dark:bg-gray-900 border-b border-slate-200 dark:border-gray-700"
     >
@@ -21,15 +20,20 @@
           <ArrowLeft class="h-5 w-5" :stroke-width="iconStroke" aria-hidden="true" />
           <span class="sr-only">Back</span>
         </button>
-        <h1 class="text-base font-semibold text-gray-900 dark:text-gray-100">Edit Connection</h1>
-        <span v-if="connection" class="text-xs text-gray-500 dark:text-gray-400">
-          — {{ connection.name }}
-        </span>
+        <div>
+          <h1 class="text-base font-semibold text-gray-900 dark:text-gray-100">Edit Connection</h1>
+          <p class="text-xs text-gray-500 dark:text-gray-400">
+            {{
+              connection
+                ? `Update settings for ${connection.name}`
+                : 'Update saved connection settings'
+            }}
+          </p>
+        </div>
       </div>
     </header>
 
-    <!-- Main Content -->
-    <main class="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 py-8">
+    <main class="flex-1 overflow-y-auto">
       <EditConnectionWizard :connectionId="connectionId" />
     </main>
   </div>

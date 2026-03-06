@@ -1,48 +1,40 @@
 <template>
   <div class="px-4 md:px-6">
-    <!-- Connection ID (for existing connections) -->
+    <div v-if="!connection && isEdit" class="text-center">
+      <Spinner text="Loading connection..." size="sm" />
+    </div>
+
     <div
-      v-if="connection?.id"
+      v-if="connection"
       class="bg-white dark:bg-gray-850 rounded-xl border border-gray-100 dark:border-gray-700 p-6 mb-6 shadow-sm dark:shadow-gray-900/30"
     >
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Connection ID</label>
-        <div class="md:col-span-2">
-          <div
-            class="w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2.5 px-4 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 shadow-sm text-sm"
-          >
-            {{ connection?.id }}
+      <div class="space-y-4">
+        <div v-if="connection.id" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+          <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Connection ID</label>
+          <div class="md:col-span-2">
+            <div
+              class="w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2.5 px-4 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 shadow-sm text-sm"
+            >
+              {{ connection.id }}
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+          <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
+          <div class="md:col-span-2">
+            <input
+              v-model="connection.name"
+              type="text"
+              class="w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2.5 px-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 dark:focus:ring-teal-400 focus:border-teal-500 dark:focus:border-teal-400 transition-colors"
+              placeholder="Connection Name"
+            />
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Loading state for edit mode -->
-    <div v-else class="text-center" :class="isEdit ? '' : 'hidden'">
-      <Spinner text="Loading connection..." size="sm" />
-    </div>
-
-    <!-- Connection Name -->
-    <div
-      v-if="connection"
-      class="bg-white dark:bg-gray-850 rounded-xl border border-gray-100 dark:border-gray-700 p-6 mb-6 shadow-sm dark:shadow-gray-900/30"
-    >
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
-        <div class="md:col-span-2">
-          <input
-            v-model="connection.name"
-            type="text"
-            class="w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2.5 px-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 dark:focus:ring-teal-400 focus:border-teal-500 dark:focus:border-teal-400 transition-colors"
-            placeholder="Connection Name"
-          />
-        </div>
-      </div>
-    </div>
-
-    <!-- S3 Configuration -->
     <div v-if="connection && ((isEdit && connection.id) || !isEdit)">
-      <!-- S3 Configuration Group -->
       <div
         class="bg-white dark:bg-gray-850 rounded-xl border border-gray-100 dark:border-gray-700 p-6 mb-6 shadow-sm dark:shadow-gray-900/30"
       >

@@ -45,7 +45,9 @@ function buildConnectionsFixture(): Connection[] {
       name: 'postgres-analytics',
       type: 'postgresql',
       databasesInfo: [],
-      spec: { database: { host: 'localhost', port: 5432, username: 'postgres', database: 'analytics' } }
+      spec: {
+        database: { host: 'localhost', port: 5432, username: 'postgres', database: 'analytics' }
+      }
     },
     {
       id: 'files-1',

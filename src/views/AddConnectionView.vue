@@ -15,7 +15,9 @@
         </button>
         <div>
           <h1 class="text-base font-semibold text-gray-900 dark:text-gray-100">New Connection</h1>
-          <p class="text-xs text-gray-500 dark:text-gray-400">Choose a source type to get started</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">
+            Choose a source type to get started
+          </p>
         </div>
       </div>
     </header>

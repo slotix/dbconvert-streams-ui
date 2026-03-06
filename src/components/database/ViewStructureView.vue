@@ -94,7 +94,9 @@ function getColumnType(column: SQLColumnMeta) {
     v-if="viewMeta"
     :class="[
       'bg-white dark:bg-gray-850',
-      $attrs.class ? $attrs.class : 'rounded-lg border border-gray-200 shadow-sm dark:border-gray-700'
+      $attrs.class
+        ? $attrs.class
+        : 'rounded-lg border border-gray-200 shadow-sm dark:border-gray-700'
     ]"
   >
     <!-- Header removed; DatabaseObjectContainer renders tabs, title, and actions -->

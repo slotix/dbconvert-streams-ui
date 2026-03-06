@@ -117,7 +117,8 @@ watchEffect(() => {
 })
 
 function getDBTypeLogo(type: string): string {
-  const dbType = connectionsStore.dbTypes.find((db) => db.type === type)
+  const normalizedType = type.toLowerCase()
+  const dbType = connectionsStore.dbTypes.find((db) => db.type.toLowerCase() === normalizedType)
   return dbType?.logo || '/images/db-logos/default.svg'
 }
 </script>

@@ -1,55 +1,47 @@
 <template>
   <div class="px-4 md:px-6">
-    <!-- Connection ID (for existing connections) -->
+    <div v-if="!connection && isEdit" class="text-center">
+      <Spinner text="Loading connection..." size="sm" />
+    </div>
+
     <div
-      v-if="connection?.id"
+      v-if="connection"
       class="bg-white dark:bg-gray-850 rounded-xl border border-gray-100 dark:border-gray-700 p-6 mb-6 shadow-sm dark:shadow-gray-900/30"
     >
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Connection ID</label>
-        <div class="md:col-span-2">
-          <div
-            class="w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2.5 px-4 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 shadow-sm text-sm"
-          >
-            {{ connection?.id }}
+      <div class="space-y-4">
+        <div v-if="connection.id" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+          <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Connection ID</label>
+          <div class="md:col-span-2">
+            <div
+              class="w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2.5 px-4 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 shadow-sm text-sm"
+            >
+              {{ connection.id }}
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+          <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
+          <div class="md:col-span-2">
+            <input
+              v-model="connection.name"
+              type="text"
+              class="w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2.5 px-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 dark:focus:ring-teal-400 focus:border-teal-500 dark:focus:border-teal-400 transition-colors"
+              placeholder="Connection Name"
+            />
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Loading state for edit mode -->
-    <div v-else class="text-center" :class="isEdit ? '' : 'hidden'">
-      <Spinner text="Loading connection..." size="sm" />
-    </div>
-
-    <!-- Connection Name -->
-    <div
-      v-if="connection"
-      class="bg-white dark:bg-gray-850 rounded-xl border border-gray-100 dark:border-gray-700 p-6 mb-6 shadow-sm dark:shadow-gray-900/30"
-    >
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
-        <div class="md:col-span-2">
-          <input
-            v-model="connection.name"
-            type="text"
-            class="w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2.5 px-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 dark:focus:ring-teal-400 focus:border-teal-500 dark:focus:border-teal-400 transition-colors"
-            placeholder="Connection Name"
-          />
-        </div>
-      </div>
-    </div>
-
-    <!-- Connection Parameters -->
     <div v-if="connection && ((isEdit && connection.id) || !isEdit)" class="mt-6">
-      <!-- Connection Authentication Group -->
       <div
         class="bg-white dark:bg-gray-850 rounded-xl border border-gray-100 dark:border-gray-700 p-6 mb-6 shadow-sm dark:shadow-gray-900/30"
       >
         <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-6 flex items-center">
           <img
-            v-if="logo"
-            :src="logo"
+            v-if="resolvedLogo"
+            :src="resolvedLogo"
             alt="Connection type logo"
             class="h-6 w-6 mr-2.5 object-contain dark:brightness-0 dark:invert dark:opacity-70"
           />
@@ -67,7 +59,7 @@
               d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
             />
           </svg>
-          {{ connectionType }} Connection Details
+          {{ displayConnectionType }} Connection Details
         </h3>
 
         <div class="space-y-4">
@@ -184,6 +176,13 @@ const dbCapabilities = useDatabaseCapabilities(computed(() => props.connectionTy
 const { defaultPort, getConnectionDefaults } = dbCapabilities
 
 const connectionsStore = useConnectionsStore()
+const matchedDbType = computed(() =>
+  connectionsStore.dbTypes.find(
+    (dbType) => dbType.type.toLowerCase() === props.connectionType.toLowerCase()
+  )
+)
+const displayConnectionType = computed(() => matchedDbType.value?.type || props.connectionType)
+const resolvedLogo = computed(() => matchedDbType.value?.logo || props.logo)
 
 // Direct store access - single source of truth
 const connection = computed(() => connectionsStore.currentConnection)
