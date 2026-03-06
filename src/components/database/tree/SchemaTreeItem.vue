@@ -4,7 +4,12 @@ import type { ComputedRef } from 'vue'
 import { ChevronDown, ChevronRight, Grid2X2 } from 'lucide-vue-next'
 import ObjectList from './ObjectList.vue'
 import HighlightedText from '@/components/common/HighlightedText.vue'
-import type { ObjectType } from '@/stores/explorerNavigation'
+import {
+  getExplorerObjectSectionKey,
+  useExplorerNavigationStore,
+  type ExplorerObjectSection,
+  type ObjectType
+} from '@/stores/explorerNavigation'
 
 interface SchemaInfo {
   name: string
@@ -22,6 +27,7 @@ const props = defineProps<{
   isExpanded: boolean
   tableSizes?: Record<string, number>
 }>()
+const navigationStore = useExplorerNavigationStore()
 
 // Inject search query, caret class, and selection from parent
 const searchQuery = inject<ComputedRef<string>>('treeSearchQuery')!
@@ -46,8 +52,6 @@ const isSelected = computed(() => {
   )
 })
 
-const tablesOpen = ref(true)
-const viewsOpen = ref(true)
 const functionsOpen = ref(true)
 const proceduresOpen = ref(true)
 const sequencesOpen = ref(true)
@@ -56,8 +60,6 @@ const highlightedSection = ref<
 >(null)
 let sectionHighlightTimeout: ReturnType<typeof setTimeout> | null = null
 
-const tablesExpanded = computed(() => tablesOpen.value)
-const viewsExpanded = computed(() => viewsOpen.value)
 const functionsExpanded = computed(() => functionsOpen.value)
 const proceduresExpanded = computed(() => proceduresOpen.value)
 const sequencesExpanded = computed(() => sequencesOpen.value)
@@ -67,6 +69,15 @@ const filteredViews = computed(() => props.schema.views)
 const filteredFunctions = computed(() => props.schema.functions)
 const filteredProcedures = computed(() => props.schema.procedures)
 const filteredSequences = computed(() => props.schema.sequences)
+
+function getSectionKey(section: ExplorerObjectSection): string {
+  return getExplorerObjectSectionKey({
+    connectionId: props.connectionId,
+    database: props.database,
+    schema: props.schema.name,
+    section
+  })
+}
 
 const showTablesSection = computed(() =>
   hasActiveSearch.value ? filteredTables.value.length > 0 : true
@@ -101,8 +112,14 @@ const sequencesCount = computed(() =>
 )
 
 const sectionsAutoExpanded = computed(() => hasActiveSearch.value)
-const tablesSectionExpanded = computed(() => sectionsAutoExpanded.value || tablesExpanded.value)
-const viewsSectionExpanded = computed(() => sectionsAutoExpanded.value || viewsExpanded.value)
+const tablesSectionExpanded = computed(
+  () =>
+    sectionsAutoExpanded.value || navigationStore.isObjectSectionExpanded(getSectionKey('tables'))
+)
+const viewsSectionExpanded = computed(
+  () =>
+    sectionsAutoExpanded.value || navigationStore.isObjectSectionExpanded(getSectionKey('views'))
+)
 const functionsSectionExpanded = computed(
   () => sectionsAutoExpanded.value || functionsExpanded.value
 )
@@ -132,13 +149,13 @@ watch(
     if ((sel.schema || '') !== (props.schema.name || '')) return
 
     if (sel.type === 'table') {
-      if (!tablesOpen.value) {
-        tablesOpen.value = true
+      if (!navigationStore.isObjectSectionExpanded(getSectionKey('tables'))) {
+        navigationStore.expandObjectSection(getSectionKey('tables'))
         highlightSection('tables')
       }
     } else if (sel.type === 'view') {
-      if (!viewsOpen.value) {
-        viewsOpen.value = true
+      if (!navigationStore.isObjectSectionExpanded(getSectionKey('views'))) {
+        navigationStore.expandObjectSection(getSectionKey('views'))
         highlightSection('views')
       }
     } else if (sel.type === 'function') {
@@ -229,6 +246,10 @@ function handleObjectContextMenu(payload: {
     name: payload.name
   })
 }
+
+function toggleSection(section: ExplorerObjectSection) {
+  navigationStore.toggleObjectSection(getSectionKey(section))
+}
 </script>
 
 <template>
@@ -270,7 +291,7 @@ function handleObjectContextMenu(payload: {
           'animate-pulse text-slate-600 dark:text-slate-300': highlightedSection === 'tables'
         }"
         :aria-expanded="tablesSectionExpanded"
-        @click.stop="tablesOpen = !tablesOpen"
+        @click.stop="toggleSection('tables')"
       >
         <span class="flex items-center gap-1">
           <component
@@ -306,7 +327,7 @@ function handleObjectContextMenu(payload: {
           'animate-pulse text-slate-600 dark:text-slate-300': highlightedSection === 'views'
         }"
         :aria-expanded="viewsSectionExpanded"
-        @click.stop="viewsOpen = !viewsOpen"
+        @click.stop="toggleSection('views')"
       >
         <span class="flex items-center gap-1">
           <component

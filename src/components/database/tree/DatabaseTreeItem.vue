@@ -6,7 +6,12 @@ import SchemaTreeItem from './SchemaTreeItem.vue'
 import ObjectList from './ObjectList.vue'
 import HighlightedText from '@/components/common/HighlightedText.vue'
 import { useDatabaseOverviewStore } from '@/stores/databaseOverview'
-import { useExplorerNavigationStore, type ObjectType } from '@/stores/explorerNavigation'
+import {
+  getExplorerObjectSectionKey,
+  useExplorerNavigationStore,
+  type ExplorerObjectSection,
+  type ObjectType
+} from '@/stores/explorerNavigation'
 import type { ConnectionDatabaseSearchMatches, ConnectionSearchObjectRef } from '@/api/connections'
 
 const overviewStore = useDatabaseOverviewStore()
@@ -62,18 +67,22 @@ const isSelected = computed(() => {
   )
 })
 
-const tablesOpen = ref(true)
-const viewsOpen = ref(true)
 const functionsOpen = ref(true)
 const proceduresOpen = ref(true)
 const highlightedSection = ref<'tables' | 'views' | 'functions' | 'procedures' | null>(null)
 let sectionHighlightTimeout: ReturnType<typeof setTimeout> | null = null
 
-const tablesExpanded = computed(() => tablesOpen.value)
-const viewsExpanded = computed(() => viewsOpen.value)
 const functionsExpanded = computed(() => functionsOpen.value)
 const proceduresExpanded = computed(() => proceduresOpen.value)
 const hasActiveSearch = computed(() => (searchQuery.value || '').trim().length > 0)
+
+function getSectionKey(section: ExplorerObjectSection): string {
+  return getExplorerObjectSectionKey({
+    connectionId: props.connectionId,
+    database: props.database.name,
+    section
+  })
+}
 
 function normalized(value: string | undefined | null): string {
   return (value || '').trim().toLowerCase()
@@ -236,8 +245,14 @@ const proceduresCount = computed(() =>
 )
 
 const sectionsAutoExpanded = computed(() => hasActiveSearch.value)
-const tablesSectionExpanded = computed(() => sectionsAutoExpanded.value || tablesExpanded.value)
-const viewsSectionExpanded = computed(() => sectionsAutoExpanded.value || viewsExpanded.value)
+const tablesSectionExpanded = computed(
+  () =>
+    sectionsAutoExpanded.value || navigationStore.isObjectSectionExpanded(getSectionKey('tables'))
+)
+const viewsSectionExpanded = computed(
+  () =>
+    sectionsAutoExpanded.value || navigationStore.isObjectSectionExpanded(getSectionKey('views'))
+)
 const functionsSectionExpanded = computed(
   () => sectionsAutoExpanded.value || functionsExpanded.value
 )
@@ -321,13 +336,13 @@ watch(
     if (sel.connectionId !== props.connectionId || sel.database !== props.database.name) return
 
     if (sel.type === 'table') {
-      if (!tablesOpen.value) {
-        tablesOpen.value = true
+      if (!navigationStore.isObjectSectionExpanded(getSectionKey('tables'))) {
+        navigationStore.expandObjectSection(getSectionKey('tables'))
         highlightSection('tables')
       }
     } else if (sel.type === 'view') {
-      if (!viewsOpen.value) {
-        viewsOpen.value = true
+      if (!navigationStore.isObjectSectionExpanded(getSectionKey('views'))) {
+        navigationStore.expandObjectSection(getSectionKey('views'))
         highlightSection('views')
       }
     } else if (sel.type === 'function') {
@@ -429,6 +444,10 @@ function handleFlatObjectContextMenu(payload: {
     name: payload.name
   })
 }
+
+function toggleSection(section: ExplorerObjectSection) {
+  navigationStore.toggleObjectSection(getSectionKey(section))
+}
 </script>
 
 <template>
@@ -493,7 +512,7 @@ function handleFlatObjectContextMenu(payload: {
               'animate-pulse text-slate-600 dark:text-slate-300': highlightedSection === 'tables'
             }"
             :aria-expanded="tablesSectionExpanded"
-            @click.stop="tablesOpen = !tablesOpen"
+            @click.stop="toggleSection('tables')"
           >
             <span class="flex items-center gap-1">
               <component
@@ -528,7 +547,7 @@ function handleFlatObjectContextMenu(payload: {
               'animate-pulse text-slate-600 dark:text-slate-300': highlightedSection === 'views'
             }"
             :aria-expanded="viewsSectionExpanded"
-            @click.stop="viewsOpen = !viewsOpen"
+            @click.stop="toggleSection('views')"
           >
             <span class="flex items-center gap-1">
               <component

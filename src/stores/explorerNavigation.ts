@@ -16,6 +16,7 @@ interface PersistedExpansionState {
   expandedConnections: string[]
   expandedDatabases: string[]
   expandedSchemas: string[]
+  collapsedObjectSections: string[]
 }
 
 function hasBrowserStorage(): boolean {
@@ -44,7 +45,8 @@ function loadPersistedExpansionState(): PersistedExpansionState | null {
     return {
       expandedConnections: toStringArray(parsed.expandedConnections),
       expandedDatabases: toStringArray(parsed.expandedDatabases),
-      expandedSchemas: toStringArray(parsed.expandedSchemas)
+      expandedSchemas: toStringArray(parsed.expandedSchemas),
+      collapsedObjectSections: toStringArray(parsed.collapsedObjectSections)
     }
   } catch (error) {
     console.warn('Failed to load explorer navigation expansion state from localStorage:', error)
@@ -68,6 +70,22 @@ const persistedExpansionState = loadPersistedExpansionState()
 
 export type ObjectType = 'table' | 'view' | 'function' | 'procedure' | 'sequence'
 export type DefaultTab = 'structure' | 'data'
+export type ExplorerObjectSection = 'tables' | 'views'
+
+export function getExplorerObjectSectionKey(params: {
+  connectionId: string
+  database: string
+  section: ExplorerObjectSection
+  schema?: string
+}): string {
+  return [
+    params.connectionId,
+    params.database,
+    params.schema || '',
+    'section',
+    params.section
+  ].join(':')
+}
 
 export interface NavigationSelection {
   connectionId: string
@@ -116,6 +134,9 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
     expandedConnections: new Set<string>(persistedExpansionState?.expandedConnections || []),
     expandedDatabases: new Set<string>(persistedExpansionState?.expandedDatabases || []),
     expandedSchemas: new Set<string>(persistedExpansionState?.expandedSchemas || []),
+    collapsedObjectSections: new Set<string>(
+      persistedExpansionState?.collapsedObjectSections || []
+    ),
 
     // Metadata state - stores fetched data for UI reactivity only (NOT HTTP caching)
     // Backend handles HTTP caching with 30s TTL
@@ -156,6 +177,10 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
 
     isSchemaExpanded: (state) => (key: string) => {
       return state.expandedSchemas.has(key)
+    },
+
+    isObjectSectionExpanded: (state) => (key: string) => {
+      return !state.collapsedObjectSections.has(key)
     },
 
     // Get ALL databases (including system)
@@ -229,7 +254,8 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
       persistExpansionState({
         expandedConnections: Array.from(this.expandedConnections),
         expandedDatabases: Array.from(this.expandedDatabases),
-        expandedSchemas: Array.from(this.expandedSchemas)
+        expandedSchemas: Array.from(this.expandedSchemas),
+        collapsedObjectSections: Array.from(this.collapsedObjectSections)
       })
     },
 
@@ -325,6 +351,17 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
       }
       for (const key of expandedSchemasToRemove) {
         this.expandedSchemas.delete(key)
+      }
+
+      const collapsedSectionsToRemove: string[] = []
+      for (const key of this.collapsedObjectSections) {
+        const connId = key.split(':')[0]
+        if (!validIdSet.has(connId)) {
+          collapsedSectionsToRemove.push(key)
+        }
+      }
+      for (const key of collapsedSectionsToRemove) {
+        this.collapsedObjectSections.delete(key)
       }
 
       // Clear active connection if it's invalid
@@ -472,6 +509,25 @@ export const useExplorerNavigationStore = defineStore('explorerNavigation', {
 
     collapseSchema(key: string) {
       this.expandedSchemas.delete(key)
+      this.saveExpansionState()
+    },
+
+    toggleObjectSection(key: string) {
+      if (this.collapsedObjectSections.has(key)) {
+        this.collapsedObjectSections.delete(key)
+      } else {
+        this.collapsedObjectSections.add(key)
+      }
+      this.saveExpansionState()
+    },
+
+    expandObjectSection(key: string) {
+      this.collapsedObjectSections.delete(key)
+      this.saveExpansionState()
+    },
+
+    collapseObjectSection(key: string) {
+      this.collapsedObjectSections.add(key)
       this.saveExpansionState()
     },
 
