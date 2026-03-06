@@ -2,7 +2,7 @@
   <div v-if="isPaginatorVisible" class="mt-4 mt-4 flex items-center">
     <button
       type="button"
-      class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-700 shadow-sm dark:shadow-gray-900/30 px-4 py-2 bg-white dark:bg-gray-850 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-900 focus:ring-gray-500 dark:focus:ring-gray-600 sm:mt-0 sm:ml-3 sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+      class="mt-3 inline-flex w-full justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus-visible:border-gray-400 focus-visible:bg-gray-50 dark:border-gray-700 dark:bg-gray-850 dark:text-gray-300 dark:shadow-gray-900/30 dark:hover:bg-gray-800 dark:focus-visible:border-gray-500 dark:focus-visible:bg-gray-800 sm:mt-0 sm:ml-3 sm:w-auto disabled:cursor-not-allowed disabled:opacity-50"
       :disabled="previousPageDisabled"
       @click="previousPage"
     >
@@ -14,7 +14,7 @@
     </span>
     <button
       type="button"
-      class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-700 shadow-sm dark:shadow-gray-900/30 px-4 py-2 bg-white dark:bg-gray-850 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-900 focus:ring-gray-500 dark:focus:ring-gray-600 sm:mt-0 sm:ml-3 sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+      class="mt-3 inline-flex w-full justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus-visible:border-gray-400 focus-visible:bg-gray-50 dark:border-gray-700 dark:bg-gray-850 dark:text-gray-300 dark:shadow-gray-900/30 dark:hover:bg-gray-800 dark:focus-visible:border-gray-500 dark:focus-visible:bg-gray-800 sm:mt-0 sm:ml-3 sm:w-auto disabled:cursor-not-allowed disabled:opacity-50"
       :disabled="nextPageDisabled"
       @click="nextPage"
     >

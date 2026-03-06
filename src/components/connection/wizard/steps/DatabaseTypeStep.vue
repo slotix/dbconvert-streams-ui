@@ -15,9 +15,9 @@
             isComingSoon(dbType)
               ? 'opacity-50 cursor-not-allowed border-gray-300 dark:border-gray-700'
               : selectedDBType?.id === dbType.id
-                ? 'ring-2 ring-teal-500 dark:ring-teal-400 border-teal-500 dark:border-teal-400 bg-teal-50 dark:bg-teal-900/20'
+                ? 'border-teal-500 dark:border-teal-400 bg-teal-50 dark:bg-teal-900/20 shadow-sm dark:shadow-black/20'
                 : 'border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800',
-            'relative p-4 border rounded-xl flex flex-col items-center text-center bg-white dark:bg-gray-850 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-900 focus:ring-teal-500 dark:focus:ring-teal-400 transition-all duration-200'
+            'relative p-4 border rounded-xl flex flex-col items-center text-center bg-white dark:bg-gray-850 focus:outline-none focus-visible:outline-none focus-visible:border-teal-500 dark:focus-visible:border-teal-400 focus-visible:bg-teal-50/60 dark:focus-visible:bg-teal-900/20 transition-all duration-200'
           ]"
           @click="!isComingSoon(dbType) && selectDBType(dbType)"
           @dblclick.prevent="!isComingSoon(dbType) && selectDBTypeAndProceed(dbType)"
@@ -76,9 +76,9 @@
             :aria-selected="selectedDBType?.id === dbType.id"
             :class="[
               selectedDBType?.id === dbType.id
-                ? 'ring-2 ring-teal-500 dark:ring-teal-400 border-teal-500 dark:border-teal-400 bg-teal-50 dark:bg-teal-900/20'
+                ? 'border-teal-500 dark:border-teal-400 bg-teal-50 dark:bg-teal-900/20 shadow-sm dark:shadow-black/20'
                 : 'border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800',
-              'relative p-6 border rounded-xl flex flex-col items-center text-center bg-white dark:bg-gray-850 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-900 focus:ring-teal-500 dark:focus:ring-teal-400 transition-all duration-200 min-w-[160px]'
+              'relative p-6 border rounded-xl flex flex-col items-center text-center bg-white dark:bg-gray-850 focus:outline-none focus-visible:outline-none focus-visible:border-teal-500 dark:focus-visible:border-teal-400 focus-visible:bg-teal-50/60 dark:focus-visible:bg-teal-900/20 transition-all duration-200 min-w-[160px]'
             ]"
             @click="selectDBType(dbType)"
             @dblclick.prevent="selectDBTypeAndProceed(dbType)"

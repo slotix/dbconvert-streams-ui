@@ -105,10 +105,12 @@ const activeDescription = computed(() => {
         <div
           :class="[
             checked
-              ? 'bg-teal-50 dark:bg-teal-900/20 border-teal-200 dark:border-teal-700'
+              ? 'bg-teal-50/80 dark:bg-teal-900/20 border-teal-500 dark:border-teal-400 shadow-sm dark:shadow-black/20'
               : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700',
-            active ? 'ring-2 ring-teal-500 ring-offset-2' : '',
-            'relative flex items-start cursor-pointer rounded-lg border p-3 transition-all duration-150 focus:outline-none flex-1',
+            active && !checked
+              ? 'border-teal-400 dark:border-teal-500 bg-gray-50 dark:bg-gray-800'
+              : '',
+            'relative flex items-start cursor-pointer rounded-lg border p-3 transition-all duration-150 focus:outline-none focus-visible:outline-none flex-1',
             (disabled || option.disabled) && 'opacity-60 cursor-not-allowed'
           ]"
         >
@@ -116,7 +118,7 @@ const activeDescription = computed(() => {
             <input
               :checked="checked"
               type="radio"
-              class="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 dark:border-gray-500 bg-white dark:bg-gray-700"
+              class="h-4 w-4 border-gray-300 bg-white text-teal-600 dark:border-gray-500 dark:bg-gray-700 focus:outline-none"
             />
           </div>
           <div class="ml-3 flex-1">

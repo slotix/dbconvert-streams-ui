@@ -20,7 +20,7 @@
       leave-to-class="transform opacity-0 scale-95"
     >
       <MenuItems
-        class="absolute right-0 z-10 mt-2 w-56 divide-y divide-gray-100 dark:divide-gray-700 rounded-md bg-white dark:bg-gray-850 shadow-lg dark:shadow-gray-900/30 ring-1 ring-black dark:ring-gray-700 ring-opacity-5 focus:outline-none"
+        class="ui-surface-floating absolute right-0 z-10 mt-2 w-56 divide-y divide-gray-100 dark:divide-gray-700 focus:outline-none"
         :class="{
           'bottom-10': position === 'bottom',
           'left-4 bottom-16 ': position === 'card'

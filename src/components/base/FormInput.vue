@@ -133,10 +133,10 @@ const inputId = props.id || `form-input-${Math.random().toString(36).substr(2, 9
       :class="[
         'block w-full rounded-md shadow-sm sm:text-sm',
         'text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder:text-gray-500',
-        'transition-colors duration-150',
+        'transition-colors duration-150 focus:outline-none focus-visible:outline-none',
         error
-          ? 'border-red-300 dark:border-red-600 focus:border-red-500 dark:focus:border-red-400 focus:ring-1 focus:ring-red-500 dark:focus:ring-red-400'
-          : 'border-gray-300 dark:border-gray-600 focus:border-teal-500 dark:focus:border-teal-400 focus:ring-1 focus:ring-teal-500 dark:focus:ring-teal-400',
+          ? 'border-red-300 dark:border-red-600 focus:border-red-500 dark:focus:border-red-400 focus:bg-red-50/40 dark:focus:bg-red-950/20'
+          : 'border-gray-300 dark:border-gray-600 focus:border-teal-500 dark:focus:border-teal-400 focus:bg-teal-50/40 dark:focus:bg-teal-950/20',
         disabled ? 'bg-gray-100 dark:bg-gray-700 cursor-not-allowed' : 'bg-white dark:bg-gray-800'
       ]"
       @input="handleInput"

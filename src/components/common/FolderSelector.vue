@@ -15,7 +15,7 @@
       <!-- Browse button -->
       <button
         type="button"
-        class="inline-flex items-center px-4 py-2.5 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-900 focus:ring-teal-500 dark:focus:ring-teal-400 transition-colors"
+        class="inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus-visible:border-teal-500 focus-visible:bg-teal-50/60 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 dark:focus-visible:border-teal-400 dark:focus-visible:bg-teal-900/20"
         @click="openModal"
       >
         <FolderOpen class="h-4 w-4 mr-2" />
@@ -76,17 +76,17 @@ const isDesktop = isWailsContext()
 
 const inputClass = computed(() => {
   const baseClass =
-    'block w-full rounded-lg border shadow-sm text-sm py-2.5 px-4 focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-900 focus:outline-none transition-colors'
+    'block w-full rounded-lg border shadow-sm px-4 py-2.5 text-sm focus:outline-none transition-colors'
 
   if (props.error) {
-    return `${baseClass} border-red-300 dark:border-red-700 bg-white dark:bg-gray-800 text-red-900 dark:text-red-300 placeholder-red-300 dark:placeholder-red-600 focus:ring-red-500 dark:focus:ring-red-400 focus:border-red-500 dark:focus:border-red-400`
+    return `${baseClass} border-red-300 dark:border-red-700 bg-white dark:bg-gray-800 text-red-900 dark:text-red-300 placeholder-red-300 dark:placeholder-red-600 focus:border-red-500 dark:focus:border-red-400 focus:bg-red-50/40 dark:focus:bg-red-950/20`
   }
 
   if (props.disabled) {
     return `${baseClass} border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed`
   }
 
-  return `${baseClass} border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-teal-500 dark:focus:ring-teal-400 focus:border-teal-500 dark:focus:border-teal-400`
+  return `${baseClass} border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 focus:border-teal-500 dark:focus:border-teal-400 focus:bg-teal-50/40 dark:focus:bg-teal-950/20`
 })
 
 const openModal = async () => {

@@ -3,7 +3,7 @@
     <!-- Button -->
     <button
       ref="buttonRef"
-      class="inline-flex items-center gap-2 px-2 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-850 border border-gray-300 dark:border-gray-700 rounded hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 whitespace-nowrap min-w-[100px]"
+      class="inline-flex min-w-[100px] items-center gap-2 rounded border border-gray-300 bg-white px-2 py-1.5 text-xs font-medium whitespace-nowrap text-gray-700 hover:bg-gray-50 focus:outline-none focus-visible:border-gray-400 focus-visible:bg-gray-50 dark:border-gray-700 dark:bg-gray-850 dark:text-gray-300 dark:hover:bg-gray-800 dark:focus-visible:border-gray-500 dark:focus-visible:bg-gray-800"
       :title="buttonTooltip"
       @click="isOpen = !isOpen"
     >
@@ -25,7 +25,7 @@
         v-if="isOpen"
         ref="dropdownRef"
         :style="dropdownStyle"
-        class="fixed z-50 w-56 rounded-md bg-white dark:bg-gray-850 shadow-lg dark:shadow-gray-900/50 ring-1 ring-black dark:ring-gray-700 ring-opacity-5 dark:ring-opacity-50"
+        class="ui-surface-floating fixed z-50 w-56 dark:bg-gray-850 dark:shadow-gray-900/50"
       >
         <div class="py-1">
           <!-- Select All / Clear All -->

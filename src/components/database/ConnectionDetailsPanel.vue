@@ -585,7 +585,7 @@ const isLoadingDatabases = computed(() => {
               leave-to-class="transform scale-95 opacity-0"
             >
               <PopoverPanel
-                class="absolute right-0 z-10 mt-1 w-72 origin-top-right rounded-lg bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black/5 dark:ring-white/10 p-3"
+                class="ui-surface-floating absolute right-0 z-10 mt-1 w-72 origin-top-right p-3"
               >
                 <div class="space-y-2">
                   <label class="block text-xs font-medium text-gray-600 dark:text-gray-400"
@@ -667,7 +667,7 @@ const isLoadingDatabases = computed(() => {
               leave-to-class="transform scale-95 opacity-0"
             >
               <PopoverPanel
-                class="absolute right-0 z-10 mt-1 w-64 origin-top-right rounded-lg bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black/5 dark:ring-white/10 p-3"
+                class="ui-surface-floating absolute right-0 z-10 mt-1 w-64 origin-top-right p-3"
               >
                 <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5"
                   >Database name</label
@@ -726,7 +726,7 @@ const isLoadingDatabases = computed(() => {
               leave-to-class="transform scale-95 opacity-0"
             >
               <PopoverPanel
-                class="absolute right-0 z-10 mt-1 w-64 origin-top-right rounded-lg bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black/5 dark:ring-white/10 p-3"
+                class="ui-surface-floating absolute right-0 z-10 mt-1 w-64 origin-top-right p-3"
               >
                 <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">
                   In database:
@@ -777,9 +777,7 @@ const isLoadingDatabases = computed(() => {
       <div v-if="isFileConnection" class="space-y-6">
         <template v-if="isS3Connection">
           <div class="grid gap-4 grid-cols-[repeat(auto-fit,minmax(260px,1fr))]">
-            <div
-              class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700"
-            >
+            <div class="ui-surface-panel p-4">
               <div class="flex items-center gap-2 mb-3">
                 <div class="p-1.5 bg-sky-100 dark:bg-sky-900/30 rounded-lg">
                   <Cloud class="h-4 w-4 text-sky-600 dark:text-sky-400" />
@@ -844,9 +842,7 @@ const isLoadingDatabases = computed(() => {
               </div>
             </div>
 
-            <div
-              class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700"
-            >
+            <div class="ui-surface-panel p-4">
               <div class="flex items-center gap-2 mb-3">
                 <div class="p-1.5 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
                   <Folder class="h-4 w-4 text-amber-600 dark:text-amber-400" />
@@ -913,9 +909,7 @@ const isLoadingDatabases = computed(() => {
           </div>
         </template>
         <template v-else>
-          <div
-            class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700 space-y-4"
-          >
+          <div class="ui-surface-panel space-y-4 p-4">
             <div class="flex items-center gap-2">
               <div class="p-1.5 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
                 <Folder class="h-4 w-4 text-amber-600 dark:text-amber-400" />
@@ -973,9 +967,7 @@ const isLoadingDatabases = computed(() => {
       <div v-else class="grid gap-4 grid-cols-[repeat(auto-fit,minmax(280px,1fr))]">
         <!-- Row 1: Server Info -->
         <!-- Connection Info Card -->
-        <div
-          class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700"
-        >
+        <div class="ui-surface-panel p-4">
           <div class="flex items-center gap-2 mb-3">
             <div class="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
               <Server class="h-4 w-4 text-blue-600 dark:text-blue-400" />
@@ -1052,9 +1044,7 @@ const isLoadingDatabases = computed(() => {
         </div>
 
         <!-- Server Stats Card -->
-        <div
-          class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700"
-        >
+        <div class="ui-surface-panel p-4">
           <div class="flex items-center gap-2 mb-3">
             <div class="p-1.5 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
               <BarChart3 class="h-4 w-4 text-purple-600 dark:text-purple-400" />

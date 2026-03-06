@@ -7,7 +7,7 @@
       <button
         :disabled="isExecuting"
         :title="`Run query (${runShortcutHint})`"
-        class="inline-flex items-center whitespace-nowrap px-3 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed"
+        class="inline-flex items-center whitespace-nowrap rounded border border-transparent bg-teal-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-teal-700 focus:outline-none focus-visible:border-teal-700 focus-visible:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50"
         @click="handleRunClick"
       >
         <Play class="h-3.5 w-3.5 mr-1.5" />
@@ -17,7 +17,7 @@
       <div ref="formatDropdownRef" class="relative inline-flex">
         <button
           :disabled="isFormatClickDebounced"
-          class="inline-flex items-center px-2 py-1.5 border border-gray-300 dark:border-gray-600 border-r-0 text-xs font-medium rounded-l shadow-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500"
+          class="inline-flex items-center rounded-l border border-r-0 border-gray-300 bg-white px-2 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus-visible:border-teal-500 focus-visible:bg-teal-50/60 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 dark:focus-visible:border-teal-400 dark:focus-visible:bg-teal-900/20"
           :title="formatButtonTitle"
           @click="handleFormatClick"
         >
@@ -27,7 +27,7 @@
 
         <button
           :disabled="isFormatClickDebounced"
-          class="inline-flex items-center justify-center px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded-r shadow-sm text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500"
+          class="inline-flex items-center justify-center rounded-r border border-gray-300 bg-white px-2 py-1.5 text-gray-600 shadow-sm hover:bg-gray-50 focus:outline-none focus-visible:border-teal-500 focus-visible:bg-teal-50/60 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 dark:focus-visible:border-teal-400 dark:focus-visible:bg-teal-900/20"
           :class="formatState === 'compacted' ? 'text-teal-700 dark:text-teal-300' : ''"
           :title="'More formatting options'"
           @click.stop="toggleFormatMenu"
@@ -54,7 +54,7 @@
 
       <button
         :disabled="!hasQueryToCopy"
-        class="inline-flex items-center px-2 py-1.5 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded shadow-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed"
+        class="inline-flex items-center rounded border border-gray-300 bg-white px-2 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus-visible:border-teal-500 focus-visible:bg-teal-50/60 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 dark:focus-visible:border-teal-400 dark:focus-visible:bg-teal-900/20 disabled:cursor-not-allowed disabled:opacity-50"
         :title="isCopyFeedbackVisible ? 'Copied' : 'Copy SQL'"
         @click="copyCurrentQuery"
       >
@@ -68,7 +68,7 @@
       <!-- Templates Dropdown -->
       <div v-if="templates.length > 0" ref="templatesDropdownRef" class="relative">
         <button
-          class="inline-flex items-center px-2 py-1.5 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded shadow-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+          class="inline-flex items-center rounded border border-gray-300 bg-white px-2 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus-visible:border-teal-500 focus-visible:bg-teal-50/60 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 dark:focus-visible:border-teal-400 dark:focus-visible:bg-teal-900/20"
           :title="`Open template picker (${shortcutHint})`"
           @click="toggleTemplates"
         >
@@ -88,7 +88,7 @@
       <!-- History Dropdown -->
       <div ref="historyDropdownRef" class="relative">
         <button
-          class="inline-flex items-center px-2 py-1.5 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded shadow-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+          class="inline-flex items-center rounded border border-gray-300 bg-white px-2 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus-visible:border-teal-500 focus-visible:bg-teal-50/60 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 dark:focus-visible:border-teal-400 dark:focus-visible:bg-teal-900/20"
           :disabled="history.length === 0"
           :class="{ 'opacity-50 cursor-not-allowed': history.length === 0 }"
           :title="historyButtonTitle"
@@ -130,7 +130,7 @@
                 v-model="historySearch"
                 type="text"
                 placeholder="Search history..."
-                class="w-full pl-8 pr-2 py-1.5 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-850 text-xs text-gray-900 dark:text-gray-100 focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
+                class="w-full rounded-md border border-gray-300 bg-white py-1.5 pl-8 pr-2 text-xs text-gray-900 focus:border-teal-500 focus:bg-teal-50/40 focus:outline-none dark:border-gray-600 dark:bg-gray-850 dark:text-gray-100 dark:focus:border-teal-400 dark:focus:bg-teal-950/20"
               />
             </div>
           </div>

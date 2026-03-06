@@ -591,7 +591,7 @@ async function handleCreateSchema() {
             leave-to-class="transform scale-95 opacity-0"
           >
             <MenuItems
-              class="absolute right-0 z-10 mt-1 w-52 origin-top-right rounded-lg bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black/5 dark:ring-white/10 focus:outline-none py-1"
+              class="ui-surface-floating absolute right-0 z-10 mt-1 w-52 origin-top-right py-1 focus:outline-none"
             >
               <MenuItem v-slot="{ active }">
                 <button
@@ -644,7 +644,7 @@ async function handleCreateSchema() {
             leave-to-class="transform scale-95 opacity-0"
           >
             <PopoverPanel
-              class="absolute right-0 z-10 mt-1 w-64 origin-top-right rounded-lg bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black/5 dark:ring-white/10 p-3"
+              class="ui-surface-floating absolute right-0 z-10 mt-1 w-64 origin-top-right p-3"
             >
               <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5"
                 >Schema name</label
@@ -694,9 +694,7 @@ async function handleCreateSchema() {
       class="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(240px,1fr))]"
     >
       <!-- Essentials -->
-      <div
-        class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700"
-      >
+      <div class="ui-surface-panel p-4">
         <div class="flex items-center gap-2 mb-3">
           <div class="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
             <Database class="h-4 w-4 text-blue-600 dark:text-blue-400" />
@@ -770,9 +768,7 @@ async function handleCreateSchema() {
       </div>
 
       <!-- CDC readiness -->
-      <div
-        class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700"
-      >
+      <div class="ui-surface-panel p-4">
         <div class="flex items-center justify-between mb-3">
           <div class="flex items-center gap-2">
             <div class="p-1.5 bg-teal-100 dark:bg-teal-900/30 rounded-lg">
@@ -888,9 +884,7 @@ async function handleCreateSchema() {
       </div>
 
       <!-- Activity -->
-      <div
-        class="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700"
-      >
+      <div class="ui-surface-panel p-4">
         <div class="flex items-center gap-2 mb-3">
           <div class="p-1.5 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
             <ChartBar class="h-4 w-4 text-orange-600 dark:text-orange-400" />
@@ -952,9 +946,7 @@ async function handleCreateSchema() {
       </div>
 
       <!-- Top Tables (sortable) -->
-      <div
-        class="col-span-full md:col-span-1 xl:col-span-2 bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700"
-      >
+      <div class="ui-surface-panel col-span-full md:col-span-1 xl:col-span-2 p-4">
         <div class="flex items-center gap-2 mb-3">
           <div class="p-1.5 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
             <Table2 class="h-4 w-4 text-purple-600 dark:text-purple-400" />
@@ -1068,10 +1060,7 @@ async function handleCreateSchema() {
       </div>
 
       <!-- Notes -->
-      <div
-        v-if="overview.notes?.length"
-        class="col-span-full bg-slate-50 dark:bg-gray-800/50 rounded-xl p-4 ring-1 ring-slate-200/70 dark:ring-gray-700"
-      >
+      <div v-if="overview.notes?.length" class="ui-surface-panel col-span-full p-4">
         <div class="flex items-center gap-2 mb-3">
           <div class="p-1.5 bg-sky-100 dark:bg-sky-900/30 rounded-lg">
             <Info class="h-4 w-4 text-sky-600 dark:text-sky-400" />

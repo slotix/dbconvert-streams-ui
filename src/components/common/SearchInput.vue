@@ -133,7 +133,7 @@ defineExpose({
       v-model="local"
       type="text"
       :placeholder="props.placeholder || 'Filter...'"
-      class="border border-gray-300 dark:border-gray-700 rounded focus:outline-none focus:ring-1 focus:ring-slate-400 dark:focus:ring-gray-600 w-full pl-8 pr-8 bg-white dark:bg-gray-850 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
+      class="w-full rounded border border-gray-300 bg-white pl-8 pr-8 text-gray-900 placeholder-gray-400 focus:border-slate-400 focus:bg-slate-50 focus:outline-none dark:border-gray-700 dark:bg-gray-850 dark:text-gray-100 dark:placeholder-gray-500 dark:focus:border-gray-500 dark:focus:bg-gray-800"
       :class="[sizes[props.size || 'sm'], inputRightPaddingClass]"
       @keydown="handleKeydown"
     />

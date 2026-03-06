@@ -210,7 +210,7 @@ onBeforeUnmount(() => {
         <span class="text-xs font-semibold text-slate-700 dark:text-slate-200">Zoom</span>
         <div class="flex items-center gap-1">
           <button
-            class="p-0.5 rounded-md text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:ring-offset-1 dark:focus:ring-offset-slate-900"
+            class="rounded-md p-0.5 text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:bg-slate-100 focus-visible:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white dark:focus-visible:bg-slate-800 dark:focus-visible:text-white"
             @click="emit('zoom', 'out')"
           >
             <Minus class="w-3.5 h-3.5" />
@@ -221,20 +221,20 @@ onBeforeUnmount(() => {
             {{ Math.round(currentZoom * 100) }}%
           </span>
           <button
-            class="p-0.5 rounded-md text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:ring-offset-1 dark:focus:ring-offset-slate-900"
+            class="rounded-md p-0.5 text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:bg-slate-100 focus-visible:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white dark:focus-visible:bg-slate-800 dark:focus-visible:text-white"
             @click="emit('zoom', 'in')"
           >
             <Plus class="w-3.5 h-3.5" />
           </button>
           <button
-            class="p-0.5 ml-1 rounded-md text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:ring-offset-1 dark:focus:ring-offset-slate-900"
+            class="ml-1 rounded-md p-0.5 text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:bg-slate-100 focus-visible:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white dark:focus-visible:bg-slate-800 dark:focus-visible:text-white"
             title="Auto layout (recenter + retune)"
             @click="emit('auto')"
           >
             <Sparkles class="w-3.5 h-3.5" />
           </button>
           <button
-            class="p-0.5 ml-1 rounded-md text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-1 focus:ring-cyan-500 focus:ring-offset-1 dark:focus:ring-offset-slate-900"
+            class="ml-1 rounded-md p-0.5 text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:bg-slate-100 focus-visible:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white dark:focus-visible:bg-slate-800 dark:focus-visible:text-white"
             title="Export diagram"
             @click="emit('toggle-export')"
           >
@@ -259,7 +259,7 @@ onBeforeUnmount(() => {
               type="radio"
               value="svg"
               :checked="exportType === 'svg'"
-              class="form-radio h-3.5 w-3.5 text-slate-500 focus:ring-slate-400"
+              class="form-radio h-3.5 w-3.5 text-slate-500 focus:outline-none"
               @change="emit('update:exportType', 'svg')"
             />
             <span class="ml-1.5 text-xs text-slate-700 dark:text-slate-300">SVG</span>
@@ -269,7 +269,7 @@ onBeforeUnmount(() => {
               type="radio"
               value="png"
               :checked="exportType === 'png'"
-              class="form-radio h-3.5 w-3.5 text-slate-500 focus:ring-slate-400"
+              class="form-radio h-3.5 w-3.5 text-slate-500 focus:outline-none"
               @change="emit('update:exportType', 'png')"
             />
             <span class="ml-1.5 text-xs text-slate-700 dark:text-slate-300">PNG</span>
@@ -279,14 +279,14 @@ onBeforeUnmount(() => {
               type="radio"
               value="pdf"
               :checked="exportType === 'pdf'"
-              class="form-radio h-3.5 w-3.5 text-slate-500 focus:ring-slate-400"
+              class="form-radio h-3.5 w-3.5 text-slate-500 focus:outline-none"
               @change="emit('update:exportType', 'pdf')"
             />
             <span class="ml-1.5 text-xs text-slate-700 dark:text-slate-300">PDF</span>
           </label>
         </div>
         <button
-          class="w-full py-1 bg-slate-700 hover:bg-slate-800 dark:bg-slate-600 dark:hover:bg-slate-500 text-white text-xs font-semibold rounded-md focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-1 dark:focus:ring-offset-slate-900 transition-colors disabled:opacity-50"
+          class="w-full rounded-md bg-slate-700 py-1 text-xs font-semibold text-white transition-colors hover:bg-slate-800 focus:outline-none focus-visible:bg-slate-800 dark:bg-slate-600 dark:hover:bg-slate-500 dark:focus-visible:bg-slate-500 disabled:opacity-50"
           :disabled="exportProgress"
           @click="emit('export')"
         >
@@ -410,11 +410,11 @@ onBeforeUnmount(() => {
 }
 
 .slider-gray:focus::-webkit-slider-thumb {
-  box-shadow: 0 0 0 2px rgb(75 85 99 / 0.25);
+  box-shadow: none;
 }
 
 .slider-gray:focus::-moz-range-thumb {
-  box-shadow: 0 0 0 2px rgb(75 85 99 / 0.25);
+  box-shadow: none;
 }
 
 :global(.dark) .slider-gray::-webkit-slider-thumb {
@@ -438,10 +438,10 @@ onBeforeUnmount(() => {
 }
 
 :global(.dark) .slider-gray:focus::-webkit-slider-thumb {
-  box-shadow: 0 0 0 2px rgb(113 113 122 / 0.25);
+  box-shadow: none;
 }
 
 :global(.dark) .slider-gray:focus::-moz-range-thumb {
-  box-shadow: 0 0 0 2px rgb(113 113 122 / 0.25);
+  box-shadow: none;
 }
 </style>

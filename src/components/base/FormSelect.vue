@@ -148,10 +148,10 @@ const optionsBehaviorClass = computed(() => {
           'relative w-full rounded-md shadow-sm text-left',
           buttonSizeClass,
           'transition-colors duration-150',
-          'focus:outline-none focus:ring-1',
+          'focus:outline-none focus-visible:outline-none',
           error
-            ? 'border border-red-300 dark:border-red-600 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-500 dark:focus:ring-red-400'
-            : 'border border-gray-300 dark:border-gray-600 focus:border-teal-500 dark:focus:border-teal-400 focus:ring-teal-500 dark:focus:ring-teal-400',
+            ? 'border border-red-300 dark:border-red-600 focus:border-red-500 dark:focus:border-red-400 focus:bg-red-50/40 dark:focus:bg-red-950/20'
+            : 'border border-gray-300 dark:border-gray-600 focus:border-teal-500 dark:focus:border-teal-400 focus:bg-teal-50/40 dark:focus:bg-teal-950/20',
           disabled
             ? 'bg-gray-100 dark:bg-gray-700 cursor-not-allowed text-gray-500 dark:text-gray-400'
             : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 cursor-pointer',
@@ -180,7 +180,7 @@ const optionsBehaviorClass = computed(() => {
       >
         <ListboxOptions
           :class="[
-            'absolute z-50 w-full rounded-md bg-white dark:bg-gray-800 py-1 shadow-lg ring-1 ring-black dark:ring-gray-600 ring-opacity-5 dark:ring-opacity-100 focus:outline-none',
+            'ui-surface-floating absolute z-50 w-full py-1 focus:outline-none',
             placement === 'top' ? 'bottom-full mb-1' : 'mt-1',
             optionsBehaviorClass,
             optionsTextClass

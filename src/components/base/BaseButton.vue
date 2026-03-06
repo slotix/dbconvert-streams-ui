@@ -43,17 +43,17 @@ const emit = defineEmits<{
 }>()
 
 const baseClasses =
-  'inline-flex items-center justify-center gap-2 font-medium rounded-md transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60'
+  'inline-flex items-center justify-center gap-2 font-medium rounded-md transition-all duration-150 focus:outline-none focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60'
 
 const variantClasses: Record<Variant, string> = {
   primary:
-    'bg-teal-600 dark:bg-teal-900 text-white border border-transparent dark:border-teal-600 hover:bg-teal-700 dark:hover:bg-teal-800 hover:border-teal-700 dark:hover:border-teal-500 focus:ring-teal-500 dark:focus:ring-teal-400 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:text-gray-500 dark:disabled:text-gray-400 dark:disabled:border-gray-600',
+    'bg-teal-600 dark:bg-teal-900 text-white border border-transparent dark:border-teal-600 hover:bg-teal-700 dark:hover:bg-teal-800 hover:border-teal-700 dark:hover:border-teal-500 focus-visible:bg-teal-700 dark:focus-visible:bg-teal-800 focus-visible:border-teal-700 dark:focus-visible:border-teal-500 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:text-gray-500 dark:disabled:text-gray-400 dark:disabled:border-gray-600',
   secondary:
-    'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 focus:ring-gray-500 dark:focus:ring-gray-400 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-400',
+    'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 focus-visible:bg-gray-50 dark:focus-visible:bg-gray-700 focus-visible:border-gray-400 dark:focus-visible:border-gray-500 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-400',
   danger:
-    'bg-white dark:bg-gray-800 text-red-600 dark:text-red-300 border border-red-300 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 hover:border-red-400 dark:hover:border-red-600 focus:ring-red-500 dark:focus:ring-red-400 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-400',
+    'bg-white dark:bg-gray-800 text-red-600 dark:text-red-300 border border-red-300 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 hover:border-red-400 dark:hover:border-red-600 focus-visible:bg-red-50 dark:focus-visible:bg-red-900/30 focus-visible:border-red-400 dark:focus-visible:border-red-600 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-400',
   ghost:
-    'bg-transparent text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200 focus:ring-gray-400 disabled:text-gray-400 disabled:hover:bg-transparent dark:disabled:hover:bg-transparent'
+    'bg-transparent text-gray-600 dark:text-gray-400 border border-transparent hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200 focus-visible:bg-gray-100 dark:focus-visible:bg-gray-800 focus-visible:text-gray-900 dark:focus-visible:text-gray-200 disabled:text-gray-400 disabled:hover:bg-transparent dark:disabled:hover:bg-transparent'
 }
 
 const sizeClasses: Record<Size, string> = {

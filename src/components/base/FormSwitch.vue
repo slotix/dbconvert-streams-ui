@@ -61,10 +61,10 @@ const handleChange = (value: boolean) => {
       :disabled="disabled"
       :class="[
         'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out',
-        'focus:outline-none focus:ring-2 focus:ring-offset-2',
+        'focus:outline-none focus-visible:outline-none',
         modelValue
-          ? 'bg-teal-600 dark:bg-teal-500 focus:ring-teal-500 dark:focus:ring-teal-400'
-          : 'bg-gray-200 dark:bg-gray-700 focus:ring-gray-500 dark:focus:ring-gray-600',
+          ? 'bg-teal-600 dark:bg-teal-500 focus-visible:border-teal-200 dark:focus-visible:border-teal-300'
+          : 'bg-gray-200 dark:bg-gray-700 focus-visible:border-gray-400 dark:focus-visible:border-gray-500',
         disabled ? 'opacity-50 cursor-not-allowed' : ''
       ]"
       @update:model-value="handleChange"
@@ -121,10 +121,10 @@ const handleChange = (value: boolean) => {
       :disabled="disabled"
       :class="[
         'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out',
-        'focus:outline-none focus:ring-2 focus:ring-offset-2',
+        'focus:outline-none focus-visible:outline-none',
         modelValue
-          ? 'bg-teal-600 dark:bg-teal-500 focus:ring-teal-500 dark:focus:ring-teal-400'
-          : 'bg-gray-200 dark:bg-gray-700 focus:ring-gray-500 dark:focus:ring-gray-600',
+          ? 'bg-teal-600 dark:bg-teal-500 focus-visible:border-teal-200 dark:focus-visible:border-teal-300'
+          : 'bg-gray-200 dark:bg-gray-700 focus-visible:border-gray-400 dark:focus-visible:border-gray-500',
         disabled ? 'opacity-50 cursor-not-allowed' : ''
       ]"
       @update:model-value="handleChange"

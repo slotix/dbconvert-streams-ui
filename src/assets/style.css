@@ -221,6 +221,37 @@
     background-color: rgb(107 114 128) !important; /* gray-500 */
     border-color: rgb(107 114 128) !important;
   }
+
+  /* Neutralize Tailwind ring widths globally. Focus treatment is handled with borders,
+     background shifts, and existing shadows to avoid halo artifacts around controls/panels. */
+  .ring,
+  .ring-0,
+  .ring-1,
+  .ring-2,
+  .ring-inset,
+  .focus\:ring:focus,
+  .focus\:ring-0:focus,
+  .focus\:ring-1:focus,
+  .focus\:ring-2:focus,
+  .focus\:ring-inset:focus,
+  .focus-visible\:ring:focus-visible,
+  .focus-visible\:ring-0:focus-visible,
+  .focus-visible\:ring-1:focus-visible,
+  .focus-visible\:ring-2:focus-visible,
+  .focus-visible\:ring-inset:focus-visible {
+    --tw-ring-shadow: 0 0 #0000 !important;
+    --tw-ring-offset-shadow: 0 0 #0000 !important;
+  }
+}
+
+@layer components {
+  .ui-surface-panel {
+    @apply rounded-xl border border-slate-200/80 bg-slate-50 shadow-sm dark:border-gray-700 dark:bg-gray-800/50 dark:shadow-black/20;
+  }
+
+  .ui-surface-floating {
+    @apply rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800 dark:shadow-black/30;
+  }
 }
 
 /* ===========================
