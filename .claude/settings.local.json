@@ -48,7 +48,8 @@
       "Bash(grep v2-create-stream\\\\|v2-streams:*)",
       "Bash(grep v2-monitoring:*)",
       "WebFetch(domain:codemirror.net)",
-      "WebFetch(domain:raw.githubusercontent.com)"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(npx vitest:*)"
     ],
     "deny": [],
     "ask": []
