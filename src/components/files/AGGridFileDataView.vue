@@ -1036,7 +1036,7 @@ export default {
 /* Pending delete: subtle red tint + strike-through */
 :deep(.ag-row.row-pending-delete),
 :deep(.ag-row.row-pending-delete .ag-cell) {
-  background-color: rgba(220, 38, 38, 0.06);
+  background-color: rgba(239, 68, 68, 0.1);
 }
 
 /* Pending insert: sky tint */
@@ -1052,8 +1052,14 @@ export default {
 
 /* Pending edit: highlight edited cells */
 :deep(.ag-cell.cell-pending-edit) {
-  background-color: rgba(13, 148, 136, 0.08);
-  box-shadow: inset 0 0 0 1px rgba(13, 148, 136, 0.9);
+  background-color: rgba(20, 184, 166, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(94, 234, 212, 0.95);
+}
+
+/* Selected row: keep it distinct from edit and delete state */
+:deep(.ag-row.ag-row-selected:not(.row-pending-delete):not(.row-pending-insert)),
+:deep(.ag-row.ag-row-selected:not(.row-pending-delete):not(.row-pending-insert) .ag-cell) {
+  background-color: rgba(59, 130, 246, 0.12);
 }
 
 /* Row change gutter indicator */
@@ -1100,14 +1106,14 @@ export default {
 
 /* Selected row + edited cell */
 :deep(.ag-row.ag-row-selected .ag-cell.cell-pending-edit) {
-  background-color: transparent;
-  box-shadow: inset 0 0 0 2px rgba(13, 148, 136, 1);
+  background-color: rgba(20, 184, 166, 0.12);
+  box-shadow: inset 0 0 0 2px rgba(94, 234, 212, 1);
 }
 
 @media (prefers-color-scheme: dark) {
   :deep(.ag-row.row-pending-delete),
   :deep(.ag-row.row-pending-delete .ag-cell) {
-    background-color: rgba(248, 113, 113, 0.12);
+    background-color: rgba(239, 68, 68, 0.18);
   }
 
   :deep(.ag-row.row-pending-insert),
@@ -1117,7 +1123,12 @@ export default {
 
   :deep(.ag-cell.cell-pending-edit) {
     background-color: rgba(45, 212, 191, 0.14);
-    box-shadow: inset 0 0 0 1px rgba(45, 212, 191, 0.95);
+    box-shadow: inset 0 0 0 1px rgba(94, 234, 212, 0.95);
+  }
+
+  :deep(.ag-row.ag-row-selected:not(.row-pending-delete):not(.row-pending-insert)),
+  :deep(.ag-row.ag-row-selected:not(.row-pending-delete):not(.row-pending-insert) .ag-cell) {
+    background-color: rgba(59, 130, 246, 0.14);
   }
 
   :deep(.ag-cell.row-change-gutter .row-action-edit) {
@@ -1139,8 +1150,8 @@ export default {
   }
 
   :deep(.ag-row.ag-row-selected .ag-cell.cell-pending-edit) {
-    background-color: transparent;
-    box-shadow: inset 0 0 0 2px rgba(45, 212, 191, 1);
+    background-color: rgba(45, 212, 191, 0.16);
+    box-shadow: inset 0 0 0 2px rgba(94, 234, 212, 1);
   }
 }
 
