@@ -94,7 +94,7 @@ function getColumnType(column: SQLColumnMeta) {
     v-if="viewMeta"
     :class="[
       'bg-white dark:bg-gray-850',
-      $attrs.class ? $attrs.class : 'shadow-sm ring-1 ring-gray-900/5 dark:ring-gray-700 rounded-lg'
+      $attrs.class ? $attrs.class : 'rounded-lg border border-gray-200 shadow-sm dark:border-gray-700'
     ]"
   >
     <!-- Header removed; DatabaseObjectContainer renders tabs, title, and actions -->
@@ -106,7 +106,7 @@ function getColumnType(column: SQLColumnMeta) {
           <button
             :class="[
               'px-3 py-2.5 text-sm font-medium leading-5 whitespace-nowrap transition-colors duration-150',
-              'focus:outline-none focus:ring-1 ring-offset-1 ring-gray-300 dark:ring-gray-600',
+              'focus:outline-none focus-visible:border-gray-400 dark:focus-visible:border-gray-500',
               selected
                 ? 'border-b-2 border-gray-400 dark:border-gray-500 text-gray-900 dark:text-gray-100 -mb-px'
                 : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
@@ -132,7 +132,7 @@ function getColumnType(column: SQLColumnMeta) {
         <TabPanel>
           <div class="overflow-x-auto">
             <div class="min-w-[640px]">
-              <div class="ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg">
+              <div class="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
                 <table class="min-w-full divide-y divide-gray-300 dark:divide-gray-700">
                   <thead>
                     <tr class="bg-gray-50 dark:bg-gray-900">

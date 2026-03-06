@@ -99,6 +99,8 @@ Tailwind CSS color schemes for database types.
 
 - `DATABASE_COLORS` - Color scheme per database type
 - `DEFAULT_DATABASE_COLOR` - Fallback color scheme
+- `DATABASE_ICON_COLORS` - Muted tree/panel icon tile scheme per database type
+- `DEFAULT_ICON_COLOR` - Fallback icon tile scheme
 
 **Helper Functions:**
 
@@ -106,6 +108,16 @@ Tailwind CSS color schemes for database types.
 - `getDatabaseBgColor(type)` - Get background color class
 - `getDatabaseRingColor(type)` - Get ring/border color class
 - `getDatabaseTextColor(type)` - Get text color class
+- `getDatabaseIconColors(type)` - Get complete icon tile scheme
+- `getDatabaseIconBgColor(type)` - Get icon tile background class
+- `getDatabaseIconRingColor(type)` - Get icon tile border/ring class
+- `getDatabaseIconTint(type)` - Get icon tint/filter classes
+
+**Design Notes:**
+
+- Use `DatabaseIcon.vue` for connection/database logos that should match the explorer tree.
+- Use `PanelHeaderIcon.vue` for panel/card headers so header icon tiles stay visually aligned with the tree.
+- Ring utilities are no longer the primary focus affordance. Prefer border and background state changes for focusable controls.
 
 ---
 

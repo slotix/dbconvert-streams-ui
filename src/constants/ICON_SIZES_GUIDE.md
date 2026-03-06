@@ -274,6 +274,19 @@ const sizes = useContextualIconSizes()
 // - Secondary navigation
 ```
 
+### Panel and Card Headers
+
+```typescript
+const sizes = useContextualIconSizes()
+
+// Use MD-sized icon tiles for:
+// - Panel header icons
+// - Card section headers
+// - Explorer detail summaries
+//
+// Prefer PanelHeaderIcon.vue instead of ad hoc "colored square + icon" markup.
+```
+
 ### Buttons
 
 ```typescript
@@ -345,6 +358,9 @@ const noSpacing = getIconClasses('LG', 'NONE') // Returns 'h-6 w-6'
 - Use `iconWithTextClass` when icons appear next to text
 - Prefer `ICON_SIZES.BASE` (h-4 w-4) for most action icons
 - Use consistent sizing within the same context (all table actions same size)
+- Use `DatabaseIcon.vue` for connection/database logos that should match the explorer tree
+- Use `PanelHeaderIcon.vue` for panel/card headers instead of hand-built icon tiles
+- Keep focus states on controls border/background-based; avoid introducing new ring halos
 
 ### ❌ DON'T
 
@@ -353,6 +369,8 @@ const noSpacing = getIconClasses('LG', 'NONE') // Returns 'h-6 w-6'
 - Don't forget the `mr-2` spacing when icons are next to text
 - Don't use `BASE` size for sidebar navigation (use `LG`)
 - Don't use large sizes for action buttons (stick to `BASE` or `MD`)
+- Don't build new panel header icons with one-off `p-1.5 bg-* rounded-*` wrappers
+- Don't rely on `ring-*` for control focus treatment in new UI work
 
 ## TypeScript Support
 
@@ -373,6 +391,8 @@ See these components for real-world usage:
 
 - [SearchInput.vue](../components/common/SearchInput.vue) - Dynamic sizing with props
 - [ObjectIcon.vue](../components/common/ObjectIcon.vue) - Icon component example
+- [DatabaseIcon.vue](../components/base/DatabaseIcon.vue) - Connection/tree logo tile
+- [PanelHeaderIcon.vue](../components/common/PanelHeaderIcon.vue) - Panel/card header icon tile
 
 ## Questions?
 

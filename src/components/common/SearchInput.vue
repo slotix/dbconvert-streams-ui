@@ -117,7 +117,7 @@ defineExpose({
       v-if="showClear"
       type="button"
       aria-label="Clear search"
-      class="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+      class="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus-visible:bg-gray-100 focus-visible:text-gray-700 dark:text-gray-500 dark:hover:bg-gray-800 dark:hover:text-gray-300 dark:focus-visible:bg-gray-800 dark:focus-visible:text-gray-200"
       @click="clear"
     >
       <X :class="iconClass" />

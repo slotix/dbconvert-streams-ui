@@ -4,6 +4,7 @@ import { ChevronDown, ChevronRight, Sheet } from 'lucide-vue-next'
 import { useMonitoringStore } from '@/stores/monitoring'
 import { STATUS } from '@/constants'
 import StatusBadge from '@/components/common/StatusBadge.vue'
+import PanelHeaderIcon from '@/components/common/PanelHeaderIcon.vue'
 import TableProgressBar from './TableProgressBar.vue'
 
 const props = withDefaults(
@@ -78,11 +79,7 @@ function formatDuration(seconds: number) {
     >
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
-          <div
-            class="p-2 bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700"
-          >
-            <Sheet class="h-5 w-5 text-gray-600 dark:text-gray-300" />
-          </div>
+          <PanelHeaderIcon :icon="Sheet" tone="slate" />
           <div>
             <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">Tables</h3>
             <p class="text-sm text-gray-600 dark:text-gray-400">

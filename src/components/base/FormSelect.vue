@@ -9,7 +9,7 @@
  * - Full v-model support via Headless UI Listbox
  * - Better accessibility than native <select>
  * - Keyboard navigation built-in
- * - Consistent gray borders with teal focus rings
+ * - Consistent gray borders with border/background focus states
  * - Error state styling
  * - Label and helper text support
  *

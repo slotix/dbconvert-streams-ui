@@ -7,6 +7,7 @@
 ## 1. Implementation Snapshot
 - **Component library:** Use `src/components/base/*` (`BaseButton`, `FormInput`, `FormSelect`, `FormCheckbox`, `FormSwitch`, `SelectionButtonGroup`). `StatusBadge` currently lives in `src/components/common/StatusBadge.vue`. Monitoring still runs the legacy badge until the transition bug is fixed.
 - **Coverage:** 21 components (12 buttons, 9 forms) already consume the shared primitives.
+- **Header icon system:** Use `src/components/base/DatabaseIcon.vue` for connection/database logo tiles and `src/components/common/PanelHeaderIcon.vue` for panel/card headers. Explorer and monitoring panels now use this shared icon language.
 - **Rollout progress:**
   | Phase | Scope | Outcome |
   | --- | --- | --- |
@@ -14,7 +15,7 @@
   | 2 | Dialogs & connection management | Confirm dialogs, folder selection, connection panels migrated |
   | 3 | Remaining priority buttons | Card items, stream history controls, explorer panels updated |
   | 4 | Logs & advanced settings | Planned when those areas are refactored |
-- **Documented exceptions:** icon-only controls in compact layouts, context menus, breadcrumbs, and monitoring’s legacy badge. Keep them as-is until the owning flows change.
+- **Documented exceptions:** icon-only controls in compact layouts, context menus, breadcrumbs, and inline object/list icons. Keep them as-is until the owning flows change.
 - **Outstanding work:** Optional migrations for `UnifiedConnectionParams` and other specialty inputs; Phase 4 polish plus dark-mode validation pass once the toggle ships.
 
 ---
@@ -23,34 +24,38 @@
 ### Core principles
 1. **Color = signal.** Teal appears only when guiding users through primary actions, active selections, focus states, success, or progress. Neutral grays handle everything else.
 2. **Clarity for operators.** Surfaces stay calm so DB engineers can spot the next action instantly.
-3. **Accessibility first.** Every interactive element must expose a teal focus ring, predictable keyboard order, and semantic color contrast.
+3. **Accessibility first.** Every interactive element must expose a visible focus state, predictable keyboard order, and semantic color contrast.
 4. **Centralized styling.** Extend base components instead of scattering ad-hoc Tailwind strings. Document any exception.
+5. **One icon language.** Tree roots, explorer summaries, and panel headers should feel related. Reuse shared icon tiles instead of rebuilding colored squares per view.
 
 ### When to use teal
 | Element | Teal? | Notes |
 | --- | --- | --- |
-| Primary buttons | ✅ | `bg-teal-600` / `hover:bg-teal-700`, `focus:ring-teal-500` |
+| Primary buttons | ✅ | `bg-teal-600` / `hover:bg-teal-700`, teal border/background focus state |
 | Secondary buttons (Cancel/Back) | ❌ | `bg-white border-gray-300 text-gray-700` |
-| Active selections (tabs, segmented controls) | ✅ | Selected option gains teal fill or border + ring |
-| Form inputs | ⚠️ | Gray borders by default; teal only on focus |
+| Active selections (tabs, segmented controls) | ✅ | Selected option gains teal fill or border |
+| Form inputs | ⚠️ | Gray borders by default; teal only on focus border/background |
 | Success state badges | ✅ | Finished/completed indicators |
 | Progress indicators | ✅ | Bars/spinners use teal fill |
 | Body text, helper copy | ❌ | Stick with gray-600/700 |
+| Panel header icons | ⚠️ | Use muted tile palettes; use actual connection logo when context matters |
 
 ### Button & input cheatsheet
-- **Primary:** teal background, white text, `focus:ring-teal-500 ring-offset-2`.
+- **Primary:** teal background, white text, stronger teal border/background on focus.
 - **Secondary:** white background, gray text, gray border, `hover:bg-gray-50`.
 - **Danger:** white background, red text/border; reserve for destructive actions.
 - **Ghost:** transparent background, gray text; use for inline “Edit”/link-style actions.
-- **Inputs/selects/textareas:** `border-gray-300 text-gray-900 placeholder-gray-400`, teal focus ring only.
-- **Checkbox/radio:** `text-teal-600 focus:ring-teal-500`, gray border when idle.
+- **Inputs/selects/textareas:** `border-gray-300 text-gray-900 placeholder-gray-400`, teal focus border/background only.
+- **Checkbox/radio:** `text-teal-600`, gray border when idle; do not add halo rings.
+- **Panel headers:** use `PanelHeaderIcon` rather than ad hoc `p-* bg-* rounded-*` wrappers.
 
 ### Color decision flow
 1. Is the element interactive? If not, keep it gray.
 2. Does it advance/confirm the primary flow? → teal primary styling.
 3. Is it destructive? → red danger palette.
 4. Is it contextual (cancel/back/filter)? → secondary gray styling.
-5. Is it showing active/selected state? → teal border/fill + ring.
+5. Is it showing active/selected state? → teal border/fill.
+6. Is it a panel/card header? → use a muted icon tile (`PanelHeaderIcon` or `DatabaseIcon`) instead of a one-off color block.
 
 ### Status colors
 | Status | Background | Text | Border |
@@ -67,6 +72,8 @@
 - Setting teal as the default input border instead of only on focus.
 - Mixing focus colors (blue inputs, teal selects). Stick with teal everywhere.
 - Using teal for body text or decorative accents with no semantic meaning.
+- Rebuilding panel header icon tiles by hand instead of reusing `PanelHeaderIcon`.
+- Reintroducing `ring-*` halos for focus instead of border/background state changes.
 
 ---
 
@@ -88,15 +95,21 @@ Teal never appears on inert surfaces, body text, or default input borders.
 
 ## 4. Component Standards
 ### Buttons
-- Primary: `bg-teal-600 text-white`, `hover:bg-teal-700`, `focus:ring-2 ring-teal-500 ring-offset-2`, disabled = `bg-gray-300 text-gray-500`.
-- Secondary: `bg-white text-gray-700 border-gray-300`, `hover:bg-gray-50 hover:border-gray-400`, `focus:ring-gray-500`.
-- Danger: `text-red-600 border-red-300 bg-white`, `hover:bg-red-50`, `focus:ring-red-500`.
+- Primary: `bg-teal-600 text-white`, `hover:bg-teal-700`, focus uses stronger border/background state, disabled = `bg-gray-300 text-gray-500`.
+- Secondary: `bg-white text-gray-700 border-gray-300`, `hover:bg-gray-50 hover:border-gray-400`, focus uses border/background state.
+- Danger: `text-red-600 border-red-300 bg-white`, `hover:bg-red-50`, focus uses red border/background state.
 - Ghost: transparent background + gray text; icons allowed with bespoke spacing.
 
 ### Forms
-- Inputs/selects/textareas: `border-gray-300 text-gray-900 placeholder-gray-400`, teal focus ring, disabled surfaces lighten to `bg-gray-50`.
-- Checkboxes/radios: `text-teal-600 focus:ring-teal-500 focus:ring-offset-2`, gray outline when idle.
-- Segmented controls: neutral gray when idle, teal fill + ring when selected.
+- Inputs/selects/textareas: `border-gray-300 text-gray-900 placeholder-gray-400`, teal focus border/background, disabled surfaces lighten to `bg-gray-50`.
+- Checkboxes/radios: `text-teal-600`, gray outline when idle.
+- Segmented controls: neutral gray when idle, teal fill + border when selected.
+
+### Icons
+- **Connection/database logo tiles:** Use `DatabaseIcon.vue`. This is the source of truth for tree-style connection logos and their muted tile palettes.
+- **Panel/card headers:** Use `PanelHeaderIcon.vue`.
+- **Inline object icons:** Keep using `ObjectIcon.vue` or direct Lucide icons where the icon is part of a row/list, not a panel header.
+- **Do not** build new header tiles with local color classes unless a new shared tone is needed; add the tone to the shared component instead.
 
 ### Status badges
 Standard statuses map to semantic colors (see table above). Use `StatusBadge` to avoid inline duplication.
@@ -109,7 +122,7 @@ Standard statuses map to semantic colors (see table above). Use `StatusBadge` to
 ### Typography, spacing, and elevation
 - Headings: titles `text-3xl font-bold text-gray-900`; section headers `text-xl font-semibold`; labels `text-sm font-medium text-gray-700`; helper text `text-sm text-gray-500`.
 - Spacing: `space-y-4` between inputs, `space-y-6/8` between sections, `gap-4` for form grids, `gap-6` for cards.
-- Radius & shadows: `rounded-md` controls, `rounded-lg` cards, `rounded-full` badges; `shadow-sm` + `ring-1 ring-gray-900/5` for cards.
+- Radius & shadows: `rounded-md` controls, `rounded-lg` cards, `rounded-full` badges; use soft borders plus `shadow-sm`/`shadow-lg` for surfaces. Do not rely on rings for card outlines.
 
 ---
 
@@ -124,14 +137,16 @@ Standard statuses map to semantic colors (see table above). Use `StatusBadge` to
 1. **Buttons → `BaseButton`.** Map actions to variants (`primary`, `secondary`, `danger`, `ghost`). Use the built-in loading/disabled props.
 2. **Forms → base components.** Inputs, selects, textareas, checkboxes, switches, and segmented controls should reuse the shared wrappers for focus, helper text, and accessibility.
 3. **Status indicators → `StatusBadge`.** Convert inline badge styles and remap legacy labels (active→running, success→finished, error→failed, waiting→pending, stopped→paused, loading→initializing).
-4. **Navigation/selection states.** Tabs, sidebars, segmented controls always show teal when active and gray when idle.
-5. **Validation/messaging.** Reserve semantic colors for real state (teal/green success, red danger, amber warning). Remove decorative teal.
+4. **Panel headers → shared icon tiles.** Use `PanelHeaderIcon` for panel/card section headers and `DatabaseIcon` when the actual connection/database logo should appear.
+5. **Navigation/selection states.** Tabs, sidebars, segmented controls always show teal when active and gray when idle.
+6. **Validation/messaging.** Reserve semantic colors for real state (teal/green success, red danger, amber warning). Remove decorative teal.
 
 ### Testing checklist
 - Button variants show correct hover/disabled states.
-- Inputs default to gray borders and use teal focus rings.
+- Inputs default to gray borders and use teal focus border/background states.
 - Keyboard navigation covers every interactive element with visible focus.
 - Status badges use the semantic palettes above.
+- Panel/card headers reuse `PanelHeaderIcon` or `DatabaseIcon` where applicable.
 - No stray inline colors remain; lint/tests pass with no console warnings.
 
 ### Suggested rollout order (when tackling large areas)
@@ -163,10 +178,11 @@ Standard statuses map to semantic colors (see table above). Use `StatusBadge` to
 | Primary button | `bg-teal-600 hover:bg-teal-700` | `dark:bg-teal-500 dark:hover:bg-teal-400` |
 | Secondary button | `bg-white border-gray-300` | `dark:bg-gray-800 dark:border-gray-600` |
 | Status colors | `bg-{color}-100 text-{color}-800` | `dark:bg-{color}-900 dark:text-{color}-300` |
+| Header icon tiles | muted solid tiles | darker muted tiles with lightened icon tint |
 
 ### Implementation pattern
 1. Pair every color utility with a `dark:` counterpart (`bg-white dark:bg-gray-850`, `text-gray-900 dark:text-gray-100`).
-2. Update supporting tokens: `shadow-sm dark:shadow-gray-900/30`, `ring-offset-2 dark:ring-offset-gray-900`, `placeholder-gray-400 dark:placeholder-gray-500`.
+2. Update supporting tokens: `shadow-sm dark:shadow-gray-900/30`, `placeholder-gray-400 dark:placeholder-gray-500`, and the appropriate dark border/background focus states.
 3. Icons should inherit text color via `currentColor`; multi-tone SVGs need explicit `dark:` classes (safelisted in `tailwind.config.mjs`).
 4. Global CSS already applies a 200 ms transition to color/border/background; no extra JS needed beyond the theme store.
 
@@ -176,7 +192,7 @@ Standard statuses map to semantic colors (see table above). Use `StatusBadge` to
 - `src/styles/agGridTheme.css`: AG Grid dark theme overrides.
 
 ### Dark mode testing checklist
-- Toggle the theme and confirm backgrounds, text, borders, shadows, and focus rings update.
+- Toggle the theme and confirm backgrounds, text, borders, shadows, focus states, and header icon tiles update.
 - Validate hover/focus states remain visible on dark surfaces.
 - Confirm icons/spinners inherit the correct color.
 - Check WCAG contrast ≥ 4.5:1 in both modes.

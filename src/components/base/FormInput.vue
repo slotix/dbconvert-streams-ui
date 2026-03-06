@@ -8,7 +8,7 @@
  * Features:
  * - Full v-model support (two-way binding)
  * - All standard input attributes (type, placeholder, disabled, etc.)
- * - Consistent gray borders with teal focus rings
+ * - Consistent gray borders with border/background focus states
  * - Error state styling
  * - Label and helper text support
  * - Forward all native input events

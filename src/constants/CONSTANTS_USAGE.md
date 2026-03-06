@@ -96,10 +96,15 @@ if (normalizeDatabaseType(connection.type) === DATABASE_TYPES.POSTGRESQL) {
 
 ---
 
-### 3. Database Colors (`databaseColors.ts`)
+### 3. Database Colors and Icon Tiles (`databaseColors.ts`)
 
 ```typescript
-import { getDatabaseColors, getDatabaseBgColor } from '@/constants'
+import {
+  getDatabaseColors,
+  getDatabaseBgColor,
+  getDatabaseIconBgColor,
+  getDatabaseIconTint
+} from '@/constants'
 
 // Get complete color scheme
 const colors = getDatabaseColors('postgresql')
@@ -107,6 +112,10 @@ const colors = getDatabaseColors('postgresql')
 
 // Get specific color
 const bgColor = getDatabaseBgColor('mysql') // 'bg-orange-100'
+
+// Get icon tile styling used by tree/panel headers
+const iconBg = getDatabaseIconBgColor('mysql')
+const iconTint = getDatabaseIconTint('mysql')
 ```
 
 **Before:**
@@ -127,6 +136,29 @@ import { getDatabaseBgColor } from '@/constants'
 
 const bgColor = getDatabaseBgColor(connection.type)
 ```
+
+**Panel/Header Pattern:**
+
+```vue
+<script setup lang="ts">
+import PanelHeaderIcon from '@/components/common/PanelHeaderIcon.vue'
+import { Database } from 'lucide-vue-next'
+</script>
+
+<template>
+  <div class="flex items-center gap-2">
+    <PanelHeaderIcon
+      :icon="Database"
+      tone="blue"
+      db-type="PostgreSQL"
+      logo-src="/images/db-logos/postgresql.svg"
+    />
+    <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Connection Info</span>
+  </div>
+</template>
+```
+
+Use `PanelHeaderIcon` for card/panel headers. It keeps those tiles aligned with the explorer tree styling and uses the real connection logo when available.
 
 ---
 

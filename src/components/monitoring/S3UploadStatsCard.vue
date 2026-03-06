@@ -4,6 +4,7 @@ import { ChevronDown, CloudUpload } from 'lucide-vue-next'
 import { useMonitoringStore } from '@/stores/monitoring'
 import { STATUS } from '@/constants'
 import StatusBadge from '@/components/common/StatusBadge.vue'
+import PanelHeaderIcon from '@/components/common/PanelHeaderIcon.vue'
 import { formatDataSize } from '@/utils/formats'
 
 const props = withDefaults(
@@ -88,11 +89,7 @@ function getUploadStatus(status: string) {
     >
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
-          <div
-            class="p-2 bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-amber-200 dark:border-amber-700/50"
-          >
-            <CloudUpload class="h-5 w-5 text-amber-600 dark:text-amber-400" />
-          </div>
+          <PanelHeaderIcon :icon="CloudUpload" tone="amber" />
           <div>
             <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">S3 Upload</h3>
             <p class="text-sm text-gray-600 dark:text-gray-400">

@@ -469,7 +469,7 @@ function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
           <button
             :class="[
               'px-3 py-2.5 text-sm font-medium leading-5 whitespace-nowrap transition-colors duration-150',
-              'focus:outline-none focus:ring-1 ring-offset-1 ring-gray-300 dark:ring-gray-600',
+              'focus:outline-none focus-visible:border-gray-400 dark:focus-visible:border-gray-500',
               selected
                 ? 'border-b-2 border-gray-400 dark:border-gray-500 text-gray-900 dark:text-gray-100 -mb-px'
                 : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
@@ -502,7 +502,7 @@ function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
                 v-model="columnFilterQuery"
                 type="text"
                 placeholder="Filter columns..."
-                class="h-8 w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-850 pl-8 pr-2 text-xs text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-teal-500/40 dark:focus:ring-teal-500/30"
+                class="h-8 w-full rounded-md border border-gray-200 bg-white pl-8 pr-2 text-xs text-gray-900 placeholder:text-gray-400 focus:border-teal-500 focus:bg-teal-50/40 focus:outline-none dark:border-gray-700 dark:bg-gray-850 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:border-teal-400 dark:focus:bg-teal-950/20"
               />
             </div>
 
@@ -512,11 +512,11 @@ function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
               </span>
               <button
                 type="button"
-                class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset transition-colors"
+                class="inline-flex items-center rounded-md border px-2 py-1 text-xs font-medium transition-colors"
                 :class="
                   showAdvancedColumns
-                    ? 'bg-gray-100 text-gray-900 ring-gray-200 dark:bg-gray-800 dark:text-gray-100 dark:ring-gray-700'
-                    : 'bg-white text-gray-600 ring-gray-200 hover:bg-gray-50 dark:bg-gray-850 dark:text-gray-300 dark:ring-gray-700 dark:hover:bg-gray-800'
+                    ? 'border-gray-300 bg-gray-100 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100'
+                    : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-850 dark:text-gray-300 dark:hover:bg-gray-800'
                 "
                 :aria-pressed="showAdvancedColumns"
                 @click="showAdvancedColumns = !showAdvancedColumns"
@@ -528,7 +528,7 @@ function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
 
           <div class="overflow-x-auto">
             <div class="min-w-[640px]">
-              <div class="ring-1 ring-gray-200 dark:ring-gray-700">
+              <div class="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
                 <table class="min-w-full divide-y divide-gray-300 dark:divide-gray-700">
                   <thead>
                     <tr class="bg-gray-50 dark:bg-gray-900">
@@ -634,7 +634,7 @@ function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
                             <span class="whitespace-nowrap">{{ getColumnType(column) }}</span>
                             <span
                               v-if="column.isUnsigned"
-                              class="inline-flex items-center rounded-md bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-800 ring-1 ring-inset ring-amber-200 dark:bg-amber-900/30 dark:text-amber-200 dark:ring-amber-700/50"
+                              class="inline-flex items-center rounded-md border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-800 dark:border-amber-700/50 dark:bg-amber-900/30 dark:text-amber-200"
                             >
                               UNSIGNED
                             </span>
@@ -645,7 +645,7 @@ function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
                             :title="getEnumSetTitle(column)"
                           >
                             <span
-                              class="mr-1 inline-flex items-center rounded-md bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-700 ring-1 ring-inset ring-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:ring-gray-700"
+                              class="mr-1 inline-flex items-center rounded-md border border-gray-200 bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
                             >
                               {{ getEnumSetLabel(column) }}
                             </span>
@@ -755,7 +755,7 @@ function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
         <TabPanel>
           <div class="overflow-x-auto">
             <div class="inline-block min-w-full align-middle">
-              <div class="overflow-hidden ring-1 ring-gray-200 dark:ring-gray-700">
+              <div class="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
                 <table class="min-w-full divide-y divide-gray-300 dark:divide-gray-700">
                   <thead>
                     <tr class="bg-gray-50 dark:bg-gray-900">
@@ -862,7 +862,7 @@ function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
 
           <div class="overflow-x-auto">
             <div class="inline-block min-w-full align-middle">
-              <div class="overflow-hidden ring-1 ring-gray-200 dark:ring-gray-700">
+              <div class="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
                 <table class="min-w-full divide-y divide-gray-300 dark:divide-gray-700">
                   <thead>
                     <tr class="bg-gray-50 dark:bg-gray-900">

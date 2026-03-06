@@ -96,7 +96,7 @@
               :checked="isTypeSelected(option.type)"
               :disabled="isComingSoon(option)"
               tabindex="-1"
-              class="pointer-events-none h-4 w-4 shrink-0 rounded border-gray-300 bg-white text-sky-600 dark:border-gray-600 dark:bg-gray-800 focus:ring-sky-500"
+              class="pointer-events-none h-4 w-4 shrink-0 rounded border-gray-300 bg-white text-sky-600 dark:border-gray-600 dark:bg-gray-800 focus:outline-none"
             />
             <img
               :src="option.logo"
@@ -236,7 +236,9 @@ function groupChipClass(group: FilterGroupKey): string {
     isActive
       ? 'border-slate-400 bg-slate-100 pr-7 text-slate-700 dark:border-slate-500 dark:bg-slate-700/30 dark:text-slate-200'
       : 'border-slate-300 bg-white pr-2 text-slate-600 hover:bg-slate-50 dark:border-gray-700 dark:bg-gray-850 dark:text-gray-300 dark:hover:bg-gray-800',
-    openGroup.value === group ? 'ring-1 ring-slate-300 dark:ring-slate-500' : ''
+    openGroup.value === group
+      ? 'border-slate-400 bg-slate-50 dark:border-slate-500 dark:bg-gray-800'
+      : ''
   ].join(' ')
 }
 
