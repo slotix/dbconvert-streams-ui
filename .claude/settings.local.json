@@ -49,7 +49,11 @@
       "Bash(grep v2-monitoring:*)",
       "WebFetch(domain:codemirror.net)",
       "WebFetch(domain:raw.githubusercontent.com)",
-      "Bash(npx vitest:*)"
+      "Bash(npx vitest:*)",
+      "Bash(identify /home/dm3/Downloads/sshot_20260306_154758.png)",
+      "Read(//home/dm3/Downloads/**)",
+      "Bash(node:*)",
+      "Bash(identify:*)"
     ],
     "deny": [],
     "ask": []

@@ -1,10 +1,18 @@
 <template>
   <div v-if="isS3" class="w-full">
-    <S3ConnectionParams :connectionType="props.connectionType" :logo="props.logo" />
+    <S3ConnectionParams
+      :connectionType="props.connectionType"
+      :logo="props.logo"
+      :layout="props.layout"
+    />
   </div>
 
   <div v-else-if="isLocalFiles" class="w-full">
-    <LocalFilesConnectionParams :connectionType="props.connectionType" :logo="props.logo" />
+    <LocalFilesConnectionParams
+      :connectionType="props.connectionType"
+      :logo="props.logo"
+      :layout="props.layout"
+    />
   </div>
 
   <div v-else>
@@ -21,6 +29,7 @@
           :is="paramsComponent"
           :connectionType="props.connectionType"
           :logo="props.logo"
+          :layout="props.layout"
         />
       </keep-alive>
     </div>

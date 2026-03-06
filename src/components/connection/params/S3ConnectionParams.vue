@@ -1,5 +1,5 @@
 <template>
-  <div class="px-4 md:px-6">
+  <div :class="containerClass">
     <div v-if="!connection && isEdit" class="text-center">
       <Spinner text="Loading connection..." size="sm" />
     </div>
@@ -226,21 +226,18 @@
         </div>
       </div>
 
-      <!-- File Formats Info -->
-      <div
-        class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-5 shadow-sm dark:shadow-gray-900/20"
-      >
+      <div class="rounded-xl border border-gray-200 bg-transparent p-5 dark:border-gray-700">
         <div class="flex items-start">
-          <FileText class="h-5 w-5 text-blue-600 dark:text-blue-400 mr-3 mt-0.5 shrink-0" />
+          <FileText class="mr-3 mt-0.5 h-5 w-5 shrink-0 text-sky-500 dark:text-sky-400" />
           <div>
-            <h4 class="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-2">
+            <h4 class="mb-2 text-sm font-semibold text-gray-900 dark:text-gray-100">
               Supported File Formats
             </h4>
-            <p class="text-xs text-blue-700 dark:text-blue-300 leading-relaxed mb-3">
+            <p class="mb-3 text-xs leading-relaxed text-gray-600 dark:text-gray-300">
               Parquet, CSV, JSON, JSONL (with .gz/.zst compression)
             </p>
-            <p class="text-xs text-blue-600 dark:text-blue-400 font-medium">Supported Providers:</p>
-            <p class="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
+            <p class="text-xs font-medium text-gray-700 dark:text-gray-200">Supported Providers:</p>
+            <p class="text-xs leading-relaxed text-gray-600 dark:text-gray-300">
               AWS S3, Google Cloud Storage, Cloudflare R2, DigitalOcean Spaces, Backblaze B2, MinIO,
               and any S3-compatible storage
             </p>
@@ -262,11 +259,15 @@ import { S3_PROVIDER_PRESETS } from '@/types/s3'
 interface Props {
   connectionType: string
   logo?: string
+  layout?: 'default' | 'workspace'
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  layout: 'default'
+})
 
 const connectionsStore = useConnectionsStore()
+const containerClass = computed(() => (props.layout === 'workspace' ? '' : 'px-4 md:px-6'))
 
 // Direct store access - single source of truth
 const connection = computed(() => connectionsStore.currentConnection)

@@ -43,9 +43,6 @@ const props = defineProps<{
   fileEntries?: Array<{ name: string; path: string; type: 'file' | 'dir'; size?: number }>
 }>()
 const emit = defineEmits<{
-  (e: 'edit-wizard'): void
-  (e: 'clone'): void
-  (e: 'delete'): void
   (e: 'create-database', databaseName: string): void
   (e: 'create-schema', schemaName: string): void
   (e: 'open-sql-console'): void
@@ -564,13 +561,6 @@ const isLoadingDatabases = computed(() => {
         />
       </div>
       <div class="hidden sm:flex flex-wrap items-center justify-end gap-2">
-        <BaseButton variant="secondary" size="sm" @click="emit('edit-wizard')">Edit</BaseButton>
-        <BaseButton variant="secondary" size="sm" @click="emit('clone')">Clone</BaseButton>
-        <BaseButton variant="danger" size="sm" @click="emit('delete')">Delete</BaseButton>
-
-        <!-- Action buttons separator -->
-        <div class="w-px h-6 bg-gray-200 dark:bg-gray-700 mx-0.5"></div>
-
         <!-- File connection actions -->
         <template v-if="isFileConnection">
           <BaseButton

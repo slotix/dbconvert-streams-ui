@@ -7,7 +7,7 @@
       :layout="layout"
     />
 
-    <AccessNotice v-if="showAccessNotice" :publicIp="publicIp" />
+    <AccessNotice v-if="showAccessNotice" :publicIp="publicIp" :layout="layout" />
   </div>
 </template>
 

@@ -66,6 +66,17 @@ const alwaysOpenNewTab = usePersistedState<boolean>('explorer.alwaysOpenNewTab',
 })
 
 const selectedDatabase = computed(() => explorerState.selectedDatabaseName.value)
+const normalizedTreeSelection = computed(() => {
+  const selection = treeSelection.value
+  if (!selection) {
+    return undefined
+  }
+
+  return {
+    ...selection,
+    filePath: selection.filePath ?? undefined
+  }
+})
 
 const activeConnectionId = computed(
   () =>
@@ -96,11 +107,8 @@ const {
   handlePickFromBreadcrumb,
   handlePickFileFromBreadcrumb,
   onAddConnection,
-  onEditConnection,
-  onDeleteConnection,
   confirmDeleteConnection,
-  cancelDeleteConnection,
-  onCloneConnection
+  cancelDeleteConnection
 } = useDatabaseExplorerController({
   router,
   explorerState,
@@ -301,7 +309,7 @@ function handleOpenFileConsole(payload: {
               :initial-expanded-connection-id="explorerState.currentConnectionId.value || undefined"
               :search-query="connectionSearch"
               :type-filters="selectedConnectionTypes"
-              :selected="treeSelection || undefined"
+              :selected="normalizedTreeSelection"
               @update:search-query="connectionSearch = $event"
               @update:type-filters="selectedConnectionTypes = $event"
               @add-connection="onAddConnection"
@@ -356,9 +364,6 @@ function handleOpenFileConsole(payload: {
               v-if="activeConnectionId"
               :active-pane="paneTabsStore.activePane"
               :split-pane-resize="splitPaneResize"
-              @edit-connection-wizard="onEditConnection"
-              @clone-connection="onCloneConnection"
-              @delete-connection="onDeleteConnection"
               @create-database="handleCreateDatabase"
               @create-schema="handleCreateSchema"
               @create-bucket="handleCreateBucket"

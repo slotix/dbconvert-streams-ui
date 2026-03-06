@@ -43,9 +43,6 @@
           @open-connection-file-console="handleOpenFileConsole"
           @open-database-sql-console="handleOpenSqlConsole"
           @show-diagram="$emit('show-diagram', $event)"
-          @edit-connection-wizard="$emit('edit-connection-wizard', $event)"
-          @clone-connection="$emit('clone-connection', $event)"
-          @delete-connection="$emit('delete-connection', $event)"
           @create-database="$emit('create-database', $event)"
           @create-schema="$emit('create-schema', $event)"
           @create-bucket="$emit('create-bucket', $event)"
@@ -91,9 +88,6 @@
           @open-connection-file-console="handleOpenFileConsole"
           @open-database-sql-console="handleOpenSqlConsole"
           @show-diagram="$emit('show-diagram', $event)"
-          @edit-connection-wizard="$emit('edit-connection-wizard', $event)"
-          @clone-connection="$emit('clone-connection', $event)"
-          @delete-connection="$emit('delete-connection', $event)"
           @create-database="$emit('create-database', $event)"
           @create-schema="$emit('create-schema', $event)"
           @create-bucket="$emit('create-bucket', $event)"
@@ -130,9 +124,6 @@ const props = withDefaults(defineProps<Props>(), {
 
 // Define emits
 const emit = defineEmits<{
-  'edit-connection-wizard': [connectionId: string]
-  'clone-connection': [connectionId: string]
-  'delete-connection': [connectionId: string]
   'create-database': [payload: { connectionId: string; name: string }]
   'create-schema': [payload: { connectionId: string; name: string; database?: string }]
   'create-bucket': [payload: { connectionId: string; bucket: string; region?: string }]

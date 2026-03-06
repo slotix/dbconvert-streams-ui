@@ -54,7 +54,7 @@ const isDesktop = computed(() => isWailsContext())
 const isLocalPath = computed(() => !props.entry.path.startsWith('s3://'))
 const isCSVFile = computed(() => {
   const knownFormats = [props.metadata?.format, props.entry.format, fileFormat.value]
-    .filter((value): value is string => typeof value === 'string')
+    .filter((value): value is NonNullable<typeof value> => value != null)
     .map((value) => value.toLowerCase())
   return knownFormats.includes('csv')
 })

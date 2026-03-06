@@ -1,5 +1,5 @@
 <template>
-  <div class="px-6">
+  <div :class="containerClass">
     <div class="mt-4">
       <h3 class="text-xl font-medium text-gray-900 dark:text-gray-100 mb-6">SSL Configuration</h3>
       <div class="space-y-6">
@@ -58,6 +58,15 @@ import FormSelect from '@/components/base/FormSelect.vue'
 import type { SSLConfig } from '@/types/connections'
 import { vTooltip } from '@/directives/tooltip'
 import CertificateInput from './CertificateInput.vue'
+
+interface Props {
+  layout?: 'default' | 'workspace'
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  layout: 'default'
+})
+const containerClass = computed(() => (props.layout === 'workspace' ? 'px-4 md:px-6' : 'px-6'))
 
 // Constants
 const SSL_MODES = [
@@ -133,7 +142,7 @@ watch(
 
 // Methods
 function getSSLModeDescription(mode: SSLConfig['mode']): string {
-  const descriptions = {
+  const descriptions: Record<SSLConfig['mode'], string> = {
     disabled: 'No SSL encryption',
     require: 'Encrypt connection only',
     'verify-ca': 'Verify server certificate is signed by trusted CA',

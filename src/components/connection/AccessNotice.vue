@@ -1,8 +1,6 @@
 <template>
   <div>
-    <div
-      class="mx-4 rounded-xl border border-gray-200 bg-transparent p-5 md:mx-6 dark:border-gray-700"
-    >
+    <div :class="containerClass">
       <div class="flex items-start">
         <Info class="mt-0.5 h-5 w-5 shrink-0 text-sky-500 dark:text-sky-400" />
         <div class="ml-3">
@@ -46,10 +44,20 @@
 
 <script setup lang="ts">
 import { ExternalLink, Info } from 'lucide-vue-next'
+import { computed } from 'vue'
 
 interface Props {
   publicIp: string
+  layout?: 'default' | 'workspace'
 }
 
-defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  layout: 'default'
+})
+
+const containerClass = computed(() =>
+  props.layout === 'workspace'
+    ? 'rounded-xl border border-gray-200 bg-transparent p-5 dark:border-gray-700'
+    : 'mx-4 rounded-xl border border-gray-200 bg-transparent p-5 md:mx-6 dark:border-gray-700'
+)
 </script>

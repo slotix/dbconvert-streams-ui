@@ -5,9 +5,6 @@
       :key="`${paneId}-connection-${activeTab.connectionId}`"
       :connection="currentConnection"
       :file-entries="connectionFileEntries"
-      @edit-wizard="$emit('edit-connection-wizard', activeTab.connectionId)"
-      @clone="$emit('clone-connection', activeTab.connectionId)"
-      @delete="$emit('delete-connection', activeTab.connectionId)"
       @create-database="
         $emit('create-database', { connectionId: activeTab.connectionId, name: $event })
       "
@@ -150,9 +147,6 @@ defineEmits<{
   'open-connection-file-console': [connectionId: string]
   'open-database-sql-console': [payload: { connectionId: string; database: string }]
   'show-diagram': [payload: ShowDiagramPayload]
-  'edit-connection-wizard': [connectionId: string]
-  'clone-connection': [connectionId: string]
-  'delete-connection': [connectionId: string]
   'create-database': [payload: { connectionId: string; name: string }]
   'create-schema': [payload: { connectionId: string; name: string; database?: string }]
   'create-bucket': [payload: { connectionId: string; bucket: string; region?: string }]

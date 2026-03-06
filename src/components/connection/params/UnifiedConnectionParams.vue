@@ -1,5 +1,5 @@
 <template>
-  <div class="px-4 md:px-6">
+  <div :class="containerClass">
     <div v-if="!connection && isEdit" class="text-center">
       <Spinner text="Loading connection..." size="sm" />
     </div>
@@ -167,9 +167,12 @@ import { Eye, EyeOff } from 'lucide-vue-next'
 interface Props {
   connectionType: string
   logo?: string
+  layout?: 'default' | 'workspace'
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  layout: 'default'
+})
 
 // Get database capabilities
 const dbCapabilities = useDatabaseCapabilities(computed(() => props.connectionType))
@@ -183,6 +186,7 @@ const matchedDbType = computed(() =>
 )
 const displayConnectionType = computed(() => matchedDbType.value?.type || props.connectionType)
 const resolvedLogo = computed(() => matchedDbType.value?.logo || props.logo)
+const containerClass = computed(() => (props.layout === 'workspace' ? '' : 'px-4 md:px-6'))
 
 // Direct store access - single source of truth
 const connection = computed(() => connectionsStore.currentConnection)
