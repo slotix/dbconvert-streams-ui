@@ -52,73 +52,40 @@
     </div>
 
     <!-- Action Buttons -->
-    <div
-      class="absolute right-2 top-2 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity bg-white/95 dark:bg-gray-850/95 backdrop-blur-sm rounded-md shadow-sm border border-gray-200 dark:border-gray-700 p-0.5"
-      @click.stop
-    >
-      <!-- Start/Run Again/Pause/Resume Button -->
-      <!-- Show Resume button when paused (and not finished) -->
-      <button
-        v-if="isPaused && !isFinished"
-        v-tooltip="'Resume the stream'"
-        type="button"
-        class="p-1.5 rounded-md hover:bg-teal-100 dark:hover:bg-teal-900/30 text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 transition-colors"
-        @click.stop="resumeStream"
-      >
-        <Play class="h-4 w-4" />
-      </button>
-      <!-- Show Pause button when running (not paused, not finished) -->
-      <button
-        v-else-if="isRunning && !isPaused && !isFinished"
-        v-tooltip="'Pause the stream'"
-        type="button"
-        class="p-1.5 rounded-md hover:bg-yellow-100 dark:hover:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 hover:text-yellow-700 dark:hover:text-yellow-300 transition-colors"
-        @click.stop="pauseStream"
-      >
-        <Pause class="h-4 w-4" />
-      </button>
-      <!-- Show Play button when not running or finished -->
-      <button
-        v-else
-        v-tooltip="hasHistory ? 'Run the stream again' : 'Start the stream'"
-        type="button"
-        class="p-1.5 rounded-md hover:bg-teal-100 dark:hover:bg-teal-900/30 text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 transition-colors"
-        @click.stop="startStream"
-      >
-        <Play class="h-4 w-4" />
-      </button>
-
-      <!-- Edit Button -->
-      <router-link :to="{ name: 'EditStream', params: { id: stream.id } }">
+    <QuickActions :actions="quickActions" @action="onQuickAction">
+      <template #prepend>
+        <!-- Resume button when paused (and not finished) -->
         <button
-          v-tooltip="'Edit stream configuration'"
+          v-if="isPaused && !isFinished"
+          v-tooltip="'Resume the stream'"
           type="button"
-          class="p-1.5 rounded-md hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+          class="p-1.5 rounded-md hover:bg-teal-100 dark:hover:bg-teal-900/30 text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 transition-colors"
+          @click.stop="resumeStream"
         >
-          <Pencil class="h-4 w-4" />
+          <Play class="h-4 w-4" />
         </button>
-      </router-link>
-
-      <!-- Clone Button -->
-      <button
-        v-tooltip="'Clone stream configuration'"
-        type="button"
-        class="p-1.5 rounded-md hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-        @click.stop="cloneStream"
-      >
-        <Copy class="h-4 w-4" />
-      </button>
-
-      <!-- Delete Button -->
-      <button
-        v-tooltip="'Delete stream configuration'"
-        type="button"
-        class="p-1.5 rounded-md hover:bg-red-100 dark:hover:bg-red-900/30 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-        @click.stop="deleteStream"
-      >
-        <Trash class="h-4 w-4" />
-      </button>
-    </div>
+        <!-- Pause button when running (not paused, not finished) -->
+        <button
+          v-else-if="isRunning && !isPaused && !isFinished"
+          v-tooltip="'Pause the stream'"
+          type="button"
+          class="p-1.5 rounded-md hover:bg-yellow-100 dark:hover:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 hover:text-yellow-700 dark:hover:text-yellow-300 transition-colors"
+          @click.stop="pauseStream"
+        >
+          <Pause class="h-4 w-4" />
+        </button>
+        <!-- Play button when not running or finished -->
+        <button
+          v-else
+          v-tooltip="hasHistory ? 'Run the stream again' : 'Start the stream'"
+          type="button"
+          class="p-1.5 rounded-md hover:bg-teal-100 dark:hover:bg-teal-900/30 text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 transition-colors"
+          @click.stop="startStream"
+        >
+          <Play class="h-4 w-4" />
+        </button>
+      </template>
+    </QuickActions>
   </div>
 </template>
 
@@ -140,6 +107,7 @@ import type { StreamConfig } from '@/types/streamConfig'
 import type { Connection } from '@/types/connections'
 import { STATUS } from '@/constants'
 import HighlightedText from '@/components/common/HighlightedText.vue'
+import QuickActions, { type QuickAction } from '@/components/common/QuickActions.vue'
 
 const props = defineProps<{
   stream: StreamConfig
@@ -252,6 +220,22 @@ const objectsSummaryLabel = computed(() => {
   }
   return parts.join(', ')
 })
+
+const quickActions = computed<QuickAction[]>(() => [
+  {
+    key: 'edit',
+    icon: Pencil,
+    tooltip: 'Edit stream configuration',
+    to: { name: 'EditStream', params: { id: props.stream.id } }
+  },
+  { key: 'clone', icon: Copy, tooltip: 'Clone stream configuration' },
+  { key: 'delete', icon: Trash, tooltip: 'Delete stream configuration', variant: 'danger' }
+])
+
+function onQuickAction(key: string) {
+  if (key === 'clone') cloneStream()
+  else if (key === 'delete') deleteStream()
+}
 
 function selectStream() {
   emit('select', { streamId: props.stream.id! })

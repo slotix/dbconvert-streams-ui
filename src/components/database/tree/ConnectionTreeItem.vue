@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { computed, inject } from 'vue'
 import type { ComputedRef } from 'vue'
-import { ChevronDown, ChevronRight } from 'lucide-vue-next'
+import { ChevronDown, ChevronRight, Copy, Pencil, Trash } from 'lucide-vue-next'
 import DatabaseTreeItem from './DatabaseTreeItem.vue'
 import FileEntry from '../FileEntry.vue'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
 import DatabaseIcon from '@/components/base/DatabaseIcon.vue'
 import HighlightedText from '@/components/common/HighlightedText.vue'
 import ConnectionErrorState from '@/components/common/ConnectionErrorState.vue'
+import QuickActions, { type QuickAction } from '@/components/common/QuickActions.vue'
 import { getConnectionTooltip } from '@/utils/connectionUtils'
 import { getConnectionHost, getConnectionPort } from '@/utils/specBuilder'
 import { useConnectionTreeLogic } from '@/composables/useConnectionTreeLogic'
@@ -130,6 +131,9 @@ const emit = defineEmits<{
     }
   ): void
   (e: 'request-file-entries', payload: { connectionId: string }): void
+  (e: 'edit-connection', payload: { connectionId: string }): void
+  (e: 'clone-connection', payload: { connectionId: string }): void
+  (e: 'delete-connection', payload: { connectionId: string }): void
 }>()
 
 function isDatabaseExpanded(dbName: string): boolean {
@@ -196,6 +200,19 @@ function handleFileOpen(payload: {
     defaultTab: 'data',
     openInRightSplit: payload.openInRightSplit
   })
+}
+
+const connectionQuickActions = computed<QuickAction[]>(() => [
+  { key: 'edit', icon: Pencil, tooltip: 'Edit connection' },
+  { key: 'clone', icon: Copy, tooltip: 'Clone connection' },
+  { key: 'delete', icon: Trash, tooltip: 'Delete connection', variant: 'danger' }
+])
+
+function onConnectionQuickAction(key: string) {
+  const payload = { connectionId: props.connection.id }
+  if (key === 'edit') emit('edit-connection', payload)
+  else if (key === 'clone') emit('clone-connection', payload)
+  else if (key === 'delete') emit('delete-connection', payload)
 }
 
 function handleFileContextMenu(payload: { event: MouseEvent; entry: FileSystemEntry }) {
@@ -484,7 +501,7 @@ const connectionPort = computed(() => getConnectionPort(props.connection))
       :aria-selected="isSelected ? 'true' : 'false'"
       tabindex="-1"
       :class="[
-        'group flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 rounded-lg cursor-pointer select-none',
+        'group relative flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 rounded-lg cursor-pointer select-none',
         'transition-all duration-200 ease-out',
         'hover:bg-linear-to-r hover:from-gray-100 hover:to-gray-200 dark:hover:from-gray-850 dark:hover:to-gray-800',
         'hover:shadow-sm hover:scale-[1.02] hover:-translate-y-0.5',
@@ -532,6 +549,7 @@ const connectionPort = computed(() => getConnectionPort(props.connection))
           {{ connectionHost }}:{{ connectionPort }}
         </div>
       </div>
+      <QuickActions :actions="connectionQuickActions" @action="onConnectionQuickAction" />
     </div>
 
     <!-- Databases or Files under connection -->
