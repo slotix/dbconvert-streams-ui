@@ -18,7 +18,7 @@ import { AlertCircle, AlertTriangle, CheckCircle, Eye, Info, Settings } from 'lu
 const PURPOSE_PRESENTATION: Record<string, { label: string; classes: string }> = {
   SCHEMA_INTROSPECTION: { label: 'Schema', classes: 'bg-slate-600 text-white' },
   DATA_QUERY: { label: 'Data', classes: 'bg-blue-600 text-white' },
-  COUNT_QUERY: { label: 'Count', classes: 'bg-amber-600 text-white' },
+  COUNT_QUERY: { label: 'Count', classes: 'bg-sky-600 text-white' },
   PLAN_ANALYSIS: { label: 'Plan Analysis', classes: 'bg-slate-500 text-white' },
   SCHEMA_CHANGE: { label: 'DDL', classes: 'bg-red-600 text-white' },
   DML_OPERATION: { label: 'DML', classes: 'bg-emerald-600 text-white' },

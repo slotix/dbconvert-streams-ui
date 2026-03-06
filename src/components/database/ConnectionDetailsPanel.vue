@@ -1106,7 +1106,7 @@ const isLoadingDatabases = computed(() => {
                 :class="
                   serverStats.engine === 'postgres'
                     ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
-                    : 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300'
+                    : 'bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-300'
                 "
               >
                 {{ serverStats.engine === 'postgres' ? 'PostgreSQL' : 'MySQL' }}

@@ -55,7 +55,7 @@
               </span>
               <span
                 v-if="isDev"
-                class="ml-2 inline-flex items-center rounded-full bg-amber-50 dark:bg-amber-900/30 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-300"
+                class="ml-2 inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300"
               >
                 DEV
               </span>

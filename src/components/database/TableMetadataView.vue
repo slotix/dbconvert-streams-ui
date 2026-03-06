@@ -634,7 +634,7 @@ function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
                             <span class="whitespace-nowrap">{{ getColumnType(column) }}</span>
                             <span
                               v-if="column.isUnsigned"
-                              class="inline-flex items-center rounded-md border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-800 dark:border-amber-700/50 dark:bg-amber-900/30 dark:text-amber-200"
+                              class="inline-flex items-center rounded-md border border-sky-200 bg-sky-50 px-1.5 py-0.5 text-[10px] font-medium text-sky-800 dark:border-sky-700/50 dark:bg-sky-900/30 dark:text-sky-200"
                             >
                               UNSIGNED
                             </span>

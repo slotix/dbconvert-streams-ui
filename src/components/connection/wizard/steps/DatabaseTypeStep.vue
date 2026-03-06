@@ -34,7 +34,7 @@
           <!-- Coming Soon badge -->
           <span
             v-if="isComingSoon(dbType)"
-            class="mt-1 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300"
+            class="mt-1 inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300"
           >
             Coming Soon
           </span>

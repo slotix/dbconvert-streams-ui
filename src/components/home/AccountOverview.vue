@@ -111,7 +111,7 @@
             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Subscription</p>
             <span
               v-if="subscriptionStatus === 'paused'"
-              class="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-medium bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-300 rounded-full"
+              class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300"
             >
               <svg class="w-1 h-1 fill-current" viewBox="0 0 4 4">
                 <circle cx="2" cy="2" r="2" />
@@ -425,7 +425,7 @@ const evaluationBadgeClass = computed(() => {
   if (!commonStore.userData?.evaluation)
     return 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'
   if (evaluationStatus.value === 'ended')
-    return 'bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200'
+    return 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
   if (evaluationStatus.value === 'active')
     return 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-200'
   return 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'

@@ -130,7 +130,7 @@ function getDataQualityHints(col: ColumnSummary): SummaryHint[] {
   if (col.count > 0 && col.approxUnique <= 1) {
     hints.push({
       label: 'Constant',
-      className: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
+      className: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300',
       title: 'Single distinct value'
     })
   }
@@ -166,7 +166,7 @@ function getCardinalityClass(indicator: string): string {
     case 'unique':
       return 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300'
     case 'low':
-      return 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300'
+      return 'bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300'
     case 'empty':
       return 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
     default:

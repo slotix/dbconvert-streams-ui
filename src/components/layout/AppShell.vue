@@ -76,8 +76,8 @@ import DegradedModeBanner from '@/components/layout/DegradedModeBanner.vue'
 import InitializingOverlay from '@/components/layout/InitializingOverlay.vue'
 import SidebarMobile from '@/components/layout/SidebarMobile.vue'
 import SidebarDesktop from '@/components/layout/SidebarDesktop.vue'
+import AboutDialog from '@/components/common/AboutDialog.vue'
 const LogsPanel = defineAsyncComponent(() => import('@/components/logs/LogsPanel.vue'))
-const AboutDialog = defineAsyncComponent(() => import('@/components/common/AboutDialog.vue'))
 const LinuxChatFallback = defineAsyncComponent(
   () => import('@/components/layout/LinuxChatFallback.vue')
 )
