@@ -5,6 +5,7 @@ import type { Connection } from '@/types/connections'
 import BaseButton from '@/components/base/BaseButton.vue'
 import FormInput from '@/components/base/FormInput.vue'
 import CloudProviderBadge from '@/components/common/CloudProviderBadge.vue'
+import PanelHeaderIcon from '@/components/common/PanelHeaderIcon.vue'
 import ConnectionConfigJsonEditor from '@/components/connection/ConnectionConfigJsonEditor.vue'
 import connectionsApi from '@/api/connections'
 import { generateConnectionString } from '@/utils/connectionStringGenerator'
@@ -103,6 +104,19 @@ const { canCreateDatabase, canCreateSchema, isPostgreSQL } = useDatabaseCapabili
 const connectionTypeLabel = computed(
   () => getConnectionTypeLabel(props.connection?.spec, props.connection?.type) || ''
 )
+
+function normalizeConnectionType(value: string): string {
+  return value.trim().toLowerCase()
+}
+
+const connectionLogoSrc = computed(() => {
+  const normalizedType = normalizeConnectionType(connectionTypeLabel.value)
+  if (!normalizedType) return ''
+  const match = connectionsStore.dbTypes.find(
+    (dbType) => normalizeConnectionType(dbType.type) === normalizedType
+  )
+  return match?.logo || ''
+})
 
 // For PostgreSQL, schema creation is available at database level (DatabaseOverviewPanel)
 // so we hide it from connection level to avoid confusion
@@ -779,9 +793,12 @@ const isLoadingDatabases = computed(() => {
           <div class="grid gap-4 grid-cols-[repeat(auto-fit,minmax(260px,1fr))]">
             <div class="ui-surface-panel p-4">
               <div class="flex items-center gap-2 mb-3">
-                <div class="p-1.5 bg-sky-100 dark:bg-sky-900/30 rounded-lg">
-                  <Cloud class="h-4 w-4 text-sky-600 dark:text-sky-400" />
-                </div>
+                <PanelHeaderIcon
+                  :icon="Cloud"
+                  tone="sky"
+                  :db-type="connectionTypeLabel"
+                  :logo-src="connectionLogoSrc"
+                />
                 <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"
                   >Storage Info</span
                 >
@@ -844,9 +861,7 @@ const isLoadingDatabases = computed(() => {
 
             <div class="ui-surface-panel p-4">
               <div class="flex items-center gap-2 mb-3">
-                <div class="p-1.5 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
-                  <Folder class="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                </div>
+                <PanelHeaderIcon :icon="Folder" tone="amber" />
                 <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"
                   >Scope & Files</span
                 >
@@ -911,9 +926,12 @@ const isLoadingDatabases = computed(() => {
         <template v-else>
           <div class="ui-surface-panel space-y-4 p-4">
             <div class="flex items-center gap-2">
-              <div class="p-1.5 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
-                <Folder class="h-4 w-4 text-amber-600 dark:text-amber-400" />
-              </div>
+              <PanelHeaderIcon
+                :icon="Folder"
+                tone="amber"
+                :db-type="connectionTypeLabel"
+                :logo-src="connectionLogoSrc"
+              />
               <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Local Path</span>
             </div>
             <div>
@@ -969,9 +987,12 @@ const isLoadingDatabases = computed(() => {
         <!-- Connection Info Card -->
         <div class="ui-surface-panel p-4">
           <div class="flex items-center gap-2 mb-3">
-            <div class="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-              <Server class="h-4 w-4 text-blue-600 dark:text-blue-400" />
-            </div>
+            <PanelHeaderIcon
+              :icon="Server"
+              tone="blue"
+              :db-type="connectionTypeLabel"
+              :logo-src="connectionLogoSrc"
+            />
             <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"
               >Connection Info</span
             >
@@ -1046,9 +1067,7 @@ const isLoadingDatabases = computed(() => {
         <!-- Server Stats Card -->
         <div class="ui-surface-panel p-4">
           <div class="flex items-center gap-2 mb-3">
-            <div class="p-1.5 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-              <BarChart3 class="h-4 w-4 text-purple-600 dark:text-purple-400" />
-            </div>
+            <PanelHeaderIcon :icon="BarChart3" tone="purple" />
             <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Server Stats</span>
           </div>
 

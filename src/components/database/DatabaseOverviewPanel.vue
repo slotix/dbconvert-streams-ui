@@ -20,6 +20,8 @@ import type { ShowDiagramPayload } from '@/types/diagram'
 import type { DatabaseMetadata, SQLTableMeta, SQLViewMeta } from '@/types/metadata'
 import BaseButton from '@/components/base/BaseButton.vue'
 import FormInput from '@/components/base/FormInput.vue'
+import PanelHeaderIcon from '@/components/common/PanelHeaderIcon.vue'
+import { getConnectionTypeLabel } from '@/types/specs'
 import {
   ArrowDown,
   ArrowUp,
@@ -62,6 +64,24 @@ const isCreatingSchema = ref(false)
 const connectionType = computed(() => {
   const conn = connectionsStore.connectionByID(props.connectionId)
   return conn?.type || ''
+})
+
+const connectionTypeLabel = computed(() => {
+  const conn = connectionsStore.connectionByID(props.connectionId)
+  return getConnectionTypeLabel(conn?.spec, conn?.type) || connectionType.value
+})
+
+function normalizeConnectionType(value: string): string {
+  return value.trim().toLowerCase()
+}
+
+const connectionLogoSrc = computed(() => {
+  const normalizedType = normalizeConnectionType(connectionTypeLabel.value)
+  if (!normalizedType) return ''
+  const match = connectionsStore.dbTypes.find(
+    (dbType) => normalizeConnectionType(dbType.type) === normalizedType
+  )
+  return match?.logo || ''
 })
 
 // Database capabilities
@@ -696,9 +716,12 @@ async function handleCreateSchema() {
       <!-- Essentials -->
       <div class="ui-surface-panel p-4">
         <div class="flex items-center gap-2 mb-3">
-          <div class="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-            <Database class="h-4 w-4 text-blue-600 dark:text-blue-400" />
-          </div>
+          <PanelHeaderIcon
+            :icon="Database"
+            tone="blue"
+            :db-type="connectionTypeLabel"
+            :logo-src="connectionLogoSrc"
+          />
           <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Essentials</span>
         </div>
 
@@ -771,9 +794,7 @@ async function handleCreateSchema() {
       <div class="ui-surface-panel p-4">
         <div class="flex items-center justify-between mb-3">
           <div class="flex items-center gap-2">
-            <div class="p-1.5 bg-teal-100 dark:bg-teal-900/30 rounded-lg">
-              <Signal class="h-4 w-4 text-teal-600 dark:text-teal-400" />
-            </div>
+            <PanelHeaderIcon :icon="Signal" tone="teal" />
             <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"
               >CDC readiness</span
             >
@@ -886,9 +907,7 @@ async function handleCreateSchema() {
       <!-- Activity -->
       <div class="ui-surface-panel p-4">
         <div class="flex items-center gap-2 mb-3">
-          <div class="p-1.5 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-            <ChartBar class="h-4 w-4 text-orange-600 dark:text-orange-400" />
-          </div>
+          <PanelHeaderIcon :icon="ChartBar" tone="orange" />
           <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Activity</span>
         </div>
 
@@ -948,9 +967,7 @@ async function handleCreateSchema() {
       <!-- Top Tables (sortable) -->
       <div class="ui-surface-panel col-span-full md:col-span-1 xl:col-span-2 p-4">
         <div class="flex items-center gap-2 mb-3">
-          <div class="p-1.5 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-            <Table2 class="h-4 w-4 text-purple-600 dark:text-purple-400" />
-          </div>
+          <PanelHeaderIcon :icon="Table2" tone="purple" />
           <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Top Tables</span>
           <span
             v-if="overview.engine === 'mysql'"
@@ -1062,9 +1079,7 @@ async function handleCreateSchema() {
       <!-- Notes -->
       <div v-if="overview.notes?.length" class="ui-surface-panel col-span-full p-4">
         <div class="flex items-center gap-2 mb-3">
-          <div class="p-1.5 bg-sky-100 dark:bg-sky-900/30 rounded-lg">
-            <Info class="h-4 w-4 text-sky-600 dark:text-sky-400" />
-          </div>
+          <PanelHeaderIcon :icon="Info" tone="sky" />
           <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Notes</span>
         </div>
         <ul class="space-y-2">
