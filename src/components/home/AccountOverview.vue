@@ -367,6 +367,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useCommonStore } from '@/stores/common'
 import { useConfirmDialogStore } from '@/stores/confirmDialog'
 import { useLucideIcons } from '@/composables/useLucideIcons'
+import { useSystemDefaults } from '@/composables/useSystemDefaults'
 import {
   AlertTriangle,
   CircleUser,
@@ -379,12 +380,12 @@ import {
 } from 'lucide-vue-next'
 import { formatDataSize } from '@/utils/formats'
 import { isWailsContext } from '@/composables/useWailsEvents'
-import { getOrCreateInstallId } from '@/utils/installId'
 
 const commonStore = useCommonStore()
 const confirmDialog = useConfirmDialogStore()
 const isClearingApiKey = ref(false)
 const { strokeWidth: iconStroke } = useLucideIcons()
+const { systemDefaults, loadSystemDefaults } = useSystemDefaults()
 
 const userData = computed(() => commonStore.userData)
 const showConnectCta = computed(() => isWailsContext() && !commonStore.hasValidApiKey)
@@ -455,7 +456,7 @@ const maskedApiKey = computed(() => {
 
 const hasApiKey = computed(() => !!(commonStore.userData?.apiKey || commonStore.apiKey))
 
-const installId = computed(() => getOrCreateInstallId())
+const installId = computed(() => systemDefaults.value?.installId?.trim() || '')
 
 const maskedInstallId = computed(() => {
   const id = installId.value
@@ -465,6 +466,7 @@ const maskedInstallId = computed(() => {
 })
 
 onMounted(() => {
+  void loadSystemDefaults()
   void commonStore.refreshUserDataSilently()
 })
 

@@ -9,7 +9,6 @@ import { type UserData } from '@/types/user'
 import { type ServiceStatusResponse, type SystemDefaults } from '@/types/common'
 import { useCommonStore } from '@/stores/common'
 import { getBackendUrl, getSentryDsn } from '@/utils/environment'
-import { getOrCreateInstallId } from '@/utils/installId'
 import { DEFAULT_API_TIMEOUT, API_RETRY, API_HEADERS, CONTENT_TYPES } from '@/constants'
 
 interface ApiResponse<T> {
@@ -62,9 +61,20 @@ const sentryClient: AxiosInstance = axios.create({
   }
 })
 
-const installId = getOrCreateInstallId()
-apiClient.defaults.headers.common[API_HEADERS.INSTALL_ID] = installId
-sentryClient.defaults.headers.common[API_HEADERS.INSTALL_ID] = installId
+let installId = ''
+let systemDefaultsPromise: Promise<SystemDefaults> | null = null
+
+function applyInstallId(nextInstallId: string): void {
+  installId = nextInstallId.trim()
+  if (!installId) {
+    delete apiClient.defaults.headers.common[API_HEADERS.INSTALL_ID]
+    delete sentryClient.defaults.headers.common[API_HEADERS.INSTALL_ID]
+    return
+  }
+
+  apiClient.defaults.headers.common[API_HEADERS.INSTALL_ID] = installId
+  sentryClient.defaults.headers.common[API_HEADERS.INSTALL_ID] = installId
+}
 
 function normalizeApiKey(apiKey: string | null): string {
   if (!apiKey) {
@@ -78,10 +88,29 @@ function normalizeApiKey(apiKey: string | null): string {
   return apiKey.trim()
 }
 
-function buildAuthHeaders(apiKey: string): Record<string, string> {
+async function ensureInstallId(): Promise<string> {
+  if (installId) {
+    return installId
+  }
+
+  const defaults = await getSystemDefaults()
+  const resolvedInstallId = defaults.installId?.trim() || ''
+  if (!resolvedInstallId) {
+    throw new Error('Backend install ID is unavailable')
+  }
+
+  return resolvedInstallId
+}
+
+function getCachedInstallId(): string {
+  return installId
+}
+
+async function buildAuthHeaders(apiKey: string): Promise<Record<string, string>> {
+  const resolvedInstallId = await ensureInstallId()
   return {
     [API_HEADERS.API_KEY]: apiKey,
-    [API_HEADERS.INSTALL_ID]: installId
+    [API_HEADERS.INSTALL_ID]: resolvedInstallId
   }
 }
 
@@ -215,7 +244,7 @@ export async function validateApiKeyWithServer(apiKey: string | null): Promise<v
   try {
     // Validate the API key by making a request to a protected endpoint
     await apiClient.get('/user', {
-      headers: buildAuthHeaders(normalizedApiKey)
+      headers: await buildAuthHeaders(normalizedApiKey)
     })
   } catch (error: unknown) {
     if (error && typeof error === 'object' && 'response' in error) {
@@ -232,7 +261,7 @@ const getUserDataFromSentry = async (apiKey: string): Promise<UserData> => {
   try {
     const normalizedApiKey = normalizeApiKey(apiKey)
     const response: ApiResponse<UserData> = await apiClient.get('/user', {
-      headers: buildAuthHeaders(normalizedApiKey)
+      headers: await buildAuthHeaders(normalizedApiKey)
     })
     return response.data
   } catch (error: unknown) {
@@ -257,7 +286,7 @@ const loadUserConfigs = async (apiKey: string): Promise<void> => {
 
     // Load user configs
     await apiClient.get('/user/configs', {
-      headers: buildAuthHeaders(normalizedApiKey)
+      headers: await buildAuthHeaders(normalizedApiKey)
     })
   } catch (error) {
     // Provide more specific error messages
@@ -315,12 +344,22 @@ const getServiceStatus = async (): Promise<ServiceStatusResponse> => {
 }
 
 const getSystemDefaults = async (): Promise<SystemDefaults> => {
-  try {
-    const response: ApiResponse<SystemDefaults> = await apiClient.get('/system/defaults')
-    return response.data
-  } catch (error) {
-    throw handleApiError(error)
+  if (!systemDefaultsPromise) {
+    systemDefaultsPromise = apiClient
+      .get('/system/defaults')
+      .then((response: ApiResponse<SystemDefaults>) => {
+        applyInstallId(response.data.installId || '')
+        return response.data
+      })
+      .catch((error) => {
+        throw handleApiError(error)
+      })
+      .finally(() => {
+        systemDefaultsPromise = null
+      })
   }
+
+  return systemDefaultsPromise
 }
 
 export async function getLoggingSettings(): Promise<LoggingSettings> {
@@ -379,6 +418,7 @@ export async function getStreamLogs(
 }
 
 export async function initializeApiClient() {
+  await getSystemDefaults()
   const commonStore = useCommonStore()
   const savedApiKey = await commonStore.getApiKey()
 
@@ -400,6 +440,8 @@ export default {
   sentryHealthCheck,
   getServiceStatus,
   getSystemDefaults,
+  getCachedInstallId,
+  ensureInstallId,
   getLoggingSettings,
   updateLoggingSettings,
   clearApiKey,

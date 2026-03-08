@@ -1,10 +1,10 @@
 import { ref, type Ref } from 'vue'
+import apiClient from '@/api/apiClient'
 import {
   buildSqlLspWebSocketUrl,
   type SqlLspConnectionContext
 } from '@/composables/useSqlLspProviders'
 import { getBackendUrl } from '@/utils/environment'
-import { getOrCreateInstallId } from '@/utils/installId'
 import type {
   JsonRpcNotification,
   JsonRpcResponse,
@@ -92,7 +92,7 @@ export function useSqlCodeMirrorLspSession(options: UseSqlCodeMirrorLspSessionOp
       if (!isActiveLspSession(sessionToken) || !options.shouldEnableLsp.value) {
         return
       }
-      connectLspSession(false)
+      void connectLspSession(false)
     }, reconnectDelay)
   }
 
@@ -332,9 +332,16 @@ export function useSqlCodeMirrorLspSession(options: UseSqlCodeMirrorLspSessionOp
     options.onSessionDisposed?.()
   }
 
-  function connectLspSession(resetReconnectBackoff = true) {
+  async function connectLspSession(resetReconnectBackoff = true) {
     disconnectLspSession(resetReconnectBackoff)
     if (!options.shouldEnableLsp.value) {
+      return
+    }
+
+    const defaults = await apiClient.getSystemDefaults()
+    const installId = defaults.installId?.trim()
+    if (!installId) {
+      reportLspUnavailable(new Error('Backend install ID is unavailable'))
       return
     }
 
@@ -342,7 +349,7 @@ export function useSqlCodeMirrorLspSession(options: UseSqlCodeMirrorLspSessionOp
     const wsUrl = buildSqlLspWebSocketUrl({
       backendUrl: getBackendUrl(),
       apiKey: options.getApiKey(),
-      installId: getOrCreateInstallId(),
+      installId,
       connectionContext: options.connectionContext.value
     })
 

@@ -12,6 +12,7 @@ export interface ServiceStatusResponse {
 export interface SystemDefaults {
   defaultExportPath: string
   mode: 'desktop' | 'server' | 'docker'
+  installId: string
 }
 
 export type NodeType = 'source' | 'target' | 'api'
