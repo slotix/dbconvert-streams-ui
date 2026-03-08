@@ -1,6 +1,5 @@
 // src/types/streams.ts
 import type { TargetSpec, UIStructureOptions, SchemaPolicy, WriteMode } from './specs'
-import type { ConnectionMapping } from '@/api/federated'
 
 /**
  * Filter condition for structured query building
@@ -80,10 +79,17 @@ export interface FilesSourceConfig {
   paths?: string[]
 }
 
-// StreamConnectionMapping extends the federated ConnectionMapping with
-// per-connection database/tables/queries/S3 config for stream sources.
-// Each connection owns its own selection of what to stream.
-export interface StreamConnectionMapping extends ConnectionMapping {
+// StreamConnectionMapping is stream-specific.
+// Single-source streams omit alias, while multi-source streams provide one.
+export interface StreamConnectionMapping {
+  /** Alias used for multi-source stream references */
+  alias?: string
+  /** UUID of the stored connection */
+  connectionId: string
+  /** Optional specific database to connect to */
+  database?: string
+  /** Optional file scope path for stream-specific file selection */
+  scopePath?: string
   /** Schema name - optional, defaults to provider-specific default */
   schema?: string
   /** Tables to stream from this connection (database sources) */

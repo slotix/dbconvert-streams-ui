@@ -22,7 +22,7 @@ import {
   buildSnowflakeTargetSpec
 } from '@/utils/specBuilder'
 import { getFileSpec } from '@/composables/useTargetSpec'
-import { normalizeStreamConnections, DEFAULT_ALIAS } from '@/utils/federatedUtils'
+import { normalizeStreamConnections } from '@/utils/federatedUtils'
 
 interface State {
   generateDefaultStreamConfigName(
@@ -39,8 +39,12 @@ function normalizeSource(source: StreamConfig['source']): StreamConfig['source']
   const normalized = { ...source }
   const connections = normalized.connections ? [...normalized.connections] : []
 
-  // Use shared utility for alias normalization
-  normalized.connections = normalizeStreamConnections(connections)
+  if (connections.length === 1) {
+    const { alias: _alias, ...singleSource } = connections[0]
+    normalized.connections = [singleSource]
+  } else {
+    normalized.connections = normalizeStreamConnections(connections)
+  }
   return normalized
 }
 
@@ -122,6 +126,8 @@ export const defaultStreamConfigOptions: StreamConfig = {
 
 export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> => {
   const normalizedSource = normalizeSource(stream.source)
+  const sourceConnections = normalizedSource.connections || []
+  const isSingleSource = sourceConnections.length === 1
   const connectionsStore = useConnectionsStore()
   const filteredStream: Partial<StreamConfig> = {
     name: stream.name,
@@ -322,7 +328,6 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
     filteredStream.source = {
       connections: [
         {
-          alias: connections[0]?.alias || 'src',
           connectionId: connections[0]?.connectionId || '',
           s3: s3Payload
         }
@@ -390,16 +395,20 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
     })
   }
 
+  type StreamConnectionPayload = Omit<StreamConnectionMapping, 'alias'> & { alias?: string }
+
   // Build connections with their per-connection database/schema/tables/queries/files
-  const builtConnections: StreamConnectionMapping[] = connections.map((conn) => {
+  const builtConnections: StreamConnectionPayload[] = connections.map((conn) => {
     const resolvedConn = connectionsStore.connectionByID(conn.connectionId)
     const connKind = getConnectionKindFromSpec(resolvedConn?.spec)
     const isS3Conn = connKind === 's3'
     const isFilesConn = connKind === 'files'
 
-    const result: StreamConnectionMapping = {
-      alias: conn.alias,
+    const result: StreamConnectionPayload = {
       connectionId: conn.connectionId
+    }
+    if (!isSingleSource && conn.alias) {
+      result.alias = conn.alias
     }
 
     // Only include database/schema/tables/queries for database connections
@@ -678,12 +687,10 @@ export const useStreamsStore = defineStore('streams', {
     updateSource(sourceId: string, database?: string) {
       if (this.currentStreamConfig) {
         const existingConn = this.currentStreamConfig.source.connections?.[0]
-        const alias = existingConn?.alias || DEFAULT_ALIAS
         const connectionsStore = useConnectionsStore()
         const resolved = connectionsStore.connectionByID(sourceId)
         const kind = getConnectionKindFromSpec(resolved?.spec)
         const next: StreamConnectionMapping = {
-          alias,
           connectionId: sourceId,
           schema: existingConn?.schema,
           tables: existingConn?.tables,

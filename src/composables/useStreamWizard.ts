@@ -9,7 +9,7 @@ import {
   type SchemaPolicy,
   type WriteMode
 } from '@/types/specs'
-import { normalizeConnectionAliases, DEFAULT_ALIAS } from '@/utils/federatedUtils'
+import { normalizeConnectionAliases } from '@/utils/federatedUtils'
 
 export interface WizardStep {
   name: string
@@ -387,6 +387,10 @@ export function useStreamWizard() {
   function normalizeSourceConnections(
     connections: StreamConnectionMapping[]
   ): StreamConnectionMapping[] {
+    if (connections.length === 1) {
+      const { alias: _alias, ...singleSource } = connections[0]
+      return [singleSource]
+    }
     return normalizeConnectionAliases(connections) as StreamConnectionMapping[]
   }
 
@@ -409,12 +413,7 @@ export function useStreamWizard() {
     const connectionsStore = useConnectionsStore()
     const connection = connectionsStore.connectionByID(connectionId)
     const kind = getConnectionKindFromSpec(connection?.spec)
-    const alias =
-      sourceConnections.value.find((c) => c.connectionId === connectionId)?.alias ||
-      sourceConnections.value[0]?.alias ||
-      DEFAULT_ALIAS
     const mapping: StreamConnectionMapping = {
-      alias,
       connectionId
     }
 

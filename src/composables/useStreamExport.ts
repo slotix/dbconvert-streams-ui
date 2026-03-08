@@ -227,7 +227,6 @@ export function useStreamExport() {
       source: {
         connections: [
           {
-            alias: 'src',
             connectionId,
             database: database,
             schema: schema,

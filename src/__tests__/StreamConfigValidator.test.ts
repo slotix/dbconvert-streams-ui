@@ -16,7 +16,6 @@ describe('StreamConfigValidator', () => {
     source: {
       connections: [
         {
-          alias: 'src',
           connectionId: 'conn-source-123',
           tables: [{ name: 'users' }]
         }
@@ -115,7 +114,7 @@ describe('StreamConfigValidator', () => {
       expect(result.errors.some((e) => e.path === 'source.connections')).toBe(true)
     })
 
-    it('should require alias and connectionId for each connection', () => {
+    it('should require alias for multi-source and connectionId for each connection', () => {
       const config = {
         ...validConfig,
         source: {
@@ -129,6 +128,22 @@ describe('StreamConfigValidator', () => {
       expect(result.valid).toBe(false)
       expect(result.errors.some((e) => e.message === 'Connection alias is required')).toBe(true)
       expect(result.errors.some((e) => e.message === 'Connection ID is required')).toBe(true)
+    })
+
+    it('should reject alias for single-source streams', () => {
+      const config = {
+        ...validConfig,
+        source: {
+          connections: [{ alias: 'src', connectionId: 'conn-123', tables: [{ name: 'users' }] }]
+        }
+      }
+      const result = validateStreamConfig(config)
+      expect(result.valid).toBe(false)
+      expect(
+        result.errors.some(
+          (e) => e.message === 'Connection alias must be omitted for single-source streams'
+        )
+      ).toBe(true)
     })
 
     it('should require unique aliases', () => {
@@ -149,7 +164,7 @@ describe('StreamConfigValidator', () => {
     it('should require at least one table or query per connection', () => {
       const config = {
         ...validConfig,
-        source: { connections: [{ alias: 'src', connectionId: 'conn-123' }] }
+        source: { connections: [{ connectionId: 'conn-123' }] }
       }
       const result = validateStreamConfig(config)
       expect(result.valid).toBe(false)
@@ -168,7 +183,6 @@ describe('StreamConfigValidator', () => {
         source: {
           connections: [
             {
-              alias: 'src',
               connectionId: 'conn-123',
               s3: {
                 bucket: 'my-bucket',
@@ -188,7 +202,6 @@ describe('StreamConfigValidator', () => {
         source: {
           connections: [
             {
-              alias: 'src',
               connectionId: 'conn-123',
               s3: {
                 bucket: 'my-bucket',
@@ -216,7 +229,6 @@ describe('StreamConfigValidator', () => {
         source: {
           connections: [
             {
-              alias: 'src',
               connectionId: 'conn-123',
               s3: {
                 bucket: 'my-bucket',
@@ -237,7 +249,6 @@ describe('StreamConfigValidator', () => {
         source: {
           connections: [
             {
-              alias: 'src',
               connectionId: 'conn-123',
               s3: {
                 bucket: 'my-bucket',
@@ -258,7 +269,6 @@ describe('StreamConfigValidator', () => {
         source: {
           connections: [
             {
-              alias: 'src',
               connectionId: 'conn-123',
               s3: {
                 bucket: 'my-bucket',
@@ -278,7 +288,6 @@ describe('StreamConfigValidator', () => {
         source: {
           connections: [
             {
-              alias: 'src',
               connectionId: 'conn-123',
               s3: {
                 bucket: 'my-bucket',
@@ -297,7 +306,7 @@ describe('StreamConfigValidator', () => {
       const config = {
         ...validConfig,
         source: {
-          connections: [{ alias: 'src', connectionId: 'conn-123', tables: [{ name: '' }] }]
+          connections: [{ connectionId: 'conn-123', tables: [{ name: '' }] }]
         }
       }
       const result = validateStreamConfig(config)
@@ -311,7 +320,6 @@ describe('StreamConfigValidator', () => {
         source: {
           connections: [
             {
-              alias: 'src',
               connectionId: 'conn-123',
               tables: [{ name: 'users', filter: { limit: 100 } }]
             }
@@ -328,7 +336,6 @@ describe('StreamConfigValidator', () => {
         source: {
           connections: [
             {
-              alias: 'src',
               connectionId: 'conn-123',
               tables: [{ name: 'users', filter: 'invalid' }]
             }
@@ -344,7 +351,7 @@ describe('StreamConfigValidator', () => {
       const config = {
         ...validConfig,
         source: {
-          connections: [{ alias: 'src', connectionId: 'conn-123', tables: [{ name: 'users' }] }],
+          connections: [{ connectionId: 'conn-123', tables: [{ name: 'users' }] }],
           options: { dataBundleSize: 0 }
         }
       }
@@ -359,7 +366,7 @@ describe('StreamConfigValidator', () => {
       const config = {
         ...validConfig,
         source: {
-          connections: [{ alias: 'src', connectionId: 'conn-123', tables: [{ name: 'users' }] }],
+          connections: [{ connectionId: 'conn-123', tables: [{ name: 'users' }] }],
           options: { operations: ['insert', 'invalid'] }
         }
       }
@@ -372,7 +379,7 @@ describe('StreamConfigValidator', () => {
       const config = {
         ...validConfig,
         source: {
-          connections: [{ alias: 'src', connectionId: 'conn-123', tables: [{ name: 'users' }] }],
+          connections: [{ connectionId: 'conn-123', tables: [{ name: 'users' }] }],
           options: { operations: ['insert', 'update', 'delete'] }
         }
       }
@@ -601,7 +608,7 @@ describe('StreamConfigValidator', () => {
   "mode": "convert",
   "source": {
     "connections": [
-      { "alias": "src", "connectionId": "conn-123" }
+      { "connectionId": "conn-123" }
     ],
     "tables": [
       { "name": "users" }
@@ -637,9 +644,7 @@ describe('StreamConfigValidator', () => {
       mode: 'convert',
       created: 1234567890,
       source: {
-        connections: [
-          { alias: 'src', connectionId: 'conn-source-original', tables: [{ name: 'users' }] }
-        ]
+        connections: [{ connectionId: 'conn-source-original', tables: [{ name: 'users' }] }]
       },
       target: {
         id: 'conn-target-original'
@@ -651,7 +656,7 @@ describe('StreamConfigValidator', () => {
         ...originalConfig,
         source: {
           ...originalConfig.source,
-          connections: [{ alias: 'src', connectionId: 'conn-source-changed' }]
+          connections: [{ connectionId: 'conn-source-changed' }]
         }
       }
       const result = validateStreamConfig(modifiedConfig, originalConfig)

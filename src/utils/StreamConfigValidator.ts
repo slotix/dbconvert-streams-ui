@@ -444,19 +444,30 @@ function validateConnections(
   errors: ValidationError[]
 ): void {
   const seenAliases = new Set<string>()
+  const isSingleSource = connections.length === 1
   connections.forEach((conn, index) => {
-    if (!conn.alias || typeof conn.alias !== 'string' || conn.alias.trim() === '') {
-      errors.push({
-        path: `source.connections[${index}].alias`,
-        message: 'Connection alias is required'
-      })
-    } else if (seenAliases.has(conn.alias)) {
-      errors.push({
-        path: `source.connections[${index}].alias`,
-        message: 'Connection alias must be unique'
-      })
+    const alias = typeof conn.alias === 'string' ? conn.alias.trim() : ''
+    if (isSingleSource) {
+      if (alias) {
+        errors.push({
+          path: `source.connections[${index}].alias`,
+          message: 'Connection alias must be omitted for single-source streams'
+        })
+      }
     } else {
-      seenAliases.add(conn.alias)
+      if (!alias) {
+        errors.push({
+          path: `source.connections[${index}].alias`,
+          message: 'Connection alias is required'
+        })
+      } else if (seenAliases.has(alias)) {
+        errors.push({
+          path: `source.connections[${index}].alias`,
+          message: 'Connection alias must be unique'
+        })
+      } else {
+        seenAliases.add(alias)
+      }
     }
 
     if (!conn.connectionId || typeof conn.connectionId !== 'string') {

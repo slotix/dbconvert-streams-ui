@@ -25,6 +25,12 @@ import { executeFederatedQuery, type ConnectionMapping } from '@/api/federated'
 import type { FileFormat } from '@/utils/fileFormat'
 import { parseTableName } from '@/utils/federatedUtils'
 import {
+  applySourceAlias,
+  computeLocalFileSelectionTableName,
+  computeS3ObjectTableName,
+  computeS3PrefixTableName
+} from '@/utils/fileSelectionTableName'
+import {
   getConnectionKindFromSpec,
   getConnectionTypeLabel,
   getSqlDialectFromConnection,
@@ -66,6 +72,13 @@ interface CompareItem {
   query?: string
   targetObjectName: string
   sourcePath?: string
+}
+
+interface PendingFileCompareItem {
+  connectionId?: string
+  alias?: string
+  sourcePath: string
+  tableName: string
 }
 
 const props = defineProps<{
@@ -126,6 +139,40 @@ const targetDialect = computed(() =>
   getSqlDialectFromConnection(props.target.spec, props.target.type)
 )
 
+const reportedCompareTableNames = computed<string[]>(() => {
+  const names: string[] = []
+  const seen = new Set<string>()
+  const currentStreamId = monitoringStore.streamID
+
+  const pushName = (value?: string) => {
+    const normalized = value?.trim()
+    if (!normalized || seen.has(normalized)) return
+    seen.add(normalized)
+    names.push(normalized)
+  }
+
+  for (const log of monitoringStore.logs) {
+    if (
+      log.streamId !== currentStreamId ||
+      log.category !== 'stat' ||
+      log.type !== 'target' ||
+      !log.table
+    ) {
+      continue
+    }
+
+    const normalized = log.table.trim().toLowerCase()
+    if (normalized === 'total' || normalized === 'summary') continue
+    pushName(log.table)
+  }
+
+  for (const tableName of monitoringStore.tableMetadata.keys()) {
+    pushName(tableName)
+  }
+
+  return names
+})
+
 function buildTargetObjectNameForTable(
   tableName: string,
   alias: string,
@@ -160,6 +207,7 @@ function buildTargetObjectNameForTable(
 
 const compareItems = computed<CompareItem[]>(() => {
   const items: CompareItem[] = []
+  const pendingFileItems: PendingFileCompareItem[] = []
 
   for (const conn of sourceConnections.value) {
     const alias = (conn.alias || '').trim()
@@ -201,54 +249,69 @@ const compareItems = computed<CompareItem[]>(() => {
       })
     }
 
-    // S3/file sources: build source paths from stream config.
-    // Pair with monitoring store tableMetadata for authoritative table names.
-    // The backend processes selections in config order, so we match by position.
-    // Format detection is deferred to loadSourceFile() which uses fileExplorerStore
-    // (same code path as Data Explorer and stream wizard).
+    // File-backed sources derive compare items directly from saved selections.
+    // Reported table names are only used when they align 1:1 with those selections.
+    const aliasPrefix = isFederated.value ? alias : ''
     const s3Bucket = conn.s3?.bucket
-    const sourcePaths: string[] = []
+    const localExistingNames = new Set<string>()
 
     for (const prefix of conn.s3?.prefixes || []) {
       if (!prefix.replace(/\/+$/, '')) continue
-      sourcePaths.push(s3Bucket ? `s3://${s3Bucket}/${prefix}` : prefix)
+      pendingFileItems.push({
+        connectionId: conn.connectionId,
+        alias,
+        sourcePath: s3Bucket ? `s3://${s3Bucket}/${prefix}` : prefix,
+        tableName: applySourceAlias(computeS3PrefixTableName(prefix), aliasPrefix)
+      })
     }
     for (const obj of conn.s3?.objects || []) {
       const trimmed = obj.trim()
       if (!trimmed) continue
-      sourcePaths.push(s3Bucket ? `s3://${s3Bucket}/${trimmed}` : trimmed)
+      pendingFileItems.push({
+        connectionId: conn.connectionId,
+        alias,
+        sourcePath: s3Bucket ? `s3://${s3Bucket}/${trimmed}` : trimmed,
+        tableName: applySourceAlias(computeS3ObjectTableName(trimmed), aliasPrefix)
+      })
     }
     const filesBasePath = conn.files?.basePath
     for (const filePath of conn.files?.paths || []) {
       const trimmed = filePath.trim()
       if (!trimmed) continue
-      sourcePaths.push(filesBasePath ? joinPaths(filesBasePath, trimmed) : trimmed)
-    }
-
-    if (sourcePaths.length > 0) {
-      // Table names come from the monitoring store (backend-computed, reported via SSE).
-      // Backend processes selections in config order, so monitoring table names
-      // (excluding database tables already added above) map 1:1 by position.
-      const dbTableNames = new Set(items.map((it) => it.value))
-      const fileTableNames = Array.from(monitoringStore.tableMetadata.keys()).filter(
-        (name) => !dbTableNames.has(name)
-      )
-
-      for (let i = 0; i < sourcePaths.length; i++) {
-        const tableName = fileTableNames[i]
-        if (!tableName) continue
-        items.push({
-          value: tableName,
-          label: tableName,
-          kind: 'table',
-          connectionId: conn.connectionId,
-          alias,
-          targetObjectName: tableName,
-          sourcePath: sourcePaths[i]
-        })
-      }
+      const unaliasedTableName = computeLocalFileSelectionTableName(trimmed, localExistingNames)
+      localExistingNames.add(unaliasedTableName)
+      pendingFileItems.push({
+        connectionId: conn.connectionId,
+        alias,
+        sourcePath: filesBasePath ? joinPaths(filesBasePath, trimmed) : trimmed,
+        tableName: applySourceAlias(unaliasedTableName, aliasPrefix)
+      })
     }
   }
+
+  const existingTargetNames = new Set(items.map((item) => item.targetObjectName))
+  const reportedFileTableNames = reportedCompareTableNames.value.filter(
+    (tableName) => !existingTargetNames.has(tableName)
+  )
+  const resolvedFileTableNames =
+    reportedFileTableNames.length === pendingFileItems.length
+      ? reportedFileTableNames
+      : pendingFileItems.map((item) => item.tableName)
+
+  pendingFileItems.forEach((item, index) => {
+    const tableName = resolvedFileTableNames[index]
+    if (!tableName) return
+
+    items.push({
+      value: tableName,
+      label: tableName,
+      kind: 'table',
+      connectionId: item.connectionId,
+      alias: item.alias,
+      targetObjectName: tableName,
+      sourcePath: item.sourcePath
+    })
+  })
 
   return items
 })
@@ -1370,7 +1433,7 @@ async function selectTable(tableName: string) {
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
           <span class="text-sm font-medium text-gray-700 dark:text-gray-200">Compare Table:</span>
-          <Menu as="div" class="relative z-1200">
+          <Menu as="div" class="relative z-[1200]">
             <MenuButton
               class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
             >
@@ -1378,7 +1441,7 @@ async function selectTable(tableName: string) {
               <ChevronDown class="h-4 w-4 text-gray-500 dark:text-gray-400" />
             </MenuButton>
             <MenuItems
-              class="absolute left-0 z-1300 mt-1 w-56 origin-top-left rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-lg ring-1 ring-black ring-opacity-5 dark:ring-white/10 border border-gray-200 dark:border-gray-700 focus:outline-none"
+              class="absolute left-0 top-full z-[1300] mt-1 w-56 origin-top-left rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-lg ring-1 ring-black ring-opacity-5 dark:ring-white/10 border border-gray-200 dark:border-gray-700 focus:outline-none"
             >
               <div class="py-1">
                 <MenuItem

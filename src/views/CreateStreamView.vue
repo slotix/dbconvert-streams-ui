@@ -187,7 +187,6 @@ import { useMonitoringStore } from '@/stores/monitoring'
 import type { StreamConnectionMapping } from '@/types/streamConfig'
 import { STATUS, type Status } from '@/constants'
 import { getConnectionKindFromSpec } from '@/types/specs'
-import { DEFAULT_ALIAS } from '@/utils/federatedUtils'
 import { getSourceSelectionValue } from '@/components/stream/wizard/sourceMappings'
 import WizardLayout from '@/components/connection/wizard/WizardLayout.vue'
 import SourceTargetSelectionStep from '@/components/stream/wizard/steps/SourceTargetSelectionStep.vue'
@@ -509,11 +508,7 @@ function handleSourceUpdate(connectionId: string, database?: string, _schema?: s
     if (!database) {
       return
     }
-    const alias =
-      wizard.sourceConnections.value.find((c) => c.connectionId === connectionId)?.alias ||
-      wizard.sourceConnections.value[0]?.alias ||
-      DEFAULT_ALIAS
-    wizard.setSourceConnections([{ alias, connectionId, s3: { bucket: database } }])
+    wizard.setSourceConnections([{ connectionId, s3: { bucket: database } }])
     wizard.selection.value.sourceSchema = null
   } else {
     wizard.setSourceConnection(connectionId, database, undefined)
@@ -612,8 +607,7 @@ function mergeWizardConnections(
     const existing = existingConnections.find(
       (ec) => ec.connectionId === wizardConn.connectionId || ec.alias === wizardConn.alias
     )
-    return {
-      alias: wizardConn.alias,
+    const merged: StreamConnectionMapping = {
       connectionId: wizardConn.connectionId,
       database: wizardConn.database,
       // Preserve existing per-connection data (tables, queries, schema)
@@ -627,6 +621,12 @@ function mergeWizardConnections(
         ? { ...existing?.files, basePath: wizardConn.files.basePath }
         : existing?.files
     }
+
+    if (wizardConn.alias) {
+      merged.alias = wizardConn.alias
+    }
+
+    return merged
   })
 }
 
