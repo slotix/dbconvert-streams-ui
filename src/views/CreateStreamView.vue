@@ -53,7 +53,7 @@
           <template #footer-left>
             <div v-if="showStepOneSelectionFooter" class="flex min-w-0 flex-1 items-center gap-2">
               <div
-                class="min-w-0 max-w-[36rem] truncate bg-sky-50 dark:bg-sky-900/20 border border-sky-200 dark:border-sky-600/60 rounded-lg px-3 py-1.5 text-sm shadow-sm shadow-sky-900/10 dark:shadow-sky-900/40"
+                class="min-w-0 max-w-xl truncate bg-sky-50 dark:bg-sky-900/20 border border-sky-200 dark:border-sky-600/60 rounded-lg px-3 py-1.5 text-sm shadow-sm shadow-sky-900/10 dark:shadow-sky-900/40"
                 :title="sourceFooterLabel"
               >
                 <span class="font-semibold text-sky-700 dark:text-sky-200">Source:</span>
@@ -75,7 +75,7 @@
                 />
               </svg>
               <div
-                class="min-w-0 max-w-[36rem] truncate bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-600/60 rounded-lg px-3 py-1.5 text-sm shadow-sm shadow-emerald-900/10 dark:shadow-emerald-900/40"
+                class="min-w-0 max-w-xl truncate bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-600/60 rounded-lg px-3 py-1.5 text-sm shadow-sm shadow-emerald-900/10 dark:shadow-emerald-900/40"
                 :title="targetFooterLabel"
               >
                 <span class="font-semibold text-emerald-700 dark:text-emerald-200">Target:</span>
