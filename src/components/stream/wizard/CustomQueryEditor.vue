@@ -270,6 +270,7 @@ import {
   getSqlDialectFromConnection,
   isFileBasedKind
 } from '@/types/specs'
+import { toFederatedConnectionMappings } from '@/utils/federatedUtils'
 import {
   getFederatedTemplates,
   getDatabaseTemplates,
@@ -497,7 +498,7 @@ const sqlLspContext = computed<SqlLspConnectionContext | undefined>(() => {
 
   const sourceConnection = connectionsStore.connectionByID(sourceConnectionId.value)
   const sourceConnectionType = sourceConnection?.type?.trim().toLowerCase() || ''
-  const useDuckDBLsp = sourceConnectionType.includes('duckdb')
+  const duckdbLspEnabled = sourceConnectionType.includes('duckdb')
 
   if (isFileConnection(sourceConnectionId.value)) {
     return {
@@ -506,12 +507,12 @@ const sqlLspContext = computed<SqlLspConnectionContext | undefined>(() => {
     }
   }
 
-  if (!useDuckDBLsp && !sourceDatabase.value) {
+  if (!duckdbLspEnabled && !sourceDatabase.value) {
     return undefined
   }
 
   return {
-    provider: useDuckDBLsp ? 'duckdb' : 'sqls',
+    provider: duckdbLspEnabled ? 'duckdb' : 'sqls',
     connectionId: sourceConnectionId.value,
     database: sourceDatabase.value || undefined
   }
@@ -598,7 +599,7 @@ const runPreview = async (query: QuerySource, index: number) => {
       // Execute federated query across multiple sources
       const federatedResult = await executeFederatedQuery({
         query: query.query,
-        connections: props.sourceConnections
+        connections: toFederatedConnectionMappings(props.sourceConnections)
       })
       result = {
         columns: federatedResult.columns || [],

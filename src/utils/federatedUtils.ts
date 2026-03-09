@@ -5,6 +5,7 @@
  * Centralizes alias normalization, table name parsing, and connection lookups.
  */
 
+import type { ConnectionMapping } from '@/api/federated'
 import type { StreamConnectionMapping } from '@/types/streamConfig'
 
 /** Default alias prefix for source connections (fallback) */
@@ -275,4 +276,30 @@ export function normalizeStreamConnections(
       files: conn.files
     }
   })
+}
+
+/**
+ * Convert stream source mappings into federated query mappings.
+ * Stream config allows alias to be omitted for single-source flows, but
+ * federated query execution requires explicit aliases for every mapping.
+ */
+export function toFederatedConnectionMappings(
+  connections: StreamConnectionMapping[]
+): ConnectionMapping[] {
+  return connections
+    .map((conn) => {
+      const alias = conn.alias?.trim()
+      if (!alias || !conn.connectionId) return null
+
+      const database = conn.database?.trim()
+      const scopePath = conn.scopePath?.trim() || conn.files?.basePath?.trim()
+
+      return {
+        alias,
+        connectionId: conn.connectionId,
+        ...(database ? { database } : {}),
+        ...(scopePath ? { scopePath } : {})
+      } satisfies ConnectionMapping
+    })
+    .filter((conn): conn is ConnectionMapping => conn !== null)
 }

@@ -108,19 +108,19 @@ export function useConsoleLspContext(options: UseConsoleLspContextOptions) {
 
     const directConnection = options.getConnectionById(direct.connectionId)
     const directConnectionType = directConnection?.type?.trim().toLowerCase() || ''
-    const useDuckDBLsp = directConnectionType.includes('duckdb')
+    const duckdbLspEnabled = directConnectionType.includes('duckdb')
 
-    if (!useDuckDBLsp && !options.getDirectSourceReadiness(direct).ready) {
+    if (!duckdbLspEnabled && !options.getDirectSourceReadiness(direct).ready) {
       return undefined
     }
 
     const database = direct.database?.trim() || ''
-    if (!useDuckDBLsp && !database) {
+    if (!duckdbLspEnabled && !database) {
       return undefined
     }
 
     return {
-      provider: useDuckDBLsp ? 'duckdb' : 'sqls',
+      provider: duckdbLspEnabled ? 'duckdb' : 'sqls',
       connectionId: direct.connectionId,
       database: database || undefined
     }

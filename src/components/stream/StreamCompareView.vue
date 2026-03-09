@@ -23,7 +23,7 @@ import type { FileMetadata } from '@/types/files'
 import * as files from '@/api/files'
 import { executeFederatedQuery, type ConnectionMapping } from '@/api/federated'
 import type { FileFormat } from '@/utils/fileFormat'
-import { parseTableName } from '@/utils/federatedUtils'
+import { parseTableName, toFederatedConnectionMappings } from '@/utils/federatedUtils'
 import {
   applySourceAlias,
   computeLocalFileSelectionTableName,
@@ -827,21 +827,7 @@ async function loadSourceQueryPreview() {
     return
   }
 
-  const queryConnections: ConnectionMapping[] = sourceConnections.value
-    .map((conn) => {
-      const alias = (conn.alias || '').trim()
-      if (!alias || !conn.connectionId) return null
-
-      const database = conn.database?.trim()
-      const scopePath = conn.files?.basePath?.trim()
-      return {
-        alias,
-        connectionId: conn.connectionId,
-        ...(database ? { database } : {}),
-        ...(scopePath ? { scopePath } : {})
-      } as ConnectionMapping
-    })
-    .filter((conn): conn is ConnectionMapping => conn !== null)
+  const queryConnections: ConnectionMapping[] = toFederatedConnectionMappings(sourceConnections.value)
 
   if (queryConnections.length === 0) {
     sourceQueryError.value = 'No source connections available for query preview.'
