@@ -122,13 +122,19 @@
                 >
                   <template #actions>
                     <SourceHeaderActions
+                      v-if="!hasS3ManifestPath(fileConn.connectionId)"
                       @select-all="selectAllInFileGroup(fileConn.connectionId)"
                       @clear="clearAllInFileGroup(fileConn.connectionId)"
                     />
                   </template>
                 </SourceSectionHeader>
                 <div v-show="isFileGroupExpanded(fileConn.connectionId)">
+                  <S3ManifestSourceConfig
+                    v-if="isS3Type(fileConn.connectionId)"
+                    :connection-id="fileConn.connectionId"
+                  />
                   <FilePreviewList
+                    v-if="!hasS3ManifestPath(fileConn.connectionId)"
                     :ref="(instance) => setFilePreviewRef(fileConn.connectionId, instance)"
                     :connection-id="fileConn.connectionId"
                     :show-toolbar="false"
@@ -402,6 +408,7 @@
 import { ref, computed, watch } from 'vue'
 import TableList from '@/components/settings/TableList.vue'
 import FilePreviewList from '@/components/stream/wizard/FilePreviewList.vue'
+import S3ManifestSourceConfig from '@/components/stream/wizard/S3ManifestSourceConfig.vue'
 import DataSelectionToolbar from '@/components/stream/wizard/DataSelectionToolbar.vue'
 import SourceSectionHeader from '@/components/stream/wizard/SourceSectionHeader.vue'
 import SourceHeaderActions from '@/components/stream/wizard/SourceHeaderActions.vue'
@@ -708,6 +715,13 @@ function getConnectionName(connectionId: string): string {
 
 function getSourceSelectionLabel(source: StreamConnectionMapping): string {
   return source.s3?.bucket || source.files?.basePath || source.database || ''
+}
+
+function hasS3ManifestPath(connectionId: string): boolean {
+  const connection = streamsStore.currentStreamConfig?.source?.connections?.find(
+    (conn) => conn.connectionId === connectionId
+  )
+  return !!connection?.s3?.manifestPath?.trim()
 }
 
 // Check if target is a database type that supports structure options

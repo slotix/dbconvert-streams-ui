@@ -93,18 +93,50 @@ export interface S3ValidationResponse {
 }
 
 // S3 Manifest Response
+export interface S3ManifestFile {
+  version: string
+  files: string[]
+  metadata?: Record<string, unknown>
+}
+
+export interface S3ManifestStats {
+  file_count: number
+  s3_files: number
+  local_files: number
+  version: string
+  total_size_bytes?: number
+  total_row_count?: number
+  created_at?: string
+}
+
 export interface S3ManifestResponse {
-  manifest: {
-    version: string
-    files: string[]
-    metadata: Record<string, unknown>
-  }
-  stats: {
-    file_count: number
-    s3_files: number
-    local_files: number
-    version: string
-  }
+  manifest: S3ManifestFile
+  stats: S3ManifestStats
+  outputPath?: string
+}
+
+export interface S3ManifestCreateRequest {
+  files: string[]
+  metadata?: Record<string, unknown>
+}
+
+export interface S3ManifestFilterRequest {
+  pattern: string
+  sourcePath?: string
+  manifest?: S3ManifestFile
+  connectionId?: string
+}
+
+export interface S3ManifestMergeRequest {
+  sourcePaths?: string[]
+  manifests?: S3ManifestFile[]
+  connectionId?: string
+}
+
+export interface S3ManifestWriteRequest {
+  manifest: S3ManifestFile
+  outputPath: string
+  connectionId: string
 }
 
 // Provider preset configuration

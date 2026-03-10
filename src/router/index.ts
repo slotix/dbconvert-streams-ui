@@ -6,6 +6,7 @@ import NotFound from '@/views/NotFound.vue'
 const loadHomeView = () => import('@/views/HomeView.vue')
 const loadStreamsView = () => import('@/views/StreamsView.vue')
 const loadDatabaseExplorerView = () => import('@/views/DatabaseExplorerView.vue')
+const loadManifestsView = () => import('@/views/ManifestsView.vue')
 
 const routes = [
   {
@@ -46,6 +47,11 @@ const routes = [
     component: loadStreamsView
   },
   {
+    path: '/manifests',
+    name: 'Manifests',
+    component: loadManifestsView
+  },
+  {
     path: '/streams/create',
     name: 'CreateStream',
     component: () => import('@/views/CreateStreamView.vue')
@@ -78,7 +84,8 @@ export function prefetchWorkspaceViews(activeRouteName?: string | symbol | null)
 
   const loaders = [
     { name: 'Streams', load: loadStreamsView },
-    { name: 'DatabaseExplorer', load: loadDatabaseExplorerView }
+    { name: 'DatabaseExplorer', load: loadDatabaseExplorerView },
+    { name: 'Manifests', load: loadManifestsView }
   ]
 
   window.setTimeout(() => {

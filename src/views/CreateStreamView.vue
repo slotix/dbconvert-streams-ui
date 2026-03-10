@@ -607,6 +607,8 @@ function mergeWizardConnections(
     const existing = existingConnections.find(
       (ec) => ec.connectionId === wizardConn.connectionId || ec.alias === wizardConn.alias
     )
+    const mergedS3 =
+      wizardConn.s3 || existing?.s3 ? { ...existing?.s3, ...wizardConn.s3 } : undefined
     const merged: StreamConnectionMapping = {
       connectionId: wizardConn.connectionId,
       database: wizardConn.database,
@@ -614,8 +616,7 @@ function mergeWizardConnections(
       schema: existing?.schema,
       tables: existing?.tables,
       queries: existing?.queries,
-      // Prefer wizard's s3 config (from bucket selection) over existing (for edit mode fallback)
-      s3: wizardConn.s3 || existing?.s3,
+      s3: mergedS3,
       // Preserve files config: wizard has basePath, existing may have saved paths
       files: wizardConn.files
         ? { ...existing?.files, basePath: wizardConn.files.basePath }

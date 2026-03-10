@@ -302,6 +302,9 @@ export function useStreamWizard() {
   const canProceedStep2 = computed(() => {
     const streamsStore = useStreamsStore()
     const config = streamsStore.currentStreamConfig
+    const hasManifestValidationError = Object.values(streamsStore.manifestValidationErrors).some(
+      (error) => !!error
+    )
 
     // Check if tables or custom queries are selected (per-connection)
     let selectedTablesCount = 0
@@ -332,6 +335,9 @@ export function useStreamWizard() {
 
     // In CDC mode, enforce tables-only (no custom queries allowed)
     if (config?.mode === 'cdc' && customQueriesCount > 0) {
+      return false
+    }
+    if (hasManifestValidationError) {
       return false
     }
 

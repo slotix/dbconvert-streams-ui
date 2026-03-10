@@ -211,7 +211,9 @@ function validateSource(source: unknown, errors: ValidationError[]): void {
         const s3 = conn.s3 as Record<string, unknown>
         const hasPrefixes = Array.isArray(s3.prefixes) && s3.prefixes.length > 0
         const hasObjects = Array.isArray(s3.objects) && s3.objects.length > 0
-        if (hasPrefixes || hasObjects) {
+        const hasManifestPath =
+          typeof s3.manifestPath === 'string' && s3.manifestPath.trim().length > 0
+        if (hasPrefixes || hasObjects || hasManifestPath) {
           hasAnySelection = true
         }
       }
@@ -297,11 +299,20 @@ function validateS3Config(
   // Validate prefixes and objects arrays (at least one must have entries)
   const prefixes = Array.isArray(s3.prefixes) ? s3.prefixes : []
   const objects = Array.isArray(s3.objects) ? s3.objects : []
+  const manifestPath = typeof s3.manifestPath === 'string' ? s3.manifestPath.trim() : ''
 
-  if (prefixes.length === 0 && objects.length === 0) {
+  if (manifestPath && (prefixes.length > 0 || objects.length > 0)) {
     errors.push({
       path: `${connPath}.s3`,
-      message: 'at least one prefix or object is required'
+      message: 'manifestPath cannot be combined with prefixes or objects'
+    })
+    return
+  }
+
+  if (prefixes.length === 0 && objects.length === 0 && !manifestPath) {
+    errors.push({
+      path: `${connPath}.s3`,
+      message: 'at least one prefix, object, or manifestPath is required'
     })
     return
   }

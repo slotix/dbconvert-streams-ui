@@ -1,5 +1,5 @@
 import { computed, type Component } from 'vue'
-import { RefreshCw, Sheet } from 'lucide-vue-next'
+import { FileJson, RefreshCw, Sheet } from 'lucide-vue-next'
 
 export type AppNavigationItem = {
   name: string
@@ -21,6 +21,12 @@ export function useAppNavigation() {
         name: 'Streams',
         href: '/streams',
         icon: RefreshCw,
+        show: true
+      },
+      {
+        name: 'Manifests',
+        href: '/manifests',
+        icon: FileJson,
         show: true
       }
     ].filter((item) => item.show)

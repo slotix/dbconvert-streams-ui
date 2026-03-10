@@ -72,6 +72,7 @@ export interface S3SourceConfig {
   bucket: string
   prefixes?: string[]
   objects?: string[]
+  manifestPath?: string
 }
 
 export interface FilesSourceConfig {

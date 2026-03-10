@@ -302,6 +302,48 @@ describe('StreamConfigValidator', () => {
       expect(result.valid).toBe(true)
     })
 
+    it('should allow S3 sources with manifestPath', () => {
+      const config = {
+        ...validConfig,
+        source: {
+          connections: [
+            {
+              connectionId: 'conn-123',
+              s3: {
+                bucket: 'my-bucket',
+                manifestPath: 's3://my-bucket/manifests/orders.json'
+              }
+            }
+          ]
+        }
+      }
+      const result = validateStreamConfig(config)
+      expect(result.valid).toBe(true)
+    })
+
+    it('should reject mixing manifestPath with prefixes or objects', () => {
+      const config = {
+        ...validConfig,
+        source: {
+          connections: [
+            {
+              connectionId: 'conn-123',
+              s3: {
+                bucket: 'my-bucket',
+                manifestPath: 's3://my-bucket/manifests/orders.json',
+                prefixes: ['sakila/actor/']
+              }
+            }
+          ]
+        }
+      }
+      const result = validateStreamConfig(config)
+      expect(result.valid).toBe(false)
+      expect(result.errors.some((e) => e.message.includes('manifestPath cannot be combined'))).toBe(
+        true
+      )
+    })
+
     it('should require table name', () => {
       const config = {
         ...validConfig,

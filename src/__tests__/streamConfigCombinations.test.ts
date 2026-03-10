@@ -55,7 +55,6 @@ describe('buildStreamPayload combinations', () => {
 
     expect(payload.source?.connections).toEqual([
       {
-        alias: 'pg1',
         connectionId: 'conn-pg',
         database: 'postgres',
         schema: 'public',
@@ -88,7 +87,6 @@ describe('buildStreamPayload combinations', () => {
     const payload = buildStreamPayload(stream)
 
     expect(payload.source?.connections?.[0]).toMatchObject({
-      alias: 'files1',
       connectionId: 'conn-files',
       files: {
         basePath: '/data/files',
@@ -140,6 +138,41 @@ describe('buildStreamPayload combinations', () => {
       bucket: 'data-bucket',
       prefixes: ['exports/'],
       objects: ['standalone.parquet']
+    })
+  })
+
+  it('builds payload for a single S3 source using manifestPath', () => {
+    seedConnections([
+      makeConnection('conn-s3', 's3', {
+        s3: { region: 'us-east-1' }
+      })
+    ])
+
+    const stream: StreamConfig = {
+      name: 's3_manifest_source',
+      mode: 'convert',
+      source: {
+        connections: [
+          {
+            alias: 's3a',
+            connectionId: 'conn-s3',
+            s3: {
+              bucket: 'data-bucket',
+              manifestPath: 's3://data-bucket/manifests/orders.json',
+              prefixes: ['should-not-be-sent/']
+            }
+          }
+        ]
+      },
+      target: baseTarget,
+      files: [{ name: 'ignored', path: 's3://data-bucket/ignored/', type: 'dir', selected: true }]
+    }
+
+    const payload = buildStreamPayload(stream)
+
+    expect(payload.source?.connections?.[0].s3).toEqual({
+      bucket: 'data-bucket',
+      manifestPath: 's3://data-bucket/manifests/orders.json'
     })
   })
 
