@@ -52,7 +52,6 @@ describe('S3LocationDetailsPanel', () => {
       }
     })
 
-    expect(wrapper.text()).toContain('S3 Location')
     expect(wrapper.text()).toContain('bucket')
     expect(wrapper.text()).toContain('orders')
     expect(wrapper.text()).toContain('2')

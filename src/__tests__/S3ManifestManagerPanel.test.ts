@@ -253,7 +253,6 @@ describe('S3ManifestManagerPanel', () => {
       ]
     })
 
-    expect(wrapper.text()).toContain('Context:')
     expect(wrapper.text()).toContain('s3://bucket')
     expect(wrapper.text()).toContain('orders-manifest.json')
     expect(wrapper.text()).toContain('orders-0001.parquet')

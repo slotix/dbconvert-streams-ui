@@ -856,7 +856,7 @@ const isLoadingDatabases = computed(() => {
 
             <div class="ui-surface-panel p-4">
               <div class="flex items-center gap-2 mb-3">
-                <PanelHeaderIcon :icon="Folder" tone="amber" />
+                <PanelHeaderIcon :icon="Folder" tone="slate" />
                 <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"
                   >Scope & Files</span
                 >
@@ -907,9 +907,9 @@ const isLoadingDatabases = computed(() => {
                 </div>
                 <div
                   v-if="!s3Bucket"
-                  class="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg"
+                  class="p-3 border border-gray-200 dark:border-gray-700 rounded-lg"
                 >
-                  <p class="text-xs text-blue-700 dark:text-blue-300">
+                  <p class="text-xs text-gray-600 dark:text-gray-400">
                     <strong>Note:</strong> This connection can browse all buckets. Specify a bucket
                     when using it as a stream target.
                   </p>

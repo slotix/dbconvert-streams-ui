@@ -1,68 +1,66 @@
 <template>
-  <section class="ui-surface-panel p-4">
-    <div class="flex flex-col gap-3 border-b border-gray-200 pb-4 dark:border-gray-700">
-      <div class="flex items-start justify-between gap-4">
-        <div>
-          <h4 class="text-sm font-semibold text-gray-900 dark:text-gray-100">Manifest workflow</h4>
-          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            Manage manifests in the context of the current S3 bucket or prefix.
-          </p>
-        </div>
-        <BaseButton v-if="currentManifest" size="sm" variant="ghost" @click="clearCurrentManifest">
-          Reset
-        </BaseButton>
+  <div class="flex flex-col">
+    <!-- Section toolbar -->
+    <div
+      class="flex items-center justify-between gap-3 border-b border-gray-200 px-5 py-2.5 dark:border-gray-700"
+    >
+      <div class="flex items-center gap-2">
+        <h4 class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+          Manifest workflow
+        </h4>
+        <span
+          v-if="contextUri"
+          class="rounded-md bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-700 dark:bg-sky-900/30 dark:text-sky-300"
+        >
+          {{ contextUri }}
+        </span>
       </div>
-
-      <div
-        class="rounded-xl border border-sky-200 bg-sky-50/70 px-3 py-3 text-xs text-sky-900 dark:border-sky-800 dark:bg-sky-950/30 dark:text-sky-100"
-      >
-        <span class="font-semibold">Context:</span>
-        <span class="ml-1 break-all">{{
-          contextUri || 'Select a bucket in the explorer first.'
-        }}</span>
-      </div>
+      <BaseButton v-if="currentManifest" size="sm" variant="ghost" @click="clearCurrentManifest">
+        Reset
+      </BaseButton>
     </div>
 
+    <!-- Error banner -->
     <div
       v-if="pageError"
-      class="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-200"
+      class="border-b border-red-200 bg-red-50 px-5 py-2 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-200"
     >
       {{ pageError }}
     </div>
 
+    <!-- No bucket context -->
     <div
       v-if="!hasBucketContext"
-      class="mt-4 rounded-xl border border-dashed border-gray-300 px-4 py-6 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400"
+      class="flex flex-col items-center justify-center px-5 py-12 text-center"
     >
-      Navigate to an S3 bucket or prefix in the explorer to browse manifests and build one from the
-      visible objects.
+      <p class="text-sm text-gray-500 dark:text-gray-400">
+        Navigate to an S3 bucket or prefix in the explorer to browse manifests and build one from
+        the visible objects.
+      </p>
     </div>
 
-    <div v-else class="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
-      <div class="space-y-4">
-        <div class="rounded-2xl border border-gray-200 dark:border-gray-700">
-          <div class="border-b border-gray-200 px-4 py-3 dark:border-gray-700">
-            <div class="flex items-center justify-between gap-3">
-              <div>
-                <h5 class="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                  Manifest files in current location
-                </h5>
-                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  Open an existing manifest from the current bucket or prefix.
-                </p>
-              </div>
-              <span class="text-xs text-gray-500 dark:text-gray-400">
-                {{ manifestEntries.length }} files
-              </span>
-            </div>
+    <!-- Main content: two-column layout -->
+    <div v-else class="grid min-h-0 flex-1 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+      <!-- LEFT COLUMN -->
+      <div class="flex flex-col border-r border-gray-200 dark:border-gray-700">
+        <!-- Manifest files section -->
+        <div class="border-b border-gray-200 dark:border-gray-700">
+          <div
+            class="flex items-center justify-between gap-3 bg-gray-50 px-5 py-2 dark:bg-gray-800/50"
+          >
+            <span class="text-xs font-semibold text-gray-700 dark:text-gray-300"
+              >Manifest files</span
+            >
+            <span class="text-xs text-gray-400 dark:text-gray-500"
+              >{{ manifestEntries.length }} files</span
+            >
           </div>
-
-          <div class="max-h-[260px] divide-y divide-gray-100 overflow-y-auto dark:divide-gray-800">
+          <div class="max-h-[200px] divide-y divide-gray-100 overflow-y-auto dark:divide-gray-800">
             <button
               v-for="entry in manifestEntries"
               :key="entry.path"
               type="button"
-              class="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors"
+              class="flex w-full items-center gap-3 px-5 py-2.5 text-left transition-colors"
               :class="
                 entry.path === currentManifestPath
                   ? 'bg-teal-50 text-teal-900 dark:bg-teal-950/40 dark:text-teal-100'
@@ -75,74 +73,66 @@
                 <p class="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
                   {{ entry.name }}
                 </p>
-                <p class="truncate text-xs text-gray-500 dark:text-gray-400">
-                  {{ entry.path }}
-                </p>
+                <p class="truncate text-xs text-gray-500 dark:text-gray-400">{{ entry.path }}</p>
               </div>
             </button>
             <div
               v-if="manifestEntries.length === 0"
-              class="px-4 py-6 text-sm text-gray-500 dark:text-gray-400"
+              class="px-5 py-4 text-xs text-gray-400 dark:text-gray-500"
             >
               No manifest JSON files in the current location.
             </div>
           </div>
         </div>
 
-        <div class="rounded-2xl border border-gray-200 dark:border-gray-700">
-          <div class="border-b border-gray-200 px-4 py-3 dark:border-gray-700">
-            <div class="flex items-center justify-between gap-3">
-              <div>
-                <h5 class="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                  Create from visible S3 objects
-                </h5>
-                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  Use the objects visible in the explorer for this bucket or prefix.
-                </p>
-              </div>
-              <span class="text-xs text-gray-500 dark:text-gray-400">
-                {{ selectedObjectPaths.length }}/{{ dataEntries.length }} selected
-              </span>
-            </div>
+        <!-- Create from objects section -->
+        <div class="flex-1">
+          <div
+            class="flex items-center justify-between gap-3 border-b border-gray-200 bg-gray-50 px-5 py-2 dark:border-gray-700 dark:bg-gray-800/50"
+          >
+            <span class="text-xs font-semibold text-gray-700 dark:text-gray-300"
+              >Create from S3 objects</span
+            >
+            <span class="text-xs text-gray-400 dark:text-gray-500"
+              >{{ selectedObjectPaths.length }}/{{ dataEntries.length }} selected</span
+            >
           </div>
 
-          <div class="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-            <div class="rounded-xl border border-gray-200 dark:border-gray-700">
-              <div
-                class="max-h-[320px] divide-y divide-gray-100 overflow-y-auto dark:divide-gray-800"
+          <div class="flex flex-col gap-0 lg:flex-row">
+            <!-- Object list -->
+            <div
+              class="max-h-[260px] min-h-[120px] flex-1 divide-y divide-gray-100 overflow-y-auto dark:divide-gray-800"
+            >
+              <label
+                v-for="entry in dataEntries"
+                :key="entry.path"
+                class="flex cursor-pointer items-start gap-3 px-5 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-800"
               >
-                <label
-                  v-for="entry in dataEntries"
-                  :key="entry.path"
-                  class="flex cursor-pointer items-start gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800"
-                >
-                  <input
-                    v-model="selectedObjectPaths"
-                    type="checkbox"
-                    :value="entry.path"
-                    data-test="context-object-checkbox"
-                    class="mt-1 h-4 w-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500 dark:border-gray-600 dark:bg-gray-900"
-                  />
-                  <div class="min-w-0">
-                    <p class="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
-                      {{ entry.name }}
-                    </p>
-                    <p class="truncate text-xs text-gray-500 dark:text-gray-400">
-                      {{ entry.path }}
-                    </p>
-                  </div>
-                </label>
-                <div
-                  v-if="dataEntries.length === 0"
-                  class="px-4 py-6 text-sm text-gray-500 dark:text-gray-400"
-                >
-                  No file objects in the current location.
+                <input
+                  v-model="selectedObjectPaths"
+                  type="checkbox"
+                  :value="entry.path"
+                  data-test="context-object-checkbox"
+                  class="mt-0.5 h-4 w-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500 dark:border-gray-600 dark:bg-gray-900"
+                />
+                <div class="min-w-0">
+                  <p class="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
+                    {{ entry.name }}
+                  </p>
+                  <p class="truncate text-xs text-gray-500 dark:text-gray-400">{{ entry.path }}</p>
                 </div>
+              </label>
+              <div
+                v-if="dataEntries.length === 0"
+                class="px-5 py-4 text-xs text-gray-400 dark:text-gray-500"
+              >
+                No file objects in the current location.
               </div>
             </div>
 
+            <!-- Metadata & create action -->
             <div
-              class="space-y-3 rounded-xl border border-gray-200 bg-gray-50/70 p-4 dark:border-gray-700 dark:bg-gray-950/40"
+              class="w-full space-y-3 border-t border-gray-200 bg-gray-50/70 p-4 dark:border-gray-700 dark:bg-gray-800/30 lg:w-72 lg:border-l lg:border-t-0"
             >
               <FormInput
                 v-model="metadataRowCount"
@@ -177,26 +167,24 @@
         </div>
       </div>
 
-      <div class="space-y-4">
-        <div
-          class="rounded-2xl border border-gray-200 bg-gray-50/70 p-4 dark:border-gray-700 dark:bg-gray-950/40"
-        >
-          <div class="flex items-start justify-between gap-3">
-            <div>
-              <h5 class="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                Current manifest
-              </h5>
-              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                Filter, merge, preview, and save the currently loaded manifest.
-              </p>
-            </div>
+      <!-- RIGHT COLUMN -->
+      <div class="flex flex-col">
+        <!-- Current manifest section -->
+        <div class="border-b border-gray-200 dark:border-gray-700">
+          <div
+            class="flex items-center justify-between gap-3 bg-gray-50 px-5 py-2 dark:bg-gray-800/50"
+          >
+            <span class="text-xs font-semibold text-gray-700 dark:text-gray-300"
+              >Current manifest</span
+            >
           </div>
 
-          <div
-            v-if="currentManifestResponse"
-            class="mt-4 rounded-xl border border-emerald-200 bg-emerald-50/70 p-3 text-xs text-emerald-900 dark:border-emerald-700/60 dark:bg-emerald-950/30 dark:text-emerald-100"
-          >
-            <div class="flex flex-wrap gap-x-4 gap-y-2">
+          <div class="space-y-4 px-5 py-4">
+            <!-- Stats bar -->
+            <div
+              v-if="currentManifestResponse"
+              class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600 dark:text-gray-300"
+            >
               <span><strong>Files:</strong> {{ currentManifestResponse.stats.file_count }}</span>
               <span><strong>S3:</strong> {{ currentManifestResponse.stats.s3_files }}</span>
               <span><strong>Version:</strong> {{ currentManifestResponse.stats.version }}</span>
@@ -205,114 +193,126 @@
                 {{ formatDataSize(currentManifestResponse.stats.total_size_bytes) }}
               </span>
             </div>
-          </div>
 
-          <div class="mt-4 grid gap-3">
-            <FormInput
-              v-model="filterPattern"
-              label="Filter pattern"
-              placeholder="orders-*.parquet"
-              helper-text="Matches against the manifest file basename."
-            />
-            <BaseButton
-              :disabled="!currentManifest"
-              :loading="filterLoading"
-              data-test="context-filter-manifest"
-              @click="applyFilter"
-            >
-              Filter current manifest
-            </BaseButton>
-          </div>
-
-          <div
-            class="mt-4 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
-          >
-            <div class="flex items-center justify-between gap-3">
-              <div>
-                <h6 class="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                  Merge sources
-                </h6>
-                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  Merge the current manifest with other manifest files from this location.
-                </p>
+            <!-- Filter -->
+            <div class="flex items-end gap-2">
+              <div class="min-w-0 flex-1">
+                <FormInput
+                  v-model="filterPattern"
+                  label="Filter pattern"
+                  placeholder="orders-*.parquet"
+                  helper-text="Matches against the manifest file basename."
+                />
               </div>
               <BaseButton
                 size="sm"
-                :disabled="!currentManifest || selectedMergePaths.length === 0"
-                :loading="mergeLoading"
-                data-test="context-merge-manifests"
-                @click="mergeSelectedManifests"
+                variant="secondary"
+                :disabled="!currentManifest"
+                :loading="filterLoading"
+                data-test="context-filter-manifest"
+                @click="applyFilter"
               >
-                Merge
+                Filter
               </BaseButton>
             </div>
 
-            <div
-              class="mt-3 max-h-[180px] divide-y divide-gray-100 overflow-y-auto dark:divide-gray-800"
-            >
-              <label
-                v-for="entry in mergeCandidates"
-                :key="entry.path"
-                class="flex cursor-pointer items-start gap-3 px-1 py-3"
-              >
-                <input
-                  v-model="selectedMergePaths"
-                  type="checkbox"
-                  :value="entry.path"
-                  data-test="context-merge-checkbox"
-                  class="mt-1 h-4 w-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500 dark:border-gray-600 dark:bg-gray-900"
-                />
-                <div class="min-w-0">
-                  <p class="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
-                    {{ entry.name }}
-                  </p>
-                  <p class="truncate text-xs text-gray-500 dark:text-gray-400">
-                    {{ entry.path }}
-                  </p>
-                </div>
-              </label>
+            <!-- Merge sources -->
+            <div>
+              <div class="flex items-center justify-between gap-3">
+                <span class="text-xs font-semibold text-gray-700 dark:text-gray-300"
+                  >Merge sources</span
+                >
+                <BaseButton
+                  size="sm"
+                  :disabled="!currentManifest || selectedMergePaths.length === 0"
+                  :loading="mergeLoading"
+                  data-test="context-merge-manifests"
+                  @click="mergeSelectedManifests"
+                >
+                  Merge
+                </BaseButton>
+              </div>
               <div
-                v-if="mergeCandidates.length === 0"
-                class="px-1 py-4 text-sm text-gray-500 dark:text-gray-400"
+                class="mt-2 max-h-[140px] divide-y divide-gray-100 overflow-y-auto rounded-lg border border-gray-200 dark:divide-gray-800 dark:border-gray-700"
               >
-                No additional manifest files available in this location.
+                <label
+                  v-for="entry in mergeCandidates"
+                  :key="entry.path"
+                  class="flex cursor-pointer items-start gap-3 px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-800"
+                >
+                  <input
+                    v-model="selectedMergePaths"
+                    type="checkbox"
+                    :value="entry.path"
+                    data-test="context-merge-checkbox"
+                    class="mt-0.5 h-4 w-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500 dark:border-gray-600 dark:bg-gray-900"
+                  />
+                  <div class="min-w-0">
+                    <p class="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
+                      {{ entry.name }}
+                    </p>
+                    <p class="truncate text-xs text-gray-500 dark:text-gray-400">
+                      {{ entry.path }}
+                    </p>
+                  </div>
+                </label>
+                <div
+                  v-if="mergeCandidates.length === 0"
+                  class="px-3 py-3 text-xs text-gray-400 dark:text-gray-500"
+                >
+                  No additional manifest files available in this location.
+                </div>
               </div>
             </div>
-          </div>
 
-          <div class="mt-4 grid gap-3">
-            <FormInput
-              v-model="saveOutputPath"
-              label="Save output path"
-              :placeholder="suggestedManifestPath"
-              helper-text="Persist the current manifest back to S3."
-            />
-            <BaseButton
-              :disabled="!currentManifest || !saveOutputPath.trim()"
-              :loading="saveLoading"
-              data-test="context-save-manifest"
-              @click="saveCurrentManifest"
-            >
-              Save manifest
-            </BaseButton>
+            <!-- Save -->
+            <div class="flex items-end gap-2">
+              <div class="min-w-0 flex-1">
+                <FormInput
+                  v-model="saveOutputPath"
+                  label="Save output path"
+                  :placeholder="suggestedManifestPath"
+                  helper-text="Persist the current manifest back to S3."
+                />
+              </div>
+              <BaseButton
+                size="sm"
+                :disabled="!currentManifest || !saveOutputPath.trim()"
+                :loading="saveLoading"
+                data-test="context-save-manifest"
+                @click="saveCurrentManifest"
+              >
+                Save
+              </BaseButton>
+            </div>
           </div>
         </div>
 
-        <div class="rounded-2xl border border-gray-200 dark:border-gray-700">
-          <div class="border-b border-gray-200 px-4 py-3 dark:border-gray-700">
-            <h5 class="text-sm font-semibold text-gray-900 dark:text-gray-100">Manifest entries</h5>
+        <!-- Manifest entries list -->
+        <div class="min-h-0 flex-1">
+          <div
+            class="flex items-center justify-between gap-3 border-b border-gray-200 bg-gray-50 px-5 py-2 dark:border-gray-700 dark:bg-gray-800/50"
+          >
+            <span class="text-xs font-semibold text-gray-700 dark:text-gray-300"
+              >Manifest entries</span
+            >
+            <span
+              v-if="currentManifest?.files?.length"
+              class="text-xs text-gray-400 dark:text-gray-500"
+              >{{ currentManifest.files.length }} files</span
+            >
           </div>
-          <div class="max-h-[360px] overflow-y-auto">
+          <div class="max-h-[300px] overflow-y-auto">
             <div
               v-for="filePath in currentManifest?.files || []"
               :key="filePath"
-              class="border-b border-gray-100 px-4 py-3 text-sm text-gray-700 last:border-b-0 dark:border-gray-800 dark:text-gray-200"
+              class="border-b border-gray-100 px-5 py-2 text-sm text-gray-700 last:border-b-0 dark:border-gray-800 dark:text-gray-200"
             >
-              <span class="break-all">{{ filePath }}</span>
+              <span class="break-all font-mono text-xs">{{ filePath }}</span>
             </div>
             <div
               v-if="!currentManifest?.files?.length"
-              class="px-4 py-6 text-sm text-gray-500 dark:text-gray-400"
+              class="px-5 py-4 text-xs text-gray-400 dark:text-gray-500"
             >
               No manifest loaded yet.
             </div>
@@ -320,7 +320,7 @@
         </div>
       </div>
     </div>
-  </section>
+  </div>
 </template>
 
 <script setup lang="ts">
