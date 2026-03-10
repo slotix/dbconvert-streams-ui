@@ -98,7 +98,8 @@ const handleSelect = () => {
       emit('expand-folder', { entry: props.entry })
     }
   } else if (isFolder.value) {
-    // Single-click on folder: expand/collapse it
+    // Single-click on folder: update the current explorer context and toggle expansion.
+    emit('select', { path: props.entry.path, entry: props.entry })
     emit('expand-folder', { entry: props.entry })
   } else {
     // Single-click on file: select it for preview
@@ -147,7 +148,7 @@ const handleChildExpandFolder = (payload: { entry: FileSystemEntry }) => {
     <div
       class="flex items-center py-1.5 text-sm text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer select-none"
       :class="{
-        'bg-slate-100/90 dark:bg-slate-800/80': isSelected && isSelectableFile,
+        'bg-slate-100/90 dark:bg-slate-800/80': isSelected,
         'opacity-60': !isSupported && entry.type !== 'dir'
       }"
       data-tree-node="true"

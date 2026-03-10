@@ -40,7 +40,12 @@ const commonStore = useCommonStore()
 
 const props = defineProps<{
   connection: Connection
-  fileEntries?: Array<{ name: string; path: string; type: 'file' | 'dir'; size?: number }>
+  fileEntries?: Array<{
+    name: string
+    path: string
+    type: 'file' | 'dir'
+    size?: number
+  }>
 }>()
 const emit = defineEmits<{
   (e: 'create-database', databaseName: string): void

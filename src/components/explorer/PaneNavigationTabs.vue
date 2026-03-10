@@ -174,6 +174,7 @@ import {
   Database,
   Eye,
   File,
+  Folder,
   Hash,
   MoreHorizontal,
   Server,
@@ -479,6 +480,7 @@ async function handleMoveToOtherPane() {
 function getObjectIcon(tab: PaneTab) {
   if (tab.tabType === 'connection-details') return Server
   if (tab.tabType === 'database-overview') return Database
+  if (tab.tabType === 's3-location') return Folder
   if (tab.tabType === 'file') return File
   if (tab.tabType === 'sql-console') return Terminal
   if (tab.tabType === 'file-console') return Terminal
@@ -495,6 +497,9 @@ function getIconColor(tab: PaneTab): string {
   }
   if (tab.tabType === 'database-overview') {
     return 'text-teal-500 dark:text-teal-400'
+  }
+  if (tab.tabType === 's3-location') {
+    return 'text-cyan-500 dark:text-cyan-400'
   }
   // Database tabs: tables, views, sequences, routines
   if (tab.tabType === 'database') {

@@ -213,6 +213,57 @@ export function useExplorerTabManager({
     })().catch(console.error)
   }
 
+  function openS3LocationTab(
+    connectionId: string,
+    path: string,
+    mode: 'preview' | 'pinned',
+    paneId: PaneId = 'left'
+  ) {
+    ;(async () => {
+      const ok = await confirmLeavePaneIfDirty(paneId)
+      if (!ok) return
+
+      const normalizedPath = path.replace(/\/+$/, '')
+      const tabId = `s3-location:${connectionId}:${normalizedPath}`
+      const tabName = getS3LocationTabName(normalizedPath)
+
+      if (mode === 'pinned') {
+        const preview = paneTabsStore.getPreviewTab(paneId)
+        if (
+          preview?.tabType === 's3-location' &&
+          preview.connectionId === connectionId &&
+          preview.filePath?.replace(/\/+$/, '') === normalizedPath
+        ) {
+          paneTabsStore.pinPreviewTab(paneId)
+          return
+        }
+      }
+
+      paneTabsStore.addTab(
+        paneId,
+        {
+          id: tabId,
+          connectionId,
+          name: tabName,
+          filePath: path,
+          tabType: 's3-location'
+        },
+        mode
+      )
+    })().catch(console.error)
+  }
+
+  function getS3LocationTabName(path: string): string {
+    const trimmed = path.replace(/\/+$/, '')
+    const withoutScheme = trimmed.startsWith('s3://') ? trimmed.slice('s3://'.length) : trimmed
+    if (!withoutScheme) return 'S3'
+
+    const parts = withoutScheme.split('/').filter(Boolean)
+    if (parts.length === 0) return 'S3'
+    if (parts.length === 1) return parts[0]
+    return parts[parts.length - 1]
+  }
+
   /**
    * Preload metadata for all restored database tabs.
    * This ensures tabs display data immediately after page reload
@@ -245,6 +296,7 @@ export function useExplorerTabManager({
     getConnectionTabName,
     openConnectionDetailsTab,
     openDatabaseOverviewTab,
+    openS3LocationTab,
     preloadMetadataForRestoredTabs
   }
 }

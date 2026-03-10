@@ -71,6 +71,8 @@
     <S3ManifestPickerModal
       v-model:is-open="showPicker"
       :connection-id="props.connectionId"
+      :bucket="bucket"
+      :lock-bucket="!!bucket"
       @select="handleManifestPicked"
     />
   </div>

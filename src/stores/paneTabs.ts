@@ -26,6 +26,7 @@ export type PaneTab = {
   tabType:
     | 'database'
     | 'file'
+    | 's3-location'
     | 'sql-console'
     | 'file-console'
     | 'diagram'
@@ -113,6 +114,9 @@ function buildObjectKey(paneId: PaneId, tab: PaneTab): string | null {
   }
   if (tab.tabType === 'file' && tab.filePath) {
     return `${paneId}:file-${tab.filePath}`
+  }
+  if (tab.tabType === 's3-location' && tab.filePath) {
+    return `${paneId}:s3-location-${tab.filePath}`
   }
   if (tab.tabType === 'sql-console') {
     const sessionPart = tab.consoleSessionId || tab.id
@@ -327,6 +331,9 @@ export const usePaneTabsStore = defineStore('paneTabs', () => {
   function generateTabKey(tab: PaneTab): string {
     if (tab.tabType === 'file') {
       return `file:${tab.connectionId}:${tab.filePath}`
+    }
+    if (tab.tabType === 's3-location') {
+      return `s3-location:${tab.connectionId}:${tab.filePath}`
     }
     if (tab.tabType === 'file-console') {
       return `file-console:${tab.consoleSessionId || tab.id}`

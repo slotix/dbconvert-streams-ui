@@ -21,6 +21,14 @@
     >
       Connection no longer available. Close this tab to remove it.
     </div>
+    <S3LocationDetailsPanel
+      v-else-if="activeTab.tabType === 's3-location' && activeTab.filePath"
+      :key="`${paneId}-s3-location-${activeTab.connectionId}-${activeTab.filePath}`"
+      :connection-id="activeTab.connectionId"
+      :location-path="activeTab.filePath"
+      :directory-root-path="connectionDirectoryPath"
+      :root-entries="connectionFileEntries"
+    />
     <div
       v-else-if="activeTab.tabType === 'database-overview' && activeTab.database"
       class="rounded-2xl bg-white dark:bg-gray-900 shadow-lg dark:shadow-gray-900/40"
@@ -103,6 +111,7 @@ import { computed, defineAsyncComponent } from 'vue'
 import ObjectContainer from '@/components/common/ObjectContainer.vue'
 import ConnectionDetailsPanel from '@/components/database/ConnectionDetailsPanel.vue'
 import DatabaseOverviewPanel from '@/components/database/DatabaseOverviewPanel.vue'
+import S3LocationDetailsPanel from '@/components/database/S3LocationDetailsPanel.vue'
 import { UnifiedConsoleTab } from '@/components/console'
 import EmptyStateMessage from './EmptyStateMessage.vue'
 import { useConnectionsStore } from '@/stores/connections'
@@ -218,7 +227,11 @@ const resolvedDatabaseMeta = computed<
 const wrapperClass = computed(() => {
   const base = 'flex-1 min-h-0'
   const tabType = props.activeTab?.tabType
-  if (tabType === 'connection-details' || tabType === 'database-overview') {
+  if (
+    tabType === 'connection-details' ||
+    tabType === 'database-overview' ||
+    tabType === 's3-location'
+  ) {
     return `${base} overflow-y-auto overflow-x-hidden`
   }
   return `${base} overflow-hidden`
@@ -230,7 +243,22 @@ const currentConnection = computed(() => {
 })
 
 const connectionFileEntries = computed(() => {
-  if (!props.activeTab || props.activeTab.tabType !== 'connection-details') return []
+  if (
+    !props.activeTab ||
+    (props.activeTab.tabType !== 'connection-details' && props.activeTab.tabType !== 's3-location')
+  ) {
+    return []
+  }
   return fileExplorerStore.getEntries(props.activeTab.connectionId)
+})
+
+const connectionDirectoryPath = computed(() => {
+  if (
+    !props.activeTab ||
+    (props.activeTab.tabType !== 'connection-details' && props.activeTab.tabType !== 's3-location')
+  ) {
+    return ''
+  }
+  return fileExplorerStore.getDirectoryPath(props.activeTab.connectionId)
 })
 </script>

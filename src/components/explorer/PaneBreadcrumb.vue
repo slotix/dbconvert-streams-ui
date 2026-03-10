@@ -169,7 +169,7 @@ const breadcrumbData = computed(() => {
   // Check if this is a SQL console tab (database- or file-initiated)
   const isSqlConsole = isSqlConsoleTabType(activeTab.tabType)
 
-  if (activeTab.tabType === 'file') {
+  if (activeTab.tabType === 'file' || activeTab.tabType === 's3-location') {
     const filePath = activeTab.filePath || ''
     // Get base path from connection spec for proper segment parsing
     const conn = connectionsStore.connections.find((c) => c.id === activeTab.connectionId)
@@ -177,11 +177,11 @@ const breadcrumbData = computed(() => {
 
     // Build path segments (excluding the file name itself)
     const allSegments = parsePathToSegments(filePath, basePath)
-    // Remove the last segment (the file name) since we display it separately
-    const pathSegments = allSegments.slice(0, -1)
+    const isLocationView = activeTab.tabType === 's3-location'
+    const pathSegments = isLocationView ? allSegments : allSegments.slice(0, -1)
 
     // Find sibling files for the picker
-    const siblingFiles = findSiblingFiles(activeTab.connectionId, filePath)
+    const siblingFiles = isLocationView ? [] : findSiblingFiles(activeTab.connectionId, filePath)
 
     const fileEntry = activeTab.fileEntry
     const isTableFolder = fileEntry?.type === 'dir' && Boolean(fileEntry?.isTable)
@@ -211,11 +211,11 @@ const breadcrumbData = computed(() => {
       name: null,
       objects: [],
       pathSegments,
-      fileName: activeTab.name || null,
+      fileName: isLocationView ? null : activeTab.name || null,
       databaseStatusLabel: null,
       databaseStatusTooltip: null,
-      fileStatusLabel,
-      fileStatusTooltip,
+      fileStatusLabel: isLocationView ? null : fileStatusLabel,
+      fileStatusTooltip: isLocationView ? null : fileStatusTooltip,
       siblingFiles,
       isSqlConsole: false,
       isFileBreadcrumb: true,

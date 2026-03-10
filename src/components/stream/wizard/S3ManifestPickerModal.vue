@@ -34,7 +34,7 @@
                       {{ title }}
                     </DialogTitle>
                     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                      Browse buckets and pick a manifest JSON file from the selected S3 connection.
+                      {{ descriptionText }}
                     </p>
                   </div>
                   <button
@@ -47,8 +47,12 @@
                 </div>
               </div>
 
-              <div class="grid gap-0 lg:grid-cols-[220px_minmax(0,1fr)]">
+              <div
+                class="grid gap-0"
+                :class="showBucketSelector ? 'lg:grid-cols-[220px_minmax(0,1fr)]' : ''"
+              >
                 <div
+                  v-if="showBucketSelector"
                   class="border-b border-gray-200 bg-gray-50/80 p-4 dark:border-gray-700 dark:bg-gray-950/50 lg:border-b-0 lg:border-r"
                 >
                   <div class="mb-3 flex items-center justify-between">
@@ -270,10 +274,16 @@ interface Props {
   isOpen: boolean
   connectionId: string
   title?: string
+  bucket?: string
+  prefix?: string
+  lockBucket?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  title: 'Select manifest'
+  title: 'Select manifest',
+  bucket: '',
+  prefix: '',
+  lockBucket: false
 })
 
 const emit = defineEmits<{
@@ -290,6 +300,12 @@ const currentBucket = ref('')
 const currentPrefix = ref('')
 const selectedPath = ref('')
 const selectionError = ref('')
+const showBucketSelector = computed(() => !props.lockBucket)
+const descriptionText = computed(() =>
+  props.lockBucket
+    ? 'Browse manifest JSON files within the current bucket context.'
+    : 'Browse buckets and pick a manifest JSON file from the selected S3 connection.'
+)
 
 const prefixSegments = computed(() => {
   return currentPrefix.value
@@ -322,13 +338,13 @@ watch(
 )
 
 watch(
-  () => props.connectionId,
+  () => [props.connectionId, props.bucket, props.prefix, props.lockBucket],
   () => {
     buckets.value = []
     prefixes.value = []
     objects.value = []
-    currentBucket.value = ''
-    currentPrefix.value = ''
+    currentBucket.value = props.lockBucket ? props.bucket : ''
+    currentPrefix.value = props.lockBucket ? props.prefix : ''
     selectedPath.value = ''
   }
 )
@@ -355,10 +371,16 @@ async function loadBuckets() {
   loadingBuckets.value = true
   selectionError.value = ''
   try {
-    const response = await listS3Buckets(props.connectionId)
-    buckets.value = response.buckets
-    if (!currentBucket.value && response.buckets.length > 0) {
-      currentBucket.value = response.buckets[0]
+    if (props.lockBucket && props.bucket) {
+      buckets.value = [props.bucket]
+      currentBucket.value = props.bucket
+      currentPrefix.value = props.prefix || ''
+    } else {
+      const response = await listS3Buckets(props.connectionId)
+      buckets.value = response.buckets
+      if (!currentBucket.value && response.buckets.length > 0) {
+        currentBucket.value = response.buckets[0]
+      }
     }
     if (currentBucket.value) {
       await loadObjects()
