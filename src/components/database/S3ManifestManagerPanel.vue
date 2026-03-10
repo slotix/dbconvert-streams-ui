@@ -1,25 +1,5 @@
 <template>
   <div class="flex flex-col">
-    <!-- Section toolbar -->
-    <div
-      class="flex items-center justify-between gap-3 border-b border-gray-200 px-5 py-2.5 dark:border-gray-700"
-    >
-      <div class="flex items-center gap-2">
-        <h4 class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-          Manifest workflow
-        </h4>
-        <span
-          v-if="contextUri"
-          class="rounded-md bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-700 dark:bg-sky-900/30 dark:text-sky-300"
-        >
-          {{ contextUri }}
-        </span>
-      </div>
-      <BaseButton v-if="currentManifest" size="sm" variant="ghost" @click="clearCurrentManifest">
-        Reset
-      </BaseButton>
-    </div>
-
     <!-- Error banner -->
     <div
       v-if="pageError"
@@ -177,6 +157,14 @@
             <span class="text-xs font-semibold text-gray-700 dark:text-gray-300"
               >Current manifest</span
             >
+            <BaseButton
+              v-if="currentManifest"
+              size="sm"
+              variant="ghost"
+              @click="clearCurrentManifest"
+            >
+              Reset
+            </BaseButton>
           </div>
 
           <div class="space-y-4 px-5 py-4">
