@@ -7,10 +7,17 @@
   >
     <div
       class="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-600 text-sm font-medium"
+      :title="counterTitle"
     >
       <span class="text-teal-600 dark:text-teal-400">{{ selectedCount }}</span>
+      <span v-if="selectedCountLabel" class="text-gray-500 dark:text-gray-400">
+        {{ selectedCountLabel }}
+      </span>
       <span class="text-gray-400">/</span>
       <span class="text-gray-600 dark:text-gray-300">{{ totalCount }}</span>
+      <span v-if="totalCountLabel" class="text-gray-500 dark:text-gray-400">
+        {{ totalCountLabel }}
+      </span>
     </div>
 
     <div class="flex-1 min-w-[180px]">
@@ -64,6 +71,9 @@ import FormCheckbox from '@/components/base/FormCheckbox.vue'
 interface Props {
   selectedCount: number
   totalCount: number
+  selectedCountLabel?: string
+  totalCountLabel?: string
+  counterTitle?: string
   searchValue: string
   searchPlaceholder?: string
   selectAllChecked: boolean
@@ -79,6 +89,9 @@ interface Props {
 
 withDefaults(defineProps<Props>(), {
   searchPlaceholder: 'Filter...',
+  selectedCountLabel: '',
+  totalCountLabel: '',
+  counterTitle: '',
   selectAllLabel: 'Select all',
   clearLabel: 'Clear',
   clearDisabled: false,
