@@ -36,27 +36,10 @@
     v-else-if="sourceMode === 'manifest'"
     class="border-b border-gray-200/70 px-4 py-4 text-sm dark:border-gray-700/70"
   >
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-      <div class="min-w-0">
-        <p class="font-medium text-gray-900 dark:text-gray-100">Manifest source</p>
-        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-          Pick one manifest file and use its object list as the exact source snapshot.
-        </p>
-      </div>
-
-      <button
-        v-if="manifestPath"
-        type="button"
-        class="text-xs font-medium text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
-        data-test="clear-manifest"
-        @click="clearManifest"
-      >
-        Clear manifest
-      </button>
-    </div>
-
     <S3ManifestBrowser
       :connection-id="connectionId"
+      :connection-name="connectionName"
+      :alias="sourceConnection?.alias || ''"
       :bucket="pickerBucket"
       :prefix="pickerPrefix"
       :selected-path="manifestPath"
@@ -75,6 +58,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import S3ManifestBrowser from '@/components/stream/wizard/S3ManifestBrowser.vue'
+import { useConnectionsStore } from '@/stores/connections'
 import { useStreamsStore } from '@/stores/streamConfig'
 import type { S3SourceMode, StreamConnectionMapping } from '@/types/streamConfig'
 
@@ -87,12 +71,16 @@ const props = withDefaults(defineProps<Props>(), {
   variant: 'panel'
 })
 
+const connectionsStore = useConnectionsStore()
 const streamsStore = useStreamsStore()
 
 const sourceConnection = computed(() =>
   streamsStore.currentStreamConfig?.source?.connections?.find(
     (connection) => connection.connectionId === props.connectionId
   )
+)
+const connectionName = computed(
+  () => connectionsStore.connectionByID(props.connectionId)?.name || props.connectionId
 )
 
 const manifestValidationError = computed(
@@ -191,24 +179,6 @@ function applyManifestPath(path: string) {
     delete nextS3.prefixes
     delete nextS3.objects
     clearConnectionFileSelections(nextS3.bucket)
-
-    return {
-      ...connection,
-      s3: nextS3
-    }
-  })
-
-  streamsStore.setManifestValidationError(props.connectionId, null)
-}
-
-function clearManifest() {
-  streamsStore.setS3SourceMode(props.connectionId, 'selection')
-  updateSourceConnection((connection) => {
-    const nextS3 = {
-      bucket: connection.s3?.bucket || '',
-      ...(connection.s3 || {})
-    }
-    delete nextS3.manifestPath
 
     return {
       ...connection,

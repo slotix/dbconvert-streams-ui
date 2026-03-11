@@ -7,8 +7,8 @@
     <div class="flex items-center gap-3 min-w-0">
       <component
         :is="expanded ? ChevronDown : ChevronRight"
+        v-if="collapsible"
         class="h-4 w-4 text-gray-500 dark:text-gray-400 shrink-0"
-        :class="collapsible ? '' : 'invisible'"
       />
       <component :is="icon" class="w-5 h-5 shrink-0" :class="iconClass" />
 

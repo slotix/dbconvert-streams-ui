@@ -145,11 +145,8 @@
                       :selection-label="getSourceSelectionLabel(fileConn)"
                       :icon="Cloud"
                       icon-class="text-sky-500/80 dark:text-sky-400/80"
-                      collapsible
-                      :expanded="isFileGroupExpanded(fileConn.connectionId)"
                       sticky
                       class="rounded-none border-x-0 border-t-0 border-b border-b-gray-200/70 dark:border-b-gray-700/70"
-                      @toggle="toggleFileGroup(fileConn.connectionId)"
                     >
                       <template v-if="showPerGroupFileActions" #actions>
                         <SourceHeaderActions
@@ -158,7 +155,7 @@
                         />
                       </template>
                     </SourceSectionHeader>
-                    <div v-show="isFileGroupExpanded(fileConn.connectionId)">
+                    <div>
                       <FilePreviewList
                         :ref="(instance) => setFilePreviewRef(fileConn.connectionId, instance)"
                         :connection-id="fileConn.connectionId"
@@ -177,11 +174,8 @@
                     :selection-label="getSourceSelectionLabel(fileConn)"
                     :icon="FolderOpen"
                     icon-class="text-sky-500/80 dark:text-sky-400/80"
-                    collapsible
-                    :expanded="isFileGroupExpanded(fileConn.connectionId)"
                     sticky
                     class="rounded-none border-x-0 border-t-0 border-b border-b-gray-200/70 dark:border-b-gray-700/70"
-                    @toggle="toggleFileGroup(fileConn.connectionId)"
                   >
                     <template v-if="showPerGroupFileActions" #actions>
                       <SourceHeaderActions
@@ -190,7 +184,7 @@
                       />
                     </template>
                   </SourceSectionHeader>
-                  <div v-show="isFileGroupExpanded(fileConn.connectionId)">
+                  <div>
                     <FilePreviewList
                       :ref="(instance) => setFilePreviewRef(fileConn.connectionId, instance)"
                       :connection-id="fileConn.connectionId"
@@ -553,7 +547,6 @@ const filePreviewRefs = ref<Record<string, UnifiedObjectPanelHandle | null>>({})
 const tableObjectStats = ref<ObjectListStats>({ selected: 0, total: 0 })
 const fileObjectStats = ref<Record<string, ObjectListStats>>({})
 const combinedObjectSearchQuery = ref('')
-const expandedFileGroups = ref<Set<string>>(new Set())
 
 // Current mode from stream config
 const currentMode = computed(() => streamsStore.currentStreamConfig?.mode || 'convert')
@@ -765,20 +758,6 @@ function setFileObjectStats(connectionId: string, stats: ObjectListStats) {
   }
 }
 
-function isFileGroupExpanded(connectionId: string): boolean {
-  return expandedFileGroups.value.has(connectionId)
-}
-
-function toggleFileGroup(connectionId: string) {
-  const next = new Set(expandedFileGroups.value)
-  if (next.has(connectionId)) {
-    next.delete(connectionId)
-  } else {
-    next.add(connectionId)
-  }
-  expandedFileGroups.value = next
-}
-
 function selectAllInFileGroup(connectionId: string) {
   filePreviewRefs.value[connectionId]?.setSelectAll?.(true)
 }
@@ -975,7 +954,6 @@ watch(
     const validIds = new Set(connections.map((c) => c.connectionId))
     const nextRefs: Record<string, UnifiedObjectPanelHandle | null> = {}
     const nextStats: Record<string, ObjectListStats> = {}
-    const nextExpanded = new Set<string>()
 
     for (const [connectionId, instance] of Object.entries(filePreviewRefs.value)) {
       if (validIds.has(connectionId)) {
@@ -987,14 +965,8 @@ watch(
         nextStats[connectionId] = stats
       }
     }
-    for (const connectionId of connections.map((c) => c.connectionId)) {
-      if (expandedFileGroups.value.has(connectionId)) {
-        nextExpanded.add(connectionId)
-      }
-    }
     filePreviewRefs.value = nextRefs
     fileObjectStats.value = nextStats
-    expandedFileGroups.value = nextExpanded
   },
   { deep: true, immediate: true }
 )

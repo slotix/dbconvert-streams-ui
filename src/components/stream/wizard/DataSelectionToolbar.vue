@@ -33,7 +33,7 @@
       </div>
     </div>
 
-    <div class="inline-flex items-center">
+    <div v-if="selectionMode === 'multi'" class="inline-flex items-center">
       <FormCheckbox
         :model-value="selectAllChecked"
         :indeterminate="selectAllIndeterminate"
@@ -43,6 +43,7 @@
     </div>
 
     <button
+      v-if="selectionMode !== 'none'"
       type="button"
       class="text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       :disabled="clearDisabled"
@@ -85,6 +86,7 @@ interface Props {
   refreshTitle?: string
   refreshDisabled?: boolean
   sticky?: boolean
+  selectionMode?: 'multi' | 'single' | 'none'
 }
 
 withDefaults(defineProps<Props>(), {
@@ -98,7 +100,8 @@ withDefaults(defineProps<Props>(), {
   refreshLabel: 'Refresh',
   refreshTitle: 'Refresh',
   refreshDisabled: false,
-  sticky: false
+  sticky: false,
+  selectionMode: 'multi'
 })
 
 const emit = defineEmits<{

@@ -103,7 +103,10 @@
                 </button>
               </div>
 
-              <span class="ml-4 shrink-0 text-xs text-gray-500 dark:text-gray-400">
+              <span
+                v-if="(row.entry.size || 0) > 0"
+                class="ml-4 shrink-0 text-xs text-gray-500 dark:text-gray-400"
+              >
                 {{ formatDataSize(row.entry.size || 0) }}
               </span>
             </template>
@@ -193,7 +196,10 @@
                     </button>
                   </div>
 
-                  <span class="ml-4 shrink-0 text-xs text-gray-500 dark:text-gray-400">
+                  <span
+                    v-if="(row.entry.size || 0) > 0"
+                    class="ml-4 shrink-0 text-xs text-gray-500 dark:text-gray-400"
+                  >
                     {{ formatDataSize(row.entry.size || 0) }}
                   </span>
                 </template>
@@ -306,7 +312,9 @@ function filterDisplayEntries(entries: FileSystemEntry[]): FileSystemEntry[] {
       continue
     }
 
-    const nextChildren = entry.children?.length ? filterDisplayEntries(entry.children) : entry.children
+    const nextChildren = entry.children?.length
+      ? filterDisplayEntries(entry.children)
+      : entry.children
     visible.push(
       nextChildren && nextChildren !== entry.children ? { ...entry, children: nextChildren } : entry
     )
