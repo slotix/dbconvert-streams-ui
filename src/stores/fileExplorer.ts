@@ -106,6 +106,7 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
   )
   const folderPagesByConnection = ref<Record<string, Record<string, FolderPageState>>>({})
   const pendingMetadataRequests = new Map<string, Promise<FileMetadata | null>>()
+  const pendingFolderLoads = new Map<string, Promise<void>>()
 
   // S3 operations can be sensitive to shared backend/session state.
   // Serialize S3 list requests across connections to avoid cross-connection interference.
@@ -1066,98 +1067,113 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
 
   // Load contents of a specific folder
   async function loadFolderContents(connectionId: string, folderPath: string, force = false) {
-    const connectionsStore = useConnectionsStore()
-    const connection = connectionsStore.connections.find((c) => c.id === connectionId)
-    if (!connection) return
-    const kind = getConnectionKindFromSpec(connection.spec)
-    if (kind === 'gcs' || kind === 'azure') {
-      errorsByConnection.value = {
-        ...errorsByConnection.value,
-        [connectionId]: 'GCS/Azure browsing is not supported yet.'
-      }
-      return
+    const pendingKey = `${connectionId}::${force ? 'force' : 'normal'}::${folderPath}`
+    const pendingLoad = pendingFolderLoads.get(pendingKey)
+    if (pendingLoad) {
+      return pendingLoad
     }
 
-    try {
-      const isS3 = folderPath.startsWith('s3://')
+    const loadPromise = (async () => {
+      const connectionsStore = useConnectionsStore()
+      const connection = connectionsStore.connections.find((c) => c.id === connectionId)
+      if (!connection) return
+      const kind = getConnectionKindFromSpec(connection.spec)
+      if (kind === 'gcs' || kind === 'azure') {
+        errorsByConnection.value = {
+          ...errorsByConnection.value,
+          [connectionId]: 'GCS/Azure browsing is not supported yet.'
+        }
+        return
+      }
 
-      if (isS3) {
-        await enqueueS3Request(async () => {
-          const { entries: folderContents, pageState } = await listS3Level(
-            connectionId,
-            folderPath,
-            force
-          )
-          if (pageState.manifestUsed && pageState.manifestPath && !force) {
-            const parsed = parseS3Uri(folderPath)
-            if (!parsed) {
-              throw new Error('Invalid S3 folder path')
-            }
-            const manifestTree = await loadManifestTree(
+      try {
+        const isS3 = folderPath.startsWith('s3://')
+
+        if (isS3) {
+          await enqueueS3Request(async () => {
+            const { entries: folderContents, pageState } = await listS3Level(
               connectionId,
-              parsed.bucket,
               folderPath,
-              pageState.manifestPath
+              force
             )
+            if (pageState.manifestUsed && pageState.manifestPath && !force) {
+              const parsed = parseS3Uri(folderPath)
+              if (!parsed) {
+                throw new Error('Invalid S3 folder path')
+              }
+              const manifestTree = await loadManifestTree(
+                connectionId,
+                parsed.bucket,
+                folderPath,
+                pageState.manifestPath
+              )
+              const currentEntries = entriesByConnection.value[connectionId] || []
+              const manifestState: ManifestFolderState = {
+                manifestUsed: true,
+                manifestPath: pageState.manifestPath
+              }
+              const updatedEntries = updateFolderChildren(
+                currentEntries,
+                folderPath,
+                manifestTree.entries,
+                manifestState
+              )
+              entriesByConnection.value = {
+                ...entriesByConnection.value,
+                [connectionId]: updatedEntries
+              }
+              setFolderPageState(connectionId, folderPath, manifestTree.pageState)
+              return
+            }
+
+            // Update folder children immutably (single source of truth)
             const currentEntries = entriesByConnection.value[connectionId] || []
             const manifestState: ManifestFolderState = {
-              manifestUsed: true,
+              manifestUsed: !!pageState.manifestUsed,
               manifestPath: pageState.manifestPath
             }
+            const entryPatch = detectDirectTableFolder(folderContents)
             const updatedEntries = updateFolderChildren(
               currentEntries,
               folderPath,
-              manifestTree.entries,
-              manifestState
+              folderContents,
+              manifestState,
+              entryPatch
             )
             entriesByConnection.value = {
               ...entriesByConnection.value,
               [connectionId]: updatedEntries
             }
-            setFolderPageState(connectionId, folderPath, manifestTree.pageState)
-            return
+            setFolderPageState(connectionId, folderPath, pageState)
+          })
+        } else {
+          // Local filesystem
+          if (kind !== 'files') {
+            throw new Error('Unsupported file explorer connection type')
           }
+          const response = await listDirectory(folderPath, kind, connectionId)
 
           // Update folder children immutably (single source of truth)
           const currentEntries = entriesByConnection.value[connectionId] || []
-          const manifestState: ManifestFolderState = {
-            manifestUsed: !!pageState.manifestUsed,
-            manifestPath: pageState.manifestPath
-          }
-          const entryPatch = detectDirectTableFolder(folderContents)
-          const updatedEntries = updateFolderChildren(
-            currentEntries,
-            folderPath,
-            folderContents,
-            manifestState,
-            entryPatch
-          )
+          const updatedEntries = updateFolderChildren(currentEntries, folderPath, response.entries)
           entriesByConnection.value = {
             ...entriesByConnection.value,
             [connectionId]: updatedEntries
           }
-          setFolderPageState(connectionId, folderPath, pageState)
-        })
-      } else {
-        // Local filesystem
-        if (kind !== 'files') {
-          throw new Error('Unsupported file explorer connection type')
         }
-        const response = await listDirectory(folderPath, kind, connectionId)
 
-        // Update folder children immutably (single source of truth)
-        const currentEntries = entriesByConnection.value[connectionId] || []
-        const updatedEntries = updateFolderChildren(currentEntries, folderPath, response.entries)
-        entriesByConnection.value = {
-          ...entriesByConnection.value,
-          [connectionId]: updatedEntries
-        }
+        // Expand the folder
+        expandFolder(connectionId, folderPath)
+      } catch (error) {
+        console.error('Failed to load folder contents:', error)
       }
+    })()
 
-      // Expand the folder
-      expandFolder(connectionId, folderPath)
-    } catch (error) {
-      console.error('Failed to load folder contents:', error)
+    pendingFolderLoads.set(pendingKey, loadPromise)
+    try {
+      await loadPromise
+    } finally {
+      pendingFolderLoads.delete(pendingKey)
     }
   }
 

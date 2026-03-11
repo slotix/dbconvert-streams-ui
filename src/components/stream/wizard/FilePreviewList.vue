@@ -12,7 +12,7 @@
       :clear-disabled="selectedCount === 0"
       refresh-label="Refresh files"
       refresh-title="Refresh files"
-      :refresh-disabled="isLoading"
+      :refresh-disabled="isBusy"
       @update:search-value="searchQuery = $event"
       @update:select-all="toggleSelectAll"
       @clear="toggleSelectAll(false)"
@@ -21,7 +21,7 @@
 
     <!-- File List -->
     <div :class="fileListContainerClass">
-      <div v-if="isLoading" class="py-10 text-center text-sm text-gray-500 dark:text-gray-400">
+      <div v-if="isBusy" class="py-10 text-center text-sm text-gray-500 dark:text-gray-400">
         Loading files…
       </div>
       <div v-else-if="error" class="py-10 text-center text-sm text-red-600 dark:text-red-300">
@@ -109,7 +109,7 @@
               v-else
               type="button"
               class="text-xs font-medium text-sky-600 hover:text-sky-700 dark:text-sky-300 dark:hover:text-sky-200"
-              :disabled="isLoading"
+              :disabled="isBusy"
               @click="loadMore(row.parentPath)"
             >
               Load more
@@ -199,7 +199,7 @@
                   v-else
                   type="button"
                   class="text-xs font-medium text-sky-600 hover:text-sky-700 dark:text-sky-300 dark:hover:text-sky-200"
-                  :disabled="isLoading"
+                  :disabled="isBusy"
                   @click="loadMore(row.parentPath)"
                 >
                   Load more
@@ -827,6 +827,10 @@ const isLoading = computed(() => {
   }
   return fileExplorerStore.isLoading(props.connectionId)
 })
+const isHydratingSelectedParents = ref(false)
+let activeHydrationPromise: Promise<void> | null = null
+let hydrationRunToken = 0
+const isBusy = computed(() => isLoading.value || isHydratingSelectedParents.value)
 
 function toggleSelectAll(selectAll: boolean) {
   // Apply to the currently filtered rows (so filter + select all works predictably)
@@ -950,6 +954,10 @@ const hasAutoExpanded = ref(false)
  */
 async function autoExpandSelectedParents() {
   if (!props.connectionId || hasAutoExpanded.value) return
+  if (activeHydrationPromise) {
+    await activeHydrationPromise
+    return
+  }
 
   const selectedFiles = configFiles.value.filter((f) => f.selected)
   if (selectedFiles.length === 0 || rawFiles.value.length === 0) return
@@ -962,19 +970,39 @@ async function autoExpandSelectedParents() {
   if (parentsToExpand.size === 0) return
 
   const sortedParents = Array.from(parentsToExpand).sort((a, b) => a.length - b.length)
+  const runToken = ++hydrationRunToken
 
-  // Load and expand each parent folder
-  for (const parentPath of sortedParents) {
-    await fileExplorerStore.loadFolderContents(props.connectionId, parentPath)
-  }
+  const currentHydration = (async () => {
+    isHydratingSelectedParents.value = true
+    try {
+      for (const parentPath of sortedParents) {
+        if (runToken !== hydrationRunToken || !props.connectionId) {
+          return
+        }
+        await fileExplorerStore.loadFolderContents(props.connectionId, parentPath)
+      }
+      if (runToken === hydrationRunToken) {
+        hasAutoExpanded.value = true
+      }
+    } finally {
+      if (runToken === hydrationRunToken) {
+        isHydratingSelectedParents.value = false
+        activeHydrationPromise = null
+      }
+    }
+  })()
+  activeHydrationPromise = currentHydration
 
-  hasAutoExpanded.value = true
+  await activeHydrationPromise
 }
 
 // Load files when connection or bucket changes
 watch(
   [() => props.connectionId, s3Bucket],
   async ([connectionId, bucket]) => {
+    hydrationRunToken += 1
+    activeHydrationPromise = null
+    isHydratingSelectedParents.value = false
     hasAutoExpanded.value = false
     if (connectionId) {
       const overridePath = bucket ? `s3://${bucket}/` : undefined
@@ -1005,6 +1033,10 @@ async function toggleFolder(entry: FileSystemEntry) {
 
 function refresh() {
   if (props.connectionId) {
+    hydrationRunToken += 1
+    activeHydrationPromise = null
+    isHydratingSelectedParents.value = false
+    hasAutoExpanded.value = false
     const overridePath =
       isS3Connection.value && s3Bucket.value ? `s3://${s3Bucket.value}/` : undefined
     void fileExplorerStore.loadEntries(props.connectionId, true, overridePath)

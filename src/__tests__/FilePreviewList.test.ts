@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { nextTick } from 'vue'
 import { createPinia, setActivePinia } from 'pinia'
 import FilePreviewList from '@/components/stream/wizard/FilePreviewList.vue'
 import { useConnectionsStore } from '@/stores/connections'
@@ -153,5 +154,109 @@ describe('FilePreviewList', () => {
     })
 
     expect(wrapper.text()).toContain('Load more')
+  })
+
+  it('keeps the tree in loading state during initial edit-mode hydration without duplicate folder loads', async () => {
+    const connectionsStore = useConnectionsStore()
+    const fileExplorerStore = useFileExplorerStore()
+    const streamsStore = useStreamsStore()
+
+    connectionsStore.connections = [
+      {
+        id: 'conn-s3',
+        name: 'S3',
+        type: 's3',
+        databasesInfo: [],
+        spec: {
+          s3: {
+            region: 'us-east-1'
+          }
+        }
+      }
+    ]
+
+    streamsStore.currentStreamConfig = {
+      id: 'stream-1',
+      name: 'test',
+      mode: 'convert',
+      source: {
+        connections: [
+          {
+            connectionId: 'conn-s3',
+            s3: {
+              bucket: 'bucket'
+            }
+          }
+        ]
+      },
+      target: { id: 'target-1' },
+      files: [
+        {
+          name: 'actor.parquet',
+          connectionId: 'conn-s3',
+          path: 's3://bucket/e2e/actor.parquet',
+          type: 'file',
+          selected: true
+        }
+      ]
+    }
+
+    fileExplorerStore.$patch({
+      entriesByConnection: {
+        'conn-s3': [
+          {
+            name: 'e2e',
+            path: 's3://bucket/e2e/',
+            type: 'dir',
+            children: [],
+            isLoaded: false
+          }
+        ]
+      },
+      directoryPathsByConnection: {
+        'conn-s3': 's3://bucket/'
+      }
+    } as never)
+
+    let resolveLoad: () => void = () => undefined
+    const loadEntriesSpy = vi.spyOn(fileExplorerStore, 'loadEntries').mockResolvedValue(undefined)
+    const loadFolderSpy = vi.spyOn(fileExplorerStore, 'loadFolderContents').mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveLoad = resolve
+        })
+    )
+
+    const wrapper = mount(FilePreviewList, {
+      props: {
+        connectionId: 'conn-s3',
+        showToolbar: false
+      }
+    })
+
+    await nextTick()
+
+    expect(loadEntriesSpy).toHaveBeenCalled()
+    expect(loadFolderSpy).toHaveBeenCalledTimes(1)
+    expect(loadFolderSpy).toHaveBeenCalledWith('conn-s3', 's3://bucket/e2e/')
+    expect(wrapper.text()).toContain('Loading files')
+
+    fileExplorerStore.entriesByConnection['conn-s3'] = [
+      {
+        name: 'e2e',
+        path: 's3://bucket/e2e/',
+        type: 'dir',
+        children: [],
+        isLoaded: false
+      }
+    ]
+
+    await nextTick()
+
+    expect(loadFolderSpy).toHaveBeenCalledTimes(1)
+
+    resolveLoad()
+    await Promise.resolve()
+    await nextTick()
   })
 })
