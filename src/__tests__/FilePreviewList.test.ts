@@ -12,7 +12,7 @@ describe('FilePreviewList', () => {
     setActivePinia(createPinia())
   })
 
-  it('keeps manifest metadata files out of normal S3 source selection', () => {
+  it('hides manifest metadata files from normal S3 source selection', () => {
     const connectionsStore = useConnectionsStore()
     const fileExplorerStore = useFileExplorerStore()
     const streamsStore = useStreamsStore()
@@ -76,9 +76,10 @@ describe('FilePreviewList', () => {
     })
 
     const checkboxes = wrapper.findAll('input[type="checkbox"]')
-    expect(checkboxes).toHaveLength(2)
-    expect(checkboxes[0].attributes('disabled')).toBeDefined()
-    expect(checkboxes[1].attributes('disabled')).toBeUndefined()
+    expect(wrapper.text()).not.toContain('manifest.json')
+    expect(wrapper.text()).toContain('part-0001.parquet')
+    expect(checkboxes).toHaveLength(1)
+    expect(checkboxes[0].attributes('disabled')).toBeUndefined()
   })
 
   it('renders a load more action when the current S3 level is truncated', async () => {

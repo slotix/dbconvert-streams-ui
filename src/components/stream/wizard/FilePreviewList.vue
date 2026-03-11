@@ -286,9 +286,40 @@ const rawFiles = computed<FileSystemEntry[]>(() => {
   return fileExplorerStore.getEntries(props.connectionId)
 })
 
+function shouldHideEntry(entry: FileSystemEntry): boolean {
+  if (!isS3Connection.value) {
+    return false
+  }
+
+  if (entry.type === 'file') {
+    return isManifestMetadataPath(entry.path)
+  }
+
+  return !!entry.isManifest
+}
+
+function filterDisplayEntries(entries: FileSystemEntry[]): FileSystemEntry[] {
+  const visible: FileSystemEntry[] = []
+
+  for (const entry of entries) {
+    if (shouldHideEntry(entry)) {
+      continue
+    }
+
+    const nextChildren = entry.children?.length ? filterDisplayEntries(entry.children) : entry.children
+    visible.push(
+      nextChildren && nextChildren !== entry.children ? { ...entry, children: nextChildren } : entry
+    )
+  }
+
+  return visible
+}
+
+const displayFiles = computed<FileSystemEntry[]>(() => filterDisplayEntries(rawFiles.value))
+
 const { isFolderExpanded, toggleFolder: toggleTreeFolder } = useFileTreeFolderExpansion(
   () => props.connectionId,
-  rawFiles
+  displayFiles
 )
 
 type EntryRow = { kind: 'entry'; entry: FileSystemEntry; depth: number }
@@ -337,7 +368,7 @@ function flattenAllLoaded(entries: FileSystemEntry[], depth: number): EntryRow[]
 const visibleRows = computed<TreeRow[]>(() => {
   if (!props.connectionId) return []
   // Default: show the expandable tree (only expanded folders reveal children)
-  const rows = flattenVisible(rawFiles.value, 0)
+  const rows = flattenVisible(displayFiles.value, 0)
   if (!searchQuery.value.trim() && hasMore(rootFolderPath.value)) {
     rows.push({ kind: 'load-more', parentPath: rootFolderPath.value, depth: 0 })
   }
@@ -349,7 +380,9 @@ const filteredRows = computed<TreeRow[]>(() => {
   if (!q) return visibleRows.value
   // When filtering, search across all currently loaded nodes.
   // (Deep nodes will appear after user expands to load them.)
-  return flattenAllLoaded(rawFiles.value, 0).filter((r) => r.entry.name.toLowerCase().includes(q))
+  return flattenAllLoaded(displayFiles.value, 0).filter((r) =>
+    r.entry.name.toLowerCase().includes(q)
+  )
 })
 
 const listContainer = ref<HTMLElement | null>(null)
@@ -675,7 +708,7 @@ function findEntryBySelectionPath(targetPath: string): FileSystemEntry | null {
     }
     return null
   }
-  return search(rawFiles.value)
+  return search(displayFiles.value)
 }
 
 /**
@@ -778,7 +811,7 @@ function syncConfigFilesWithLoadedTree(entries: FileSystemEntry[]) {
 }
 
 const selectableCount = computed(() => {
-  return flattenAllLoaded(rawFiles.value, 0).filter((r) => isSelectable(r.entry)).length
+  return flattenAllLoaded(displayFiles.value, 0).filter((r) => isSelectable(r.entry)).length
 })
 
 /**
@@ -786,7 +819,7 @@ const selectableCount = computed(() => {
  * Also counts selected items from configFiles that may not be visible in tree yet.
  */
 const selectedCount = computed(() => {
-  const allRows = flattenAllLoaded(rawFiles.value, 0)
+  const allRows = flattenAllLoaded(displayFiles.value, 0)
   const visibleSelected = allRows.filter((r) => {
     if (!isSelectable(r.entry)) return false
     const state = getCheckboxState(r.entry)
@@ -963,7 +996,7 @@ async function autoExpandSelectedParents() {
   }
 
   const selectedFiles = configFiles.value.filter((f) => f.selected)
-  if (selectedFiles.length === 0 || rawFiles.value.length === 0) return
+  if (selectedFiles.length === 0 || displayFiles.value.length === 0) return
 
   // Collect unique parent paths and sort by depth (shortest first)
   const parentsToExpand = new Set<string>()
@@ -1017,7 +1050,7 @@ watch(
 
 // Sync config files and auto-expand when tree loads
 watch(
-  rawFiles,
+  displayFiles,
   async (entries) => {
     if (!streamsStore.currentStreamConfig || !props.connectionId) return
     syncConfigFilesWithLoadedTree(entries)
