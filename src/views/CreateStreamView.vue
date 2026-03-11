@@ -607,8 +607,18 @@ function mergeWizardConnections(
     const existing = existingConnections.find(
       (ec) => ec.connectionId === wizardConn.connectionId || ec.alias === wizardConn.alias
     )
-    const mergedS3 =
+    const mergedS3Candidate =
       wizardConn.s3 || existing?.s3 ? { ...existing?.s3, ...wizardConn.s3 } : undefined
+    const mergedS3: StreamConnectionMapping['s3'] =
+      mergedS3Candidate && typeof mergedS3Candidate.bucket === 'string'
+        ? {
+            bucket: mergedS3Candidate.bucket,
+            prefixes: mergedS3Candidate.prefixes,
+            objects: mergedS3Candidate.objects,
+            manifestPath: mergedS3Candidate.manifestPath,
+            _sourceMode: mergedS3Candidate._sourceMode
+          }
+        : undefined
     const merged: StreamConnectionMapping = {
       connectionId: wizardConn.connectionId,
       database: wizardConn.database,

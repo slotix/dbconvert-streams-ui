@@ -58,6 +58,7 @@ const props = defineProps<{
   canCreateSchema?: boolean
   isFileConnection?: boolean
   isLocalFileConnection?: boolean
+  isS3Connection?: boolean
 }>()
 
 const { isDesktop } = useDesktopMode()
@@ -124,13 +125,28 @@ const isNavigationFolder = computed(() => {
 const isLocalNavigationFolder = computed(
   () => props.isFileConnection && props.isLocalFileConnection && isNavigationFolder.value
 )
+const isS3NavigationFolder = computed(
+  () => props.isFileConnection && props.isS3Connection && isNavigationFolder.value
+)
 // Objects that can be opened (tables, views, files, table folders)
 const isOpenable = computed(() => isDatabaseObject.value || isFileOrTableFolder.value)
 // Show menu for: non-file targets, openable files, OR local navigation folders
 const hasMenu = computed(
   () =>
-    props.visible && !!props.target && (!isNavigationFolder.value || isLocalNavigationFolder.value)
+    props.visible &&
+    !!props.target &&
+    (!isNavigationFolder.value || isLocalNavigationFolder.value || isS3NavigationFolder.value)
 )
+
+const refreshConnectionLabel = computed(() => {
+  if (props.isS3Connection) {
+    return 'List live S3 contents'
+  }
+  if (props.isFileConnection) {
+    return 'Refresh files'
+  }
+  return 'Refresh'
+})
 
 const canCollapseSubtree = computed(() => {
   if (!props.target) return false
@@ -196,7 +212,7 @@ function click(action: string, openInRightSplit?: boolean) {
             @click="click('refresh-databases')"
           >
             <RefreshCw class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
-            <span>Refresh</span>
+            <span>{{ refreshConnectionLabel }}</span>
           </button>
           <button
             v-if="canCollapseSubtree"
@@ -461,6 +477,18 @@ function click(action: string, openInRightSplit?: boolean) {
               class="my-1 border-t border-gray-100 dark:border-gray-700"
             ></div>
             <button
+              v-if="props.isS3Connection"
+              class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
+              @click="click('refresh-databases')"
+            >
+              <RefreshCw class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
+              <span>List live S3 contents</span>
+            </button>
+            <div
+              v-if="props.isS3Connection"
+              class="my-1 border-t border-gray-100 dark:border-gray-700"
+            ></div>
+            <button
               class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
               @click="click('insert-into-console')"
             >
@@ -487,8 +515,8 @@ function click(action: string, openInRightSplit?: boolean) {
           </template>
         </template>
 
-        <!-- Navigation folder menu (local file folders that are not table folders) -->
-        <template v-else-if="isLocalNavigationFolder">
+        <!-- Navigation folder menu -->
+        <template v-else-if="isLocalNavigationFolder || isS3NavigationFolder">
           <button
             class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
             @click="click('expand-subtree')"
@@ -505,14 +533,26 @@ function click(action: string, openInRightSplit?: boolean) {
           </button>
           <div class="my-1 border-t border-gray-100 dark:border-gray-700"></div>
           <button
+            v-if="isS3NavigationFolder"
             class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
-            @click="click('copy-system-path')"
+            @click="click('refresh-databases')"
+          >
+            <RefreshCw class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
+            <span>List live S3 contents</span>
+          </button>
+          <div
+            v-if="isS3NavigationFolder"
+            class="my-1 border-t border-gray-100 dark:border-gray-700"
+          ></div>
+          <button
+            class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
+            @click="click(isS3NavigationFolder ? 'copy-file-path' : 'copy-system-path')"
           >
             <Copy class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
             <span>Copy Path</span>
           </button>
           <button
-            v-if="isDesktop"
+            v-if="isDesktop && isLocalNavigationFolder"
             class="w-full text-left px-3 py-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
             @click="click('open-in-explorer')"
           >

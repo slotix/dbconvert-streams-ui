@@ -269,6 +269,14 @@ const isLocalFileConnection = computed(() => {
   return !!conn.spec?.files?.basePath
 })
 
+const isS3Connection = computed(() => {
+  const target = contextMenu.contextTarget.value
+  if (!target) return false
+  const conn = connectionsStore.connections.find((c) => c.id === target.connectionId)
+  if (!conn) return false
+  return treeLogic.isS3Connection(conn)
+})
+
 const searchTooShort = computed(() => {
   const len = searchQuery.value.trim().length
   return len > 0 && len < MIN_SEARCH_LENGTH
@@ -1469,6 +1477,7 @@ defineExpose({ focus: () => internalSearchInputRef.value?.focus() })
         :canCreateSchema="canCreateSchema"
         :isFileConnection="isFileConnection"
         :isLocalFileConnection="isLocalFileConnection"
+        :isS3Connection="isS3Connection"
         @menu-action="onMenuAction"
         @close="contextMenu.close"
       />

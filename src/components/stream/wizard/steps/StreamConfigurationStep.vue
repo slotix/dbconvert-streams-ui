@@ -179,6 +179,13 @@
                           {{ currentStreamConfig.target.spec.s3.upload.prefix }}
                         </span>
                       </div>
+                      <div
+                        v-if="!isCDCMode"
+                        class="rounded-md border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-xs text-emerald-900 dark:border-emerald-700/60 dark:bg-emerald-900/20 dark:text-emerald-100"
+                      >
+                        A canonical <code>manifest.json</code> will be written automatically after a
+                        successful convert run.
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -475,6 +482,17 @@ const fileFormatDisplay = computed(() => {
   return getFileSpec(spec)?.fileFormat
 })
 
+const sourceManifestPath = computed(() => {
+  const sourceConnections = currentStreamConfig.value?.source?.connections || []
+  for (const connection of sourceConnections) {
+    const manifestPath = connection.s3?.manifestPath?.trim()
+    if (manifestPath) {
+      return manifestPath
+    }
+  }
+  return ''
+})
+
 const compressionDisplay = computed(() => {
   const spec = currentStreamConfig.value?.target?.spec
   const format = getFormatSpec(spec)
@@ -501,9 +519,20 @@ const summaryDetailCards = computed<SummaryDetailCard[]>(() => {
     { label: 'Structure', value: structureModeLabel.value }
   ]
 
+  if (isS3Source.value) {
+    cards.push({
+      label: 'Source mode',
+      value: sourceManifestPath.value ? 'Manifest snapshot' : 'Folders / Files'
+    })
+  }
+
   if ((isFileTarget.value || isS3Target.value) && fileFormatDisplay.value) {
     cards.push({ label: 'Format', value: fileFormatDisplay.value.toUpperCase() })
     cards.push({ label: 'Compression', value: compressionDisplay.value.toUpperCase() })
+  }
+
+  if (isS3Target.value && !isCDCMode.value) {
+    cards.push({ label: 'Output manifest', value: 'Automatic' })
   }
 
   return cards

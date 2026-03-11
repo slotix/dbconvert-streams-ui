@@ -785,9 +785,8 @@ const isLoadingDatabases = computed(() => {
       <!-- File Connection Details -->
       <div v-if="isFileConnection" class="space-y-6">
         <template v-if="isS3Connection">
-          <div class="grid gap-4 grid-cols-[repeat(auto-fit,minmax(260px,1fr))]">
-            <div class="ui-surface-panel p-4">
-              <div class="flex items-center gap-2 mb-3">
+          <div class="ui-surface-panel p-4">
+            <div class="flex items-center gap-2 mb-3">
                 <PanelHeaderIcon
                   :icon="Cloud"
                   tone="sky"
@@ -851,22 +850,11 @@ const isLoadingDatabases = computed(() => {
                     {{ credentialSummary }}
                   </p>
                 </div>
-              </div>
-            </div>
-
-            <div class="ui-surface-panel p-4">
-              <div class="flex items-center gap-2 mb-3">
-                <PanelHeaderIcon :icon="Folder" tone="slate" />
-                <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"
-                  >Scope & Files</span
-                >
-              </div>
-              <div class="space-y-4">
                 <div>
                   <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
-                    >Access Scope</label
+                    >Access scope</label
                   >
-                  <p class="mt-1 font-semibold text-gray-900 dark:text-gray-100">
+                  <p class="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">
                     {{ s3AccessScopeLabel }}
                   </p>
                   <p class="text-xs text-gray-600 dark:text-gray-400">
@@ -889,34 +877,8 @@ const isLoadingDatabases = computed(() => {
                     {{ s3Prefix }}
                   </p>
                 </div>
-                <div>
-                  <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
-                    >Files</label
-                  >
-                  <p class="mt-1 text-sm text-gray-700 dark:text-gray-300 font-medium">
-                    <span v-if="totalFileCount > 0">{{ fileSummary }}</span>
-                    <span v-else-if="hasPath || s3Bucket || isS3Connection">
-                      {{
-                        isS3Connection && !s3Bucket
-                          ? 'Browse buckets to view files'
-                          : 'No supported files found'
-                      }}
-                    </span>
-                    <span v-else>No path configured</span>
-                  </p>
-                </div>
-                <div
-                  v-if="!s3Bucket"
-                  class="p-3 border border-gray-200 dark:border-gray-700 rounded-lg"
-                >
-                  <p class="text-xs text-gray-600 dark:text-gray-400">
-                    <strong>Note:</strong> This connection can browse all buckets. Specify a bucket
-                    when using it as a stream target.
-                  </p>
-                </div>
               </div>
             </div>
-          </div>
         </template>
         <template v-else>
           <div class="ui-surface-panel space-y-4 p-4">

@@ -69,9 +69,14 @@ export function useConnectionActions(emits?: {
     if (isFileBasedKind(kind)) {
       try {
         await fileExplorerStore.loadEntries(id, true)
-        toast.success('Files refreshed')
+        toast.success(kind === 's3' ? 'Live S3 listing refreshed' : 'Files refreshed')
       } catch (e: unknown) {
-        const msg = e instanceof Error ? e.message : 'Failed to refresh files'
+        const msg =
+          e instanceof Error
+            ? e.message
+            : kind === 's3'
+              ? 'Failed to list live S3 contents'
+              : 'Failed to refresh files'
         toast.error(msg)
       }
       return

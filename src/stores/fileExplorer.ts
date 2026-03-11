@@ -1,12 +1,18 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { listDirectory, type FileSystemEntry } from '@/api/fileSystem'
-import { getFileMetadata, listS3Objects, listS3Buckets } from '@/api/files'
-import { getFileFormat, type FileFormat } from '@/utils/fileFormat'
+import { getFileMetadata, listS3Objects, listS3Buckets, readS3Manifest } from '@/api/files'
+import { getFileFormat } from '@/utils/fileFormat'
+import {
+  detectTableFolder,
+  isManifestMetadataFolder,
+  isManifestMetadataPath
+} from '@/utils/s3TableDetection'
 import { useConnectionsStore } from '@/stores/connections'
 import { getConnectionKindFromSpec, isFileBasedKind } from '@/types/specs'
 import type { FileMetadata } from '@/types/files'
 import type { Connection } from '@/types/connections'
+import type { S3ManifestFile, S3ManifestObject } from '@/types/s3'
 
 const EXPANDED_FOLDERS_STORAGE_KEY_BASE = 'explorer.fileExplorer.expandedFolders.v1'
 
@@ -74,6 +80,18 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     maxFolders: number
   }
 
+  interface ManifestFolderState {
+    manifestUsed: boolean
+    manifestPath?: string
+  }
+
+  interface FolderPageState {
+    nextToken: string
+    isTruncated: boolean
+    manifestUsed?: boolean
+    manifestPath?: string
+  }
+
   const DEFAULT_MAX_EXPAND_SUBTREE_FOLDERS = 250
   const DEFAULT_EXPAND_SUBTREE_PROGRESS_EVERY = 25
 
@@ -86,6 +104,7 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
   const expandedFoldersByConnection = ref<Record<string, Set<string>>>(
     loadPersistedExpandedFolders()
   )
+  const folderPagesByConnection = ref<Record<string, Record<string, FolderPageState>>>({})
   const pendingMetadataRequests = new Map<string, Promise<FileMetadata | null>>()
 
   // S3 operations can be sensitive to shared backend/session state.
@@ -139,6 +158,18 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
   const isFolderExpanded = computed(() => {
     return (connectionId: string, folderPath: string): boolean => {
       return expandedFoldersByConnection.value[connectionId]?.has(folderPath) || false
+    }
+  })
+
+  const getFolderPageState = computed(() => {
+    return (connectionId: string, folderPath: string): FolderPageState | null => {
+      return folderPagesByConnection.value[connectionId]?.[folderPath] || null
+    }
+  })
+
+  const hasMoreEntries = computed(() => {
+    return (connectionId: string, folderPath: string): boolean => {
+      return !!folderPagesByConnection.value[connectionId]?.[folderPath]?.isTruncated
     }
   })
 
@@ -197,6 +228,300 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
 
   function resolveConnectionFolderPath(connection: Connection): string {
     return getS3UriFromConnection(connection)
+  }
+
+  function buildS3EntryPath(bucket: string, key: string): string {
+    return `s3://${bucket}/${key}`
+  }
+
+  function getEntryNameFromPath(path: string): string {
+    const trimmed = path.replace(/\/+$/, '')
+    const segments = trimmed.split('/').filter(Boolean)
+    return segments[segments.length - 1] || path
+  }
+
+  function sortEntries(entries: FileSystemEntry[]): FileSystemEntry[] {
+    return [...entries].sort((a, b) => {
+      const typeOrder = a.type === b.type ? 0 : a.type === 'dir' ? -1 : 1
+      if (typeOrder !== 0) {
+        return typeOrder
+      }
+      return (a.name || '').localeCompare(b.name || '')
+    })
+  }
+
+  function mergeEntries(
+    existing: FileSystemEntry[],
+    incoming: FileSystemEntry[]
+  ): FileSystemEntry[] {
+    const merged = new Map<string, FileSystemEntry>()
+    for (const entry of existing) {
+      merged.set(entry.path, entry)
+    }
+    for (const entry of incoming) {
+      const previous = merged.get(entry.path)
+      merged.set(entry.path, previous ? { ...previous, ...entry } : entry)
+    }
+    return sortEntries(Array.from(merged.values()))
+  }
+
+  function setFolderPageState(
+    connectionId: string,
+    folderPath: string,
+    pageState: FolderPageState
+  ) {
+    folderPagesByConnection.value = {
+      ...folderPagesByConnection.value,
+      [connectionId]: {
+        ...(folderPagesByConnection.value[connectionId] || {}),
+        [folderPath]: pageState
+      }
+    }
+  }
+
+  function buildS3LevelEntries(
+    bucket: string,
+    prefixes: string[],
+    objects: Array<{ key: string; size: number }>
+  ): FileSystemEntry[] {
+    const entries: FileSystemEntry[] = []
+
+    for (const prefix of prefixes) {
+      entries.push({
+        name: getEntryNameFromPath(prefix),
+        path: buildS3EntryPath(bucket, prefix),
+        type: 'dir',
+        children: [],
+        isLoaded: false,
+        isManifest: isManifestMetadataFolder(getEntryNameFromPath(prefix))
+      })
+    }
+
+    for (const object of objects) {
+      const objectPath = buildS3EntryPath(bucket, object.key)
+      entries.push({
+        name: getEntryNameFromPath(object.key),
+        path: objectPath,
+        type: 'file',
+        size: object.size,
+        isManifest: isManifestMetadataPath(objectPath)
+      })
+    }
+
+    return sortEntries(entries)
+  }
+
+  function detectDirectTableFolder(children: FileSystemEntry[]): Partial<FileSystemEntry> {
+    const files = children
+      .filter((entry) => entry.type === 'file')
+      .map((entry) => ({
+        name: entry.name,
+        size: entry.size || 0,
+        fullKey: entry.path
+      }))
+
+    const tableInfo = detectTableFolder(files, '')
+    if (!tableInfo.isTable) {
+      return {
+        isTable: false,
+        format: undefined,
+        fileCount: undefined,
+        size: undefined
+      }
+    }
+
+    return {
+      isTable: true,
+      format: tableInfo.format,
+      fileCount: tableInfo.fileCount,
+      size: tableInfo.totalSize
+    }
+  }
+
+  function finalizeManifestTreeEntries(entries: FileSystemEntry[]): FileSystemEntry[] {
+    return sortEntries(
+      entries.map((entry) => {
+        if (entry.type !== 'dir') {
+          return entry
+        }
+
+        const children = finalizeManifestTreeEntries(entry.children || [])
+        const entryPatch = detectDirectTableFolder(children)
+
+        return {
+          ...entry,
+          children,
+          isLoaded: true,
+          ...entryPatch
+        }
+      })
+    )
+  }
+
+  function buildManifestTreeEntries(
+    bucket: string,
+    prefix: string,
+    manifestPath: string,
+    manifest: S3ManifestFile
+  ): FileSystemEntry[] {
+    const trimmedPrefix = prefix.replace(/^\/+|\/+$/g, '')
+    const prefixWithSlash = trimmedPrefix ? `${trimmedPrefix}/` : ''
+    const manifestObjectMetadata = new Map<string, S3ManifestObject>()
+    const rootEntries: FileSystemEntry[] = []
+
+    for (const object of manifest.objects || []) {
+      const trimmedPath = object.path?.trim()
+      if (trimmedPath) {
+        manifestObjectMetadata.set(trimmedPath, object)
+      }
+    }
+
+    function upsertDirectory(
+      children: FileSystemEntry[],
+      key: string,
+      name: string
+    ): FileSystemEntry {
+      const dirPath = buildS3EntryPath(bucket, key)
+      const existing = children.find((entry) => entry.type === 'dir' && entry.path === dirPath)
+      if (existing) {
+        return existing
+      }
+
+      const next: FileSystemEntry = {
+        name,
+        path: dirPath,
+        type: 'dir',
+        children: [],
+        isLoaded: true
+      }
+      children.push(next)
+      return next
+    }
+
+    function upsertFile(children: FileSystemEntry[], key: string) {
+      const objectPath = buildS3EntryPath(bucket, key)
+      if (children.some((entry) => entry.type === 'file' && entry.path === objectPath)) {
+        return
+      }
+
+      const objectMeta = manifestObjectMetadata.get(objectPath)
+      children.push({
+        name: getEntryNameFromPath(key),
+        path: objectPath,
+        type: 'file',
+        size: objectMeta?.size,
+        isManifest: objectPath === manifestPath || isManifestMetadataPath(objectPath)
+      })
+    }
+
+    for (const fileURI of manifest.files || []) {
+      const parsed = parseS3Uri(fileURI)
+      if (!parsed || parsed.bucket !== bucket) {
+        continue
+      }
+
+      const key = parsed.prefix.replace(/^\/+|\/+$/g, '')
+      if (!key) {
+        continue
+      }
+      if (prefixWithSlash && !key.startsWith(prefixWithSlash)) {
+        continue
+      }
+
+      const relativeKey = prefixWithSlash ? key.slice(prefixWithSlash.length) : key
+      const segments = relativeKey.split('/').filter(Boolean)
+      if (segments.length === 0) {
+        continue
+      }
+
+      let currentChildren = rootEntries
+      let currentPrefix = prefixWithSlash
+
+      for (let index = 0; index < segments.length; index += 1) {
+        const segment = segments[index]
+        const isLast = index === segments.length - 1
+        if (isLast) {
+          upsertFile(currentChildren, `${currentPrefix}${segment}`)
+          break
+        }
+
+        const dirKey = `${currentPrefix}${segments.slice(0, index + 1).join('/')}/`
+        const directory = upsertDirectory(currentChildren, dirKey, segment)
+        currentChildren = directory.children || []
+        currentPrefix = dirKey
+      }
+    }
+
+    const manifestParsed = parseS3Uri(manifestPath)
+    if (manifestParsed && manifestParsed.bucket === bucket) {
+      const manifestKey = manifestParsed.prefix.replace(/^\/+|\/+$/g, '')
+      if (manifestKey && (!prefixWithSlash || manifestKey.startsWith(prefixWithSlash))) {
+        const relativeKey = prefixWithSlash
+          ? manifestKey.slice(prefixWithSlash.length)
+          : manifestKey
+        if (relativeKey && !relativeKey.includes('/')) {
+          upsertFile(rootEntries, manifestKey)
+        }
+      }
+    }
+
+    return finalizeManifestTreeEntries(rootEntries)
+  }
+
+  async function loadManifestTree(
+    connectionId: string,
+    bucket: string,
+    folderPath: string,
+    manifestPath: string
+  ): Promise<{ entries: FileSystemEntry[]; pageState: FolderPageState }> {
+    const parsed = parseS3Uri(folderPath)
+    if (!parsed) {
+      throw new Error('Invalid S3 folder path')
+    }
+
+    const response = await readS3Manifest(manifestPath, connectionId)
+    return {
+      entries: buildManifestTreeEntries(bucket, parsed.prefix, manifestPath, response.manifest),
+      pageState: {
+        nextToken: '',
+        isTruncated: false,
+        manifestUsed: true,
+        manifestPath
+      }
+    }
+  }
+
+  async function listS3Level(
+    connectionId: string,
+    folderPath: string,
+    force = false,
+    continuationToken?: string
+  ) {
+    const parsed = parseS3Uri(folderPath)
+    if (!parsed) {
+      throw new Error('Invalid S3 folder path')
+    }
+
+    const requestPrefix = buildS3RequestPrefix(parsed.prefix)
+    const response = await listS3Objects({
+      bucket: parsed.bucket,
+      prefix: requestPrefix,
+      maxKeys: 1000,
+      connectionId,
+      refresh: force,
+      recursive: false,
+      continuationToken: continuationToken || undefined
+    })
+
+    return {
+      entries: buildS3LevelEntries(parsed.bucket, response.prefixes || [], response.objects || []),
+      pageState: {
+        nextToken: response.next_token || '',
+        isTruncated: !!response.is_truncated,
+        manifestUsed: !!response.manifest_used,
+        manifestPath: response.manifest_path
+      }
+    }
   }
 
   // Actions
@@ -301,35 +626,35 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
               ...errorsByConnection.value,
               [connectionId]: ''
             }
+            setFolderPageState(connectionId, uri, {
+              nextToken: '',
+              isTruncated: false
+            })
             return
           }
-
-          // Parse bucket and prefix from URI
-          const parsed = parseS3Uri(uri)
-          if (!parsed) {
-            throw new Error('Invalid S3 URI format. Expected s3://bucket-name/optional-prefix')
+          const { entries, pageState } = await listS3Level(connectionId, uri, force)
+          if (pageState.manifestUsed && pageState.manifestPath && !force) {
+            const manifestTree = await loadManifestTree(
+              connectionId,
+              parseS3Uri(uri)?.bucket || '',
+              uri,
+              pageState.manifestPath
+            )
+            entriesByConnection.value = {
+              ...entriesByConnection.value,
+              [connectionId]: manifestTree.entries
+            }
+            directoryPathsByConnection.value = {
+              ...directoryPathsByConnection.value,
+              [connectionId]: uri
+            }
+            errorsByConnection.value = {
+              ...errorsByConnection.value,
+              [connectionId]: ''
+            }
+            setFolderPageState(connectionId, uri, manifestTree.pageState)
+            return
           }
-
-          const bucket = parsed.bucket
-          const prefix = parsed.prefix
-          const requestPrefix = buildS3RequestPrefix(prefix)
-
-          // List S3 objects recursively, then group into a tree.
-          // This is required to detect "table folders" (folders containing uniform data files)
-          // so the Explorer can open a consolidated DuckDB view for a folder.
-          const response = await listS3Objects({
-            bucket,
-            prefix: requestPrefix,
-            maxKeys: 1000,
-            connectionId,
-            recursive: true
-          })
-
-          const entries = groupS3ObjectsIntoTree(
-            response.objects || [],
-            bucket,
-            requestPrefix || ''
-          )
 
           entriesByConnection.value = {
             ...entriesByConnection.value,
@@ -343,6 +668,7 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
             ...errorsByConnection.value,
             [connectionId]: ''
           }
+          setFolderPageState(connectionId, uri, pageState)
         })
       } else {
         // Local filesystem - use existing logic
@@ -459,6 +785,7 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     const newSelected = { ...selectedPathsByConnection.value }
     const newLoading = { ...loadingByConnection.value }
     const newExpandedFolders = { ...expandedFoldersByConnection.value }
+    const newFolderPages = { ...folderPagesByConnection.value }
 
     delete newEntries[connectionId]
     delete newPaths[connectionId]
@@ -466,6 +793,7 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     delete newSelected[connectionId]
     delete newLoading[connectionId]
     delete newExpandedFolders[connectionId]
+    delete newFolderPages[connectionId]
 
     entriesByConnection.value = newEntries
     directoryPathsByConnection.value = newPaths
@@ -473,27 +801,9 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     selectedPathsByConnection.value = newSelected
     loadingByConnection.value = newLoading
     expandedFoldersByConnection.value = newExpandedFolders
+    folderPagesByConnection.value = newFolderPages
     pendingMetadataRequests.clear()
     saveExpandedFolders()
-  }
-
-  async function loadS3Files(bucket: string, prefix?: string, connectionId?: string) {
-    const result = await listS3Objects({
-      bucket,
-      prefix: prefix ? buildS3RequestPrefix(prefix) : undefined,
-      maxKeys: 1000,
-      connectionId
-    })
-
-    // Convert S3 objects to FileSystemEntry format
-    const entries: FileSystemEntry[] = result.objects.map((obj) => ({
-      name: obj.key.split('/').pop() || obj.key,
-      path: `s3://${bucket}/${obj.key}`,
-      type: obj.key.endsWith('/') ? 'dir' : 'file',
-      size: obj.size
-    }))
-
-    return entries
   }
 
   // Folder expansion management
@@ -711,6 +1021,7 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     selectedPathsByConnection.value = keepValid(selectedPathsByConnection.value)
     loadingByConnection.value = keepValid(loadingByConnection.value)
     expandedFoldersByConnection.value = keepValid(expandedFoldersByConnection.value)
+    folderPagesByConnection.value = keepValid(folderPagesByConnection.value)
     saveExpandedFolders()
   }
 
@@ -719,16 +1030,30 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
   function updateFolderChildren(
     entries: FileSystemEntry[],
     folderPath: string,
-    children: FileSystemEntry[]
+    children: FileSystemEntry[],
+    manifestState?: ManifestFolderState,
+    entryPatch?: Partial<FileSystemEntry>
   ): FileSystemEntry[] {
     return entries.map((entry) => {
       if (entry.path === folderPath) {
         // Found the folder - return new object with updated children
-        return { ...entry, children, isLoaded: true }
+        return {
+          ...entry,
+          children,
+          isLoaded: true,
+          manifestUsed: manifestState?.manifestUsed ?? false,
+          manifestPath: manifestState?.manifestPath,
+          ...entryPatch
+        }
       }
       if (entry.children) {
-        // Recurse into children
-        const updatedChildren = updateFolderChildren(entry.children, folderPath, children)
+        const updatedChildren = updateFolderChildren(
+          entry.children,
+          folderPath,
+          children,
+          manifestState,
+          entryPatch
+        )
         if (updatedChildren !== entry.children) {
           // Children were updated - return new object
           return { ...entry, children: updatedChildren }
@@ -740,7 +1065,7 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
   }
 
   // Load contents of a specific folder
-  async function loadFolderContents(connectionId: string, folderPath: string) {
+  async function loadFolderContents(connectionId: string, folderPath: string, force = false) {
     const connectionsStore = useConnectionsStore()
     const connection = connectionsStore.connections.find((c) => c.id === connectionId)
     if (!connection) return
@@ -758,37 +1083,60 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
 
       if (isS3) {
         await enqueueS3Request(async () => {
-          // For S3, extract bucket and prefix from folder path
-          const parsed = parseS3Uri(folderPath)
-          if (!parsed) return
-
-          const bucket = parsed.bucket
-          const prefix = parsed.prefix
-          const requestPrefix = prefix ? buildS3RequestPrefix(prefix) : undefined
-
-          // Recursive list + grouping is required to mark table folders (entry.isTable)
-          // so clicking a folder can open a consolidated DuckDB view.
-          const response = await listS3Objects({
-            bucket,
-            prefix: requestPrefix,
-            maxKeys: 1000,
+          const { entries: folderContents, pageState } = await listS3Level(
             connectionId,
-            recursive: true
-          })
-
-          const folderContents = groupS3ObjectsIntoTree(
-            response.objects || [],
-            bucket,
-            requestPrefix || ''
+            folderPath,
+            force
           )
+          if (pageState.manifestUsed && pageState.manifestPath && !force) {
+            const parsed = parseS3Uri(folderPath)
+            if (!parsed) {
+              throw new Error('Invalid S3 folder path')
+            }
+            const manifestTree = await loadManifestTree(
+              connectionId,
+              parsed.bucket,
+              folderPath,
+              pageState.manifestPath
+            )
+            const currentEntries = entriesByConnection.value[connectionId] || []
+            const manifestState: ManifestFolderState = {
+              manifestUsed: true,
+              manifestPath: pageState.manifestPath
+            }
+            const updatedEntries = updateFolderChildren(
+              currentEntries,
+              folderPath,
+              manifestTree.entries,
+              manifestState
+            )
+            entriesByConnection.value = {
+              ...entriesByConnection.value,
+              [connectionId]: updatedEntries
+            }
+            setFolderPageState(connectionId, folderPath, manifestTree.pageState)
+            return
+          }
 
           // Update folder children immutably (single source of truth)
           const currentEntries = entriesByConnection.value[connectionId] || []
-          const updatedEntries = updateFolderChildren(currentEntries, folderPath, folderContents)
+          const manifestState: ManifestFolderState = {
+            manifestUsed: !!pageState.manifestUsed,
+            manifestPath: pageState.manifestPath
+          }
+          const entryPatch = detectDirectTableFolder(folderContents)
+          const updatedEntries = updateFolderChildren(
+            currentEntries,
+            folderPath,
+            folderContents,
+            manifestState,
+            entryPatch
+          )
           entriesByConnection.value = {
             ...entriesByConnection.value,
             [connectionId]: updatedEntries
           }
+          setFolderPageState(connectionId, folderPath, pageState)
         })
       } else {
         // Local filesystem
@@ -813,177 +1161,49 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     }
   }
 
-  // Helper to group S3 objects into folders and files at the current level
-  function groupS3ObjectsIntoTree(
-    objects: Array<{ key: string; size: number }>,
-    bucket: string,
-    currentPrefix: string
-  ): FileSystemEntry[] {
-    const entries: FileSystemEntry[] = []
-    const seen = new Set<string>()
+  async function loadMoreFolderContents(connectionId: string, folderPath: string) {
+    const pageState = folderPagesByConnection.value[connectionId]?.[folderPath]
+    if (!pageState?.isTruncated || !pageState.nextToken) {
+      return
+    }
 
-    // Map to track files in each folder for table detection
-    const folderFiles = new Map<string, Array<{ name: string; size: number; fullKey: string }>>()
+    await enqueueS3Request(async () => {
+      const currentEntries = entriesByConnection.value[connectionId] || []
+      const isRootFolder = directoryPathsByConnection.value[connectionId] === folderPath
+      const { entries: nextEntries, pageState: nextPageState } = await listS3Level(
+        connectionId,
+        folderPath,
+        false,
+        pageState.nextToken
+      )
 
-    // Normalize prefix (remove trailing slash for comparison)
-    const normalizedPrefix = currentPrefix.endsWith('/')
-      ? currentPrefix.slice(0, -1)
-      : currentPrefix
-
-    // First pass: group objects into folders and collect file information
-    for (const obj of objects) {
-      // Get the relative path from current prefix
-      let relativePath = obj.key
-      if (normalizedPrefix && obj.key.startsWith(normalizedPrefix + '/')) {
-        relativePath = obj.key.substring(normalizedPrefix.length + 1)
-      } else if (normalizedPrefix === obj.key) {
-        continue // Skip the prefix itself
-      }
-
-      // Find the first segment (immediate child)
-      const firstSlash = relativePath.indexOf('/')
-      const isFolder = firstSlash !== -1
-
-      if (isFolder) {
-        // This is a folder
-        const folderName = relativePath.substring(0, firstSlash)
-        if (!seen.has(folderName)) {
-          seen.add(folderName)
-          entries.push({
-            name: folderName,
-            path: `s3://${bucket}/${normalizedPrefix ? normalizedPrefix + '/' : ''}${folderName}/`,
-            type: 'dir',
-            children: [],
-            isLoaded: false
-          })
-
-          // Initialize file tracking for this folder
-          folderFiles.set(folderName, [])
-        }
-
-        // Track files in this folder
-        const remainingPath = relativePath.substring(firstSlash + 1)
-        const nextSlash = remainingPath.indexOf('/')
-        // Only track direct children (files at the immediate level)
-        if (nextSlash === -1 && remainingPath) {
-          folderFiles.get(folderName)!.push({
-            name: remainingPath,
-            size: obj.size,
-            fullKey: obj.key
-          })
+      if (isRootFolder) {
+        entriesByConnection.value = {
+          ...entriesByConnection.value,
+          [connectionId]: mergeEntries(currentEntries, nextEntries)
         }
       } else {
-        // This is a file at the current level
-        const fileName = relativePath
-        if (!seen.has(fileName) && fileName) {
-          seen.add(fileName)
-          entries.push({
-            name: fileName,
-            path: `s3://${bucket}/${obj.key}`,
-            type: 'file',
-            size: obj.size
-          })
+        const currentFolder = findEntryByPath(currentEntries, folderPath)
+        const mergedChildren = mergeEntries(currentFolder?.children || [], nextEntries)
+        const manifestState: ManifestFolderState = {
+          manifestUsed: !!nextPageState.manifestUsed,
+          manifestPath: nextPageState.manifestPath
+        }
+        const updatedEntries = updateFolderChildren(
+          currentEntries,
+          folderPath,
+          mergedChildren,
+          manifestState,
+          detectDirectTableFolder(mergedChildren)
+        )
+        entriesByConnection.value = {
+          ...entriesByConnection.value,
+          [connectionId]: updatedEntries
         }
       }
-    }
 
-    // Second pass: detect table folders
-    for (const entry of entries) {
-      if (entry.type === 'dir') {
-        const files = folderFiles.get(entry.name) || []
-        const tableInfo = detectTableFolder(files)
-
-        if (tableInfo.isTable) {
-          entry.isTable = true
-          entry.format = tableInfo.format
-          entry.fileCount = tableInfo.fileCount
-          entry.size = tableInfo.totalSize
-        }
-      }
-    }
-
-    // Stable UX: folders first, then files, alpha
-    entries.sort((a, b) => {
-      const at = a.type === 'dir' ? 0 : 1
-      const bt = b.type === 'dir' ? 0 : 1
-      if (at !== bt) return at - bt
-      return (a.name || '').localeCompare(b.name || '')
+      setFolderPageState(connectionId, folderPath, nextPageState)
     })
-
-    return entries
-  }
-
-  // Detect if a folder contains part files that should be treated as a table
-  function detectTableFolder(files: Array<{ name: string; size: number; fullKey: string }>): {
-    isTable: boolean
-    format?: FileFormat
-    fileCount: number
-    totalSize: number
-  } {
-    if (files.length === 0) {
-      return { isTable: false, fileCount: 0, totalSize: 0 }
-    }
-
-    // Helper to extract full file extension (e.g., ".csv.zst", ".parquet")
-    function getFullExtension(filename: string): string {
-      const parts = filename.split('.')
-      if (parts.length < 2) return ''
-
-      // Check for compressed extensions
-      const lastExt = parts[parts.length - 1].toLowerCase()
-      const secondLastExt = parts.length >= 3 ? parts[parts.length - 2].toLowerCase() : ''
-
-      const compressedExts = ['gz', 'gzip', 'zst', 'zstd', 'bz2', 'lz4', 'snappy']
-      const dataExts = ['csv', 'json', 'jsonl', 'parquet']
-
-      if (compressedExts.includes(lastExt) && dataExts.includes(secondLastExt)) {
-        return `.${secondLastExt}.${lastExt}`
-      } else if (dataExts.includes(lastExt)) {
-        return `.${lastExt}`
-      }
-
-      return ''
-    }
-
-    // Helper to get format from extension
-    function getFormatFromExtension(ext: string): FileFormat | null {
-      if (ext.includes('.csv')) return 'csv'
-      if (ext.includes('.json')) return ext.includes('.jsonl') ? 'jsonl' : 'json'
-      if (ext.includes('.parquet')) return 'parquet'
-      return null
-    }
-
-    // Check if all files have the same extension
-    const extensions = new Set<string>()
-    let totalSize = 0
-
-    for (const file of files) {
-      const ext = getFullExtension(file.name)
-      if (!ext) return { isTable: false, fileCount: 0, totalSize: 0 }
-
-      extensions.add(ext)
-      totalSize += file.size
-    }
-
-    // All files must have the same extension
-    if (extensions.size !== 1) {
-      return { isTable: false, fileCount: 0, totalSize: 0 }
-    }
-
-    const extension = Array.from(extensions)[0]
-    const format = getFormatFromExtension(extension)
-
-    if (!format) {
-      return { isTable: false, fileCount: 0, totalSize: 0 }
-    }
-
-    // Consider it a table folder if it has at least 1 file with a supported format
-    return {
-      isTable: true,
-      format,
-      fileCount: files.length,
-      totalSize
-    }
   }
 
   return {
@@ -994,6 +1214,7 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     selectedPathsByConnection,
     loadingByConnection,
     expandedFoldersByConnection,
+    folderPagesByConnection,
 
     // Getters
     getEntries,
@@ -1002,6 +1223,8 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     getSelectedPath,
     isLoading,
     isFolderExpanded,
+    getFolderPageState,
+    hasMoreEntries,
 
     // Actions
     isFilesConnectionType,
@@ -1012,7 +1235,7 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     clearSelection,
     clearAllSelectionsExcept,
     clearConnectionData,
-    loadS3Files,
+    loadMoreFolderContents,
     toggleFolder,
     collapseFolder,
     expandFolder,

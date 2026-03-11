@@ -6,6 +6,7 @@ import { type FileSystemEntry } from '@/api/fileSystem'
 import { type FileMetadata } from '@/types/files'
 import { useObjectTabStateStore } from '@/stores/objectTabState'
 import { getFileFormat } from '@/utils/fileFormat'
+import { isManifestMetadataPath } from '@/utils/s3TableDetection'
 
 // Lazy load database components that use ag-grid
 const TableMetadataView = defineAsyncComponent(
@@ -27,6 +28,9 @@ const TableSummaryTab = defineAsyncComponent(
   () => import('@/components/database/TableSummaryTab.vue')
 )
 const FileSummaryTab = defineAsyncComponent(() => import('@/components/files/FileSummaryTab.vue'))
+const ManifestFileView = defineAsyncComponent(
+  () => import('@/components/files/ManifestFileView.vue')
+)
 
 // Lazy load file components that use ag-grid
 const FileDataView = defineAsyncComponent(() => import('@/components/files/FileDataView.vue'))
@@ -104,10 +108,18 @@ const supportsSummary = computed(() => {
 
 const supportsFileSummary = computed(() => {
   if (props.objectType !== 'file' || !props.fileEntry) return false
+  if (isManifestFileObject.value) return false
   if (props.fileEntry.type === 'dir' && !props.fileEntry.isTable) return false
   const format = props.fileEntry.format || getFileFormat(props.fileEntry.name)
   return Boolean(format)
 })
+
+const isManifestFileObject = computed(
+  () =>
+    props.objectType === 'file' &&
+    props.fileEntry?.type === 'file' &&
+    isManifestMetadataPath(props.fileEntry.path)
+)
 
 const tabs = computed<TabItem[]>(() => {
   if (props.objectType === 'file') {
@@ -115,6 +127,39 @@ const tabs = computed<TabItem[]>(() => {
       console.error('fileEntry is required when objectType is file')
       return []
     }
+
+    if (isManifestFileObject.value) {
+      return [
+        {
+          name: 'Data',
+          component: ManifestFileView,
+          props: {
+            entry: props.fileEntry,
+            connectionId: props.connectionId,
+            mode: 'data'
+          }
+        },
+        {
+          name: 'Structure',
+          component: ManifestFileView,
+          props: {
+            entry: props.fileEntry,
+            connectionId: props.connectionId,
+            mode: 'structure'
+          }
+        },
+        {
+          name: 'Summary',
+          component: ManifestFileView,
+          props: {
+            entry: props.fileEntry,
+            connectionId: props.connectionId,
+            mode: 'summary'
+          }
+        }
+      ]
+    }
+
     const baseTabs: TabItem[] = [
       {
         name: 'Data',
@@ -422,7 +467,7 @@ function onOpenDiagram() {
           </button>
           <!-- DuckDB Console button (for file objects) -->
           <button
-            v-if="objectType === 'file'"
+            v-if="objectType === 'file' && !isManifestFileObject"
             type="button"
             class="inline-flex items-center rounded-md bg-white dark:bg-gray-800 px-2.5 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 shadow-sm dark:shadow-gray-900/30 border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
             title="Open in DuckDB Console"

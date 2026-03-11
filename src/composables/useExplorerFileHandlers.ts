@@ -7,7 +7,6 @@ import type { useConnectionsStore } from '@/stores/connections'
 import type { useFileExplorerStore } from '@/stores/fileExplorer'
 import type { useExplorerViewStateStore } from '@/stores/explorerViewState'
 import type { useExplorerState } from '@/composables/useExplorerState'
-import type { useExplorerTabManager } from '@/composables/useExplorerTabManager'
 import { findFileEntryByPath } from '@/utils/fileEntryUtils'
 import { useUnsavedChangesGuard } from '@/composables/useUnsavedChangesGuard'
 
@@ -17,7 +16,6 @@ type ConnectionsStore = ReturnType<typeof useConnectionsStore>
 type FileExplorerStore = ReturnType<typeof useFileExplorerStore>
 type ExplorerState = ReturnType<typeof useExplorerState>
 type ViewStateStore = ReturnType<typeof useExplorerViewStateStore>
-type TabManager = ReturnType<typeof useExplorerTabManager>
 
 interface UseExplorerFileHandlersOptions {
   paneTabsStore: PaneTabsStore
@@ -26,7 +24,6 @@ interface UseExplorerFileHandlersOptions {
   fileExplorerStore: FileExplorerStore
   explorerState: ExplorerState
   viewState: ViewStateStore
-  tabManager: TabManager
   alwaysOpenNewTab: Ref<boolean>
 }
 
@@ -37,7 +34,6 @@ export function useExplorerFileHandlers({
   fileExplorerStore,
   explorerState,
   viewState,
-  tabManager,
   alwaysOpenNewTab
 }: UseExplorerFileHandlersOptions) {
   // Loading state to prevent multiple file clicks during loading
@@ -216,12 +212,6 @@ export function useExplorerFileHandlers({
       explorerState.clearFileSelection()
       fileExplorerStore.clearAllSelectionsExcept(payload.connectionId)
       fileExplorerStore.setSelectedPath(payload.connectionId, payload.path)
-
-      if (payload.path.startsWith('s3://')) {
-        viewState.selectFile(payload.connectionId, payload.path)
-        const mode: 'preview' | 'pinned' = alwaysOpenNewTab.value ? 'pinned' : 'preview'
-        tabManager.openS3LocationTab(payload.connectionId, payload.path, mode)
-      }
       return
     }
 

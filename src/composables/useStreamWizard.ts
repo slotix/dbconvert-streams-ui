@@ -318,13 +318,18 @@ export function useStreamWizard() {
       }
     }
     const selectedFiles = config?.files?.filter((f) => f.selected) || []
+    const selectedManifestSources = (config?.source?.connections || []).filter((conn) => {
+      const manifestPath = conn.s3?.manifestPath?.trim()
+      const sourceMode = conn.s3?._sourceMode || (manifestPath ? 'manifest' : 'selection')
+      return sourceMode === 'manifest' && !!manifestPath
+    }).length
 
     // Multi-source aware validation:
     // - If we have file sources, we need file selections
     // - If we have database sources, we need table/query selections
     let hasRequiredDataSources = true
 
-    if (hasFileSource.value && selectedFiles.length === 0) {
+    if (hasFileSource.value && selectedFiles.length === 0 && selectedManifestSources === 0) {
       // Has file sources but no files selected
       hasRequiredDataSources = false
     }

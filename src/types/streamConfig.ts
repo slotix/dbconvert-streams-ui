@@ -68,11 +68,14 @@ export interface SourceOptions {
   operations?: string[] // CDC operation filter: 'insert', 'update', 'delete'
 }
 
+export type S3SourceMode = 'selection' | 'manifest'
+
 export interface S3SourceConfig {
   bucket: string
   prefixes?: string[]
   objects?: string[]
   manifestPath?: string
+  _sourceMode?: S3SourceMode // UI-only source picker mode
 }
 
 export interface FilesSourceConfig {

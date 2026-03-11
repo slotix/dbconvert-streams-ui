@@ -1,108 +1,93 @@
 <template>
-  <div class="border-b border-gray-200 px-4 py-4 dark:border-gray-700">
-    <div class="flex flex-col gap-3">
-      <div class="flex items-start justify-between gap-3">
-        <div>
-          <h4 class="text-sm font-semibold text-gray-900 dark:text-gray-100">Manifest source</h4>
-          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            Pick a manifest JSON file to avoid recursive S3 listing for large datasets.
-          </p>
-        </div>
-        <div class="flex shrink-0 items-center gap-2">
-          <BaseButton size="sm" variant="secondary" @click="showPicker = true">
-            Browse manifest
-          </BaseButton>
-          <BaseButton v-if="hasManifestPath" size="sm" variant="ghost" @click="clearManifestPath">
-            Clear
-          </BaseButton>
-        </div>
-      </div>
-
-      <div class="flex flex-col gap-3 lg:flex-row lg:items-start">
-        <div class="min-w-0 flex-1">
-          <FormInput
-            v-model="manifestPath"
-            label="Manifest path"
-            :placeholder="manifestPlaceholder"
-            helper-text="Accepts local paths or s3:// URIs. Manifest entries for S3 sources must all be S3 objects."
-          />
-        </div>
-        <div class="flex shrink-0 items-center gap-2 pt-0 lg:pt-6">
-          <BaseButton
-            size="sm"
-            :loading="isLoading"
-            :disabled="!trimmedManifestPath"
-            @click="handleValidateClick"
-          >
-            Validate
-          </BaseButton>
-        </div>
-      </div>
-
-      <p v-if="validationError" class="text-xs text-red-600 dark:text-red-300">
-        {{ validationError }}
-      </p>
-      <p v-else-if="validationWarning" class="text-xs text-amber-700 dark:text-amber-300">
-        {{ validationWarning }}
-      </p>
-
-      <div
-        v-if="manifestResponse"
-        class="rounded-md border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-xs text-emerald-900 dark:border-emerald-700/60 dark:bg-emerald-900/20 dark:text-emerald-100"
+  <div v-if="variant === 'header'" class="flex items-center gap-2">
+    <div
+      class="inline-flex overflow-hidden rounded-md border border-gray-300/80 bg-white/30 dark:border-gray-600/80 dark:bg-gray-900/80"
+    >
+      <button
+        type="button"
+        class="border-r border-gray-300/80 px-4 py-1.5 text-sm font-semibold transition-colors dark:border-gray-600/80"
+        :class="
+          sourceMode === 'selection'
+            ? 'bg-teal-950/80 text-gray-50 shadow-[inset_0_0_0_1px_rgba(20,184,166,0.55)]'
+            : 'bg-transparent text-gray-600 hover:bg-gray-50/70 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-gray-100'
+        "
+        data-test="s3-source-mode-selection"
+        @click="setSourceMode('selection')"
       >
-        <div class="flex flex-wrap gap-x-4 gap-y-1">
-          <span><strong>Files:</strong> {{ manifestResponse.stats.file_count }}</span>
-          <span><strong>S3:</strong> {{ manifestResponse.stats.s3_files }}</span>
-          <span><strong>Local:</strong> {{ manifestResponse.stats.local_files }}</span>
-          <span><strong>Version:</strong> {{ manifestResponse.stats.version }}</span>
-          <span v-if="totalSizeLabel"><strong>Total size:</strong> {{ totalSizeLabel }}</span>
-        </div>
+        Files
+      </button>
+      <button
+        type="button"
+        class="px-4 py-1.5 text-sm font-semibold transition-colors"
+        :class="
+          sourceMode === 'manifest'
+            ? 'bg-teal-950/80 text-gray-50 shadow-[inset_0_0_0_1px_rgba(20,184,166,0.55)]'
+            : 'bg-transparent text-gray-600 hover:bg-gray-50/70 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-gray-100'
+        "
+        data-test="s3-source-mode-manifest"
+        @click="setSourceMode('manifest')"
+      >
+        Manifest
+      </button>
+    </div>
+  </div>
+
+  <div
+    v-else-if="sourceMode === 'manifest'"
+    class="border-b border-gray-200/70 px-4 py-4 text-sm dark:border-gray-700/70"
+  >
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div class="min-w-0">
+        <p class="font-medium text-gray-900 dark:text-gray-100">Manifest source</p>
+        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          Pick one manifest file and use its object list as the exact source snapshot.
+        </p>
       </div>
 
-      <div
-        v-if="hasManifestPath"
-        class="rounded-md border border-sky-200 bg-sky-50/70 px-3 py-2 text-xs text-sky-900 dark:border-sky-700/60 dark:bg-sky-900/20 dark:text-sky-100"
+      <button
+        v-if="manifestPath"
+        type="button"
+        class="text-xs font-medium text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
+        data-test="clear-manifest"
+        @click="clearManifest"
       >
-        Manifest mode is active for this source. Bucket browsing selections are ignored until the
-        manifest path is cleared.
-      </div>
+        Clear manifest
+      </button>
     </div>
 
-    <S3ManifestPickerModal
-      v-model:is-open="showPicker"
-      :connection-id="props.connectionId"
-      :bucket="bucket"
-      :lock-bucket="!!bucket"
-      @select="handleManifestPicked"
+    <S3ManifestBrowser
+      :connection-id="connectionId"
+      :bucket="pickerBucket"
+      :prefix="pickerPrefix"
+      :selected-path="manifestPath"
+      @select="applyManifestPath"
     />
+
+    <div
+      v-if="manifestValidationError"
+      class="mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-200"
+    >
+      {{ manifestValidationError }}
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
-import BaseButton from '@/components/base/BaseButton.vue'
-import FormInput from '@/components/base/FormInput.vue'
-import S3ManifestPickerModal from '@/components/stream/wizard/S3ManifestPickerModal.vue'
-import { readS3Manifest, validateS3Path } from '@/api/files'
+import { computed } from 'vue'
+import S3ManifestBrowser from '@/components/stream/wizard/S3ManifestBrowser.vue'
 import { useStreamsStore } from '@/stores/streamConfig'
-import { formatDataSize } from '@/utils/formats'
-import { manifestContainsLocalFiles, S3_MANIFEST_ONLY_S3_URIS_ERROR } from '@/utils/s3Manifest'
-import type { S3ManifestResponse } from '@/types/s3'
+import type { S3SourceMode, StreamConnectionMapping } from '@/types/streamConfig'
 
 interface Props {
   connectionId: string
+  variant?: 'header' | 'panel'
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  variant: 'panel'
+})
 
 const streamsStore = useStreamsStore()
-
-const isLoading = ref(false)
-const validationError = ref('')
-const validationWarning = ref('')
-const manifestResponse = ref<S3ManifestResponse | null>(null)
-const lastValidatedPath = ref('')
-const showPicker = ref(false)
 
 const sourceConnection = computed(() =>
   streamsStore.currentStreamConfig?.source?.connections?.find(
@@ -110,60 +95,62 @@ const sourceConnection = computed(() =>
   )
 )
 
-const bucket = computed(() => sourceConnection.value?.s3?.bucket || '')
-const manifestPlaceholder = computed(() =>
-  bucket.value ? `s3://${bucket.value}/manifests/orders.json` : 's3://bucket/manifests/orders.json'
+const manifestValidationError = computed(
+  () => streamsStore.getManifestValidationError(props.connectionId) || ''
 )
 
-const manifestPath = computed({
-  get: () => sourceConnection.value?.s3?.manifestPath || '',
-  set: (value: string | number) => {
-    updateManifestPath(String(value))
+const manifestPath = computed(() => sourceConnection.value?.s3?.manifestPath?.trim() || '')
+const sourceMode = computed<S3SourceMode>(
+  () => sourceConnection.value?.s3?._sourceMode || (manifestPath.value ? 'manifest' : 'selection')
+)
+const pickerBucket = computed(() => sourceConnection.value?.s3?.bucket || '')
+const pickerPrefix = computed(() => {
+  const currentPath = manifestPath.value
+  if (!currentPath.startsWith('s3://')) {
+    return ''
   }
-})
 
-const trimmedManifestPath = computed(() => manifestPath.value.trim())
-const hasManifestPath = computed(() => trimmedManifestPath.value.length > 0)
-
-const totalSizeLabel = computed(() => {
-  const totalSize = manifestResponse.value?.manifest?.metadata?.total_size
-  return typeof totalSize === 'number' ? formatDataSize(totalSize) : ''
-})
-
-watch(trimmedManifestPath, (nextPath) => {
-  if (nextPath === lastValidatedPath.value) {
-    return
+  const withoutScheme = currentPath.slice(5)
+  const slashIndex = withoutScheme.indexOf('/')
+  if (slashIndex < 0) {
+    return ''
   }
-  manifestResponse.value = null
-  validationError.value = ''
-  validationWarning.value = ''
-  streamsStore.setManifestValidationError(props.connectionId, null)
-})
 
-onMounted(() => {
-  if (trimmedManifestPath.value) {
-    void validateManifestPath()
+  const objectKey = withoutScheme.slice(slashIndex + 1)
+  const lastSlash = objectKey.lastIndexOf('/')
+  if (lastSlash < 0) {
+    return ''
   }
+
+  return objectKey.slice(0, lastSlash + 1)
 })
 
-function updateManifestPath(value: string) {
+function updateSourceConnection(
+  transform: (connection: StreamConnectionMapping) => StreamConnectionMapping
+) {
   const streamConfig = streamsStore.currentStreamConfig
   if (!streamConfig?.source?.connections) {
     return
   }
 
-  const normalizedValue = value.trim()
-  streamConfig.source.connections = streamConfig.source.connections.map((connection) => {
-    if (connection.connectionId !== props.connectionId) {
-      return connection
+  streamConfig.source.connections = streamConfig.source.connections.map((connection) =>
+    connection.connectionId === props.connectionId ? transform(connection) : connection
+  )
+}
+
+function setSourceMode(nextMode: S3SourceMode) {
+  updateSourceConnection((connection) => {
+    const nextS3 = {
+      bucket: connection.s3?.bucket || '',
+      ...(connection.s3 || {}),
+      _sourceMode: nextMode
     }
 
-    const nextS3 = {
-      ...(connection.s3 || { bucket: bucket.value }),
-      ...(normalizedValue ? { manifestPath: normalizedValue } : {})
-    }
-    if (!normalizedValue) {
+    if (nextMode === 'selection') {
       delete nextS3.manifestPath
+    } else {
+      delete nextS3.prefixes
+      delete nextS3.objects
     }
 
     return {
@@ -171,70 +158,45 @@ function updateManifestPath(value: string) {
       s3: nextS3
     }
   })
-}
 
-function clearManifestPath() {
-  updateManifestPath('')
-  lastValidatedPath.value = ''
-  manifestResponse.value = null
-  validationError.value = ''
-  validationWarning.value = ''
   streamsStore.setManifestValidationError(props.connectionId, null)
 }
 
-async function handleManifestPicked(path: string) {
-  updateManifestPath(path)
-  await validateManifestPath(path)
+function applyManifestPath(path: string) {
+  updateSourceConnection((connection) => {
+    const nextS3 = {
+      bucket: connection.s3?.bucket || '',
+      ...(connection.s3 || {}),
+      _sourceMode: 'manifest' as S3SourceMode,
+      manifestPath: path
+    }
+    delete nextS3.prefixes
+    delete nextS3.objects
+
+    return {
+      ...connection,
+      s3: nextS3
+    }
+  })
+
+  streamsStore.setManifestValidationError(props.connectionId, null)
 }
 
-function handleValidateClick() {
-  void validateManifestPath()
-}
-
-async function validateManifestPath(explicitPath?: string) {
-  const path = explicitPath?.trim() || trimmedManifestPath.value
-  if (!path) {
-    validationError.value = 'Manifest path is required'
-    manifestResponse.value = null
-    streamsStore.setManifestValidationError(props.connectionId, validationError.value)
-    return
-  }
-
-  isLoading.value = true
-  validationError.value = ''
-  validationWarning.value = ''
-
-  try {
-    if (path.startsWith('s3://')) {
-      const validation = await validateS3Path(path)
-      if (!validation.valid) {
-        throw new Error(validation.reason)
-      }
-      if (validation.recommendedMode !== 'manifest') {
-        validationWarning.value = validation.reason
-      }
+function clearManifest() {
+  updateSourceConnection((connection) => {
+    const nextS3 = {
+      bucket: connection.s3?.bucket || '',
+      ...(connection.s3 || {}),
+      _sourceMode: 'selection' as S3SourceMode
     }
+    delete nextS3.manifestPath
 
-    const response = await readS3Manifest(path, props.connectionId)
-    manifestResponse.value = response
-    lastValidatedPath.value = path
-
-    if (manifestContainsLocalFiles(response)) {
-      validationError.value = S3_MANIFEST_ONLY_S3_URIS_ERROR
-      streamsStore.setManifestValidationError(props.connectionId, validationError.value)
-      return
+    return {
+      ...connection,
+      s3: nextS3
     }
+  })
 
-    updateManifestPath(path)
-    streamsStore.setManifestValidationError(props.connectionId, null)
-  } catch (error) {
-    validationError.value =
-      error instanceof Error ? error.message : 'Failed to validate manifest path'
-    manifestResponse.value = null
-    lastValidatedPath.value = ''
-    streamsStore.setManifestValidationError(props.connectionId, validationError.value)
-  } finally {
-    isLoading.value = false
-  }
+  streamsStore.setManifestValidationError(props.connectionId, null)
 }
 </script>

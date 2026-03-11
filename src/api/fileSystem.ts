@@ -6,6 +6,9 @@ export interface FileSystemEntry {
   path: string
   type: 'file' | 'dir'
   size?: number
+  manifestUsed?: boolean
+  manifestPath?: string
+  isManifest?: boolean // Whether this entry is a manifest file or a manifests folder
   isTable?: boolean
   isBucket?: boolean // Whether this is an S3 bucket
   format?: FileFormat

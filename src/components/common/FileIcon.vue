@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Archive, Code, File, FileText, Folder, Layers, Sheet } from 'lucide-vue-next'
+import { Archive, Code, File, FileJson, FileText, Folder, Layers, Sheet } from 'lucide-vue-next'
 import { useIconSizes } from '@/composables/useIconSizes'
 import type { IconSizeKey } from '@/constants'
 import type { FileFormat } from '@/utils/fileFormat'
@@ -9,6 +9,7 @@ interface Props {
   isDirectory?: boolean
   isTableFolder?: boolean // Folder containing files that DuckDB can read as a table
   isBucket?: boolean // S3 bucket
+  isManifest?: boolean // Manifest file or manifests folder
   size?: IconSizeKey
 }
 
@@ -16,7 +17,8 @@ const props = withDefaults(defineProps<Props>(), {
   size: 'BASE',
   isDirectory: false,
   isTableFolder: false,
-  isBucket: false
+  isBucket: false,
+  isManifest: false
 })
 
 const { iconClass } = useIconSizes(props.size)
@@ -26,6 +28,11 @@ const iconComponent = computed(() => {
   // S3 bucket - distinct from regular folders
   if (props.isBucket) {
     return Archive
+  }
+
+  // Manifest file - distinct from regular JSON files
+  if (props.isManifest && !props.isDirectory) {
+    return FileJson
   }
 
   // Table folder - a special folder that DuckDB can treat as a table
@@ -56,6 +63,11 @@ const iconColor = computed(() => {
   // S3 buckets - distinct blue color
   if (props.isBucket) {
     return 'text-sky-500 dark:text-sky-400'
+  }
+
+  // Manifest files and manifests folders - teal to match manifest badge
+  if (props.isManifest) {
+    return 'text-teal-500 dark:text-teal-400'
   }
 
   // Table folders get special color - teal to indicate queryable data

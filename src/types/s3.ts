@@ -1,3 +1,5 @@
+import type { FileFormat } from '@/utils/fileFormat'
+
 // S3-specific type definitions for DBConvert Streams UI
 
 // S3 Configuration Request
@@ -44,6 +46,7 @@ export interface S3ListRequest {
   maxKeys?: number
   continuationToken?: string
   connectionId?: string
+  refresh?: boolean
   /** If false, list only immediate children and return folder prefixes (common prefixes). */
   recursive?: boolean
 }
@@ -67,6 +70,8 @@ export interface S3ListResponse {
   is_truncated: boolean
   next_token: string
   total_size: number
+  manifest_used?: boolean
+  manifest_path?: string
 }
 
 // S3 bucket creation
@@ -93,10 +98,28 @@ export interface S3ValidationResponse {
 }
 
 // S3 Manifest Response
+export interface S3ManifestObject {
+  path: string
+  size?: number
+  last_modified?: string
+  etag?: string
+  storage_class?: string
+}
+
+export interface S3ManifestMetadata {
+  total_size?: number
+  row_count?: number
+  created_at?: string
+  file_format?: FileFormat
+  stream_id?: string
+  [key: string]: unknown
+}
+
 export interface S3ManifestFile {
   version: string
   files: string[]
-  metadata?: Record<string, unknown>
+  objects?: S3ManifestObject[]
+  metadata?: S3ManifestMetadata
 }
 
 export interface S3ManifestStats {
@@ -113,30 +136,6 @@ export interface S3ManifestResponse {
   manifest: S3ManifestFile
   stats: S3ManifestStats
   outputPath?: string
-}
-
-export interface S3ManifestCreateRequest {
-  files: string[]
-  metadata?: Record<string, unknown>
-}
-
-export interface S3ManifestFilterRequest {
-  pattern: string
-  sourcePath?: string
-  manifest?: S3ManifestFile
-  connectionId?: string
-}
-
-export interface S3ManifestMergeRequest {
-  sourcePaths?: string[]
-  manifests?: S3ManifestFile[]
-  connectionId?: string
-}
-
-export interface S3ManifestWriteRequest {
-  manifest: S3ManifestFile
-  outputPath: string
-  connectionId: string
 }
 
 // Provider preset configuration

@@ -76,7 +76,6 @@ export function useDatabaseExplorerController({
     fileExplorerStore,
     explorerState,
     viewState,
-    tabManager,
     alwaysOpenNewTab
   })
 

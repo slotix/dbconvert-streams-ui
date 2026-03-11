@@ -38,7 +38,7 @@ import { ChevronDown, ChevronRight } from 'lucide-vue-next'
 import type { Component } from 'vue'
 
 interface Props {
-  alias: string
+  alias?: string
   connectionName: string
   selectionLabel?: string
   countLabel?: string
@@ -50,6 +50,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  alias: '',
   selectionLabel: '',
   countLabel: '',
   iconClass: 'text-sky-600 dark:text-sky-400',

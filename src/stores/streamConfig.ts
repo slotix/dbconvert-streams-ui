@@ -5,7 +5,8 @@ import type {
   Table,
   StreamConnectionMapping,
   S3SourceConfig,
-  FileEntry
+  FileEntry,
+  S3SourceMode
 } from '@/types/streamConfig'
 import type { TargetSpec } from '@/types/specs'
 import { getConnectionKindFromSpec, getConnectionTypeLabel, isFileBasedKind } from '@/types/specs'
@@ -38,7 +39,10 @@ interface State {
 
 function normalizeSource(source: StreamConfig['source']): StreamConfig['source'] {
   const normalized = { ...source }
-  const connections = normalized.connections ? [...normalized.connections] : []
+  const connections = (normalized.connections || []).map((connection) => ({
+    ...connection,
+    s3: normalizeS3SourceConfig(connection.s3)
+  }))
 
   if (connections.length === 1) {
     const { alias: _alias, ...singleSource } = connections[0]
@@ -47,6 +51,45 @@ function normalizeSource(source: StreamConfig['source']): StreamConfig['source']
     normalized.connections = normalizeStreamConnections(connections)
   }
   return normalized
+}
+
+function normalizeS3SourceConfig(s3?: S3SourceConfig): S3SourceConfig | undefined {
+  if (!s3) {
+    return undefined
+  }
+
+  const manifestPath = s3.manifestPath?.trim()
+  const sourceMode: S3SourceMode =
+    s3._sourceMode === 'manifest' || !!manifestPath ? 'manifest' : 'selection'
+
+  return {
+    ...s3,
+    ...(manifestPath ? { manifestPath } : {}),
+    _sourceMode: sourceMode
+  }
+}
+
+function toPayloadS3Config(s3?: S3SourceConfig): S3SourceConfig | undefined {
+  if (!s3) {
+    return undefined
+  }
+
+  const payload: S3SourceConfig = {
+    bucket: s3.bucket
+  }
+
+  const manifestPath = s3.manifestPath?.trim()
+  if (manifestPath) {
+    payload.manifestPath = manifestPath
+  }
+  if (s3.prefixes?.length) {
+    payload.prefixes = s3.prefixes
+  }
+  if (s3.objects?.length) {
+    payload.objects = s3.objects
+  }
+
+  return payload
 }
 
 function normalizeStreamConfig(config: StreamConfig): StreamConfig {
@@ -306,20 +349,24 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
     // Get existing prefixes/objects or derive from selected files
     const existingS3 = connections[0]?.s3
     const manifestPath = existingS3?.manifestPath?.trim()
-    const hasExplicitS3Config =
-      !!manifestPath ||
+    const sourceMode: S3SourceMode =
+      existingS3?._sourceMode || (manifestPath ? 'manifest' : 'selection')
+    const hasExistingSelections =
       (existingS3?.prefixes && existingS3.prefixes.length > 0) ||
       (existingS3?.objects && existingS3.objects.length > 0)
 
     const scopedFiles = filesForConnection(stream.files, connections[0]?.connectionId || '', bucket)
 
-    const s3Config: S3SourceConfig = manifestPath
-      ? { bucket, manifestPath }
-      : hasExplicitS3Config
-        ? { bucket, prefixes: existingS3?.prefixes, objects: existingS3?.objects }
+    const s3Config: S3SourceConfig =
+      sourceMode === 'manifest'
+        ? manifestPath
+          ? { bucket, manifestPath }
+          : { bucket }
         : scopedFiles.length > 0
           ? { bucket, ...s3ConfigFromFiles(scopedFiles) }
-          : { bucket, prefixes: [], objects: [] }
+          : hasExistingSelections
+            ? { bucket, prefixes: existingS3?.prefixes, objects: existingS3?.objects }
+            : { bucket, prefixes: [], objects: [] }
 
     // Clean up empty arrays before sending
     const s3Payload: S3SourceConfig = { bucket: s3Config.bucket }
@@ -464,18 +511,19 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
     if (conn.s3 || isS3Conn) {
       const bucket = conn.s3?.bucket || ''
       const manifestPath = conn.s3?.manifestPath?.trim()
+      const sourceMode: S3SourceMode =
+        conn.s3?._sourceMode || (manifestPath ? 'manifest' : 'selection')
+      const hasExistingSelections =
+        !!(
+          (conn.s3?.prefixes && conn.s3.prefixes.length > 0) ||
+          (conn.s3?.objects && conn.s3.objects.length > 0)
+        )
 
-      if (manifestPath) {
+      if (sourceMode === 'manifest') {
         result.s3 = {
           bucket,
-          manifestPath
+          ...(manifestPath ? { manifestPath } : {})
         }
-      } else if (
-        // If s3 already has prefixes/objects, use them directly
-        (conn.s3?.prefixes && conn.s3.prefixes.length > 0) ||
-        (conn.s3?.objects && conn.s3.objects.length > 0)
-      ) {
-        result.s3 = conn.s3
       } else if (stream.files && stream.files.length > 0) {
         // Otherwise, build from selected files for this connection (bucket match only)
         const scopedFiles = filesForConnection(stream.files, conn.connectionId, bucket)
@@ -486,13 +534,16 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
             ...(s3FromFiles.prefixes.length > 0 ? { prefixes: s3FromFiles.prefixes } : {}),
             ...(s3FromFiles.objects.length > 0 ? { objects: s3FromFiles.objects } : {})
           }
+        } else if (hasExistingSelections) {
+          result.s3 = toPayloadS3Config(conn.s3)
         } else {
           // No files selected, just set bucket (will fail backend validation)
           result.s3 = { bucket }
         }
+      } else if (hasExistingSelections) {
+        result.s3 = toPayloadS3Config(conn.s3)
       } else if (conn.s3) {
-        // No files array, just preserve the s3 config as-is
-        result.s3 = conn.s3
+        result.s3 = { bucket }
       }
     }
 
@@ -701,6 +752,8 @@ export const useStreamsStore = defineStore('streams', {
         if (hasInvalidConnection) {
           // Clear ALL source connections - user must select new ones
           this.currentStreamConfig.source.connections = []
+          // Clean up manifest validation errors for removed connections
+          this.manifestValidationErrors = {}
         }
       }
 
@@ -838,6 +891,7 @@ export const useStreamsStore = defineStore('streams', {
                 s3: bucket
                   ? {
                       bucket,
+                      _sourceMode: first.s3?._sourceMode,
                       manifestPath: first.s3?.manifestPath,
                       prefixes: first.s3?.prefixes,
                       objects: first.s3?.objects

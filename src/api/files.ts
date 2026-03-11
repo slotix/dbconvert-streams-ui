@@ -9,10 +9,6 @@ import type {
   S3ListResponse,
   S3ValidationResponse,
   S3ManifestResponse,
-  S3ManifestCreateRequest,
-  S3ManifestFilterRequest,
-  S3ManifestMergeRequest,
-  S3ManifestWriteRequest,
   S3CreateBucketRequest,
   S3CreateBucketResponse
 } from '@/types/s3'
@@ -118,6 +114,7 @@ export async function listS3Objects(params: S3ListRequest): Promise<S3ListRespon
     if (params.maxKeys) query.set('maxKeys', String(params.maxKeys))
     if (params.continuationToken) query.set('continuationToken', params.continuationToken)
     if (params.connectionId) query.set('connectionId', params.connectionId)
+    if (params.refresh) query.set('refresh', 'true')
     if (params.recursive !== undefined) query.set('recursive', params.recursive ? 'true' : 'false')
 
     const response = await apiClient.get<S3ListResponse>(`/files/s3/list?${query.toString()}`)
@@ -175,50 +172,6 @@ export async function readS3Manifest(
         ...(connectionId ? { connectionId } : {})
       }
     })
-    return response.data
-  } catch (error) {
-    throw handleApiError(error)
-  }
-}
-
-export async function createS3Manifest(
-  payload: S3ManifestCreateRequest
-): Promise<S3ManifestResponse> {
-  try {
-    const response = await apiClient.post<S3ManifestResponse>('/files/s3/manifests/create', payload)
-    return response.data
-  } catch (error) {
-    throw handleApiError(error)
-  }
-}
-
-export async function filterS3Manifest(
-  payload: S3ManifestFilterRequest
-): Promise<S3ManifestResponse> {
-  try {
-    const response = await apiClient.post<S3ManifestResponse>('/files/s3/manifests/filter', payload)
-    return response.data
-  } catch (error) {
-    throw handleApiError(error)
-  }
-}
-
-export async function mergeS3Manifests(
-  payload: S3ManifestMergeRequest
-): Promise<S3ManifestResponse> {
-  try {
-    const response = await apiClient.post<S3ManifestResponse>('/files/s3/manifests/merge', payload)
-    return response.data
-  } catch (error) {
-    throw handleApiError(error)
-  }
-}
-
-export async function writeS3Manifest(
-  payload: S3ManifestWriteRequest
-): Promise<S3ManifestResponse> {
-  try {
-    const response = await apiClient.post<S3ManifestResponse>('/files/s3/manifests/write', payload)
     return response.data
   } catch (error) {
     throw handleApiError(error)
@@ -319,10 +272,6 @@ export default {
   createS3Bucket,
   validateS3Path,
   readS3Manifest,
-  createS3Manifest,
-  filterS3Manifest,
-  mergeS3Manifests,
-  writeS3Manifest,
   executeFileQuery,
   applyFileRowChanges
 }

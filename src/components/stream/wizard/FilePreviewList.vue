@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-4">
+  <div class="flex h-full min-h-0 flex-col gap-4">
     <DataSelectionToolbar
       v-if="showToolbar"
       :selected-count="selectedCount"
@@ -9,11 +9,13 @@
       :select-all-checked="selectAllCheckboxState"
       :select-all-indeterminate="indeterminate"
       select-all-label="Select All"
+      :clear-disabled="selectedCount === 0"
       refresh-label="Refresh files"
       refresh-title="Refresh files"
       :refresh-disabled="isLoading"
       @update:search-value="searchQuery = $event"
       @update:select-all="toggleSelectAll"
+      @clear="toggleSelectAll(false)"
       @refresh="refresh"
     />
 
@@ -31,78 +33,177 @@
       >
         No files found
       </div>
-      <div v-else class="p-4">
+      <div v-else class="flex h-full min-h-0 flex-col">
+        <div v-if="embedded" class="flex min-h-0 flex-col px-4 py-3">
+          <div
+            v-for="row in filteredRows"
+            :key="row.kind === 'entry' ? row.entry.path : `load-more:${row.parentPath}`"
+            class="h-10 rounded-md px-3 py-2 text-sm"
+            :class="
+              row.kind === 'entry'
+                ? 'flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800/70'
+                : 'flex items-center'
+            "
+            :style="{ paddingLeft: `${row.depth * 12 + 12}px` }"
+          >
+            <template v-if="row.kind === 'entry'">
+              <div class="flex min-w-0 flex-1 items-center">
+                <button
+                  v-if="row.entry.type === 'dir'"
+                  type="button"
+                  class="mr-2 shrink-0 rounded p-0.5 hover:bg-gray-200 dark:hover:bg-gray-700"
+                  :class="{ 'rotate-90': isExpanded(row.entry.path) }"
+                  @click="toggleFolder(row.entry)"
+                >
+                  <svg
+                    class="h-4 w-4 text-gray-500 dark:text-gray-400"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M7.21 14.77a.75.75 0 01.02-1.06L10.94 10 7.23 6.29a.75.75 0 011.06-1.06l4.24 4.24a.75.75 0 010 1.06l-4.24 4.24a.75.75 0 01-1.06.02z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                </button>
+                <span v-else class="mr-2 h-4 w-4 shrink-0" />
+
+                <input
+                  :id="`file-${row.entry.path}`"
+                  :checked="getCheckboxState(row.entry).checked"
+                  :indeterminate="getCheckboxState(row.entry).indeterminate"
+                  :disabled="!isSelectable(row.entry)"
+                  type="checkbox"
+                  class="mr-3 h-4 w-4 rounded border-gray-300 bg-white text-teal-600 focus:ring-teal-500 dark:border-gray-600 dark:bg-gray-800 dark:text-teal-500 dark:focus:ring-teal-400"
+                  @click.stop
+                  @change="
+                    onToggle(row.entry, ($event.target as HTMLInputElement)?.checked || false)
+                  "
+                />
+
+                <FileIcon
+                  :file-format="fileFormat(row.entry)"
+                  :is-directory="row.entry.type === 'dir'"
+                  :is-table-folder="!!row.entry.isTable"
+                  :is-bucket="!!row.entry.isBucket"
+                  class="mr-2"
+                />
+
+                <button
+                  type="button"
+                  class="min-w-0 flex-1 truncate text-left"
+                  @click="row.entry.type === 'dir' && toggleFolder(row.entry)"
+                >
+                  <span class="text-gray-900 dark:text-gray-100">{{ row.entry.name }}</span>
+                </button>
+              </div>
+
+              <span class="ml-4 shrink-0 text-xs text-gray-500 dark:text-gray-400">
+                {{ formatDataSize(row.entry.size || 0) }}
+              </span>
+            </template>
+
+            <button
+              v-else
+              type="button"
+              class="text-xs font-medium text-sky-600 hover:text-sky-700 dark:text-sky-300 dark:hover:text-sky-200"
+              :disabled="isLoading"
+              @click="loadMore(row.parentPath)"
+            >
+              Load more
+            </button>
+          </div>
+        </div>
+
         <div
+          v-else
           ref="listContainer"
-          class="max-h-[420px] overflow-y-auto overscroll-contain scrollbar-thin"
+          class="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 py-3 scrollbar-thin"
           @scroll="onScroll"
         >
           <div class="relative" :style="{ height: `${totalHeight}px` }">
             <div class="absolute inset-x-0" :style="{ transform: `translateY(${translateY}px)` }">
               <div
                 v-for="row in virtualRows"
-                :key="row.entry.path"
-                class="flex items-center justify-between px-3 py-2 text-sm rounded-md hover:bg-gray-50 dark:hover:bg-gray-800/70 h-10"
+                :key="row.kind === 'entry' ? row.entry.path : `load-more:${row.parentPath}`"
+                class="h-10 rounded-md px-3 py-2 text-sm"
+                :class="
+                  row.kind === 'entry'
+                    ? 'flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800/70'
+                    : 'flex items-center'
+                "
                 :style="{ paddingLeft: `${row.depth * 12 + 12}px` }"
               >
-                <div class="flex items-center flex-1 min-w-0">
-                  <!-- Expand chevron (folders only) -->
-                  <button
-                    v-if="row.entry.type === 'dir'"
-                    type="button"
-                    class="shrink-0 mr-2 p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
-                    :class="{ 'rotate-90': isExpanded(row.entry.path) }"
-                    @click="toggleFolder(row.entry)"
-                  >
-                    <svg
-                      class="h-4 w-4 text-gray-500 dark:text-gray-400"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                      aria-hidden="true"
+                <template v-if="row.kind === 'entry'">
+                  <div class="flex min-w-0 flex-1 items-center">
+                    <button
+                      v-if="row.entry.type === 'dir'"
+                      type="button"
+                      class="mr-2 shrink-0 rounded p-0.5 hover:bg-gray-200 dark:hover:bg-gray-700"
+                      :class="{ 'rotate-90': isExpanded(row.entry.path) }"
+                      @click="toggleFolder(row.entry)"
                     >
-                      <path
-                        fill-rule="evenodd"
-                        d="M7.21 14.77a.75.75 0 01.02-1.06L10.94 10 7.23 6.29a.75.75 0 011.06-1.06l4.24 4.24a.75.75 0 010 1.06l-4.24 4.24a.75.75 0 01-1.06.02z"
-                        clip-rule="evenodd"
-                      />
-                    </svg>
-                  </button>
-                  <span v-else class="h-4 w-4 shrink-0 mr-2" />
+                      <svg
+                        class="h-4 w-4 text-gray-500 dark:text-gray-400"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                        aria-hidden="true"
+                      >
+                        <path
+                          fill-rule="evenodd"
+                          d="M7.21 14.77a.75.75 0 01.02-1.06L10.94 10 7.23 6.29a.75.75 0 011.06-1.06l4.24 4.24a.75.75 0 010 1.06l-4.24 4.24a.75.75 0 01-1.06.02z"
+                          clip-rule="evenodd"
+                        />
+                      </svg>
+                    </button>
+                    <span v-else class="mr-2 h-4 w-4 shrink-0" />
 
-                  <!-- Checkbox (files always; folders only for S3 prefixes) -->
-                  <input
-                    :id="`file-${row.entry.path}`"
-                    :checked="getCheckboxState(row.entry).checked"
-                    :indeterminate="getCheckboxState(row.entry).indeterminate"
-                    :disabled="!isSelectable(row.entry)"
-                    type="checkbox"
-                    class="h-4 w-4 text-teal-600 dark:text-teal-500 focus:ring-teal-500 dark:focus:ring-teal-400 border-gray-300 dark:border-gray-600 rounded mr-3 bg-white dark:bg-gray-800"
-                    @click.stop
-                    @change="
-                      onToggle(row.entry, ($event.target as HTMLInputElement)?.checked || false)
-                    "
-                  />
+                    <input
+                      :id="`file-${row.entry.path}`"
+                      :checked="getCheckboxState(row.entry).checked"
+                      :indeterminate="getCheckboxState(row.entry).indeterminate"
+                      :disabled="!isSelectable(row.entry)"
+                      type="checkbox"
+                      class="mr-3 h-4 w-4 rounded border-gray-300 bg-white text-teal-600 focus:ring-teal-500 dark:border-gray-600 dark:bg-gray-800 dark:text-teal-500 dark:focus:ring-teal-400"
+                      @click.stop
+                      @change="
+                        onToggle(row.entry, ($event.target as HTMLInputElement)?.checked || false)
+                      "
+                    />
 
-                  <FileIcon
-                    :file-format="fileFormat(row.entry)"
-                    :is-directory="row.entry.type === 'dir'"
-                    :is-table-folder="!!row.entry.isTable"
-                    :is-bucket="!!row.entry.isBucket"
-                    class="mr-2"
-                  />
+                    <FileIcon
+                      :file-format="fileFormat(row.entry)"
+                      :is-directory="row.entry.type === 'dir'"
+                      :is-table-folder="!!row.entry.isTable"
+                      :is-bucket="!!row.entry.isBucket"
+                      class="mr-2"
+                    />
 
-                  <button
-                    type="button"
-                    class="text-left flex-1 min-w-0 truncate"
-                    @click="row.entry.type === 'dir' && toggleFolder(row.entry)"
-                  >
-                    <span class="text-gray-900 dark:text-gray-100">{{ row.entry.name }}</span>
-                  </button>
-                </div>
+                    <button
+                      type="button"
+                      class="min-w-0 flex-1 truncate text-left"
+                      @click="row.entry.type === 'dir' && toggleFolder(row.entry)"
+                    >
+                      <span class="text-gray-900 dark:text-gray-100">{{ row.entry.name }}</span>
+                    </button>
+                  </div>
 
-                <span class="text-xs text-gray-500 dark:text-gray-400 ml-4 shrink-0">
-                  {{ formatDataSize(row.entry.size || 0) }}
-                </span>
+                  <span class="ml-4 shrink-0 text-xs text-gray-500 dark:text-gray-400">
+                    {{ formatDataSize(row.entry.size || 0) }}
+                  </span>
+                </template>
+
+                <button
+                  v-else
+                  type="button"
+                  class="text-xs font-medium text-sky-600 hover:text-sky-700 dark:text-sky-300 dark:hover:text-sky-200"
+                  :disabled="isLoading"
+                  @click="loadMore(row.parentPath)"
+                >
+                  Load more
+                </button>
               </div>
             </div>
           </div>
@@ -118,11 +219,13 @@ import { useFileExplorerStore } from '@/stores/fileExplorer'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { getFileFormat } from '@/utils/fileFormat'
 import { formatDataSize } from '@/utils/formats'
+import { isManifestMetadataPath } from '@/utils/s3TableDetection'
 import DataSelectionToolbar from '@/components/stream/wizard/DataSelectionToolbar.vue'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import type { FileEntry } from '@/types/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
 import FileIcon from '@/components/common/FileIcon.vue'
+import { useFileTreeFolderExpansion } from '@/composables/useFileTreeFolderExpansion'
 
 interface Props {
   connectionId?: string | null
@@ -145,11 +248,12 @@ const fileExplorerStore = useFileExplorerStore()
 const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
 const showToolbar = computed(() => props.showToolbar)
+const embedded = computed(() => props.embedded)
 const searchQuery = ref(props.externalSearchQuery || '')
 const fileListContainerClass = computed(() =>
   props.embedded
-    ? 'divide-y divide-gray-200 dark:divide-gray-800'
-    : 'bg-white dark:bg-gray-850 shadow-sm dark:shadow-gray-900/30 ring-1 ring-gray-900/5 dark:ring-gray-700 rounded-lg divide-y divide-gray-200 dark:divide-gray-800'
+    ? 'flex-1 min-h-0 divide-y divide-gray-200 dark:divide-gray-800'
+    : 'flex-1 min-h-0 bg-white dark:bg-gray-850 shadow-sm dark:shadow-gray-900/30 ring-1 ring-gray-900/5 dark:ring-gray-700 rounded-lg divide-y divide-gray-200 dark:divide-gray-800'
 )
 
 const isS3Connection = computed(() => {
@@ -179,23 +283,47 @@ const rawFiles = computed<FileSystemEntry[]>(() => {
   return fileExplorerStore.getEntries(props.connectionId)
 })
 
-type TreeRow = { entry: FileSystemEntry; depth: number }
+const { isFolderExpanded, toggleFolder: toggleTreeFolder } = useFileTreeFolderExpansion(
+  () => props.connectionId,
+  rawFiles
+)
+
+type EntryRow = { kind: 'entry'; entry: FileSystemEntry; depth: number }
+type LoadMoreRow = { kind: 'load-more'; parentPath: string; depth: number }
+type TreeRow = EntryRow | LoadMoreRow
+
+const rootFolderPath = computed(() => {
+  if (!props.connectionId) {
+    return ''
+  }
+  return fileExplorerStore.getDirectoryPath(props.connectionId)
+})
+
+function hasMore(folderPath: string): boolean {
+  if (!props.connectionId || !folderPath) {
+    return false
+  }
+  return fileExplorerStore.hasMoreEntries(props.connectionId, folderPath)
+}
 
 function flattenVisible(entries: FileSystemEntry[], depth: number): TreeRow[] {
   const out: TreeRow[] = []
   for (const e of entries) {
-    out.push({ entry: e, depth })
+    out.push({ kind: 'entry', entry: e, depth })
     if (e.type === 'dir' && isExpanded(e.path) && e.children && e.children.length > 0) {
       out.push(...flattenVisible(e.children, depth + 1))
+    }
+    if (e.type === 'dir' && isExpanded(e.path) && hasMore(e.path)) {
+      out.push({ kind: 'load-more', parentPath: e.path, depth: depth + 1 })
     }
   }
   return out
 }
 
-function flattenAllLoaded(entries: FileSystemEntry[], depth: number): TreeRow[] {
-  const out: TreeRow[] = []
+function flattenAllLoaded(entries: FileSystemEntry[], depth: number): EntryRow[] {
+  const out: EntryRow[] = []
   for (const e of entries) {
-    out.push({ entry: e, depth })
+    out.push({ kind: 'entry', entry: e, depth })
     if (e.type === 'dir' && e.children && e.children.length > 0) {
       out.push(...flattenAllLoaded(e.children, depth + 1))
     }
@@ -206,7 +334,11 @@ function flattenAllLoaded(entries: FileSystemEntry[], depth: number): TreeRow[] 
 const visibleRows = computed<TreeRow[]>(() => {
   if (!props.connectionId) return []
   // Default: show the expandable tree (only expanded folders reveal children)
-  return flattenVisible(rawFiles.value, 0)
+  const rows = flattenVisible(rawFiles.value, 0)
+  if (!searchQuery.value.trim() && hasMore(rootFolderPath.value)) {
+    rows.push({ kind: 'load-more', parentPath: rootFolderPath.value, depth: 0 })
+  }
+  return rows
 })
 
 const filteredRows = computed<TreeRow[]>(() => {
@@ -316,7 +448,12 @@ const configFiles = computed<FileEntry[]>(() => {
 })
 
 function isSelectable(entry: FileSystemEntry): boolean {
-  if (entry.type === 'file') return true
+  if (entry.type === 'file') {
+    if (isS3Connection.value && isManifestMetadataPath(entry.path)) {
+      return false
+    }
+    return true
+  }
   // Allow selecting folders for both S3 prefixes and local directories
   if (entry.type === 'dir') return true
   return false
@@ -694,22 +831,32 @@ const isLoading = computed(() => {
 function toggleSelectAll(selectAll: boolean) {
   // Apply to the currently filtered rows (so filter + select all works predictably)
   filteredRows.value.forEach((r) => {
-    if (!isSelectable(r.entry)) return
+    if (r.kind !== 'entry' || !isSelectable(r.entry)) return
     upsertConfigFile(r.entry, selectAll)
   })
 }
 
+async function loadMore(folderPath: string) {
+  if (!props.connectionId || !folderPath) {
+    return
+  }
+  await fileExplorerStore.loadMoreFolderContents(props.connectionId, folderPath)
+}
+
 function updateViewportHeight() {
+  if (embedded.value) return
   if (!listContainer.value) return
   viewportHeight.value = listContainer.value.clientHeight
 }
 
 function onScroll() {
+  if (embedded.value) return
   if (!listContainer.value) return
   scrollTop.value = listContainer.value.scrollTop
 }
 
 function resetScroll() {
+  if (embedded.value) return
   scrollTop.value = 0
   if (listContainer.value) {
     listContainer.value.scrollTop = 0
@@ -717,15 +864,20 @@ function resetScroll() {
 }
 
 onMounted(() => {
-  updateViewportHeight()
-  window.addEventListener('resize', updateViewportHeight)
+  if (!embedded.value) {
+    updateViewportHeight()
+    window.addEventListener('resize', updateViewportHeight)
+  }
 })
 
 onBeforeUnmount(() => {
-  window.removeEventListener('resize', updateViewportHeight)
+  if (!embedded.value) {
+    window.removeEventListener('resize', updateViewportHeight)
+  }
 })
 
 watch(filteredRows, async () => {
+  if (embedded.value) return
   await nextTick()
   updateViewportHeight()
   resetScroll()
@@ -844,25 +996,11 @@ watch(
 )
 
 function isExpanded(path: string): boolean {
-  if (!props.connectionId) return false
-  return fileExplorerStore.isFolderExpanded(props.connectionId, path)
+  return isFolderExpanded(path)
 }
 
 async function toggleFolder(entry: FileSystemEntry) {
-  if (!props.connectionId) return
-  if (entry.type !== 'dir') return
-
-  const expanded = fileExplorerStore.isFolderExpanded(props.connectionId, entry.path)
-  if (expanded) {
-    fileExplorerStore.collapseFolder(props.connectionId, entry.path)
-    return
-  }
-
-  if (!entry.isLoaded) {
-    await fileExplorerStore.loadFolderContents(props.connectionId, entry.path)
-  } else {
-    fileExplorerStore.expandFolder(props.connectionId, entry.path)
-  }
+  await toggleTreeFolder(entry)
 }
 
 function refresh() {

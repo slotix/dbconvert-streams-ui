@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, inject, watch } from 'vue'
+import { computed, inject } from 'vue'
 import type { ComputedRef } from 'vue'
 import { ChevronRight } from 'lucide-vue-next'
 import type { FileSystemEntry } from '@/api/fileSystem'
@@ -8,6 +8,7 @@ import FileIcon from '@/components/common/FileIcon.vue'
 import HighlightedText from '@/components/common/HighlightedText.vue'
 import { SUPPORTED_FILE_FORMATS } from '@/constants/fileFormats'
 import { useFileExplorerStore } from '@/stores/fileExplorer'
+import { useFileTreeFolderExpansion } from '@/composables/useFileTreeFolderExpansion'
 
 const props = withDefaults(
   defineProps<{
@@ -24,7 +25,6 @@ const props = withDefaults(
 // Inject search query and caret class from parent
 const searchQuery = inject<ComputedRef<string>>('treeSearchQuery')!
 const caretClass = inject<string>('treeCaretClass', 'w-4 h-4')
-
 const fileExplorerStore = useFileExplorerStore()
 
 const emit = defineEmits<{
@@ -34,7 +34,6 @@ const emit = defineEmits<{
     payload: { entry: FileSystemEntry; mode: 'preview' | 'pinned'; openInRightSplit?: boolean }
   ): void
   (e: 'context-menu', payload: { event: MouseEvent; entry: FileSystemEntry }): void
-  (e: 'expand-folder', payload: { entry: FileSystemEntry }): void
 }>()
 
 const fileFormat = computed(() => props.entry.format || getFileFormat(props.entry.name))
@@ -45,21 +44,35 @@ const isSupported = computed(
   () => isTableFolder.value || props.entry.type === 'dir' || isSupportedFile(props.entry.name)
 )
 const isSelected = computed(() => props.selectedPath === props.entry.path)
-const isExpanded = computed(() =>
-  fileExplorerStore.isFolderExpanded(props.connectionId, props.entry.path)
+const { isFolderExpanded, toggleFolder } = useFileTreeFolderExpansion(
+  () => props.connectionId,
+  computed(() => [props.entry])
 )
+const isExpanded = computed(() => isFolderExpanded(props.entry.path))
 const hasChildren = computed(() => props.entry.children && props.entry.children.length > 0)
-
-// Auto-load children when folder is expanded but not loaded
-watch(
-  () => isExpanded.value && isFolder.value && !props.entry.isLoaded,
-  (shouldLoad) => {
-    if (shouldLoad) {
-      fileExplorerStore.loadFolderContents(props.connectionId, props.entry.path)
-    }
-  },
-  { immediate: true }
+const hasMoreChildren = computed(
+  () =>
+    isFolder.value &&
+    isExpanded.value &&
+    !searchQuery.value.trim() &&
+    fileExplorerStore.hasMoreEntries(props.connectionId, props.entry.path)
 )
+const manifestHint = computed(() => {
+  if (props.entry.isManifest && !isFolder.value) {
+    return 'Manifest file — lists dataset files with metadata'
+  }
+  if (props.entry.isManifest && isFolder.value) {
+    return 'Contains manifest files'
+  }
+  if (!isFolder.value || !props.entry.manifestUsed) {
+    return ''
+  }
+  const manifestPath = props.entry.manifestPath?.trim()
+  if (manifestPath) {
+    return `Using ${manifestPath} for fast listing. Use “List live S3 contents” to bypass.`
+  }
+  return 'Using manifest.json for fast listing. Use “List live S3 contents” to bypass.'
+})
 
 // Generate tooltip for unsupported files
 const unsupportedTooltip = computed(() => {
@@ -84,7 +97,7 @@ const indentStyle = computed(() => ({
 const handleChevronClick = (event: MouseEvent) => {
   event.stopPropagation()
   if (isFolder.value) {
-    emit('expand-folder', { entry: props.entry })
+    void toggleFolder(props.entry)
   }
 }
 
@@ -92,27 +105,22 @@ const handleChevronClick = (event: MouseEvent) => {
 const handleSelect = () => {
   if (isTableFolder.value) {
     emit('select', { path: props.entry.path, entry: props.entry })
-    // Table folders are selectable (open consolidated preview) but should also be expandable
-    // so users can drill into individual part files.
-    if (!isExpanded.value) {
-      emit('expand-folder', { entry: props.entry })
-    }
   } else if (isFolder.value) {
-    // Single-click on folder: update the current explorer context and toggle expansion.
+    // Single-click on a folder toggles its tree state and updates selection.
     emit('select', { path: props.entry.path, entry: props.entry })
-    emit('expand-folder', { entry: props.entry })
+    void toggleFolder(props.entry)
   } else {
     // Single-click on file: select it for preview
     emit('select', { path: props.entry.path, entry: props.entry })
   }
 }
 
-// Handle double-click - expand folder or open file
+// Handle double-click - open files/table folders, or toggle folders again.
 const handleDoubleClick = () => {
   if (isTableFolder.value || !isFolder.value) {
     emit('open', { entry: props.entry, mode: 'pinned' })
   } else {
-    emit('expand-folder', { entry: props.entry })
+    void toggleFolder(props.entry)
   }
 }
 
@@ -133,8 +141,11 @@ const handleChildContextMenu = (payload: { event: MouseEvent; entry: FileSystemE
   emit('context-menu', payload)
 }
 
-const handleChildExpandFolder = (payload: { entry: FileSystemEntry }) => {
-  emit('expand-folder', payload)
+async function handleLoadMore() {
+  if (!hasMoreChildren.value) {
+    return
+  }
+  await fileExplorerStore.loadMoreFolderContents(props.connectionId, props.entry.path)
 }
 
 // Metadata loading removed - no longer eager loaded on mount
@@ -192,6 +203,7 @@ const handleChildExpandFolder = (payload: { entry: FileSystemEntry }) => {
         :is-directory="entry.type === 'dir'"
         :is-table-folder="isTableFolder"
         :is-bucket="entry.isBucket"
+        :is-manifest="!!entry.isManifest"
         class="mr-2"
       />
 
@@ -201,6 +213,14 @@ const handleChildExpandFolder = (payload: { entry: FileSystemEntry }) => {
       <!-- File size -->
       <span v-if="entry.size" class="text-xs text-gray-500 dark:text-gray-400 ml-2 shrink-0">
         {{ formatFileSize(entry.size) }}
+      </span>
+
+      <span
+        v-if="(entry.manifestUsed && isFolder) || entry.isManifest"
+        class="ml-2 shrink-0 rounded-full border border-teal-500/30 bg-teal-500/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.16em] text-teal-600 dark:text-teal-300"
+        :title="manifestHint"
+      >
+        Manifest
       </span>
     </div>
 
@@ -216,8 +236,16 @@ const handleChildExpandFolder = (payload: { entry: FileSystemEntry }) => {
         @select="handleChildSelect"
         @open="handleChildOpen"
         @context-menu="handleChildContextMenu"
-        @expand-folder="handleChildExpandFolder"
       />
+
+      <button
+        v-if="hasMoreChildren"
+        type="button"
+        class="ml-7 mt-1 text-xs font-medium text-sky-600 hover:text-sky-700 dark:text-sky-300 dark:hover:text-sky-200"
+        @click="handleLoadMore"
+      >
+        Load more
+      </button>
     </div>
   </div>
 </template>

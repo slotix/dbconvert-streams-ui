@@ -61,7 +61,14 @@ const navigationStore = useExplorerNavigationStore()
 // Get file entries and selected path from store
 const fileEntries = computed(() => fileExplorerStore.getEntries(props.connection.id))
 const selectedFilePath = computed(() => fileExplorerStore.getSelectedPath(props.connection.id))
+const rootFolderPath = computed(() => fileExplorerStore.getDirectoryPath(props.connection.id))
 const hasActiveSearch = computed(() => (searchQuery.value || '').trim().length > 0)
+const hasMoreFileEntries = computed(
+  () =>
+    !hasActiveSearch.value &&
+    !!rootFolderPath.value &&
+    fileExplorerStore.hasMoreEntries(props.connection.id, rootFolderPath.value)
+)
 
 // Get database error state
 const databaseError = computed(() => navigationStore.getDatabasesError(props.connection.id))
@@ -235,21 +242,11 @@ function handleSelectFile(payload: { path: string; entry: FileSystemEntry }) {
   })
 }
 
-async function handleExpandFolder(payload: { entry: FileSystemEntry }) {
-  const folder = payload.entry
-  const isExpanded = fileExplorerStore.isFolderExpanded(props.connection.id, folder.path)
-
-  if (isExpanded) {
-    // Collapse the folder
-    fileExplorerStore.collapseFolder(props.connection.id, folder.path)
-  } else {
-    // Expand and load folder contents if not already loaded
-    if (!folder.isLoaded) {
-      await fileExplorerStore.loadFolderContents(props.connection.id, folder.path)
-    } else {
-      fileExplorerStore.expandFolder(props.connection.id, folder.path)
-    }
+async function handleLoadMoreFiles() {
+  if (!hasMoreFileEntries.value || !rootFolderPath.value) {
+    return
   }
+  await fileExplorerStore.loadMoreFolderContents(props.connection.id, rootFolderPath.value)
 }
 
 function normalized(value: string | undefined | null): string {
@@ -605,8 +602,15 @@ const connectionPort = computed(() => getConnectionPort(props.connection))
           @select="handleSelectFile"
           @open="handleFileOpen"
           @context-menu="handleFileContextMenu"
-          @expand-folder="handleExpandFolder"
         />
+        <button
+          v-if="hasMoreFileEntries"
+          type="button"
+          class="ml-7 mt-1 text-xs font-medium text-sky-600 hover:text-sky-700 dark:text-sky-300 dark:hover:text-sky-200"
+          @click="handleLoadMoreFiles"
+        >
+          Load more
+        </button>
       </div>
       <div v-else>
         <!-- Loading state for databases -->

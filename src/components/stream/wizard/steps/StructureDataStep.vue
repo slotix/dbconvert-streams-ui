@@ -73,6 +73,15 @@
           class="flex-1 min-h-0 flex flex-col overflow-hidden"
           :class="showCombinedObjectsToolbar ? 'overflow-y-auto pr-1 gap-6' : ''"
         >
+          <div
+            v-if="pinnedS3SourceModeHeaderConnectionId"
+            class="px-4 py-3 border-b border-b-gray-200/70 dark:border-b-gray-700/70"
+          >
+            <S3ManifestSourceConfig
+              :connection-id="pinnedS3SourceModeHeaderConnectionId"
+              variant="header"
+            />
+          </div>
           <DataSelectionToolbar
             v-if="showCombinedObjectsToolbar"
             :selected-count="combinedObjectSelectedCount"
@@ -81,12 +90,15 @@
             search-placeholder="Filter source objects..."
             :select-all-checked="combinedSelectAllChecked"
             :select-all-indeterminate="combinedSelectAllIndeterminate"
-            select-all-label="All"
+            select-all-label="Select all"
+            clear-label="Clear"
+            :clear-disabled="combinedObjectSelectedCount === 0"
             refresh-label="Refresh"
             refresh-title="Refresh source objects"
             sticky
             @update:search-value="combinedObjectSearchQuery = $event"
             @update:select-all="setCombinedSelectAll"
+            @clear="clearCombinedSelection"
             @refresh="refreshCombinedObjects"
           />
           <div :class="sourceObjectsContainerClass">
@@ -108,41 +120,84 @@
                 :key="fileConn.connectionId"
                 class="border-t first:border-t-0 border-gray-200 dark:border-gray-700"
               >
-                <SourceSectionHeader
-                  :alias="fileConn.alias"
-                  :connection-name="getConnectionName(fileConn.connectionId)"
-                  :selection-label="getSourceSelectionLabel(fileConn)"
-                  :icon="isS3Type(fileConn.connectionId) ? Cloud : FolderOpen"
-                  icon-class="text-sky-500/80 dark:text-sky-400/80"
-                  collapsible
-                  :expanded="isFileGroupExpanded(fileConn.connectionId)"
-                  sticky
-                  class="rounded-none border-x-0 border-t-0 border-b border-b-gray-200/70 dark:border-b-gray-700/70"
-                  @toggle="toggleFileGroup(fileConn.connectionId)"
-                >
-                  <template #actions>
-                    <SourceHeaderActions
-                      v-if="!hasS3ManifestPath(fileConn.connectionId)"
-                      @select-all="selectAllInFileGroup(fileConn.connectionId)"
-                      @clear="clearAllInFileGroup(fileConn.connectionId)"
+                <template v-if="isS3Type(fileConn.connectionId)">
+                  <div
+                    v-if="pinnedS3SourceModeHeaderConnectionId !== fileConn.connectionId"
+                    class="px-4 py-3 border-b border-b-gray-200/70 dark:border-b-gray-700/70"
+                  >
+                    <S3ManifestSourceConfig
+                      :connection-id="fileConn.connectionId"
+                      variant="header"
                     />
-                  </template>
-                </SourceSectionHeader>
-                <div v-show="isFileGroupExpanded(fileConn.connectionId)">
+                  </div>
                   <S3ManifestSourceConfig
-                    v-if="isS3Type(fileConn.connectionId)"
+                    v-if="isS3ManifestSource(fileConn.connectionId)"
                     :connection-id="fileConn.connectionId"
+                    variant="panel"
                   />
-                  <FilePreviewList
-                    v-if="!hasS3ManifestPath(fileConn.connectionId)"
-                    :ref="(instance) => setFilePreviewRef(fileConn.connectionId, instance)"
-                    :connection-id="fileConn.connectionId"
-                    :show-toolbar="false"
-                    :external-search-query="combinedObjectSearchQuery"
-                    :embedded="showCombinedObjectsToolbar"
-                    @stats-change="(stats) => setFileObjectStats(fileConn.connectionId, stats)"
-                  />
-                </div>
+                  <div v-else>
+                    <SourceSectionHeader
+                      :alias="fileConn.alias"
+                      :connection-name="getConnectionName(fileConn.connectionId)"
+                      :selection-label="getSourceSelectionLabel(fileConn)"
+                      :icon="Cloud"
+                      icon-class="text-sky-500/80 dark:text-sky-400/80"
+                      collapsible
+                      :expanded="isFileGroupExpanded(fileConn.connectionId)"
+                      sticky
+                      class="rounded-none border-x-0 border-t-0 border-b border-b-gray-200/70 dark:border-b-gray-700/70"
+                      @toggle="toggleFileGroup(fileConn.connectionId)"
+                    >
+                      <template v-if="showPerGroupFileActions" #actions>
+                        <SourceHeaderActions
+                          @select-all="selectAllInFileGroup(fileConn.connectionId)"
+                          @clear="clearAllInFileGroup(fileConn.connectionId)"
+                        />
+                      </template>
+                    </SourceSectionHeader>
+                    <div v-show="isFileGroupExpanded(fileConn.connectionId)">
+                      <FilePreviewList
+                        :ref="(instance) => setFilePreviewRef(fileConn.connectionId, instance)"
+                        :connection-id="fileConn.connectionId"
+                        :show-toolbar="false"
+                        :external-search-query="combinedObjectSearchQuery"
+                        :embedded="showCombinedObjectsToolbar"
+                        @stats-change="(stats) => setFileObjectStats(fileConn.connectionId, stats)"
+                      />
+                    </div>
+                  </div>
+                </template>
+                <template v-else>
+                  <SourceSectionHeader
+                    :alias="fileConn.alias"
+                    :connection-name="getConnectionName(fileConn.connectionId)"
+                    :selection-label="getSourceSelectionLabel(fileConn)"
+                    :icon="FolderOpen"
+                    icon-class="text-sky-500/80 dark:text-sky-400/80"
+                    collapsible
+                    :expanded="isFileGroupExpanded(fileConn.connectionId)"
+                    sticky
+                    class="rounded-none border-x-0 border-t-0 border-b border-b-gray-200/70 dark:border-b-gray-700/70"
+                    @toggle="toggleFileGroup(fileConn.connectionId)"
+                  >
+                    <template v-if="showPerGroupFileActions" #actions>
+                      <SourceHeaderActions
+                        @select-all="selectAllInFileGroup(fileConn.connectionId)"
+                        @clear="clearAllInFileGroup(fileConn.connectionId)"
+                      />
+                    </template>
+                  </SourceSectionHeader>
+                  <div v-show="isFileGroupExpanded(fileConn.connectionId)">
+                    <FilePreviewList
+                      :ref="(instance) => setFilePreviewRef(fileConn.connectionId, instance)"
+                      :connection-id="fileConn.connectionId"
+                      :show-toolbar="false"
+                      :external-search-query="combinedObjectSearchQuery"
+                      :embedded="showCombinedObjectsToolbar"
+                      @stats-change="(stats) => setFileObjectStats(fileConn.connectionId, stats)"
+                    />
+                  </div>
+                </template>
               </div>
             </div>
           </div>
@@ -417,7 +472,7 @@ import Operations from '@/components/settings/Operations.vue'
 import CustomQueryEditor from '@/components/stream/wizard/CustomQueryEditor.vue'
 import FormSelect from '@/components/base/FormSelect.vue'
 import { Code, Sheet, Cloud, FolderOpen } from 'lucide-vue-next'
-import type { StreamConnectionMapping } from '@/types/streamConfig'
+import type { S3SourceMode, StreamConnectionMapping } from '@/types/streamConfig'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
 import type { ModeOption } from '@/stores/common'
@@ -625,27 +680,63 @@ const isFileSourceConnection = computed(() => {
 })
 
 const hasFileSourceGroups = computed(() => fileSourceConnections.value.length > 0)
-const showCombinedObjectsToolbar = computed(() => hasFileSourceGroups.value)
+const hasBrowsableFileSourceGroups = computed(() =>
+  fileSourceConnections.value.some((connection) => !isS3ManifestSource(connection.connectionId))
+)
+const pinnedS3SourceModeHeaderConnectionId = computed(() => {
+  if (!isFileSourceConnection.value || fileSourceConnections.value.length !== 1) {
+    return null
+  }
+
+  const [connection] = fileSourceConnections.value
+  return isS3Type(connection.connectionId) ? connection.connectionId : null
+})
+const showPerGroupFileActions = computed(
+  () => !(isFileSourceConnection.value && fileSourceConnections.value.length === 1)
+)
+const showCombinedObjectsToolbar = computed(() => hasBrowsableFileSourceGroups.value)
 const sourceObjectsContainerClass = computed(() =>
   showCombinedObjectsToolbar.value
     ? 'flex-1 min-h-0 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-850 overflow-hidden'
     : 'flex-1 min-h-0 overflow-hidden'
 )
 
+const manifestSourceStats = computed(() => {
+  let total = 0
+  let selected = 0
+
+  for (const connection of fileSourceConnections.value) {
+    if (!isS3ManifestSource(connection.connectionId)) {
+      continue
+    }
+
+    total += 1
+    if (connection.s3?.manifestPath?.trim()) {
+      selected += 1
+    }
+  }
+
+  return { selected, total }
+})
+
 const combinedObjectSelectedCount = computed(() => {
-  const fileSelected = Object.values(fileObjectStats.value).reduce(
-    (sum, stats) => sum + (stats?.selected || 0),
-    0
-  )
-  return tableObjectStats.value.selected + fileSelected
+  const fileSelected = fileSourceConnections.value.reduce((sum, connection) => {
+    if (isS3ManifestSource(connection.connectionId)) {
+      return sum
+    }
+    return sum + (fileObjectStats.value[connection.connectionId]?.selected || 0)
+  }, 0)
+  return tableObjectStats.value.selected + fileSelected + manifestSourceStats.value.selected
 })
 
 const combinedObjectTotalCount = computed(() => {
-  const fileTotal = Object.values(fileObjectStats.value).reduce(
-    (sum, stats) => sum + (stats?.total || 0),
-    0
-  )
-  return tableObjectStats.value.total + fileTotal
+  const fileTotal = fileSourceConnections.value.reduce((sum, connection) => {
+    if (isS3ManifestSource(connection.connectionId)) {
+      return sum
+    }
+    return sum + (fileObjectStats.value[connection.connectionId]?.total || 0)
+  }, 0)
+  return tableObjectStats.value.total + fileTotal + manifestSourceStats.value.total
 })
 
 const combinedSelectAllChecked = computed(() => {
@@ -695,15 +786,25 @@ function clearAllInFileGroup(connectionId: string) {
 
 function setCombinedSelectAll(selectAll: boolean) {
   tableListRef.value?.setSelectAll?.(selectAll)
-  for (const refInstance of Object.values(filePreviewRefs.value)) {
-    refInstance?.setSelectAll?.(selectAll)
+  for (const connection of fileSourceConnections.value) {
+    if (isS3ManifestSource(connection.connectionId)) {
+      continue
+    }
+    filePreviewRefs.value[connection.connectionId]?.setSelectAll?.(selectAll)
   }
+}
+
+function clearCombinedSelection() {
+  setCombinedSelectAll(false)
 }
 
 function refreshCombinedObjects() {
   void tableListRef.value?.refresh?.()
-  for (const refInstance of Object.values(filePreviewRefs.value)) {
-    void refInstance?.refresh?.()
+  for (const connection of fileSourceConnections.value) {
+    if (isS3ManifestSource(connection.connectionId)) {
+      continue
+    }
+    void filePreviewRefs.value[connection.connectionId]?.refresh?.()
   }
 }
 
@@ -714,14 +815,21 @@ function getConnectionName(connectionId: string): string {
 }
 
 function getSourceSelectionLabel(source: StreamConnectionMapping): string {
+  if (source.s3?._sourceMode === 'manifest' && source.s3.manifestPath) {
+    return source.s3.manifestPath
+  }
   return source.s3?.bucket || source.files?.basePath || source.database || ''
 }
 
-function hasS3ManifestPath(connectionId: string): boolean {
+function getS3SourceMode(connectionId: string): S3SourceMode {
   const connection = streamsStore.currentStreamConfig?.source?.connections?.find(
     (conn) => conn.connectionId === connectionId
   )
-  return !!connection?.s3?.manifestPath?.trim()
+  return connection?.s3?._sourceMode || (connection?.s3?.manifestPath ? 'manifest' : 'selection')
+}
+
+function isS3ManifestSource(connectionId: string): boolean {
+  return isS3Type(connectionId) && getS3SourceMode(connectionId) === 'manifest'
 }
 
 // Check if target is a database type that supports structure options

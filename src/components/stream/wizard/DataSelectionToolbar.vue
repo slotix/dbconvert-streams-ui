@@ -37,6 +37,15 @@
 
     <button
       type="button"
+      class="text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      :disabled="clearDisabled"
+      @click="$emit('clear')"
+    >
+      {{ clearLabel }}
+    </button>
+
+    <button
+      type="button"
       class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
       :title="refreshTitle"
       :disabled="refreshDisabled"
@@ -60,6 +69,8 @@ interface Props {
   selectAllChecked: boolean
   selectAllIndeterminate: boolean
   selectAllLabel?: string
+  clearLabel?: string
+  clearDisabled?: boolean
   refreshLabel?: string
   refreshTitle?: string
   refreshDisabled?: boolean
@@ -68,7 +79,9 @@ interface Props {
 
 withDefaults(defineProps<Props>(), {
   searchPlaceholder: 'Filter...',
-  selectAllLabel: 'All',
+  selectAllLabel: 'Select all',
+  clearLabel: 'Clear',
+  clearDisabled: false,
   refreshLabel: 'Refresh',
   refreshTitle: 'Refresh',
   refreshDisabled: false,
@@ -78,6 +91,7 @@ withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   'update:search-value': [value: string]
   'update:select-all': [value: boolean]
+  clear: []
   refresh: []
 }>()
 

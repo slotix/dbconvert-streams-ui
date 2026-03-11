@@ -158,6 +158,7 @@ describe('buildStreamPayload combinations', () => {
             connectionId: 'conn-s3',
             s3: {
               bucket: 'data-bucket',
+              _sourceMode: 'manifest',
               manifestPath: 's3://data-bucket/manifests/orders.json',
               prefixes: ['should-not-be-sent/']
             }
@@ -173,6 +174,50 @@ describe('buildStreamPayload combinations', () => {
     expect(payload.source?.connections?.[0].s3).toEqual({
       bucket: 'data-bucket',
       manifestPath: 's3://data-bucket/manifests/orders.json'
+    })
+  })
+
+  it('prefers current S3 file selections over restored prefixes when source mode is selection', () => {
+    seedConnections([
+      makeConnection('conn-s3', 's3', {
+        s3: { region: 'us-east-1' }
+      })
+    ])
+
+    const stream: StreamConfig = {
+      name: 's3_selection_source',
+      mode: 'convert',
+      source: {
+        connections: [
+          {
+            alias: 's3a',
+            connectionId: 'conn-s3',
+            s3: {
+              bucket: 'data-bucket',
+              _sourceMode: 'selection',
+              prefixes: ['stale-prefix/']
+            }
+          }
+        ]
+      },
+      target: baseTarget,
+      files: [
+        { name: 'fresh', path: 's3://data-bucket/fresh/', type: 'dir', selected: true },
+        {
+          name: 'one.parquet',
+          path: 's3://data-bucket/standalone/one.parquet',
+          type: 'file',
+          selected: true
+        }
+      ]
+    }
+
+    const payload = buildStreamPayload(stream)
+
+    expect(payload.source?.connections?.[0].s3).toEqual({
+      bucket: 'data-bucket',
+      prefixes: ['fresh/'],
+      objects: ['standalone/one.parquet']
     })
   })
 

@@ -80,6 +80,7 @@ interface ExpandSubtreeResult {
 interface ExplorerFileStore {
   collapseAllFolders: (connectionId?: string) => void
   collapseFolderSubtree: (connectionId: string, path: string) => void
+  loadFolderContents: (connectionId: string, path: string, force?: boolean) => Promise<void>
   expandConnectionSubtree: (
     connectionId: string,
     options: ExpandSubtreeOptions
@@ -268,7 +269,18 @@ export function useExplorerContextMenuActions(options: UseExplorerContextMenuAct
         break
 
       case 'refresh-databases':
-        if (target.kind === 'connection') options.actions.refreshDatabases(target.connectionId)
+        if (target.kind === 'connection') {
+          options.actions.refreshDatabases(target.connectionId)
+        } else if (target.kind === 'file' && target.isDir) {
+          void options.fileExplorerStore
+            .loadFolderContents(target.connectionId, target.path, true)
+            .then(() => options.toast.success('Live S3 listing refreshed'))
+            .catch((error) => {
+              const message =
+                error instanceof Error ? error.message : 'Failed to list live S3 contents'
+              options.toast.error(message)
+            })
+        }
         break
 
       case 'toggle-system-databases':
