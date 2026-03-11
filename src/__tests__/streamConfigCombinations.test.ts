@@ -158,7 +158,6 @@ describe('buildStreamPayload combinations', () => {
             connectionId: 'conn-s3',
             s3: {
               bucket: 'data-bucket',
-              _sourceMode: 'manifest',
               manifestPath: 's3://data-bucket/manifests/orders.json',
               prefixes: ['should-not-be-sent/']
             }
@@ -194,7 +193,6 @@ describe('buildStreamPayload combinations', () => {
             connectionId: 'conn-s3',
             s3: {
               bucket: 'data-bucket',
-              _sourceMode: 'selection',
               prefixes: ['stale-prefix/']
             }
           }

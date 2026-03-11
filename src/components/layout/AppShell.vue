@@ -65,7 +65,6 @@ import { useLogsStore } from '@/stores/logs'
 import ApiKeyInput from '@/components/ApiKeyInput.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import RouteGuard from '@/components/common/RouteGuard.vue'
-import { useWailsAppCloseEvents, useWailsMenuEvents } from '@/composables/useWailsEvents'
 import { useDesktopMode } from '@/composables/useDesktopMode'
 import { setStorageValue, STORAGE_KEYS } from '@/constants/storageKeys'
 import { useAppInitialization } from '@/composables/useAppInitialization'
@@ -106,8 +105,6 @@ const openSidebar = () => {
 provide('sidebarMenuToggle', {
   openSidebar
 })
-useWailsMenuEvents()
-useWailsAppCloseEvents()
 
 const { isDesktop } = useDesktopMode()
 watchEffect(() => {
@@ -146,7 +143,6 @@ watch(
     }
   }
 )
-
 const showAboutDialog = ref(false)
 const handleShowAbout = () => {
   showAboutDialog.value = true

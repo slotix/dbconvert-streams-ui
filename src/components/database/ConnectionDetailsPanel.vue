@@ -787,98 +787,98 @@ const isLoadingDatabases = computed(() => {
         <template v-if="isS3Connection">
           <div class="ui-surface-panel p-4">
             <div class="flex items-center gap-2 mb-3">
-                <PanelHeaderIcon
-                  :icon="Cloud"
-                  tone="sky"
-                  :db-type="connectionTypeLabel"
-                  :logo-src="connectionLogoSrc"
-                />
-                <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"
-                  >Storage Info</span
+              <PanelHeaderIcon
+                :icon="Cloud"
+                tone="sky"
+                :db-type="connectionTypeLabel"
+                :logo-src="connectionLogoSrc"
+              />
+              <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"
+                >Storage Info</span
+              >
+            </div>
+            <div class="space-y-4">
+              <div>
+                <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                  >Storage URI</label
                 >
+                <div
+                  class="mt-1 flex items-start gap-2 rounded-lg bg-linear-to-r from-slate-50 to-gray-50 dark:from-gray-800 dark:to-gray-850 p-3 font-mono text-sm border border-gray-100 dark:border-gray-700"
+                >
+                  <span class="flex-1 break-all text-gray-800 dark:text-gray-200 overflow-x-auto">
+                    {{ displayS3URI }}
+                  </span>
+                  <button
+                    v-if="displayS3URI && displayS3URI !== 's3://'"
+                    class="shrink-0 transition-colors"
+                    :class="
+                      isPathCopied
+                        ? 'text-green-400'
+                        : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
+                    "
+                    :title="isPathCopied ? 'Copied!' : 'Copy storage URI to clipboard'"
+                    @click.stop="copyFolderPath"
+                  >
+                    <Clipboard v-if="!isPathCopied" class="h-4 w-4" />
+                    <Check v-else class="h-4 w-4" />
+                  </button>
+                </div>
               </div>
-              <div class="space-y-4">
-                <div>
+              <div class="grid grid-cols-2 gap-4">
+                <div v-if="storageRegion">
                   <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
-                    >Storage URI</label
-                  >
-                  <div
-                    class="mt-1 flex items-start gap-2 rounded-lg bg-linear-to-r from-slate-50 to-gray-50 dark:from-gray-800 dark:to-gray-850 p-3 font-mono text-sm border border-gray-100 dark:border-gray-700"
-                  >
-                    <span class="flex-1 break-all text-gray-800 dark:text-gray-200 overflow-x-auto">
-                      {{ displayS3URI }}
-                    </span>
-                    <button
-                      v-if="displayS3URI && displayS3URI !== 's3://'"
-                      class="shrink-0 transition-colors"
-                      :class="
-                        isPathCopied
-                          ? 'text-green-400'
-                          : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
-                      "
-                      :title="isPathCopied ? 'Copied!' : 'Copy storage URI to clipboard'"
-                      @click.stop="copyFolderPath"
-                    >
-                      <Clipboard v-if="!isPathCopied" class="h-4 w-4" />
-                      <Check v-else class="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                  <div v-if="storageRegion">
-                    <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
-                      >Region</label
-                    >
-                    <p class="mt-1 font-medium text-gray-900 dark:text-gray-100 truncate text-sm">
-                      {{ storageRegion }}
-                    </p>
-                  </div>
-                  <div v-if="storageEndpoint">
-                    <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
-                      >Endpoint</label
-                    >
-                    <p class="mt-1 font-medium text-gray-900 dark:text-gray-100 truncate text-sm">
-                      {{ storageEndpoint }}
-                    </p>
-                  </div>
-                </div>
-                <div>
-                  <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
-                    >Credentials</label
-                  >
-                  <p class="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">
-                    {{ credentialSummary }}
-                  </p>
-                </div>
-                <div>
-                  <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
-                    >Access scope</label
-                  >
-                  <p class="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">
-                    {{ s3AccessScopeLabel }}
-                  </p>
-                  <p class="text-xs text-gray-600 dark:text-gray-400">
-                    {{ s3AccessScopeDescription }}
-                  </p>
-                </div>
-                <div v-if="s3Bucket">
-                  <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
-                    >Bucket</label
+                    >Region</label
                   >
                   <p class="mt-1 font-medium text-gray-900 dark:text-gray-100 truncate text-sm">
-                    {{ s3Bucket }}
+                    {{ storageRegion }}
                   </p>
                 </div>
-                <div v-if="s3Prefix">
+                <div v-if="storageEndpoint">
                   <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
-                    >Prefix</label
+                    >Endpoint</label
                   >
                   <p class="mt-1 font-medium text-gray-900 dark:text-gray-100 truncate text-sm">
-                    {{ s3Prefix }}
+                    {{ storageEndpoint }}
                   </p>
                 </div>
+              </div>
+              <div>
+                <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                  >Credentials</label
+                >
+                <p class="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">
+                  {{ credentialSummary }}
+                </p>
+              </div>
+              <div>
+                <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                  >Access scope</label
+                >
+                <p class="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">
+                  {{ s3AccessScopeLabel }}
+                </p>
+                <p class="text-xs text-gray-600 dark:text-gray-400">
+                  {{ s3AccessScopeDescription }}
+                </p>
+              </div>
+              <div v-if="s3Bucket">
+                <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                  >Bucket</label
+                >
+                <p class="mt-1 font-medium text-gray-900 dark:text-gray-100 truncate text-sm">
+                  {{ s3Bucket }}
+                </p>
+              </div>
+              <div v-if="s3Prefix">
+                <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                  >Prefix</label
+                >
+                <p class="mt-1 font-medium text-gray-900 dark:text-gray-100 truncate text-sm">
+                  {{ s3Prefix }}
+                </p>
               </div>
             </div>
+          </div>
         </template>
         <template v-else>
           <div class="ui-surface-panel space-y-4 p-4">

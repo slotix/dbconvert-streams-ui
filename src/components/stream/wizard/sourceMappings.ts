@@ -60,6 +60,54 @@ export function makeS3SourceMapping(params: {
   }
 }
 
+export function mergeWizardConnectionsWithExisting(
+  wizardConnections: StreamConnectionMapping[],
+  existingConnections: StreamConnectionMapping[]
+): StreamConnectionMapping[] {
+  return wizardConnections.map((wizardConn) => {
+    const existing = existingConnections.find(
+      (ec) => ec.connectionId === wizardConn.connectionId || ec.alias === wizardConn.alias
+    )
+
+    const wizardBucket = wizardConn.s3?.bucket
+    const existingBucket = existing?.s3?.bucket
+    const bucket = wizardBucket ?? existingBucket
+    const bucketChanged =
+      typeof wizardBucket === 'string' &&
+      typeof existingBucket === 'string' &&
+      wizardBucket !== existingBucket
+
+    const s3State = bucketChanged ? wizardConn.s3 : existing?.s3 || wizardConn.s3
+    const mergedS3 =
+      typeof bucket === 'string'
+        ? {
+            bucket,
+            prefixes: s3State?.prefixes,
+            objects: s3State?.objects,
+            manifestPath: s3State?.manifestPath
+          }
+        : undefined
+
+    const merged: StreamConnectionMapping = {
+      connectionId: wizardConn.connectionId,
+      database: wizardConn.database,
+      schema: existing?.schema,
+      tables: existing?.tables,
+      queries: existing?.queries,
+      s3: mergedS3,
+      files: wizardConn.files
+        ? { ...existing?.files, basePath: wizardConn.files.basePath }
+        : existing?.files
+    }
+
+    if (wizardConn.alias) {
+      merged.alias = wizardConn.alias
+    }
+
+    return merged
+  })
+}
+
 export function toggleSourceMapping(params: {
   current: StreamConnectionMapping[]
   connectionId: string

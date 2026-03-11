@@ -187,7 +187,10 @@ import { useMonitoringStore } from '@/stores/monitoring'
 import type { StreamConnectionMapping } from '@/types/streamConfig'
 import { STATUS, type Status } from '@/constants'
 import { getConnectionKindFromSpec } from '@/types/specs'
-import { getSourceSelectionValue } from '@/components/stream/wizard/sourceMappings'
+import {
+  getSourceSelectionValue,
+  mergeWizardConnectionsWithExisting
+} from '@/components/stream/wizard/sourceMappings'
 import WizardLayout from '@/components/connection/wizard/WizardLayout.vue'
 import SourceTargetSelectionStep from '@/components/stream/wizard/steps/SourceTargetSelectionStep.vue'
 import StructureDataStep from '@/components/stream/wizard/steps/StructureDataStep.vue'
@@ -436,7 +439,7 @@ watch(
     if (!streamsStore.currentStreamConfig) return
     // Preserve existing per-connection data (tables, queries, s3) when syncing wizard state
     const existingConnections = streamsStore.currentStreamConfig.source?.connections || []
-    const mergedConnections = mergeWizardConnections(connections, existingConnections)
+    const mergedConnections = mergeWizardConnectionsWithExisting(connections, existingConnections)
     streamsStore.setSourceConnections(mergedConnections)
     const primary = connections[0]
     streamsStore.currentStreamConfig.sourceDatabase = primary?.database || undefined
@@ -599,48 +602,6 @@ function updateCanProceed(value: boolean) {
   canProceedOverride.value = value
 }
 
-function mergeWizardConnections(
-  wizardConnections: StreamConnectionMapping[],
-  existingConnections: StreamConnectionMapping[]
-): StreamConnectionMapping[] {
-  return wizardConnections.map((wizardConn) => {
-    const existing = existingConnections.find(
-      (ec) => ec.connectionId === wizardConn.connectionId || ec.alias === wizardConn.alias
-    )
-    const mergedS3Candidate =
-      wizardConn.s3 || existing?.s3 ? { ...existing?.s3, ...wizardConn.s3 } : undefined
-    const mergedS3: StreamConnectionMapping['s3'] =
-      mergedS3Candidate && typeof mergedS3Candidate.bucket === 'string'
-        ? {
-            bucket: mergedS3Candidate.bucket,
-            prefixes: mergedS3Candidate.prefixes,
-            objects: mergedS3Candidate.objects,
-            manifestPath: mergedS3Candidate.manifestPath,
-            _sourceMode: mergedS3Candidate._sourceMode
-          }
-        : undefined
-    const merged: StreamConnectionMapping = {
-      connectionId: wizardConn.connectionId,
-      database: wizardConn.database,
-      // Preserve existing per-connection data (tables, queries, schema)
-      schema: existing?.schema,
-      tables: existing?.tables,
-      queries: existing?.queries,
-      s3: mergedS3,
-      // Preserve files config: wizard has basePath, existing may have saved paths
-      files: wizardConn.files
-        ? { ...existing?.files, basePath: wizardConn.files.basePath }
-        : existing?.files
-    }
-
-    if (wizardConn.alias) {
-      merged.alias = wizardConn.alias
-    }
-
-    return merged
-  })
-}
-
 function applyWizardSourceSelection(mergedConnections: StreamConnectionMapping[]) {
   if (!streamsStore.currentStreamConfig) return
   streamsStore.setSourceConnections(mergedConnections)
@@ -726,7 +687,7 @@ async function handleFinish() {
 
     // Merge wizard connection metadata with existing store connections to preserve tables/queries/s3
     const existingConnections = streamsStore.currentStreamConfig.source?.connections || []
-    const mergedConnections = mergeWizardConnections(
+    const mergedConnections = mergeWizardConnectionsWithExisting(
       wizard.sourceConnections.value,
       existingConnections
     )
@@ -770,7 +731,7 @@ async function handleQuickSave() {
 
     // Merge wizard connection metadata with existing store connections to preserve tables/queries/s3
     const existingConnections = streamsStore.currentStreamConfig.source?.connections || []
-    const mergedConnections = mergeWizardConnections(
+    const mergedConnections = mergeWizardConnectionsWithExisting(
       wizard.sourceConnections.value,
       existingConnections
     )

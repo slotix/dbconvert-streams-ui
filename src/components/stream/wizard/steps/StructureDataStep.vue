@@ -815,7 +815,7 @@ function getConnectionName(connectionId: string): string {
 }
 
 function getSourceSelectionLabel(source: StreamConnectionMapping): string {
-  if (source.s3?._sourceMode === 'manifest' && source.s3.manifestPath) {
+  if (source.s3?.manifestPath?.trim()) {
     return source.s3.manifestPath
   }
   return source.s3?.bucket || source.files?.basePath || source.database || ''
@@ -825,7 +825,7 @@ function getS3SourceMode(connectionId: string): S3SourceMode {
   const connection = streamsStore.currentStreamConfig?.source?.connections?.find(
     (conn) => conn.connectionId === connectionId
   )
-  return connection?.s3?._sourceMode || (connection?.s3?.manifestPath ? 'manifest' : 'selection')
+  return streamsStore.getS3SourceMode(connectionId, connection?.s3?.manifestPath)
 }
 
 function isS3ManifestSource(connectionId: string): boolean {

@@ -12,7 +12,7 @@ import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import { useThemeStore } from '@/stores/theme'
 import { getStorageValue, STORAGE_KEYS } from '@/constants/storageKeys'
 import { DESKTOP_NAVIGATION } from '@/constants/desktopNavigation'
-import { isWailsContext } from '@/composables/useWailsEvents'
+import { initializeWailsEventBridge, isWailsContext } from '@/composables/useWailsEvents'
 import { setupDesktopZoom } from '@/utils/desktopZoom'
 import { useSystemDefaults } from '@/composables/useSystemDefaults'
 
@@ -43,7 +43,7 @@ if (!window.ENV) {
 // logEnvironment()
 
 const toastOptions: PluginOptions = {
-  position: POSITION.BOTTOM_RIGHT,
+  position: POSITION.TOP_RIGHT,
   timeout: 5000,
   closeOnClick: true,
   pauseOnFocusLoss: true,
@@ -61,6 +61,7 @@ const app = createApp(App)
 const pinia = createPinia()
 app.use(pinia)
 app.use(router)
+initializeWailsEventBridge(router, pinia)
 app.use(Toast, toastOptions)
 app.directive('tooltip', vTooltip)
 app.component('ConfirmDialog', ConfirmDialog)

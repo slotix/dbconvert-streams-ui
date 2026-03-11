@@ -100,8 +100,8 @@ const manifestValidationError = computed(
 )
 
 const manifestPath = computed(() => sourceConnection.value?.s3?.manifestPath?.trim() || '')
-const sourceMode = computed<S3SourceMode>(
-  () => sourceConnection.value?.s3?._sourceMode || (manifestPath.value ? 'manifest' : 'selection')
+const sourceMode = computed<S3SourceMode>(() =>
+  streamsStore.getS3SourceMode(props.connectionId, manifestPath.value)
 )
 const pickerBucket = computed(() => sourceConnection.value?.s3?.bucket || '')
 const pickerPrefix = computed(() => {
@@ -138,12 +138,29 @@ function updateSourceConnection(
   )
 }
 
+function clearConnectionFileSelections(bucket: string) {
+  if (!streamsStore.currentStreamConfig?.files) {
+    return
+  }
+
+  const bucketPrefix = bucket ? `s3://${bucket}/` : ''
+  streamsStore.currentStreamConfig.files = streamsStore.currentStreamConfig.files.filter((file) => {
+    if (file.connectionId) {
+      return file.connectionId !== props.connectionId
+    }
+    if (!bucketPrefix) {
+      return true
+    }
+    return !file.path.startsWith(bucketPrefix)
+  })
+}
+
 function setSourceMode(nextMode: S3SourceMode) {
+  streamsStore.setS3SourceMode(props.connectionId, nextMode)
   updateSourceConnection((connection) => {
     const nextS3 = {
       bucket: connection.s3?.bucket || '',
-      ...(connection.s3 || {}),
-      _sourceMode: nextMode
+      ...(connection.s3 || {})
     }
 
     if (nextMode === 'selection') {
@@ -151,6 +168,7 @@ function setSourceMode(nextMode: S3SourceMode) {
     } else {
       delete nextS3.prefixes
       delete nextS3.objects
+      clearConnectionFileSelections(nextS3.bucket)
     }
 
     return {
@@ -163,15 +181,16 @@ function setSourceMode(nextMode: S3SourceMode) {
 }
 
 function applyManifestPath(path: string) {
+  streamsStore.setS3SourceMode(props.connectionId, 'manifest')
   updateSourceConnection((connection) => {
     const nextS3 = {
       bucket: connection.s3?.bucket || '',
       ...(connection.s3 || {}),
-      _sourceMode: 'manifest' as S3SourceMode,
       manifestPath: path
     }
     delete nextS3.prefixes
     delete nextS3.objects
+    clearConnectionFileSelections(nextS3.bucket)
 
     return {
       ...connection,
@@ -183,11 +202,11 @@ function applyManifestPath(path: string) {
 }
 
 function clearManifest() {
+  streamsStore.setS3SourceMode(props.connectionId, 'selection')
   updateSourceConnection((connection) => {
     const nextS3 = {
       bucket: connection.s3?.bucket || '',
-      ...(connection.s3 || {}),
-      _sourceMode: 'selection' as S3SourceMode
+      ...(connection.s3 || {})
     }
     delete nextS3.manifestPath
 

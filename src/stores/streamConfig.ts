@@ -35,6 +35,7 @@ interface State {
   currentStreamConfig: StreamConfig | null
   currentStep: Step | null
   manifestValidationErrors: Record<string, string | null>
+  s3SourceModes: Record<string, S3SourceMode | undefined>
 }
 
 function normalizeSource(source: StreamConfig['source']): StreamConfig['source'] {
@@ -59,13 +60,10 @@ function normalizeS3SourceConfig(s3?: S3SourceConfig): S3SourceConfig | undefine
   }
 
   const manifestPath = s3.manifestPath?.trim()
-  const sourceMode: S3SourceMode =
-    s3._sourceMode === 'manifest' || !!manifestPath ? 'manifest' : 'selection'
 
   return {
     ...s3,
-    ...(manifestPath ? { manifestPath } : {}),
-    _sourceMode: sourceMode
+    ...(manifestPath ? { manifestPath } : {})
   }
 }
 
@@ -349,24 +347,19 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
     // Get existing prefixes/objects or derive from selected files
     const existingS3 = connections[0]?.s3
     const manifestPath = existingS3?.manifestPath?.trim()
-    const sourceMode: S3SourceMode =
-      existingS3?._sourceMode || (manifestPath ? 'manifest' : 'selection')
     const hasExistingSelections =
       (existingS3?.prefixes && existingS3.prefixes.length > 0) ||
       (existingS3?.objects && existingS3.objects.length > 0)
 
     const scopedFiles = filesForConnection(stream.files, connections[0]?.connectionId || '', bucket)
 
-    const s3Config: S3SourceConfig =
-      sourceMode === 'manifest'
-        ? manifestPath
-          ? { bucket, manifestPath }
-          : { bucket }
-        : scopedFiles.length > 0
-          ? { bucket, ...s3ConfigFromFiles(scopedFiles) }
-          : hasExistingSelections
-            ? { bucket, prefixes: existingS3?.prefixes, objects: existingS3?.objects }
-            : { bucket, prefixes: [], objects: [] }
+    const s3Config: S3SourceConfig = manifestPath
+      ? { bucket, manifestPath }
+      : scopedFiles.length > 0
+        ? { bucket, ...s3ConfigFromFiles(scopedFiles) }
+        : hasExistingSelections
+          ? { bucket, prefixes: existingS3?.prefixes, objects: existingS3?.objects }
+          : { bucket, prefixes: [], objects: [] }
 
     // Clean up empty arrays before sending
     const s3Payload: S3SourceConfig = { bucket: s3Config.bucket }
@@ -511,15 +504,12 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
     if (conn.s3 || isS3Conn) {
       const bucket = conn.s3?.bucket || ''
       const manifestPath = conn.s3?.manifestPath?.trim()
-      const sourceMode: S3SourceMode =
-        conn.s3?._sourceMode || (manifestPath ? 'manifest' : 'selection')
-      const hasExistingSelections =
-        !!(
-          (conn.s3?.prefixes && conn.s3.prefixes.length > 0) ||
-          (conn.s3?.objects && conn.s3.objects.length > 0)
-        )
+      const hasExistingSelections = !!(
+        (conn.s3?.prefixes && conn.s3.prefixes.length > 0) ||
+        (conn.s3?.objects && conn.s3.objects.length > 0)
+      )
 
-      if (sourceMode === 'manifest') {
+      if (manifestPath) {
         result.s3 = {
           bucket,
           ...(manifestPath ? { manifestPath } : {})
@@ -615,6 +605,7 @@ export const useStreamsStore = defineStore('streams', {
     currentStreamConfig: null,
     currentStep: null,
     manifestValidationErrors: {},
+    s3SourceModes: {},
     generateDefaultStreamConfigName: function (
       _sourceConnections: StreamConnectionMapping[],
       _targetConnectionId: string,
@@ -652,12 +643,29 @@ export const useStreamsStore = defineStore('streams', {
     clearManifestValidationErrors() {
       this.manifestValidationErrors = {}
     },
+    setS3SourceMode(connectionId: string, mode: S3SourceMode | null) {
+      this.s3SourceModes = {
+        ...this.s3SourceModes,
+        [connectionId]: mode || undefined
+      }
+    },
+    getS3SourceMode(connectionId: string, manifestPath?: string): S3SourceMode {
+      const localMode = this.s3SourceModes[connectionId]
+      if (localMode) {
+        return localMode
+      }
+      return manifestPath?.trim() ? 'manifest' : 'selection'
+    },
+    clearS3SourceModes() {
+      this.s3SourceModes = {}
+    },
     setCurrentStream(id: string) {
       const curStream = this.streamConfigs.find((c) => c.id === id)
       this.currentStreamConfig = curStream
         ? normalizeStreamConfig(curStream)
         : normalizeStreamConfig({ ...defaultStreamConfigOptions })
       this.clearManifestValidationErrors()
+      this.clearS3SourceModes()
 
       // Restore S3 prefixes/objects to stream.files[] for FilePreviewList
       if (this.currentStreamConfig?.source?.connections) {
@@ -754,6 +762,7 @@ export const useStreamsStore = defineStore('streams', {
           this.currentStreamConfig.source.connections = []
           // Clean up manifest validation errors for removed connections
           this.manifestValidationErrors = {}
+          this.clearS3SourceModes()
         }
       }
 
@@ -802,6 +811,14 @@ export const useStreamsStore = defineStore('streams', {
           ...this.currentStreamConfig.source,
           connections
         })
+        const activeConnectionIDs = new Set(
+          connections.map((connection) => connection.connectionId)
+        )
+        this.s3SourceModes = Object.fromEntries(
+          Object.entries(this.s3SourceModes).filter(([connectionId]) =>
+            activeConnectionIDs.has(connectionId)
+          )
+        )
       }
     },
     updateTarget(targetId: string) {
@@ -891,7 +908,6 @@ export const useStreamsStore = defineStore('streams', {
                 s3: bucket
                   ? {
                       bucket,
-                      _sourceMode: first.s3?._sourceMode,
                       manifestPath: first.s3?.manifestPath,
                       prefixes: first.s3?.prefixes,
                       objects: first.s3?.objects
@@ -1222,10 +1238,12 @@ export const useStreamsStore = defineStore('streams', {
         name: ''
       })
       this.clearManifestValidationErrors()
+      this.clearS3SourceModes()
     },
     async clearStreams() {
       this.streamConfigs = []
       this.clearManifestValidationErrors()
+      this.clearS3SourceModes()
     },
     generateDefaultStreamConfigName(
       sourceConnections: StreamConnectionMapping[],

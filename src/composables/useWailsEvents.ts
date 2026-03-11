@@ -1,12 +1,12 @@
 /**
- * Wails Event Bridge Composable
+ * Wails event bridge.
  *
- * Provides integration with Wails runtime events for the desktop app.
- * Gracefully does nothing when running as a web app (no window.runtime).
+ * Registers global desktop event handlers once at app bootstrap time.
+ * This avoids tying native menu integration to component lifecycle or HMR remount timing.
  */
 
-import { onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
+import type { Pinia } from 'pinia'
+import { type Router, NavigationFailureType, isNavigationFailure } from 'vue-router'
 import { useLogsStore } from '@/stores/logs'
 import { useObjectTabStateStore } from '@/stores/objectTabState'
 import { useConfirmDialogStore } from '@/stores/confirmDialog'
@@ -32,136 +32,148 @@ export function isWailsContext(): boolean {
   return typeof navigator !== 'undefined' && navigator.userAgent.toLowerCase().includes('wails')
 }
 
+function getWailsRuntime() {
+  if (typeof window === 'undefined') {
+    return undefined
+  }
+  if (typeof window.runtime?.EventsOnMultiple === 'function') {
+    return window.runtime
+  }
+  return undefined
+}
+
+function watchWailsRuntime(
+  label: string,
+  register: () => Array<() => void>,
+  enabled = isWailsContext()
+): () => void {
+  if (!enabled) {
+    return () => {}
+  }
+
+  let boundRuntime = getWailsRuntime()
+  let cleanupFns: Array<() => void> = []
+  let lastRegisteredAt = 0
+  const rebindIntervalMs = 4000
+
+  const cleanupRegistered = () => {
+    cleanupFns.forEach((fn) => fn())
+    cleanupFns = []
+  }
+
+  const reconcile = () => {
+    const runtime = getWailsRuntime()
+    if (!runtime) {
+      return
+    }
+
+    const shouldRebind =
+      runtime !== boundRuntime ||
+      cleanupFns.length === 0 ||
+      Date.now() - lastRegisteredAt >= rebindIntervalMs
+
+    if (!shouldRebind) {
+      return
+    }
+
+    cleanupRegistered()
+    boundRuntime = runtime
+    cleanupFns = register()
+    lastRegisteredAt = Date.now()
+    console.log(`[Wails] ${label} initialized`)
+  }
+
+  reconcile()
+
+  const reconcileInterval = window.setInterval(reconcile, 1000)
+  window.addEventListener('focus', reconcile)
+  document.addEventListener('visibilitychange', reconcile)
+
+  return () => {
+    window.clearInterval(reconcileInterval)
+    window.removeEventListener('focus', reconcile)
+    document.removeEventListener('visibilitychange', reconcile)
+    cleanupRegistered()
+  }
+}
+
 /**
  * Subscribe to a Wails event (works only in Wails context)
  * Returns an unsubscribe function
  */
 function eventsOn(eventName: string, callback: (...data: unknown[]) => void): () => void {
-  if (!isWailsContext()) {
+  const runtime = getWailsRuntime()
+  if (!runtime) {
     return () => {} // No-op unsubscribe
   }
   // -1 means unlimited callbacks (same as EventsOn)
-  return window.runtime!.EventsOnMultiple(eventName, callback, -1)
+  return runtime.EventsOnMultiple(eventName, callback, -1)
 }
 
-/**
- * Composable to handle Wails menu events
- *
- * Sets up listeners for menu actions emitted from the Go backend:
- * - menu:navigate - Navigate to a route
- * - menu:toggle-logs - Toggle the logs panel
- * - menu:refresh - Refresh the current view
- * - menu:zoom-in / menu:zoom-out / menu:zoom-reset - Adjust UI zoom (desktop only)
- * - menu:open-settings - Open global settings panel (optional section payload)
- * - menu:show-about - Show about dialog
- */
-export function useWailsMenuEvents() {
-  const router = useRouter()
-  const logsStore = useLogsStore()
-  const { zoomIn, zoomOut, resetZoom } = useDesktopZoom()
-  const cleanupFns: (() => void)[] = []
+let stopMenuEvents: (() => void) | null = null
+let stopCloseEvents: (() => void) | null = null
+let hotDisposeRegistered = false
 
-  onMounted(() => {
-    if (!isWailsContext()) {
+function navigateToPath(router: Router, path: string) {
+  void router.push(path).catch((error: unknown) => {
+    if (isNavigationFailure(error, NavigationFailureType.duplicated)) {
       return
     }
+    console.error('[Wails] Failed to navigate from desktop menu:', error)
+  })
+}
 
-    // Navigation events from menu
-    cleanupFns.push(
+export function stopWailsEventBridge() {
+  stopMenuEvents?.()
+  stopMenuEvents = null
+  stopCloseEvents?.()
+  stopCloseEvents = null
+}
+
+export function initializeWailsEventBridge(router: Router, pinia: Pinia) {
+  if (!isWailsContext()) {
+    return
+  }
+
+  const logsStore = useLogsStore(pinia)
+  const objectTabStateStore = useObjectTabStateStore(pinia)
+  const confirmDialog = useConfirmDialogStore(pinia)
+  const { zoomIn, zoomOut, resetZoom } = useDesktopZoom()
+
+  if (!stopMenuEvents) {
+    stopMenuEvents = watchWailsRuntime('Menu event listeners', () => [
       eventsOn('menu:navigate', (path: unknown) => {
         if (typeof path === 'string') {
-          router.push(path)
+          navigateToPath(router, path)
         }
-      })
-    )
-
-    // Toggle logs panel
-    cleanupFns.push(
+      }),
       eventsOn('menu:toggle-logs', () => {
         logsStore.toggleLogsPanel()
-      })
-    )
-
-    // Refresh current view
-    cleanupFns.push(
-      eventsOn('menu:refresh', () => {
-        if (window.runtime?.WindowReloadApp) {
-          window.runtime.WindowReloadApp()
-          return
-        }
-        if (window.runtime?.WindowReload) {
-          window.runtime.WindowReload()
-          return
-        }
-        router.go(0)
-      })
-    )
-
-    // Zoom controls
-    cleanupFns.push(
+      }),
       eventsOn('menu:zoom-in', () => {
         zoomIn()
-      })
-    )
-    cleanupFns.push(
+      }),
       eventsOn('menu:zoom-out', () => {
         zoomOut()
-      })
-    )
-    cleanupFns.push(
+      }),
       eventsOn('menu:zoom-reset', () => {
         resetZoom()
-      })
-    )
-
-    // Toggle explorer sidebar - dispatch custom event for DatabaseExplorerView to handle
-    cleanupFns.push(
+      }),
       eventsOn('menu:toggle-explorer-sidebar', () => {
         window.dispatchEvent(new CustomEvent('wails:toggle-explorer-sidebar'))
-      })
-    )
-
-    // Open settings panel from native menu
-    cleanupFns.push(
+      }),
       eventsOn('menu:open-settings', (section: unknown) => {
         const detail = typeof section === 'string' ? { section } : {}
         window.dispatchEvent(new CustomEvent('wails:open-settings', { detail }))
-      })
-    )
-
-    // About dialog - dispatch custom event for App.vue to handle
-    cleanupFns.push(
+      }),
       eventsOn('menu:show-about', () => {
         window.dispatchEvent(new CustomEvent('wails:show-about'))
       })
-    )
+    ])
+  }
 
-    console.log('[Wails] Menu event listeners initialized')
-  })
-
-  onUnmounted(() => {
-    cleanupFns.forEach((fn) => fn())
-    cleanupFns.length = 0
-  })
-}
-
-/**
- * Composable to handle Wails app lifecycle events.
- *
- * Currently listens for a backend close request and responds with a decision
- * after running the UI's styled unsaved-changes confirm flow.
- */
-export function useWailsAppCloseEvents() {
-  const objectTabStateStore = useObjectTabStateStore()
-  const confirmDialog = useConfirmDialogStore()
-  const cleanupFns: (() => void)[] = []
-
-  onMounted(() => {
-    if (!isWailsContext()) {
-      return
-    }
-
-    cleanupFns.push(
+  if (!stopCloseEvents) {
+    stopCloseEvents = watchWailsRuntime('App close event listeners', () => [
       eventsOn('app:close-requested', async (payload: unknown) => {
         const requestId =
           payload && typeof payload === 'object' && 'id' in payload
@@ -185,13 +197,14 @@ export function useWailsAppCloseEvents() {
           allow
         })
       })
-    )
+    ])
+  }
 
-    console.log('[Wails] App close event listeners initialized')
-  })
-
-  onUnmounted(() => {
-    cleanupFns.forEach((fn) => fn())
-    cleanupFns.length = 0
-  })
+  if (import.meta.hot && !hotDisposeRegistered) {
+    hotDisposeRegistered = true
+    import.meta.hot.dispose(() => {
+      stopWailsEventBridge()
+      hotDisposeRegistered = false
+    })
+  }
 }

@@ -4,7 +4,9 @@
       <div class="border-b border-gray-200 px-4 py-3 dark:border-gray-700">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div class="min-w-0">
-            <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">
+            <p
+              class="text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400"
+            >
               Path
             </p>
             <div class="mt-2 flex flex-wrap items-center gap-2 text-sm">
@@ -106,7 +108,9 @@
       </div>
     </div>
 
-    <div class="rounded-xl border border-gray-200 bg-gray-50/40 p-4 dark:border-gray-700 dark:bg-gray-900/30">
+    <div
+      class="rounded-xl border border-gray-200 bg-gray-50/40 p-4 dark:border-gray-700 dark:bg-gray-900/30"
+    >
       <h4 class="text-sm font-semibold text-gray-900 dark:text-gray-100">Selection</h4>
       <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
         Pick a manifest file and apply it as the source snapshot.
@@ -214,7 +218,8 @@ async function loadObjects() {
     prefixes.value = response.prefixes || []
     objects.value = response.objects.map((object) => object.key)
   } catch (error) {
-    selectionError.value = error instanceof Error ? error.message : 'Failed to load manifest objects'
+    selectionError.value =
+      error instanceof Error ? error.message : 'Failed to load manifest objects'
     prefixes.value = []
     objects.value = []
   } finally {

@@ -320,8 +320,7 @@ export function useStreamWizard() {
     const selectedFiles = config?.files?.filter((f) => f.selected) || []
     const selectedManifestSources = (config?.source?.connections || []).filter((conn) => {
       const manifestPath = conn.s3?.manifestPath?.trim()
-      const sourceMode = conn.s3?._sourceMode || (manifestPath ? 'manifest' : 'selection')
-      return sourceMode === 'manifest' && !!manifestPath
+      return !!manifestPath
     }).length
 
     // Multi-source aware validation:

@@ -92,8 +92,7 @@ function seedStores(variant: TestSourceVariant) {
                   connectionId: 'conn-s3',
                   alias: 'S3',
                   s3: {
-                    bucket: 'bucket',
-                    _sourceMode: 'selection'
+                    bucket: 'bucket'
                   }
                 },
                 {
@@ -110,7 +109,6 @@ function seedStores(variant: TestSourceVariant) {
                   alias: 'S3',
                   s3: {
                     bucket: 'bucket',
-                    _sourceMode: variant === 'single-s3-manifest' ? 'manifest' : 'selection',
                     manifestPath:
                       variant === 'single-s3-manifest'
                         ? 's3://bucket/manifests/orders.json'

@@ -38,7 +38,6 @@ describe('useStreamWizard manifest mode', () => {
             connectionId: 'conn-s3',
             s3: {
               bucket: 'data-bucket',
-              _sourceMode: 'manifest',
               manifestPath: 's3://data-bucket/manifests/orders.json'
             }
           }
@@ -54,7 +53,6 @@ describe('useStreamWizard manifest mode', () => {
         connectionId: 'conn-s3',
         s3: {
           bucket: 'data-bucket',
-          _sourceMode: 'manifest',
           manifestPath: 's3://data-bucket/manifests/orders.json'
         }
       }

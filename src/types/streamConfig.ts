@@ -75,7 +75,6 @@ export interface S3SourceConfig {
   prefixes?: string[]
   objects?: string[]
   manifestPath?: string
-  _sourceMode?: S3SourceMode // UI-only source picker mode
 }
 
 export interface FilesSourceConfig {

@@ -14,6 +14,7 @@ describe('S3ManifestSourceConfig', () => {
     sourceMode?: 'selection' | 'manifest'
     prefixes?: string[]
     objects?: string[]
+    files?: Array<{ name: string; path: string; type: 'file' | 'dir'; selected: boolean }>
   }) {
     const streamsStore = useStreamsStore()
     streamsStore.currentStreamConfig = {
@@ -26,7 +27,6 @@ describe('S3ManifestSourceConfig', () => {
             connectionId: 'conn-s3',
             s3: {
               bucket: 'bucket',
-              _sourceMode: options?.sourceMode,
               manifestPath: options?.manifestPath,
               prefixes: options?.prefixes,
               objects: options?.objects
@@ -35,7 +35,10 @@ describe('S3ManifestSourceConfig', () => {
         ]
       },
       target: { id: 'target-1' },
-      files: []
+      files: options?.files || []
+    }
+    if (options?.sourceMode) {
+      streamsStore.setS3SourceMode('conn-s3', options.sourceMode)
     }
     return streamsStore
   }
@@ -45,6 +48,7 @@ describe('S3ManifestSourceConfig', () => {
     sourceMode?: 'selection' | 'manifest'
     prefixes?: string[]
     objects?: string[]
+    files?: Array<{ name: string; path: string; type: 'file' | 'dir'; selected: boolean }>
     variant?: 'header' | 'panel'
   }) {
     const streamsStore = seedStreamConfig(options)
@@ -95,9 +99,7 @@ describe('S3ManifestSourceConfig', () => {
 
     await wrapper.get('[data-test="s3-source-mode-selection"]').trigger('click')
 
-    expect(streamsStore.currentStreamConfig?.source.connections?.[0].s3?._sourceMode).toBe(
-      'selection'
-    )
+    expect(streamsStore.getS3SourceMode('conn-s3')).toBe('selection')
     expect(streamsStore.currentStreamConfig?.source.connections?.[0].s3?.manifestPath).toBe(
       undefined
     )
@@ -108,6 +110,14 @@ describe('S3ManifestSourceConfig', () => {
       sourceMode: 'manifest',
       prefixes: ['exports/'],
       objects: ['standalone.parquet'],
+      files: [
+        {
+          name: 'exports',
+          path: 's3://bucket/exports/',
+          type: 'dir',
+          selected: true
+        }
+      ],
       variant: 'panel'
     })
 
@@ -115,11 +125,12 @@ describe('S3ManifestSourceConfig', () => {
 
     expect(streamsStore.currentStreamConfig?.source.connections?.[0].s3).toMatchObject({
       bucket: 'bucket',
-      _sourceMode: 'manifest',
       manifestPath: 's3://bucket/manifests/orders.json'
     })
+    expect(streamsStore.getS3SourceMode('conn-s3')).toBe('manifest')
     expect(streamsStore.currentStreamConfig?.source.connections?.[0].s3?.prefixes).toBeUndefined()
     expect(streamsStore.currentStreamConfig?.source.connections?.[0].s3?.objects).toBeUndefined()
+    expect(streamsStore.currentStreamConfig?.files).toEqual([])
   })
 
   it('clear manifest switches back to files mode', async () => {
@@ -131,9 +142,7 @@ describe('S3ManifestSourceConfig', () => {
 
     await wrapper.get('[data-test="clear-manifest"]').trigger('click')
 
-    expect(streamsStore.currentStreamConfig?.source.connections?.[0].s3?._sourceMode).toBe(
-      'selection'
-    )
+    expect(streamsStore.getS3SourceMode('conn-s3')).toBe('selection')
     expect(streamsStore.currentStreamConfig?.source.connections?.[0].s3?.manifestPath).toBe(
       undefined
     )

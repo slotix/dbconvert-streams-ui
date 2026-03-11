@@ -39,8 +39,7 @@ describe('FilePreviewList', () => {
           {
             connectionId: 'conn-s3',
             s3: {
-              bucket: 'bucket',
-              _sourceMode: 'selection'
+              bucket: 'bucket'
             }
           }
         ]
@@ -109,8 +108,7 @@ describe('FilePreviewList', () => {
           {
             connectionId: 'conn-s3',
             s3: {
-              bucket: 'bucket',
-              _sourceMode: 'selection'
+              bucket: 'bucket'
             }
           }
         ]
