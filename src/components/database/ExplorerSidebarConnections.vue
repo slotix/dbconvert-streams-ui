@@ -192,7 +192,6 @@ useResizeObserver(sidebarCardRef, (entries) => {
 })
 
 const MIN_WIDTH_FOR_TABLE_SIZES = 260
-
 const treeShowTableSizes = computed(() => {
   // If not measured yet, default to showing sizes.
   if (!sidebarCardWidth.value) return true
@@ -1291,7 +1290,6 @@ watch(
     const selectedNode = findSelectedNodeElement()
     if (selectedNode) {
       focusTreeNode(selectedNode)
-      selectedNode.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' })
     }
     syncTreeTabStop(selectedNode)
   },
