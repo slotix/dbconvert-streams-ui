@@ -255,30 +255,7 @@ const showStreamRestartHint = computed(() => {
   return !terminalStates.includes(monitoringStore.status as Status)
 })
 
-const selectedTablesCount = computed(() => {
-  const config = streamsStore.currentStreamConfig
-  if (!config) return 0
-
-  const selectedFiles = config.files?.filter((file) => file.selected).length || 0
-  if (selectedFiles > 0) {
-    return selectedFiles
-  }
-
-  let selectedTables = 0
-  for (const connection of config.source?.connections || []) {
-    if (connection.tables) {
-      selectedTables += connection.tables.filter((table) => table.selected !== false).length
-    }
-  }
-  return selectedTables
-})
-
-const wizardStepContext = computed<Record<number, string[]>>(() => {
-  const mode = streamsStore.currentStreamConfig?.mode === 'cdc' ? 'CDC' : 'Convert'
-  return {
-    2: [`Mode: ${mode}`, `Tables: ${selectedTablesCount.value}`]
-  }
-})
+const wizardStepContext = computed<Record<number, string[]>>(() => ({}))
 
 watch(
   () => wizard.currentStepIndex.value,
