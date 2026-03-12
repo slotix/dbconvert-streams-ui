@@ -65,7 +65,7 @@
                       size="sm"
                       variant="ghost"
                       :disabled="loadingBuckets"
-                      @click="loadBuckets"
+                      @click="loadBuckets(true)"
                     >
                       Refresh
                     </BaseButton>
@@ -134,7 +134,7 @@
                       size="sm"
                       variant="ghost"
                       :disabled="!currentBucket || loadingObjects"
-                      @click="loadObjects"
+                      @click="loadObjects(true)"
                     >
                       Refresh
                     </BaseButton>
@@ -332,7 +332,7 @@ watch(
     if (buckets.value.length === 0) {
       await loadBuckets()
     } else if (currentBucket.value) {
-      await loadObjects()
+      await loadObjects(false)
     }
   }
 )
@@ -362,7 +362,7 @@ function formatPrefixName(prefix: string): string {
   return trimmed.split('/').pop() || prefix
 }
 
-async function loadBuckets() {
+async function loadBuckets(force = false) {
   if (!props.connectionId) {
     selectionError.value = 'S3 connection is required'
     return
@@ -376,14 +376,17 @@ async function loadBuckets() {
       currentBucket.value = props.bucket
       currentPrefix.value = props.prefix || ''
     } else {
-      const response = await listS3Buckets(props.connectionId)
+      const response = await listS3Buckets(
+        props.connectionId,
+        force ? { refresh: true } : undefined
+      )
       buckets.value = response.buckets
       if (!currentBucket.value && response.buckets.length > 0) {
         currentBucket.value = response.buckets[0]
       }
     }
     if (currentBucket.value) {
-      await loadObjects()
+      await loadObjects(force)
     }
   } catch (error) {
     selectionError.value = error instanceof Error ? error.message : 'Failed to load buckets'
@@ -392,7 +395,7 @@ async function loadBuckets() {
   }
 }
 
-async function loadObjects() {
+async function loadObjects(force = false) {
   if (!currentBucket.value) {
     return
   }
@@ -405,7 +408,8 @@ async function loadObjects() {
       prefix: currentPrefix.value || undefined,
       connectionId: props.connectionId,
       recursive: false,
-      maxKeys: 500
+      maxKeys: 500,
+      refresh: force
     })
     prefixes.value = response.prefixes || []
     objects.value = response.objects.map((object) => object.key)
@@ -422,13 +426,13 @@ async function selectBucket(bucketName: string) {
   currentBucket.value = bucketName
   currentPrefix.value = ''
   selectedPath.value = ''
-  await loadObjects()
+  await loadObjects(false)
 }
 
 async function goToPrefix(prefix: string) {
   currentPrefix.value = prefix
   selectedPath.value = ''
-  await loadObjects()
+  await loadObjects(false)
 }
 
 async function openPrefix(prefix: string) {

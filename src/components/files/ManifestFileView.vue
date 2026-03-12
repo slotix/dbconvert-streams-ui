@@ -52,12 +52,16 @@ const structuredMetadataEntries = computed(() =>
   }))
 )
 
-async function refresh() {
+async function load(force = false) {
   isLoading.value = true
   errorMessage.value = ''
 
   try {
-    response.value = await readS3Manifest(props.entry.path, props.connectionId)
+    response.value = await readS3Manifest(
+      props.entry.path,
+      props.connectionId,
+      force ? { refresh: true } : undefined
+    )
   } catch (error) {
     response.value = null
     errorMessage.value = error instanceof Error ? error.message : 'Failed to load manifest'
@@ -77,17 +81,21 @@ function isComplexMetadataValue(value: unknown): boolean {
   return typeof value === 'object' && value !== null
 }
 
+async function refresh() {
+  await load(true)
+}
+
 defineExpose({ refresh })
 
 watch(
   () => [props.entry.path, props.connectionId],
   () => {
-    void refresh()
+    void load(false)
   }
 )
 
 onMounted(() => {
-  void refresh()
+  void load(false)
 })
 </script>
 

@@ -18,9 +18,7 @@
       @refresh="loadObjects(true)"
     />
 
-    <div
-      class="flex-1 min-h-0 rounded-lg bg-white shadow-sm ring-1 ring-gray-900/5 divide-y divide-gray-200 dark:bg-gray-850 dark:shadow-gray-900/30 dark:ring-gray-700 dark:divide-gray-800"
-    >
+    <div class="flex-1 min-h-0 flex flex-col divide-y divide-gray-200 dark:divide-gray-800">
       <SourceSectionHeader
         :alias="props.alias"
         :connection-name="props.connectionName"
@@ -37,73 +35,81 @@
         {{ selectionError }}
       </div>
 
-      <div v-if="loadingObjects" class="py-10 text-center text-sm text-gray-500 dark:text-gray-400">
-        Loading manifest objects...
-      </div>
-      <div
-        v-else-if="!filteredRows.length"
-        class="py-10 text-center text-sm text-gray-500 dark:text-gray-400"
-      >
-        No manifest JSON files found
-      </div>
-      <div v-else class="max-h-[420px] overflow-y-auto overscroll-contain px-4 py-3 scrollbar-thin">
-        <button
-          v-for="row in filteredRows"
-          :key="row.entry.path"
-          type="button"
-          class="flex h-10 w-full items-center rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/70"
-          :style="{ paddingLeft: `${row.depth * 12 + 12}px` }"
-          @click="handleRowClick(row.entry)"
-          @dblclick="row.entry.type === 'file' && confirmSelection()"
+      <div class="flex-1 min-h-0 flex flex-col">
+        <div
+          v-if="loadingObjects"
+          class="flex-1 min-h-0 py-10 text-center text-sm text-gray-500 dark:text-gray-400"
         >
-          <div class="flex min-w-0 flex-1 items-center">
-            <span
-              v-if="row.entry.type === 'dir'"
-              class="mr-2 shrink-0 rounded p-0.5"
-              :class="{ 'rotate-90': isExpanded(row.entry.path) }"
-            >
-              <svg
-                class="h-4 w-4 text-gray-500 dark:text-gray-400"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-                aria-hidden="true"
+          Loading manifest objects...
+        </div>
+        <div
+          v-else-if="!filteredRows.length"
+          class="flex-1 min-h-0 py-10 text-center text-sm text-gray-500 dark:text-gray-400"
+        >
+          No manifest JSON files found
+        </div>
+        <div
+          v-else
+          class="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 py-3 scrollbar-thin"
+        >
+          <button
+            v-for="row in filteredRows"
+            :key="row.entry.path"
+            type="button"
+            class="flex h-10 w-full items-center rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/70"
+            :style="{ paddingLeft: `${row.depth * 12 + 12}px` }"
+            @click="handleRowClick(row.entry)"
+            @dblclick="row.entry.type === 'file' && confirmSelection()"
+          >
+            <div class="flex min-w-0 flex-1 items-center">
+              <span
+                v-if="row.entry.type === 'dir'"
+                class="mr-2 shrink-0 rounded p-0.5"
+                :class="{ 'rotate-90': isExpanded(row.entry.path) }"
               >
-                <path
-                  fill-rule="evenodd"
-                  d="M7.21 14.77a.75.75 0 01.02-1.06L10.94 10 7.23 6.29a.75.75 0 011.06-1.06l4.24 4.24a.75.75 0 010 1.06l-4.24 4.24a.75.75 0 01-1.06.02z"
-                  clip-rule="evenodd"
+                <svg
+                  class="h-4 w-4 text-gray-500 dark:text-gray-400"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M7.21 14.77a.75.75 0 01.02-1.06L10.94 10 7.23 6.29a.75.75 0 011.06-1.06l4.24 4.24a.75.75 0 010 1.06l-4.24 4.24a.75.75 0 01-1.06.02z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
+              </span>
+              <span v-else class="mr-2 h-4 w-4 shrink-0" />
+
+              <template v-if="row.entry.type === 'file' && row.entry.isManifest">
+                <input
+                  :id="`manifest-${row.entry.path}`"
+                  :checked="isChecked(row.entry)"
+                  type="checkbox"
+                  class="mr-3 h-4 w-4 rounded border-gray-300 bg-white text-teal-600 focus:ring-teal-500 dark:border-gray-600 dark:bg-gray-800 dark:text-teal-500 dark:focus:ring-teal-400"
+                  @click.stop
+                  @change="onCheckboxChange(row.entry, ($event.target as HTMLInputElement).checked)"
                 />
-              </svg>
-            </span>
-            <span v-else class="mr-2 h-4 w-4 shrink-0" />
+              </template>
 
-            <template v-if="row.entry.type === 'file' && row.entry.isManifest">
-              <input
-                :id="`manifest-${row.entry.path}`"
-                :checked="isChecked(row.entry)"
-                type="checkbox"
-                class="mr-3 h-4 w-4 rounded border-gray-300 bg-white text-teal-600 focus:ring-teal-500 dark:border-gray-600 dark:bg-gray-800 dark:text-teal-500 dark:focus:ring-teal-400"
-                @click.stop
-                @change="onCheckboxChange(row.entry, ($event.target as HTMLInputElement).checked)"
+              <FileIcon
+                :file-format="fileFormat(row.entry)"
+                :is-directory="row.entry.type === 'dir'"
+                :is-manifest="!!row.entry.isManifest"
+                class="mr-2"
               />
-            </template>
 
-            <FileIcon
-              :file-format="fileFormat(row.entry)"
-              :is-directory="row.entry.type === 'dir'"
-              :is-manifest="!!row.entry.isManifest"
-              class="mr-2"
-            />
-
-            <button
-              type="button"
-              class="min-w-0 flex-1 truncate text-left"
-              @click.stop="row.entry.type === 'dir' && toggleFolder(row.entry)"
-            >
-              <span class="text-gray-900 dark:text-gray-100">{{ row.entry.name }}</span>
-            </button>
-          </div>
-        </button>
+              <button
+                type="button"
+                class="min-w-0 flex-1 truncate text-left"
+                @click.stop="row.entry.type === 'dir' && toggleFolder(row.entry)"
+              >
+                <span class="text-gray-900 dark:text-gray-100">{{ row.entry.name }}</span>
+              </button>
+            </div>
+          </button>
+        </div>
       </div>
 
       <div class="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">

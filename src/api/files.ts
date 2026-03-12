@@ -125,11 +125,13 @@ export async function listS3Objects(params: S3ListRequest): Promise<S3ListRespon
 }
 
 export async function listS3Buckets(
-  connectionId?: string
+  connectionId?: string,
+  options?: { refresh?: boolean }
 ): Promise<{ buckets: string[]; count: number }> {
   try {
     const query = new URLSearchParams()
     if (connectionId) query.set('connectionId', connectionId)
+    if (options?.refresh) query.set('refresh', 'true')
 
     const url = query.toString() ? `/files/s3/buckets?${query.toString()}` : '/files/s3/buckets'
     const response = await apiClient.get<{ buckets: string[]; count: number }>(url)
@@ -163,13 +165,15 @@ export async function validateS3Path(path: string): Promise<S3ValidationResponse
 
 export async function readS3Manifest(
   path: string,
-  connectionId?: string
+  connectionId?: string,
+  options?: { refresh?: boolean }
 ): Promise<S3ManifestResponse> {
   try {
     const response = await apiClient.get<S3ManifestResponse>('/files/s3/manifest', {
       params: {
         path,
-        ...(connectionId ? { connectionId } : {})
+        ...(connectionId ? { connectionId } : {}),
+        ...(options?.refresh ? { refresh: true } : {})
       }
     })
     return response.data

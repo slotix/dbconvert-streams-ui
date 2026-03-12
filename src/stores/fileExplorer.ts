@@ -558,8 +558,9 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
     // Resolve folder path (may change if connection scope/config changed)
     const folderPath = overridePath || resolveConnectionFolderPath(connection)
 
-    // Fast-path cache: only skip if we already loaded THIS exact folderPath
-    if (!force && !overridePath && entriesByConnection.value[connectionId]) {
+    // Fast-path cache: skip reload when we already have this exact path in memory.
+    // This applies to both connection-derived paths and explicit override paths.
+    if (!force && entriesByConnection.value[connectionId]) {
       const lastPath = directoryPathsByConnection.value[connectionId]
       if (lastPath && folderPath && lastPath === folderPath) {
         return
@@ -603,7 +604,10 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
           // Check if URI is just "s3://" (no bucket specified - browse all buckets)
           if (uri === 's3://') {
             // List all buckets
-            const response = await listS3Buckets(connectionId)
+            const response = await listS3Buckets(
+              connectionId,
+              force ? { refresh: true } : undefined
+            )
 
             // Convert buckets to FileSystemEntry format
             const entries: FileSystemEntry[] = response.buckets.map((bucketName) => ({
@@ -1077,6 +1081,16 @@ export const useFileExplorerStore = defineStore('fileExplorer', () => {
       const connectionsStore = useConnectionsStore()
       const connection = connectionsStore.connections.find((c) => c.id === connectionId)
       if (!connection) return
+
+      const currentFolder = findEntryByPath(
+        entriesByConnection.value[connectionId] || [],
+        folderPath
+      )
+      if (!force && currentFolder?.type === 'dir' && currentFolder.isLoaded) {
+        expandFolder(connectionId, folderPath)
+        return
+      }
+
       const kind = getConnectionKindFromSpec(connection.spec)
       if (kind === 'gcs' || kind === 'azure') {
         errorsByConnection.value = {
