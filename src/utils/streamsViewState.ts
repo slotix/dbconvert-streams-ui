@@ -4,6 +4,7 @@ import type { StreamDetailsTab } from '@/composables/useStreamHistory'
 type StreamsViewState = {
   selectedStreamId?: string
   tab?: StreamDetailsTab
+  listScrollTop?: number
 }
 
 function hasStorage(): boolean {
@@ -19,6 +20,14 @@ export function readStreamsViewState(): StreamsViewState | null {
     if (!parsed || typeof parsed !== 'object') return null
     if (parsed.tab && !isStreamDetailsTab(parsed.tab)) {
       delete parsed.tab
+    }
+    if (parsed.listScrollTop != null) {
+      const normalizedScrollTop = Number(parsed.listScrollTop)
+      if (!Number.isFinite(normalizedScrollTop) || normalizedScrollTop < 0) {
+        delete parsed.listScrollTop
+      } else {
+        parsed.listScrollTop = Math.floor(normalizedScrollTop)
+      }
     }
     return parsed
   } catch {
@@ -46,6 +55,15 @@ export function updateStreamsViewState(patch: StreamsViewState): void {
 export function setSelectedStreamInViewState(streamId?: string): void {
   updateStreamsViewState({
     selectedStreamId: streamId || undefined
+  })
+}
+
+export function setStreamsListScrollInViewState(scrollTop?: number): void {
+  updateStreamsViewState({
+    listScrollTop:
+      typeof scrollTop === 'number' && Number.isFinite(scrollTop) && scrollTop >= 0
+        ? Math.floor(scrollTop)
+        : undefined
   })
 }
 

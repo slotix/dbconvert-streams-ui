@@ -6,6 +6,7 @@
         ? 'bg-slate-100/55 dark:bg-gray-800/45'
         : 'hover:bg-slate-100/45 dark:hover:bg-gray-850/65'
     ]"
+    :data-selected="isSelected ? 'true' : undefined"
     @click="selectStream"
     @contextmenu="handleContextMenu"
   >

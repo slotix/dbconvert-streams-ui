@@ -31,7 +31,11 @@
     </div>
 
     <!-- Streams List -->
-    <div class="flex-1 overflow-y-auto p-2 scrollbar-thin">
+    <div
+      ref="listContainerRef"
+      class="flex-1 overflow-y-auto p-2 scrollbar-thin"
+      @scroll="handleListScroll"
+    >
       <!-- Enhanced loading state with gradient spinner -->
       <div v-if="isListLoading" class="flex flex-col items-center justify-center py-16">
         <div
@@ -120,7 +124,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, computed, inject, watch } from 'vue'
+import { ref, computed, inject, watch, nextTick, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { Menu, Plus, RefreshCw } from 'lucide-vue-next'
 import streamsApi, { type StreamListResponse } from '@/api/streams'
@@ -135,6 +139,7 @@ import SearchInput from '@/components/common/SearchInput.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import type { StreamConfig } from '@/types/streamConfig'
 import type { Connection } from '@/types/connections'
+import { readStreamsViewState, setStreamsListScrollInViewState } from '@/utils/streamsViewState'
 
 const props = defineProps<{
   selectedStreamId?: string
@@ -158,7 +163,11 @@ const showDeleteConfirm = ref(false)
 const pendingDeleteStream = ref<StreamConfig | null>(null)
 const searchQuery = ref('')
 const searchResult = ref<StreamListResponse | null>(null)
+const listContainerRef = ref<HTMLElement | null>(null)
+const hasRestoredListScroll = ref(false)
 let searchRequestSequence = 0
+let persistScrollFrame = 0
+let ensureSelectedFrame = 0
 
 const selectedStreamId = computed(() => props.selectedStreamId || '')
 const hasActiveSearch = computed(() => searchQuery.value.trim().length > 0)
@@ -250,6 +259,100 @@ watch(
     await refreshSearchResultsIfNeeded()
   }
 )
+
+function persistListScroll(scrollTop: number) {
+  setStreamsListScrollInViewState(scrollTop)
+}
+
+function handleListScroll() {
+  const container = listContainerRef.value
+  if (!container) return
+
+  if (persistScrollFrame) {
+    cancelAnimationFrame(persistScrollFrame)
+  }
+
+  persistScrollFrame = window.requestAnimationFrame(() => {
+    persistScrollFrame = 0
+    persistListScroll(container.scrollTop)
+  })
+}
+
+async function restoreListScroll() {
+  const container = listContainerRef.value
+  if (hasRestoredListScroll.value || !container) return
+
+  const savedScrollTop = readStreamsViewState()?.listScrollTop
+  if (savedScrollTop != null && savedScrollTop > 0) {
+    const maxScrollTop = Math.max(0, container.scrollHeight - container.clientHeight)
+    container.scrollTop = Math.min(savedScrollTop, maxScrollTop)
+  }
+
+  hasRestoredListScroll.value = true
+}
+
+function ensureSelectedStreamVisible() {
+  const container = listContainerRef.value
+  if (!container) return
+
+  const selectedItem = container.querySelector<HTMLElement>('[data-selected="true"]')
+  if (!selectedItem) return
+
+  const margin = 24
+  const visibleTop = container.scrollTop
+  const visibleBottom = visibleTop + container.clientHeight
+  const itemTop = selectedItem.offsetTop
+  const itemBottom = itemTop + selectedItem.offsetHeight
+
+  if (itemTop < visibleTop + margin) {
+    container.scrollTop = Math.max(0, itemTop - margin)
+  } else if (itemBottom > visibleBottom - margin) {
+    container.scrollTop = Math.max(0, itemBottom - container.clientHeight + margin)
+  }
+}
+
+async function syncListViewport() {
+  if (displayedStreams.value.length === 0 || isListLoading.value) {
+    return
+  }
+
+  await nextTick()
+
+  if (ensureSelectedFrame) {
+    cancelAnimationFrame(ensureSelectedFrame)
+  }
+
+  ensureSelectedFrame = window.requestAnimationFrame(() => {
+    ensureSelectedFrame = 0
+    void restoreListScroll()
+    ensureSelectedStreamVisible()
+  })
+}
+
+watch(
+  [() => isListLoading.value, () => displayedStreams.value.length, () => selectedStreamId.value],
+  async ([loading]) => {
+    if (loading) return
+    await syncListViewport()
+  },
+  { immediate: true }
+)
+
+onBeforeUnmount(() => {
+  if (persistScrollFrame) {
+    cancelAnimationFrame(persistScrollFrame)
+    persistScrollFrame = 0
+  }
+
+  if (ensureSelectedFrame) {
+    cancelAnimationFrame(ensureSelectedFrame)
+    ensureSelectedFrame = 0
+  }
+
+  if (listContainerRef.value) {
+    persistListScroll(listContainerRef.value.scrollTop)
+  }
+})
 
 function handleSelectStream(payload: { streamId: string }) {
   emit('select-stream', payload)

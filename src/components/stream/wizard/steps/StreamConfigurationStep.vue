@@ -55,138 +55,218 @@
           <TabPanel>
             <div class="divide-y divide-gray-200 dark:divide-gray-700/70">
               <section class="py-3 first:pt-0 last:pb-0">
-                <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+                <div class="flex items-start justify-between gap-3 mb-3">
                   <div>
                     <h5
-                      class="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-3"
+                      class="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide"
                     >
-                      Data Flow
+                      Flow Overview
                     </h5>
-                    <div class="space-y-2.5">
-                      <div
-                        class="flex items-start justify-between gap-3 rounded-md bg-sky-50/50 dark:bg-sky-900/15 px-3 py-2"
-                      >
-                        <div class="flex items-start gap-2 min-w-0">
-                          <component
-                            :is="sourceKindIcon"
-                            class="w-4.5 h-4.5 mt-0.5 text-sky-600 dark:text-sky-300 shrink-0"
-                          />
-                          <div class="min-w-0">
-                            <p class="text-[11px] font-medium text-sky-700 dark:text-sky-300">
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      Review the source, operation, and output destination before updating the
+                      stream.
+                    </p>
+                  </div>
+                  <div
+                    class="hidden xl:flex items-center gap-2 text-[11px] font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500"
+                  >
+                    <span>Source</span>
+                    <ArrowRight class="w-3.5 h-3.5" />
+                    <span>Operation</span>
+                    <ArrowRight class="w-3.5 h-3.5" />
+                    <span>Target</span>
+                  </div>
+                </div>
+
+                <div
+                  class="relative overflow-hidden rounded-2xl border border-gray-200/80 bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.10),_transparent_30%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.10),_transparent_30%)] px-4 py-5 dark:border-gray-700/80 dark:bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.14),_transparent_30%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.14),_transparent_30%)] sm:px-5"
+                >
+                  <div
+                    class="pointer-events-none absolute left-12 right-12 top-[4.2rem] hidden xl:block"
+                  >
+                    <div
+                      class="h-px bg-gradient-to-r from-sky-500/40 via-gray-400/20 to-emerald-500/40"
+                    />
+                  </div>
+
+                  <div
+                    class="relative grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1fr)_3rem_minmax(16rem,0.85fr)_3rem_minmax(0,1fr)] xl:items-start"
+                  >
+                    <section class="min-w-0">
+                      <div class="flex items-start gap-3">
+                        <div
+                          class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-sky-100/80 text-sky-700 shadow-[0_0_0_1px_rgba(14,165,233,0.14)] dark:bg-sky-900/30 dark:text-sky-300 dark:shadow-[0_0_0_1px_rgba(125,211,252,0.12)]"
+                        >
+                          <component :is="sourceKindIcon" class="w-5 h-5" />
+                        </div>
+                        <div class="min-w-0 flex-1">
+                          <div class="flex flex-wrap items-center gap-2">
+                            <p
+                              class="text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-700 dark:text-sky-300"
+                            >
                               Source
                             </p>
-                            <p
-                              class="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate"
+                            <span
+                              class="inline-flex items-center rounded-full bg-sky-100/80 px-2.5 py-1 text-[11px] font-semibold text-sky-700 dark:bg-sky-900/30 dark:text-sky-300"
                             >
-                              {{ sourceConnectionName }}
-                            </p>
-                            <p
-                              v-if="sourceLocation"
-                              class="text-sm text-sky-800 dark:text-sky-200 truncate"
-                            >
-                              {{ sourceLocation }}
-                            </p>
+                              {{ sourceTypeLabel }}
+                            </span>
                           </div>
+                          <p
+                            class="mt-2 text-xl font-semibold leading-tight text-gray-900 dark:text-gray-100"
+                          >
+                            {{ sourceConnectionName }}
+                          </p>
+                          <p
+                            v-if="sourceLocation"
+                            class="mt-2 max-w-xl text-sm leading-6 text-gray-600 dark:text-gray-300 break-all"
+                          >
+                            {{ sourceLocation }}
+                          </p>
                         </div>
-                        <span
-                          class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300"
+                      </div>
+
+                      <div class="mt-5 flex flex-wrap gap-2.5">
+                        <div
+                          v-for="fact in sourceSummaryFacts"
+                          :key="fact.label"
+                          class="inline-flex items-center gap-2 rounded-full border border-sky-200/80 bg-sky-50/70 px-3 py-1.5 text-sm dark:border-sky-700/40 dark:bg-sky-900/20"
                         >
-                          {{ sourceTypeLabel }}
-                        </span>
+                          <span
+                            class="text-[11px] font-semibold uppercase tracking-wide text-sky-700 dark:text-sky-300"
+                          >
+                            {{ fact.label }}
+                          </span>
+                          <span class="font-medium text-gray-900 dark:text-gray-100">
+                            {{ fact.value }}
+                          </span>
+                        </div>
                       </div>
+                    </section>
 
-                      <div class="flex items-center justify-center py-0.5">
-                        <ArrowDown class="w-4 h-4 text-gray-400 dark:text-gray-500" />
-                      </div>
+                    <div
+                      class="flex items-center justify-center text-gray-400 dark:text-gray-500 xl:pt-10"
+                    >
+                      <ArrowDown class="w-4 h-4 xl:hidden" />
+                      <ArrowRight class="hidden xl:block w-4 h-4" />
+                    </div>
 
-                      <div
-                        class="flex items-start justify-between gap-3 rounded-md bg-emerald-50/50 dark:bg-emerald-900/15 px-3 py-2"
+                    <section class="min-w-0 xl:pt-2">
+                      <p
+                        class="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400"
                       >
-                        <div class="flex items-start gap-2 min-w-0">
-                          <component
-                            :is="targetKindIcon"
-                            class="w-4.5 h-4.5 mt-0.5 text-emerald-600 dark:text-emerald-300 shrink-0"
-                          />
-                          <div class="min-w-0">
+                        Operation
+                      </p>
+                      <p class="mt-2 text-2xl font-semibold text-gray-900 dark:text-gray-100">
+                        {{ modeLabel }}
+                      </p>
+                      <p class="mt-2 text-sm leading-6 text-gray-600 dark:text-gray-300">
+                        {{ operationSummary }}
+                      </p>
+
+                      <dl class="mt-5 space-y-2.5">
+                        <div
+                          v-for="detail in operationSummaryFacts"
+                          :key="detail.label"
+                          class="flex items-baseline justify-between gap-4 border-b border-gray-200/70 pb-2 dark:border-gray-700/70"
+                        >
+                          <dt
+                            class="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+                          >
+                            {{ detail.label }}
+                          </dt>
+                          <dd
+                            class="text-right text-sm font-medium text-gray-900 dark:text-gray-100"
+                          >
+                            {{ detail.value }}
+                          </dd>
+                        </div>
+                      </dl>
+                    </section>
+
+                    <div
+                      class="flex items-center justify-center text-gray-400 dark:text-gray-500 xl:pt-10"
+                    >
+                      <ArrowDown class="w-4 h-4 xl:hidden" />
+                      <ArrowRight class="hidden xl:block w-4 h-4" />
+                    </div>
+
+                    <section class="min-w-0">
+                      <div class="flex items-start gap-3">
+                        <div
+                          class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-100/80 text-emerald-700 shadow-[0_0_0_1px_rgba(16,185,129,0.16)] dark:bg-emerald-900/30 dark:text-emerald-300 dark:shadow-[0_0_0_1px_rgba(110,231,183,0.12)]"
+                        >
+                          <component :is="targetKindIcon" class="w-5 h-5" />
+                        </div>
+                        <div class="min-w-0 flex-1">
+                          <div class="flex flex-wrap items-center gap-2">
                             <p
-                              class="text-[11px] font-medium text-emerald-700 dark:text-emerald-300"
+                              class="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300"
                             >
                               Target
                             </p>
-                            <p
-                              class="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate"
+                            <span
+                              class="inline-flex items-center rounded-full bg-emerald-100/80 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
                             >
-                              {{ targetConnectionName }}
-                            </p>
-                            <p
-                              v-if="targetLocation"
-                              class="text-sm text-emerald-800 dark:text-emerald-200 truncate"
-                            >
-                              {{ targetLocation }}
-                            </p>
+                              {{ targetTypeLabel }}
+                            </span>
                           </div>
+                          <p
+                            class="mt-2 text-xl font-semibold leading-tight text-gray-900 dark:text-gray-100"
+                          >
+                            {{ targetConnectionName }}
+                          </p>
+                          <p
+                            v-if="targetLocation"
+                            class="mt-2 max-w-xl text-sm leading-6 text-gray-600 dark:text-gray-300 break-all"
+                          >
+                            {{ targetLocation }}
+                          </p>
                         </div>
-                        <span
-                          class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300"
-                        >
-                          {{ targetTypeLabel }}
-                        </span>
                       </div>
-                    </div>
-                  </div>
 
-                  <div>
-                    <h5
-                      class="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-3"
-                    >
-                      Stream Details
-                    </h5>
-                    <div class="grid grid-cols-2 gap-2">
-                      <div
-                        v-for="detail in summaryDetailCards"
-                        :key="detail.label"
-                        class="rounded-md bg-gray-50 dark:bg-gray-900/40 px-2.5 py-2"
-                      >
-                        <p
-                          class="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400"
+                      <div class="mt-5 flex flex-wrap gap-2.5">
+                        <div
+                          v-for="fact in targetSummaryFacts"
+                          :key="fact.label"
+                          class="inline-flex items-center gap-2 rounded-full border border-emerald-200/80 bg-emerald-50/70 px-3 py-1.5 text-sm dark:border-emerald-700/40 dark:bg-emerald-900/20"
                         >
-                          {{ detail.label }}
-                        </p>
-                        <p
-                          class="mt-1 text-sm font-semibold text-gray-900 dark:text-gray-100 truncate"
-                        >
-                          {{ detail.value }}
-                        </p>
+                          <span
+                            class="text-[11px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300"
+                          >
+                            {{ fact.label }}
+                          </span>
+                          <span class="font-medium text-gray-900 dark:text-gray-100">
+                            {{ fact.value }}
+                          </span>
+                        </div>
                       </div>
-                    </div>
 
-                    <div
-                      v-if="isS3Target && currentStreamConfig?.target?.spec?.s3?.upload"
-                      class="mt-3 space-y-1.5 text-sm"
-                    >
-                      <div class="flex items-center justify-between gap-2">
-                        <span class="text-gray-600 dark:text-gray-400">S3 Bucket</span>
-                        <span class="font-medium text-teal-600 dark:text-teal-400 truncate">
-                          {{ currentStreamConfig.target.spec.s3.upload.bucket || 'Not set' }}
-                        </span>
-                      </div>
-                      <div
-                        v-if="currentStreamConfig.target.spec.s3.upload.prefix"
-                        class="flex items-center justify-between gap-2"
+                      <dl
+                        v-if="isS3Target && currentStreamConfig?.target?.spec?.s3?.upload"
+                        class="mt-5 space-y-2 text-sm"
                       >
-                        <span class="text-gray-600 dark:text-gray-400">Prefix</span>
-                        <span class="font-medium text-gray-900 dark:text-gray-100 truncate">
-                          {{ currentStreamConfig.target.spec.s3.upload.prefix }}
-                        </span>
-                      </div>
-                      <div
-                        v-if="!isCDCMode"
-                        class="rounded-md border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-xs text-emerald-900 dark:border-emerald-700/60 dark:bg-emerald-900/20 dark:text-emerald-100"
-                      >
-                        A canonical <code>manifest.json</code> will be written automatically after a
-                        successful convert run.
-                      </div>
-                    </div>
+                        <div class="flex items-start justify-between gap-4">
+                          <dt class="text-gray-600 dark:text-gray-400">S3 Bucket</dt>
+                          <dd
+                            class="max-w-[65%] text-right font-medium text-emerald-700 dark:text-emerald-300 break-all"
+                          >
+                            {{ currentStreamConfig.target.spec.s3.upload.bucket || 'Not set' }}
+                          </dd>
+                        </div>
+                        <div
+                          v-if="currentStreamConfig.target.spec.s3.upload.prefix"
+                          class="flex items-start justify-between gap-4"
+                        >
+                          <dt class="text-gray-600 dark:text-gray-400">Prefix</dt>
+                          <dd
+                            class="max-w-[65%] text-right font-medium text-gray-900 dark:text-gray-100 break-all"
+                          >
+                            {{ currentStreamConfig.target.spec.s3.upload.prefix }}
+                          </dd>
+                        </div>
+                      </dl>
+                    </section>
                   </div>
                 </div>
               </section>
@@ -316,7 +396,16 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/vue'
-import { AlertTriangle, ArrowDown, Cloud, Code, Columns2, Database, Folder } from 'lucide-vue-next'
+import {
+  AlertTriangle,
+  ArrowDown,
+  ArrowRight,
+  Cloud,
+  Code,
+  Columns2,
+  Database,
+  Folder
+} from 'lucide-vue-next'
 import { apiClient } from '@/api/apiClient'
 import { useStreamsStore, buildStreamPayload } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
@@ -505,20 +594,26 @@ interface SummaryDetailCard {
   value: string
 }
 
-const summaryDetailCards = computed<SummaryDetailCard[]>(() => {
-  const cards: SummaryDetailCard[] = [
-    { label: 'Mode', value: modeLabel.value },
-    {
-      label: isFileSource.value || isS3Source.value ? 'Files' : 'Tables',
-      value: formatNumber(tableCount.value)
-    },
-    { label: 'Data', value: copyDataModeLabel.value },
-    {
-      label: 'Batch',
-      value: `${currentStreamConfig.value?.source?.options?.dataBundleSize || 500} rows`
-    },
-    { label: 'Structure', value: structureModeLabel.value }
-  ]
+const selectedItemsLabel = computed(() => {
+  if (sourceManifestPath.value) {
+    return 'Manifest snapshot'
+  }
+
+  if (tableCount.value > 0) {
+    const unit = isFileSource.value || isS3Source.value ? 'file' : 'table'
+    const suffix = tableCount.value === 1 ? unit : `${unit}s`
+    return `${formatNumber(tableCount.value)} ${suffix}`
+  }
+
+  if (isFileSource.value || isS3Source.value) {
+    return 'Selection resolved at runtime'
+  }
+
+  return 'No tables selected'
+})
+
+const sourceSummaryFacts = computed<SummaryDetailCard[]>(() => {
+  const cards: SummaryDetailCard[] = [{ label: 'Selection', value: selectedItemsLabel.value }]
 
   if (isS3Source.value) {
     cards.push({
@@ -527,6 +622,33 @@ const summaryDetailCards = computed<SummaryDetailCard[]>(() => {
     })
   }
 
+  return cards
+})
+
+const operationSummary = computed(() => {
+  if (isCDCMode.value) {
+    return 'Continuous replication from source changes into the configured target.'
+  }
+
+  return 'One-time transfer using the selected data and structure options.'
+})
+
+const operationSummaryFacts = computed<SummaryDetailCard[]>(() => [
+  { label: 'Data', value: copyDataModeLabel.value },
+  { label: 'Structure', value: structureModeLabel.value },
+  {
+    label: isFileSource.value || isS3Source.value ? 'Files' : 'Tables',
+    value: selectedItemsLabel.value
+  },
+  {
+    label: 'Batch',
+    value: `${currentStreamConfig.value?.source?.options?.dataBundleSize || 500} rows`
+  }
+])
+
+const targetSummaryFacts = computed<SummaryDetailCard[]>(() => {
+  const cards: SummaryDetailCard[] = []
+
   if ((isFileTarget.value || isS3Target.value) && fileFormatDisplay.value) {
     cards.push({ label: 'Format', value: fileFormatDisplay.value.toUpperCase() })
     cards.push({ label: 'Compression', value: compressionDisplay.value.toUpperCase() })
@@ -534,6 +656,10 @@ const summaryDetailCards = computed<SummaryDetailCard[]>(() => {
 
   if (isS3Target.value && !isCDCMode.value) {
     cards.push({ label: 'Output manifest', value: 'Automatic' })
+  }
+
+  if (cards.length === 0) {
+    cards.push({ label: 'Mode', value: modeLabel.value })
   }
 
   return cards
