@@ -32,10 +32,7 @@
     </div>
   </div>
 
-  <div
-    v-else-if="sourceMode === 'manifest'"
-    class="border-b border-gray-200/70 px-4 py-4 text-sm dark:border-gray-700/70"
-  >
+  <div v-else-if="sourceMode === 'manifest'" class="flex min-h-0 flex-col text-sm">
     <S3ManifestBrowser
       :connection-id="connectionId"
       :connection-name="connectionName"

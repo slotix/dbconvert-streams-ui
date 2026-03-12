@@ -1,6 +1,6 @@
 <template>
   <div
-    class="flex flex-wrap items-center gap-3 pb-3 border-b border-gray-200 dark:border-gray-700"
+    class="flex flex-wrap items-center gap-3 pb-3"
     :class="
       sticky ? 'sticky top-0 z-30 bg-gray-50/95 dark:bg-gray-900/95 backdrop-blur-sm pt-1' : ''
     "
@@ -41,6 +41,11 @@
         @update:model-value="onSelectAllUpdate"
       />
     </div>
+    <div
+      v-else-if="reserveSelectionSpace"
+      aria-hidden="true"
+      class="hidden shrink-0 md:block md:w-[170px]"
+    />
 
     <button
       v-if="selectionMode !== 'none'"
@@ -87,6 +92,7 @@ interface Props {
   refreshDisabled?: boolean
   sticky?: boolean
   selectionMode?: 'multi' | 'single' | 'none'
+  reserveSelectionSpace?: boolean
 }
 
 withDefaults(defineProps<Props>(), {
@@ -101,7 +107,8 @@ withDefaults(defineProps<Props>(), {
   refreshTitle: 'Refresh',
   refreshDisabled: false,
   sticky: false,
-  selectionMode: 'multi'
+  selectionMode: 'multi',
+  reserveSelectionSpace: false
 })
 
 const emit = defineEmits<{

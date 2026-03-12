@@ -71,12 +71,15 @@
         <div
           v-if="isFileSourceConnection || activeDataTab === 'tables'"
           class="flex-1 min-h-0 flex flex-col overflow-hidden"
-          :class="showCombinedObjectsToolbar ? 'overflow-y-auto pr-1 gap-6' : ''"
+          :class="
+            showCombinedObjectsToolbar
+              ? 'overflow-y-auto pr-1 gap-6'
+              : pinnedS3SourceModeHeaderConnectionId
+                ? 'gap-6'
+                : ''
+          "
         >
-          <div
-            v-if="pinnedS3SourceModeHeaderConnectionId"
-            class="px-4 py-3 border-b border-b-gray-200/70 dark:border-b-gray-700/70"
-          >
+          <div v-if="pinnedS3SourceModeHeaderConnectionId" class="px-4 py-3">
             <S3ManifestSourceConfig
               :connection-id="pinnedS3SourceModeHeaderConnectionId"
               variant="header"
@@ -93,6 +96,7 @@
             search-placeholder="Filter source objects..."
             :select-all-checked="combinedSelectAllChecked"
             :select-all-indeterminate="combinedSelectAllIndeterminate"
+            :selection-mode="useHeaderSelectionActions ? 'none' : 'multi'"
             select-all-label="Select all"
             clear-label="Clear"
             :clear-disabled="combinedObjectSelectedCount === 0"
@@ -126,7 +130,7 @@
                 <template v-if="isS3Type(fileConn.connectionId)">
                   <div
                     v-if="pinnedS3SourceModeHeaderConnectionId !== fileConn.connectionId"
-                    class="px-4 py-3 border-b border-b-gray-200/70 dark:border-b-gray-700/70"
+                    class="px-4 py-3"
                   >
                     <S3ManifestSourceConfig
                       :connection-id="fileConn.connectionId"
@@ -687,8 +691,17 @@ const pinnedS3SourceModeHeaderConnectionId = computed(() => {
   const [connection] = fileSourceConnections.value
   return isS3Type(connection.connectionId) ? connection.connectionId : null
 })
+const useHeaderSelectionActions = computed(
+  () =>
+    isFileSourceConnection.value &&
+    fileSourceConnections.value.length === 1 &&
+    hasBrowsableFileSourceGroups.value
+)
 const showPerGroupFileActions = computed(
-  () => !(isFileSourceConnection.value && fileSourceConnections.value.length === 1)
+  () =>
+    !isFileSourceConnection.value ||
+    fileSourceConnections.value.length !== 1 ||
+    useHeaderSelectionActions.value
 )
 const showCombinedObjectsToolbar = computed(() => hasBrowsableFileSourceGroups.value)
 const sourceObjectsContainerClass = computed(() =>

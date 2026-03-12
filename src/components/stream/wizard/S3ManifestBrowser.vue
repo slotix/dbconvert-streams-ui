@@ -1,5 +1,5 @@
 <template>
-  <div class="flex min-h-0 flex-col gap-4">
+  <div class="flex h-full min-h-0 flex-col gap-6">
     <DataSelectionToolbar
       :selected-count="selectedCount"
       :total-count="loadedCount"
@@ -18,7 +18,9 @@
       @refresh="loadObjects(true)"
     />
 
-    <div class="flex-1 min-h-0 flex flex-col divide-y divide-gray-200 dark:divide-gray-800">
+    <div
+      class="flex-1 min-h-0 flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white divide-y divide-gray-200 dark:border-gray-700 dark:bg-gray-850 dark:divide-gray-800"
+    >
       <SourceSectionHeader
         :alias="props.alias"
         :connection-name="props.connectionName"
