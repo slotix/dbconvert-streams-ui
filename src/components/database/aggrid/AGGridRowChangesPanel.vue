@@ -310,16 +310,16 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeyDown))
                     <td
                       v-for="field in visibleInsertColumns"
                       :key="`insert-cell-${row.rowId}-${field}`"
+                      v-tooltip="getInsertFieldValue(row, field)"
                       class="px-3 py-2 font-mono text-teal-600 dark:text-teal-400 whitespace-nowrap"
-                      :title="getInsertFieldValue(row, field)"
                     >
                       {{ truncateValue(getInsertFieldValue(row, field)) }}
                     </td>
                     <td class="px-3 py-2 text-right" @click.stop>
                       <button
+                        v-tooltip="'Undo'"
                         type="button"
                         class="w-7 h-7 inline-flex items-center justify-center rounded border border-gray-300 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-red-300 dark:hover:border-red-700 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                        title="Undo"
                         @click="emit('revert-row', row.rowId)"
                       >
                         <Undo2 class="h-3.5 w-3.5" />
@@ -345,8 +345,8 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeyDown))
                             >{{ item.field }}:</span
                           >
                           <span
+                            v-tooltip="item.newValue"
                             class="font-mono text-teal-600 dark:text-teal-400"
-                            :title="item.newValue"
                             >{{ truncateValue(item.newValue) }}</span
                           >
                         </li>
@@ -375,7 +375,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeyDown))
               <button
                 type="button"
                 class="w-7 h-7 inline-flex items-center justify-center rounded border border-gray-300 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-red-300 dark:hover:border-red-700 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                title="Undo"
+                v-tooltip="'Undo'"
                 @click="emit('revert-row', row.rowId)"
               >
                 <Undo2 class="h-3.5 w-3.5" />
@@ -418,14 +418,14 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeyDown))
 
                     <template v-if="kind === 'edit'">
                       <span
+                        v-tooltip="item.oldValue"
                         class="font-mono text-gray-400 dark:text-gray-500 line-through decoration-1"
-                        :title="item.oldValue"
                         >{{ truncateValue(item.oldValue) }}</span
                       >
                       <span class="text-gray-400 dark:text-gray-500">→</span>
                       <span
+                        v-tooltip="item.newValue"
                         class="font-mono text-teal-600 dark:text-teal-400"
-                        :title="item.newValue"
                         >{{ truncateValue(item.newValue) }}</span
                       >
                     </template>
@@ -437,7 +437,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeyDown))
                 <button
                   type="button"
                   class="w-7 h-7 inline-flex items-center justify-center rounded border border-gray-300 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-red-300 dark:hover:border-red-700 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                  title="Undo"
+                  v-tooltip="'Undo'"
                   @click="emit('revert-row', row.rowId)"
                 >
                   <Undo2 class="h-3.5 w-3.5" />
@@ -498,9 +498,9 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeyDown))
           </div>
 
           <button
+            v-tooltip="'Apply changes (Ctrl+Enter)'"
             type="button"
             class="text-xs rounded-md px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Apply changes (Ctrl+Enter)"
             :disabled="saving"
             @click="!saving && emit('apply')"
           >

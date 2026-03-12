@@ -30,14 +30,15 @@
 
           <span
             v-if="showRowCount && getTableRowCount(table.name) !== undefined"
+            v-tooltip="'Approximate row count'"
             class="text-xs px-1.5 py-0.5 rounded shrink-0 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
-            title="Approximate row count"
           >
             {{ formatRowCount(getTableRowCount(table.name)) }}
           </span>
 
           <button
             v-if="table.selected && !isCdcMode"
+            v-tooltip="hasTableFilter(table) ? 'Edit filter' : 'Add filter'"
             class="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-all"
             :class="
               isTableSettingsOpen(table.name)
@@ -46,7 +47,6 @@
                   ? 'bg-sky-500/20 text-sky-600 dark:text-sky-400'
                   : 'text-gray-400 opacity-0 group-hover:opacity-100 hover:bg-gray-200 dark:hover:bg-gray-700'
             "
-            :title="hasTableFilter(table) ? 'Edit filter' : 'Add filter'"
             @click="emit('toggle-filter', table.name)"
           >
             <Filter class="w-3.5 h-3.5" />
@@ -94,14 +94,15 @@
 
         <span
           v-if="showRowCount && getTableRowCount(table.name) !== undefined"
+          v-tooltip="'Approximate row count'"
           class="text-xs px-1.5 py-0.5 rounded shrink-0 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
-          title="Approximate row count"
         >
           {{ formatRowCount(getTableRowCount(table.name)) }}
         </span>
 
         <button
           v-if="table.selected && !isCdcMode"
+          v-tooltip="hasTableFilter(table) ? 'Edit filter' : 'Add filter'"
           class="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-all"
           :class="
             isTableSettingsOpen(table.name)
@@ -110,7 +111,6 @@
                 ? 'bg-sky-500/20 text-sky-600 dark:text-sky-400'
                 : 'text-gray-400 opacity-0 group-hover:opacity-100 hover:bg-gray-200 dark:hover:bg-gray-700'
           "
-          :title="hasTableFilter(table) ? 'Edit filter' : 'Add filter'"
           @click="emit('toggle-filter', table.name)"
         >
           <Filter class="w-3.5 h-3.5" />

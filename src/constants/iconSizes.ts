@@ -62,55 +62,10 @@ export type IconSpacingKey = keyof typeof ICON_SPACING
 export type IconSpacing = (typeof ICON_SPACING)[IconSpacingKey]
 
 /**
- * Default icon size
- */
-export const DEFAULT_ICON_SIZE: IconSize = ICON_SIZES.BASE
-
-/**
- * Icon size usage recommendations by context
- */
-export const ICON_SIZE_USAGE = {
-  /** Table action buttons (sort, copy, delete) */
-  TABLE_ACTIONS: ICON_SIZES.BASE,
-  /** Form input icons (search, filter) */
-  FORM_INPUTS: ICON_SIZES.BASE,
-  /** Context menu items */
-  CONTEXT_MENU: ICON_SIZES.BASE,
-  /** Primary action buttons (Create, Add, Play, Stop) */
-  PRIMARY_BUTTONS: ICON_SIZES.MD,
-  /** Navigation headers */
-  NAVIGATION_HEADERS: ICON_SIZES.MD,
-  /** Modal close buttons */
-  MODAL_CLOSE: ICON_SIZES.MD,
-  /** Sidebar menu items */
-  SIDEBAR_MENU: ICON_SIZES.LG,
-  /** Loading spinners (small) */
-  SPINNER_SMALL: ICON_SIZES.XS,
-  /** Loading spinners (default) */
-  SPINNER_DEFAULT: ICON_SIZES.BASE,
-  /** Loading spinners (large) */
-  SPINNER_LARGE: ICON_SIZES.XL,
-  /** Empty state placeholders */
-  EMPTY_STATE: ICON_SIZES.XXL,
-  /** Hero section icons */
-  HERO: ICON_SIZES.XXXL
-} as const
-
-/**
  * Check if a string is a valid icon size key
  */
-export function isValidIconSizeKey(key: string): key is IconSizeKey {
+function isValidIconSizeKey(key: string): key is IconSizeKey {
   return key in ICON_SIZES
-}
-
-/**
- * Get icon size class by key, with fallback to default
- */
-export function getIconSize(key: IconSizeKey | string | null | undefined): IconSize {
-  if (key && isValidIconSizeKey(key)) {
-    return ICON_SIZES[key]
-  }
-  return DEFAULT_ICON_SIZE
 }
 
 /**

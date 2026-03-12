@@ -38,28 +38,6 @@ export const API_RETRY = {
 } as const
 
 /**
- * Health check configuration
- */
-export const HEALTH_CHECK = {
-  /** Maximum number of retry attempts for health checks */
-  MAX_RETRIES: 2,
-  /** Delay between health check retries in milliseconds */
-  RETRY_DELAY: 1000,
-  /** Interval for health monitoring in milliseconds */
-  MONITORING_INTERVAL: 10000 // 10 seconds
-} as const
-
-/**
- * SSE (Server-Sent Events) configuration
- */
-export const SSE_CONFIG = {
-  /** Connection timeout in milliseconds */
-  CONNECTION_TIMEOUT: 1000,
-  /** Reconnection delay in milliseconds */
-  RECONNECTION_DELAY: 3000
-} as const
-
-/**
  * Operation-specific timeouts
  * Maps specific operations to their recommended timeout values
  */
@@ -77,10 +55,3 @@ export const OPERATION_TIMEOUTS = {
   getFileData: API_TIMEOUTS.MEDIUM,
   getFileMetadata: API_TIMEOUTS.MEDIUM
 } as const
-
-/**
- * Helper to get timeout for an operation
- */
-export function getOperationTimeout(operation: keyof typeof OPERATION_TIMEOUTS): number {
-  return OPERATION_TIMEOUTS[operation] || DEFAULT_API_TIMEOUT
-}

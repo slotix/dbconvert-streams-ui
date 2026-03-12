@@ -3,7 +3,7 @@
  * This ensures consistency across the application and makes it easy to update supported formats
  */
 
-export interface SupportedFormat {
+interface SupportedFormat {
   name: string
   extensions: string[]
   description?: string
@@ -35,18 +35,3 @@ export const SUPPORTED_FILE_FORMATS: SupportedFormat[] = [
     description: 'Apache Parquet columnar format'
   }
 ]
-
-/**
- * Get a formatted string of extensions for a specific format
- */
-export function getFormatExtensions(formatName: string): string {
-  const format = SUPPORTED_FILE_FORMATS.find((f) => f.name === formatName)
-  return format ? format.extensions.join(', ') : ''
-}
-
-/**
- * Get all supported extensions as a flat array
- */
-export function getAllSupportedExtensions(): string[] {
-  return SUPPORTED_FILE_FORMATS.flatMap((f) => f.extensions)
-}

@@ -1,6 +1,6 @@
 import type { FileFormat } from '@/utils/fileFormat'
 
-export interface S3FolderFile {
+interface S3FolderFile {
   name: string
   size: number
   fullKey: string

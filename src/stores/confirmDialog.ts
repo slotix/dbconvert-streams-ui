@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 
-export type ConfirmDialogOptions = {
+type ConfirmDialogOptions = {
   title?: string
   description?: string
   confirmLabel?: string

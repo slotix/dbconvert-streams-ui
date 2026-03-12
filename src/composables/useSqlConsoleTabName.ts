@@ -1,7 +1,7 @@
 import { computed, type ComputedRef, type Ref } from 'vue'
 import type { ConnectionMapping } from '@/api/federated'
 
-export interface UseSqlConsoleTabNameOptions {
+interface UseSqlConsoleTabNameOptions {
   mode: Ref<'database' | 'file'> | ComputedRef<'database' | 'file'>
   runMode: Ref<'single' | 'federated'>
   selectedConnections: Ref<ConnectionMapping[]>
@@ -12,7 +12,7 @@ export interface UseSqlConsoleTabNameOptions {
   currentConnectionName: Ref<string | null> | ComputedRef<string | null>
 }
 
-export interface UseSqlConsoleTabNameReturn {
+interface UseSqlConsoleTabNameReturn {
   paneTabName: ComputedRef<string>
 }
 

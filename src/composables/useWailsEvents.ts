@@ -123,7 +123,7 @@ function navigateToPath(router: Router, path: string) {
   })
 }
 
-export function stopWailsEventBridge() {
+function stopWailsEventBridge() {
   stopMenuEvents?.()
   stopMenuEvents = null
   stopCloseEvents?.()

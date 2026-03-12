@@ -1,5 +1,5 @@
 // Cloud provider logo mapping and utility functions
-export interface CloudProviderInfo {
+interface CloudProviderInfo {
   name: string
   displayName: string
   logo: string
@@ -7,7 +7,7 @@ export interface CloudProviderInfo {
   textColor: string
 }
 
-export const CLOUD_PROVIDERS: Record<string, CloudProviderInfo> = {
+const CLOUD_PROVIDERS: Record<string, CloudProviderInfo> = {
   // PostgreSQL Cloud Providers
   neon: {
     name: 'neon',
@@ -100,7 +100,7 @@ export const CLOUD_PROVIDERS: Record<string, CloudProviderInfo> = {
 /**
  * Get cloud provider information by provider name
  */
-export function getCloudProviderInfo(providerName: string): CloudProviderInfo | null {
+function getCloudProviderInfo(providerName: string): CloudProviderInfo | null {
   if (!providerName) return null
   return CLOUD_PROVIDERS[providerName.toLowerCase()] || null
 }

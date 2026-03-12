@@ -99,7 +99,7 @@ export interface LspSignatureHelpResult {
   activeParameter?: number
 }
 
-export interface EditorDocLineLike {
+interface EditorDocLineLike {
   number: number
   from: number
   to: number

@@ -17,16 +17,12 @@ export interface FileSystemEntry {
   isLoaded?: boolean // Whether this directory's children have been loaded
 }
 
-export interface DirectoryListResponse {
+interface DirectoryListResponse {
   path: string
   entries: FileSystemEntry[]
 }
 
-export interface WritableCheckRequest {
-  path: string
-}
-
-export interface WritableCheckResponse {
+interface WritableCheckResponse {
   ok: boolean
   error?: string
 }
@@ -61,10 +57,4 @@ export async function checkWritable(path: string): Promise<WritableCheckResponse
 export async function getRoots(): Promise<string[]> {
   const response = await apiClient.get('/fs/roots')
   return response.data
-}
-
-export default {
-  listDirectory,
-  checkWritable,
-  getRoots
 }

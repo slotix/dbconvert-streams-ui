@@ -235,11 +235,11 @@ apiClient.interceptors.response.use(
   }
 )
 
-export function validateApiKey(apiKey: string | null): string {
+function validateApiKey(apiKey: string | null): string {
   return normalizeApiKey(apiKey)
 }
 
-export async function validateApiKeyWithServer(apiKey: string | null): Promise<void> {
+async function validateApiKeyWithServer(apiKey: string | null): Promise<void> {
   const normalizedApiKey = normalizeApiKey(apiKey)
   try {
     // Validate the API key by making a request to a protected endpoint
@@ -382,7 +382,7 @@ export async function updateLoggingSettings(
   }
 }
 
-export async function getConnections(): Promise<unknown> {
+async function getConnections(): Promise<unknown> {
   try {
     const response = await apiClient.get('/connections')
     return response.data
@@ -391,7 +391,7 @@ export async function getConnections(): Promise<unknown> {
   }
 }
 
-export async function getStreams(): Promise<unknown> {
+async function getStreams(): Promise<unknown> {
   try {
     const response = await apiClient.get('/streams')
     return response.data

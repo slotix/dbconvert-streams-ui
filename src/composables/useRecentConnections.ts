@@ -3,7 +3,7 @@ import { usePersistedState } from './usePersistedState'
 
 const MAX_RECENT_CONNECTIONS = 5
 
-export type RecentConnection = {
+type RecentConnection = {
   id: string
   name: string
   type?: string

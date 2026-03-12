@@ -4,7 +4,7 @@ import { ref } from 'vue'
 /**
  * Cached query results for a tab (kept in memory, not persisted)
  */
-export interface QueryResultCache {
+interface QueryResultCache {
   columns: string[]
   rows: Record<string, unknown>[]
   resultSets?: Array<{
@@ -41,7 +41,7 @@ export interface SqlQueryTab {
 /**
  * State for a SQL Console (per connection + database combination)
  */
-export interface SqlConsoleState {
+interface SqlConsoleState {
   tabs: SqlQueryTab[]
   activeTabId: string | null
 }
@@ -49,7 +49,7 @@ export interface SqlConsoleState {
 /**
  * Closed tab history item
  */
-export interface ClosedTabHistoryItem {
+interface ClosedTabHistoryItem {
   tab: SqlQueryTab
   closedAt: number
 }

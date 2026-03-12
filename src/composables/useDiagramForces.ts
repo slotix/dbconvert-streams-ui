@@ -19,7 +19,7 @@ import type {
 } from 'd3-force'
 import type { TableNode, TableLink } from '@/types/diagram'
 
-export interface DiagramForceOptions {
+interface DiagramForceOptions {
   linkDistance?: number
   chargeStrength?: number
   collisionRadius?: number

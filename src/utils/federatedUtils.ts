@@ -9,13 +9,13 @@ import type { ConnectionMapping } from '@/api/federated'
 import type { StreamConnectionMapping } from '@/types/streamConfig'
 
 /** Default alias prefix for source connections (fallback) */
-export const DEFAULT_ALIAS = 'db'
+const DEFAULT_ALIAS = 'db'
 
 /**
  * Alias prefix mapping based on connection/database type.
  * Used to generate meaningful aliases like `pg1`, `my1` instead of generic `src1`, `src2`.
  */
-export const ALIAS_PREFIX_MAP: Record<string, string> = {
+const ALIAS_PREFIX_MAP: Record<string, string> = {
   postgresql: 'pg',
   postgres: 'pg',
   mysql: 'my',
@@ -35,7 +35,7 @@ export const ALIAS_PREFIX_MAP: Record<string, string> = {
  * @param connectionType - The type of connection (e.g., 'postgresql', 'mysql', 's3')
  * @returns The prefix to use for aliases (e.g., 'pg', 'my', 's3')
  */
-export function getAliasPrefix(connectionType?: string): string {
+function getAliasPrefix(connectionType?: string): string {
   const normalized = connectionType?.toLowerCase() || ''
   return ALIAS_PREFIX_MAP[normalized] || DEFAULT_ALIAS
 }
@@ -62,7 +62,7 @@ export function generateTypeBasedAlias(
 /**
  * Parsed table name components for federated mode
  */
-export interface ParsedTableName {
+interface ParsedTableName {
   /** Connection alias (e.g., "src2") - only present in federated mode */
   alias?: string
   /** Schema name (e.g., "public") - for PostgreSQL */
@@ -185,10 +185,6 @@ export function extractSchema(tableName: string, isFederated: boolean): string {
  * @param isFederated - Whether multi-source/federated mode is active
  * @returns Display name for the table
  */
-export function getTableDisplayName(tableName: string, isFederated: boolean): string {
-  return stripAliasPrefix(tableName, isFederated)
-}
-
 /**
  * Find a connection by its alias in a connections array.
  *
@@ -196,7 +192,7 @@ export function getTableDisplayName(tableName: string, isFederated: boolean): st
  * @param connections - Array of connections to search
  * @returns Matching connection or undefined
  */
-export function getConnectionByAlias<T extends { alias?: string }>(
+function getConnectionByAlias<T extends { alias?: string }>(
   alias: string,
   connections: T[]
 ): T | undefined {

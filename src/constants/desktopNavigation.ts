@@ -21,12 +21,3 @@ export const DESKTOP_NAVIGATION = {
   /** Routes that are informational/status views (not primary workspaces) */
   informationalViews: ['/']
 } as const
-
-/**
- * Route names for the application
- */
-export const ROUTE_NAMES = {
-  OVERVIEW: 'Overview',
-  DATABASE_EXPLORER: 'DatabaseExplorer',
-  STREAMS: 'Streams'
-} as const

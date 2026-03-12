@@ -3,7 +3,7 @@ import type { GridApi } from 'ag-grid-community'
 import connections from '@/api/connections'
 import { useObjectTabStateStore } from '@/stores/objectTabState'
 
-export type ExactRowCountDeps = {
+type ExactRowCountDeps = {
   objectKey: ComputedRef<string>
   isView: ComputedRef<boolean>
   approxRows: ComputedRef<number | undefined>

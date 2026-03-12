@@ -1,4 +1,4 @@
-export type Severity = 'info' | 'warn' | 'error'
+type Severity = 'info' | 'warn' | 'error'
 
 export interface OverviewNote {
   severity: Severity
@@ -6,7 +6,7 @@ export interface OverviewNote {
   doc?: string
 }
 
-export interface OverviewConnections {
+interface OverviewConnections {
   used: number
   max?: number
 }
@@ -23,7 +23,7 @@ export interface OverviewActivity {
   }>
 }
 
-export interface OverviewHealthPGSlot {
+interface OverviewHealthPGSlot {
   name: string
   plugin: string
   active: boolean

@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 
-export type ViewType =
+type ViewType =
   | 'connection-details' // Showing connection info panel
   | 'database-overview' // Showing database stats/tables list
   | 'table-data' // Showing table data in pane tabs

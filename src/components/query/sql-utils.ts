@@ -4,9 +4,9 @@
  * Shared utilities for SQL generation across query builder components
  */
 
-export type SqlDialect = 'mysql' | 'pgsql' | 'sql'
-export type FilterClause = { column: string; operator: string; value: string }
-export type SortClause = { column: string; direction: 'ASC' | 'DESC' }
+type SqlDialect = 'mysql' | 'pgsql' | 'sql'
+type FilterClause = { column: string; operator: string; value: string }
+type SortClause = { column: string; direction: 'ASC' | 'DESC' }
 
 // Operators that don't need a value
 const UNARY_OPERATORS = ['IS NULL', 'IS NOT NULL']

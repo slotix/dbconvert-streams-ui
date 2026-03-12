@@ -1,0 +1,13 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "public/env-config.js",
+    "src/__tests__/**/*.{test,spec}.{ts,tsx,js}",
+    "tests/**/*.spec.ts"
+  ],
+  "project": [
+    "src/**/*.{ts,tsx,vue,js}",
+    "tests/**/*.{ts,tsx,js}"
+  ],
+  "ignoreDependencies": ["@tailwindcss/forms"]
+}

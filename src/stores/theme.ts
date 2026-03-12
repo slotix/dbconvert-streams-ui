@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { STORAGE_KEYS, getStorageValue, setStorageValue } from '@/constants/storageKeys'
 
-export type ThemeMode = 'light' | 'dark'
+type ThemeMode = 'light' | 'dark'
 
 export const useThemeStore = defineStore('theme', () => {
   // State

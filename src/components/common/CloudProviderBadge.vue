@@ -1,9 +1,9 @@
 <template>
   <div
     v-if="isCloudConnection(cloudProvider)"
+    v-tooltip="`Hosted on ${displayName}`"
     class="inline-flex items-center rounded-full font-medium transition-colors"
     :class="[badgeStyle.bgColor, badgeStyle.textColor, sizeClasses]"
-    :title="`Hosted on ${displayName}`"
   >
     <img
       v-if="providerLogo"

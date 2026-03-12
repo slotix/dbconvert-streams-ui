@@ -2,7 +2,7 @@ import * as XLSX from 'xlsx'
 
 export type ExportFormat = 'csv' | 'json' | 'jsonl' | 'tsv' | 'sql' | 'markdown' | 'excel'
 
-export interface ExportFormatOption {
+interface ExportFormatOption {
   id: ExportFormat
   label: string
 }
@@ -15,7 +15,7 @@ export const primaryExportFormats: ExportFormatOption[] = [
 ]
 
 // Secondary formats shown in dropdown
-export const secondaryExportFormats: ExportFormatOption[] = [
+const secondaryExportFormats: ExportFormatOption[] = [
   { id: 'jsonl', label: 'JSONL' },
   { id: 'tsv', label: 'TSV' },
   { id: 'sql', label: 'SQL INSERT' },
@@ -60,7 +60,7 @@ function escapeMarkdown(value: unknown): string {
   return str.replace(/\|/g, '\\|')
 }
 
-export interface ExportOptions {
+interface ExportOptions {
   /** Column names/keys in order */
   columns: string[]
   /** Row data as array of objects */
@@ -71,7 +71,7 @@ export interface ExportOptions {
   tableName?: string
 }
 
-export interface ExportResult {
+interface ExportResult {
   format: ExportFormat
   filename: string
   extension: string

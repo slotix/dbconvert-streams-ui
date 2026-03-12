@@ -31,7 +31,7 @@ export function getFormatSpec(spec: TargetSpec | undefined): FileFormatSpec | un
 /**
  * Check if this is a file-based target (files, s3, gcs, azure)
  */
-export function isFileBasedTarget(spec: TargetSpec | undefined): boolean {
+function isFileBasedTarget(spec: TargetSpec | undefined): boolean {
   if (!spec) return false
   return !!(spec.files || spec.s3 || spec.gcs || spec.azure)
 }
@@ -39,14 +39,14 @@ export function isFileBasedTarget(spec: TargetSpec | undefined): boolean {
 /**
  * Check if this is an S3 target
  */
-export function isS3Target(spec: TargetSpec | undefined): boolean {
+function isS3Target(spec: TargetSpec | undefined): boolean {
   return !!spec?.s3
 }
 
 /**
  * Check if this is a database target
  */
-export function isDatabaseTarget(spec: TargetSpec | undefined): boolean {
+function isDatabaseTarget(spec: TargetSpec | undefined): boolean {
   return !!spec?.db
 }
 

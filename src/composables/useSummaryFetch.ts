@@ -2,7 +2,7 @@ import { ref, onBeforeUnmount, type Ref } from 'vue'
 
 const SLOW_HINT_DELAY_MS = 2500
 
-export interface UseSummaryFetchOptions<T> {
+interface UseSummaryFetchOptions<T> {
   /**
    * Called to execute the actual fetch operation.
    * Receives the AbortSignal for cancellation and forceRefresh flag.
@@ -20,7 +20,7 @@ export interface UseSummaryFetchOptions<T> {
   onError?: (error: Error) => void
 }
 
-export interface UseSummaryFetchReturn<T> {
+interface UseSummaryFetchReturn<T> {
   loading: Ref<boolean>
   error: Ref<string | null>
   summary: Ref<T | null>

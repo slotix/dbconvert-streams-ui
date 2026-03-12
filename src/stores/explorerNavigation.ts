@@ -6,7 +6,6 @@ import type {
   SQLTableMeta,
   SQLViewMeta
 } from '@/types/metadata'
-import type { FileSystemEntry } from '@/api/fileSystem'
 import type { DatabaseInfo } from '@/types/connections'
 import connectionsApi from '@/api/connections'
 
@@ -69,7 +68,6 @@ function persistExpansionState(state: PersistedExpansionState) {
 const persistedExpansionState = loadPersistedExpansionState()
 
 export type ObjectType = 'table' | 'view' | 'function' | 'procedure' | 'sequence'
-export type DefaultTab = 'structure' | 'data'
 export type ExplorerObjectSection = 'tables' | 'views'
 
 export function getExplorerObjectSectionKey(params: {
@@ -87,34 +85,13 @@ export function getExplorerObjectSectionKey(params: {
   ].join(':')
 }
 
-export interface NavigationSelection {
+interface NavigationSelection {
   connectionId: string
   database?: string
   schema?: string
   type?: ObjectType | null
   name?: string | null
   filePath?: string | null
-}
-
-export interface OpenObjectPayload {
-  connectionId: string
-  database: string
-  schema?: string
-  type: ObjectType
-  name: string
-  meta: SQLTableMeta | SQLViewMeta | SQLRoutineMeta | SQLSequenceMeta
-  mode: 'preview' | 'pinned'
-  defaultTab?: DefaultTab
-  openInRightSplit?: boolean
-}
-
-export interface OpenFilePayload {
-  connectionId: string
-  path: string
-  entry: FileSystemEntry
-  mode: 'preview' | 'pinned'
-  defaultTab?: DefaultTab
-  openInRightSplit?: boolean
 }
 
 export const useExplorerNavigationStore = defineStore('explorerNavigation', {

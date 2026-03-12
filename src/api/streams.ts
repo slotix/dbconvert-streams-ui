@@ -16,7 +16,7 @@ type ValidatedConstraintDetail = {
   constraintName: string
 }
 
-export type ConstraintsActionResponse = {
+type ConstraintsActionResponse = {
   engine: string
   action: string
   validatedCount?: number
@@ -25,7 +25,7 @@ export type ConstraintsActionResponse = {
   violations?: FKViolationDetail[]
 }
 
-export type GetStreamsParams = {
+type GetStreamsParams = {
   search?: string
   limit?: number
   offset?: number

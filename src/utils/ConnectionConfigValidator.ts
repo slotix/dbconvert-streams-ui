@@ -7,13 +7,13 @@
 
 import type { Connection } from '@/types/connections'
 
-export interface ValidationError {
+interface ValidationError {
   path: string
   message: string
   line?: number
 }
 
-export interface ValidationResult {
+interface ValidationResult {
   valid: boolean
   errors: ValidationError[]
   parsed?: unknown

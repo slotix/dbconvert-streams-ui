@@ -13,12 +13,12 @@ export interface QueryTemplate {
   sourceLabel?: string
 }
 
-export interface FileTemplateOptions {
+interface FileTemplateOptions {
   /** Base path prefix for file references */
   prefix: string
 }
 
-export interface DatabaseTemplateOptions {
+interface DatabaseTemplateOptions {
   /** SQL dialect: 'pgsql' | 'mysql' | 'sql' */
   dialect: string
   /** Database name if scoped to a specific database */

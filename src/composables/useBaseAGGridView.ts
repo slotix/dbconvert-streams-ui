@@ -63,7 +63,7 @@ export interface FetchDataParams {
 /**
  * Options for the base AG Grid view composable
  */
-export interface BaseAGGridViewOptions {
+interface BaseAGGridViewOptions {
   /** Unique key for this grid instance (for state persistence) */
   objectKey: Ref<string>
 

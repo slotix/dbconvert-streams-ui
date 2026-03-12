@@ -7,7 +7,7 @@ import { type DatabaseMetadata, type DatabaseSummary } from '@/types/metadata'
 import { type DatabaseOverview } from '@/types/overview'
 import { OPERATION_TIMEOUTS } from '@/constants'
 
-export type GetConnectionsParams = {
+type GetConnectionsParams = {
   search?: string
 }
 

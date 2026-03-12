@@ -83,23 +83,7 @@ export const STORAGE_KEYS = {
 /**
  * Type for storage key values
  */
-export type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS]
-
-/**
- * SessionStorage key names (for temporary, session-only data)
- */
-export const SESSION_KEYS = {
-  /** Current stream monitoring data */
-  STREAM_MONITOR_STATE: 'stream-monitor-state',
-
-  /** Temporary form data */
-  FORM_DRAFT: 'form-draft'
-} as const
-
-/**
- * Type for session key values
- */
-export type SessionKey = (typeof SESSION_KEYS)[keyof typeof SESSION_KEYS]
+type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS]
 
 /**
  * Helper to get typed localStorage value

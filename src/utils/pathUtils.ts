@@ -7,7 +7,7 @@ export interface PathSegment {
   path: string
 }
 
-export interface ParsedS3Uri {
+interface ParsedS3Uri {
   bucket: string
   prefix: string
 }
@@ -28,7 +28,7 @@ export function parseS3Uri(uri: string): ParsedS3Uri | null {
 /**
  * Check if a path is an S3 URI
  */
-export function isS3Path(path: string): boolean {
+function isS3Path(path: string): boolean {
   return path.startsWith('s3://')
 }
 
@@ -140,25 +140,6 @@ function parseLocalPathToSegments(fullPath: string, basePath?: string): PathSegm
 
 /**
  * Get the file name from a path (last segment)
- */
-export function getFileName(path: string): string {
-  if (!path) return ''
-
-  // Handle S3 paths
-  if (isS3Path(path)) {
-    const parsed = parseS3Uri(path)
-    if (!parsed || !parsed.prefix) return ''
-    const parts = parsed.prefix.split('/').filter((p) => p)
-    return parts[parts.length - 1] || ''
-  }
-
-  // Handle local paths
-  const parts = path.split(/[/\\]/).filter((p) => p)
-  return parts[parts.length - 1] || ''
-}
-
-/**
- * Get the parent directory path
  */
 export function getParentPath(path: string): string {
   if (!path) return ''

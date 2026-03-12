@@ -38,10 +38,3 @@ export type SummaryResponse = TableSummaryResponse | FileSummaryResponse
 export function isTableSummary(summary: SummaryResponse): summary is TableSummaryResponse {
   return 'table' in summary
 }
-
-/**
- * Type guard to check if a summary response is a file summary.
- */
-export function isFileSummary(summary: SummaryResponse): summary is FileSummaryResponse {
-  return 'path' in summary
-}

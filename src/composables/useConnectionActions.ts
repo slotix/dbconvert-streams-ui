@@ -15,7 +15,7 @@ import type { ObjectType } from '@/stores/explorerNavigation'
 
 type DefaultTab = 'structure' | 'data'
 
-export interface OpenObjectParams {
+interface OpenObjectParams {
   connectionId: string
   database: string
   schema?: string
@@ -26,7 +26,7 @@ export interface OpenObjectParams {
   openInRightSplit?: boolean
 }
 
-export interface OpenFileParams {
+interface OpenFileParams {
   connectionId: string
   path: string
   entry: FileSystemEntry

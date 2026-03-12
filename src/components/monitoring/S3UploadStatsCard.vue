@@ -207,7 +207,7 @@ function getUploadStatus(status: string) {
               class="hover:bg-gray-50 dark:hover:bg-gray-900/40 transition-colors"
             >
               <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">
-                <span class="truncate block max-w-xs" :title="upload.table">{{
+                <span v-tooltip="upload.table" class="truncate block max-w-xs">{{
                   upload.table
                 }}</span>
               </td>

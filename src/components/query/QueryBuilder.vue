@@ -35,9 +35,9 @@
             <span>Filter</span>
           </button>
           <button
+            v-tooltip="canAddSort ? 'Add ORDER BY' : 'All columns are already used in sorting'"
             type="button"
             class="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-white dark:hover:bg-gray-800 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-gray-600 dark:disabled:hover:text-gray-400"
-            :title="canAddSort ? 'Add ORDER BY' : 'All columns are already used in sorting'"
             :disabled="!canAddSort"
             @click="addSort"
           >
@@ -150,8 +150,8 @@
                   <td
                     v-for="col in previewData.columns"
                     :key="col"
+                    v-tooltip="formatCellValue(row[col])"
                     class="px-2 py-1 text-gray-900 dark:text-gray-100 whitespace-nowrap max-w-[200px] truncate"
-                    :title="formatCellValue(row[col])"
                   >
                     {{ formatCellValue(row[col]) }}
                   </td>

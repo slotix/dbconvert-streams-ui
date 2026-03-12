@@ -1,7 +1,7 @@
 import { STORAGE_KEYS } from '@/constants/storageKeys'
 import type { StreamDetailsTab } from '@/composables/useStreamHistory'
 
-export type StreamsViewState = {
+type StreamsViewState = {
   selectedStreamId?: string
   tab?: StreamDetailsTab
 }
@@ -26,7 +26,7 @@ export function readStreamsViewState(): StreamsViewState | null {
   }
 }
 
-export function writeStreamsViewState(state: StreamsViewState): void {
+function writeStreamsViewState(state: StreamsViewState): void {
   if (!hasStorage()) return
   try {
     window.localStorage.setItem(STORAGE_KEYS.STREAMS_VIEW_STATE, JSON.stringify(state))
@@ -46,12 +46,6 @@ export function updateStreamsViewState(patch: StreamsViewState): void {
 export function setSelectedStreamInViewState(streamId?: string): void {
   updateStreamsViewState({
     selectedStreamId: streamId || undefined
-  })
-}
-
-export function setStreamsTabInViewState(tab?: StreamDetailsTab): void {
-  updateStreamsViewState({
-    tab: tab || undefined
   })
 }
 

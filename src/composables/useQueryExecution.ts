@@ -13,7 +13,7 @@ import { executeFederatedQuery, type ConnectionMapping } from '@/api/federated'
 import { detectQueryPurpose, type QueryHistoryContext } from '@/composables/useConsoleTab'
 import { isDuckDbFileQuery } from '@/composables/useConsoleSources'
 
-export type ConsoleMode = 'database' | 'file'
+type ConsoleMode = 'database' | 'file'
 
 type QueryResultSet = {
   columns?: string[]
@@ -29,21 +29,21 @@ type ExecuteQueryApiResult = {
   affectedObjects?: string[]
 }
 
-export interface NormalizedResultSet {
+interface NormalizedResultSet {
   columns: string[]
   rows: Record<string, unknown>[]
   commandTag?: string
   rowsAffected?: number
 }
 
-export interface ExecutionResult {
+interface ExecutionResult {
   columns: string[]
   rows: Record<string, unknown>[]
   resultSets?: NormalizedResultSet[]
   stats: { rowCount: number; duration: number }
 }
 
-export interface UseQueryExecutionOptions {
+interface UseQueryExecutionOptions {
   /** Console mode: 'database' or 'file' */
   mode: ComputedRef<ConsoleMode> | Ref<ConsoleMode>
   /** Current connection ID */
@@ -76,12 +76,12 @@ export interface UseQueryExecutionOptions {
   }) => string | null
 }
 
-export interface UseQueryExecutionReturn {
+interface UseQueryExecutionReturn {
   isExecuting: Ref<boolean>
   executeQuery: (queryOverride?: string) => Promise<void>
 }
 
-export function validateDatabaseExecutionTarget(target: { database?: string }): string | null {
+function validateDatabaseExecutionTarget(target: { database?: string }): string | null {
   const database = target.database?.trim()
   if (!database) {
     return 'Select database in Query Session before running direct database queries.'
@@ -676,5 +676,3 @@ export function useQueryExecution(options: UseQueryExecutionOptions): UseQueryEx
     executeQuery
   }
 }
-
-export type QueryExecutionReturn = ReturnType<typeof useQueryExecution>

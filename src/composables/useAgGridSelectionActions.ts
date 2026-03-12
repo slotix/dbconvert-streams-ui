@@ -11,7 +11,7 @@ type ToastLike = {
   info: (message: string) => void
 }
 
-export type UseAgGridSelectionActionsOptions = {
+type UseAgGridSelectionActionsOptions = {
   gridApi: Ref<GridApi | null>
   selectedRows: Ref<Record<string, unknown>[]>
   selectedRowCount: ComputedRef<number>

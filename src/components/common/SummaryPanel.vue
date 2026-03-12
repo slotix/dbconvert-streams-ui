@@ -241,8 +241,8 @@ function getCardinalityLabel(indicator: string): string {
           <span class="truncate">Rows</span>
         </div>
         <div
+          v-tooltip="summary.rowCount.toLocaleString()"
           class="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100 truncate"
-          :title="summary.rowCount.toLocaleString()"
         >
           {{ formatCompact(summary.rowCount) }}
         </div>
@@ -353,8 +353,8 @@ function getCardinalityLabel(indicator: string): string {
                     <span
                       v-for="hint in getDataQualityHints(col)"
                       :key="`${col.name}-${hint.label}`"
+                      v-tooltip="hint.title"
                       :class="['px-1.5 py-0.5 text-[10px] font-medium rounded', hint.className]"
-                      :title="hint.title"
                     >
                       {{ hint.label }}
                     </span>
@@ -378,16 +378,16 @@ function getCardinalityLabel(indicator: string): string {
               </td>
               <td class="px-4 py-3 whitespace-nowrap">
                 <span
+                  v-tooltip="String(col.min)"
                   class="text-sm text-gray-600 dark:text-gray-300 font-mono"
-                  :title="String(col.min)"
                 >
                   {{ formatValue(col.min) }}
                 </span>
               </td>
               <td class="px-4 py-3 whitespace-nowrap">
                 <span
+                  v-tooltip="String(col.max)"
                   class="text-sm text-gray-600 dark:text-gray-300 font-mono"
-                  :title="String(col.max)"
                 >
                   {{ formatValue(col.max) }}
                 </span>
@@ -419,40 +419,40 @@ function getCardinalityLabel(indicator: string): string {
           class="rounded-lg border border-gray-200 dark:border-gray-700 p-3"
         >
           <h4
+            v-tooltip="col.name"
             class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2 truncate"
-            :title="col.name"
           >
             {{ col.name }}
           </h4>
           <div class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
             <span class="text-gray-500 dark:text-gray-400">Min</span>
             <span
+              v-tooltip="String(col.min)"
               class="font-mono text-gray-900 dark:text-gray-100 text-right truncate"
-              :title="String(col.min)"
               >{{ formatValue(col.min) }}</span
             >
             <span class="text-gray-500 dark:text-gray-400">Q25</span>
             <span
+              v-tooltip="String(col.q25)"
               class="font-mono text-gray-900 dark:text-gray-100 text-right truncate"
-              :title="String(col.q25)"
               >{{ formatValue(col.q25) }}</span
             >
             <span class="text-gray-500 dark:text-gray-400">Median</span>
             <span
+              v-tooltip="String(col.q50)"
               class="font-mono text-gray-900 dark:text-gray-100 text-right truncate"
-              :title="String(col.q50)"
               >{{ formatValue(col.q50) }}</span
             >
             <span class="text-gray-500 dark:text-gray-400">Q75</span>
             <span
+              v-tooltip="String(col.q75)"
               class="font-mono text-gray-900 dark:text-gray-100 text-right truncate"
-              :title="String(col.q75)"
               >{{ formatValue(col.q75) }}</span
             >
             <span class="text-gray-500 dark:text-gray-400">Max</span>
             <span
+              v-tooltip="String(col.max)"
               class="font-mono text-gray-900 dark:text-gray-100 text-right truncate"
-              :title="String(col.max)"
               >{{ formatValue(col.max) }}</span
             >
             <span
@@ -460,8 +460,8 @@ function getCardinalityLabel(indicator: string): string {
               >Std</span
             >
             <span
+              v-tooltip="String(col.std)"
               class="font-mono text-gray-900 dark:text-gray-100 text-right truncate pt-1 border-t border-gray-100 dark:border-gray-700"
-              :title="String(col.std)"
               >{{ formatValue(col.std) }}</span
             >
           </div>

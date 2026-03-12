@@ -139,21 +139,3 @@ export function formatLogTimestamp(timestamp: number): string {
   const milliseconds = date.getMilliseconds().toString().padStart(3, '0')
   return `${timeString}.${milliseconds}`
 }
-
-/**
- * Unified keyboard shortcuts help text for both log types
- */
-export const UNIFIED_SHORTCUTS = {
-  system: [
-    { key: 'K', description: 'Clear logs' },
-    { key: 'F / /', description: 'Focus search (when implemented)' }
-  ],
-  sql: [
-    { key: 'F', description: 'Focus search box' },
-    { key: 'G', description: 'Toggle grouped/ungrouped view' },
-    { key: 'X', description: 'Toggle expand/collapse all' },
-    { key: 'E', description: 'Toggle errors only' },
-    { key: 'S', description: 'Toggle sort order' },
-    { key: 'K', description: 'Clear logs' }
-  ]
-}

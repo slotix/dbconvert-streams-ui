@@ -11,13 +11,13 @@ import {
 } from '@/types/specs'
 import { normalizeConnectionAliases } from '@/utils/federatedUtils'
 
-export interface WizardStep {
+interface WizardStep {
   name: string
   title: string
   description: string
 }
 
-export interface SelectionState {
+interface SelectionState {
   sourceConnectionId: string | null
   targetConnectionId: string | null
   sourceDatabase: string | null

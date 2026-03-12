@@ -58,7 +58,7 @@ export type PaneTab = {
 /**
  * State for a single pane
  */
-export interface PaneState {
+interface PaneState {
   /**
    * Ordered list of tabs for the pane.
    * Includes both kept (pinned=true) and preview (pinned=false) tabs.
@@ -73,7 +73,7 @@ export interface PaneState {
 /**
  * Entry in closed tab history for "Reopen Closed Tab" feature
  */
-export interface ClosedTabHistoryItem {
+interface ClosedTabHistoryItem {
   tab: PaneTab
   paneId: PaneId
   closedAt: number

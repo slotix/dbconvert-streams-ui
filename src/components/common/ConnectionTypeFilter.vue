@@ -3,8 +3,8 @@
     <!-- Button -->
     <button
       ref="buttonRef"
+      v-tooltip="buttonTooltip"
       class="inline-flex min-w-[100px] items-center gap-2 rounded border border-gray-300 bg-white px-2 py-1.5 text-xs font-medium whitespace-nowrap text-gray-700 hover:bg-gray-50 focus:outline-none focus-visible:border-gray-400 focus-visible:bg-gray-50 dark:border-gray-700 dark:bg-gray-850 dark:text-gray-300 dark:hover:bg-gray-800 dark:focus-visible:border-gray-500 dark:focus-visible:bg-gray-800"
-      :title="buttonTooltip"
       @click="isOpen = !isOpen"
     >
       <Layers v-if="selectedTypes.length === 0" class="h-5 w-5 text-gray-500 dark:text-gray-300" />

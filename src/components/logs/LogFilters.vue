@@ -229,13 +229,13 @@ onBeforeUnmount(() => {
     <div class="flex items-center gap-2">
       <!-- Visual Grouping Toggle -->
       <button
+        v-tooltip="visuallyGrouped ? 'Hide location headers (G)' : 'Show location headers (G)'"
         :class="[
           'flex items-center gap-1.5 px-3 py-1.5 text-xs border rounded transition-colors',
           visuallyGrouped
             ? 'border-gray-400 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600'
             : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
         ]"
-        :title="visuallyGrouped ? 'Hide location headers (G)' : 'Show location headers (G)'"
         @click="toggleVisualGrouping"
       >
         <component :is="visuallyGrouped ? Grid2X2 : List" class="w-4 h-4" />
@@ -245,13 +245,13 @@ onBeforeUnmount(() => {
       <!-- Expand/Collapse Toggle (only visible when visually grouped) -->
       <button
         v-if="visuallyGrouped && hasLocations"
+        v-tooltip="`${expandCollapseLabel} all location groups (X)`"
         :class="[
           'flex items-center gap-1.5 px-3 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded transition-colors shadow-sm',
           isAllExpanded
             ? 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
             : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
         ]"
-        :title="`${expandCollapseLabel} all location groups (X)`"
         @click="toggleExpandCollapse"
       >
         <component :is="isAllExpanded ? Minimize2 : Maximize2" class="w-4 h-4" />
@@ -261,8 +261,10 @@ onBeforeUnmount(() => {
       <!-- Query Type Filter Dropdown -->
       <div ref="queryTypeMenuRef" class="relative">
         <button
+          v-tooltip="
+            `Filter by query type (${selectedPurposes.size}/${queryPurposeOptions.length})`
+          "
           class="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 focus:border-gray-400 dark:focus:border-gray-500 focus:ring-1 focus:ring-gray-300 dark:focus:ring-gray-600 transition-colors text-left"
-          :title="`Filter by query type (${selectedPurposes.size}/${queryPurposeOptions.length})`"
           @click="showQueryTypeMenu = !showQueryTypeMenu"
         >
           <Filter class="w-4 h-4 text-gray-600 dark:text-gray-400" />
@@ -325,8 +327,8 @@ onBeforeUnmount(() => {
     <div class="flex items-center gap-2">
       <!-- Sort Order Toggle -->
       <button
+        v-tooltip="`Sort: ${sortOrder === 'newest' ? 'Newest on top' : 'Oldest on top'} (S)`"
         class="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-        :title="`Sort: ${sortOrder === 'newest' ? 'Newest on top' : 'Oldest on top'} (S)`"
         @click="toggleSortOrder"
       >
         <component
@@ -410,7 +412,7 @@ onBeforeUnmount(() => {
       </div>
 
       <!-- Errors Toggle -->
-      <div class="flex items-center gap-1" :title="'Show only errors (E)'">
+      <div v-tooltip="'Show only errors (E)'" class="flex items-center gap-1">
         <FormCheckbox v-model="errorsOnly">
           <span class="flex items-center gap-1.5">
             <AlertTriangle class="w-4 h-4 text-red-600 dark:text-red-300" />

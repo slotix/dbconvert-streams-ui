@@ -47,65 +47,9 @@ export const NODE_TYPES = {
 export type NodeType = (typeof NODE_TYPES)[keyof typeof NODE_TYPES]
 
 /**
- * SQL query purposes
- * Categorizes what the SQL query is doing
- */
-export const QUERY_PURPOSE = {
-  SCHEMA_INTROSPECTION: 'SCHEMA_INTROSPECTION',
-  DATA_QUERY: 'DATA_QUERY',
-  COUNT_QUERY: 'COUNT_QUERY',
-  PLAN_ANALYSIS: 'PLAN_ANALYSIS',
-  SCHEMA_CHANGE: 'SCHEMA_CHANGE',
-  DML_OPERATION: 'DML_OPERATION',
-  SYSTEM_TASK: 'SYSTEM_TASK',
-  UTILITY: 'UTILITY'
-} as const
-
-export type QueryPurpose = (typeof QUERY_PURPOSE)[keyof typeof QUERY_PURPOSE]
-
-/**
- * Human-readable labels for log levels
- */
-export const LOG_LEVEL_LABELS: Record<LogLevel, string> = {
-  [LOG_LEVELS.DEBUG]: 'Debug',
-  [LOG_LEVELS.INFO]: 'Info',
-  [LOG_LEVELS.WARN]: 'Warning',
-  [LOG_LEVELS.ERROR]: 'Error'
-}
-
-/**
- * Human-readable labels for log categories
- */
-export const LOG_CATEGORY_LABELS: Record<LogCategory, string> = {
-  [LOG_CATEGORIES.GENERAL]: 'General',
-  [LOG_CATEGORIES.PROGRESS]: 'Progress',
-  [LOG_CATEGORIES.STAT]: 'Statistics',
-  [LOG_CATEGORIES.TABLE_METADATA]: 'Table Metadata',
-  [LOG_CATEGORIES.SQL]: 'SQL',
-  [LOG_CATEGORIES.ERROR]: 'Error',
-  [LOG_CATEGORIES.DEBUG]: 'Debug',
-  [LOG_CATEGORIES.S3_UPLOAD]: 'S3 Upload'
-}
-
-/**
  * Log categories that should be filtered together as "progress & stats"
  */
 export const STREAM_PROGRESS_CATEGORIES: LogCategory[] = [
   LOG_CATEGORIES.PROGRESS,
   LOG_CATEGORIES.STAT
 ]
-
-/**
- * Log categories for terminal/end-of-stream messages
- * These typically have final stats and elapsed time
- */
-export const TERMINAL_LOG_CATEGORIES: LogCategory[] = [LOG_CATEGORIES.STAT, LOG_CATEGORIES.PROGRESS]
-
-/**
- * Node type display names
- */
-export const NODE_TYPE_DISPLAY: Record<NodeType, string> = {
-  [NODE_TYPES.API]: 'API',
-  [NODE_TYPES.SOURCE]: 'SOURCE',
-  [NODE_TYPES.TARGET]: 'TARGET'
-}

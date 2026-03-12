@@ -2,43 +2,6 @@ import type { FileFormat } from '@/utils/fileFormat'
 
 // S3-specific type definitions for DBConvert Streams UI
 
-// S3 Configuration Request
-export interface S3ConfigRequest {
-  credentialSource: 'aws' | 'static' // Backend decides on Vault storage
-  profileName?: string // For backend Vault retrieval only
-  endpoint?: string // Required for S3-compatible providers
-  region: string
-  urlStyle?: 'auto' | 'path' | 'virtual'
-  useSSL?: boolean
-  credentials?: {
-    accessKeyId: string
-    secretAccessKey: string
-    sessionToken?: string
-  }
-  performance?: {
-    threads?: number
-    enableFileCache?: boolean
-  }
-  limits?: {
-    maxListObjects?: number
-    maxScanBytes?: number
-    queryTimeoutS?: number
-  }
-}
-
-// S3 Configuration Response
-export interface S3ConfigResponse {
-  status: string
-  message: string
-  config: {
-    endpoint: string
-    region: string
-    urlStyle: string
-    useSSL: boolean
-    threads: number
-  }
-}
-
 // S3 List Request
 export interface S3ListRequest {
   bucket: string
@@ -87,16 +50,6 @@ export interface S3CreateBucketResponse {
   region: string
 }
 
-// S3 Validation Response
-export interface S3ValidationResponse {
-  valid: boolean
-  recommendedMode: 'direct' | 'glob' | 'hive' | 'manifest'
-  reason: string
-  isHivePartitioned: boolean
-  hivePartitions?: string[]
-  warnings: string[]
-}
-
 // S3 Manifest Response
 export interface S3ManifestObject {
   path: string
@@ -139,7 +92,7 @@ export interface S3ManifestResponse {
 }
 
 // Provider preset configuration
-export interface S3ProviderPreset {
+interface S3ProviderPreset {
   endpoint: string
   region: string
   urlStyle: 'auto' | 'path' | 'virtual'

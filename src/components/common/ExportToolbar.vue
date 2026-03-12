@@ -4,9 +4,9 @@
     <button
       v-for="format in visiblePrimaryFormats"
       :key="format.id"
+      v-tooltip="`Export current page as ${format.label}`"
       class="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 text-xs rounded text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
       :disabled="disabled"
-      :title="`Export current page as ${format.label}`"
       @click="handleExport(format.id)"
     >
       <Download class="h-3.5 w-3.5 mr-1" />

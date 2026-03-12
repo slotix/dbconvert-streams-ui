@@ -36,7 +36,7 @@ import {
 } from '@headlessui/vue'
 import { CheckCircle } from 'lucide-vue-next'
 
-export interface SelectionOption {
+interface SelectionOption {
   value: string | number
   label: string
   description?: string

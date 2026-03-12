@@ -9,14 +9,14 @@ import {
   parseNumberInput
 } from '@/utils/agGridEditing'
 
-export type ColumnMeta = {
+type ColumnMeta = {
   name: string
   dataType?: string
   isNullable: boolean
   scale?: number
 }
 
-export type UseAgGridDataViewColumnDefsOptions = {
+type UseAgGridDataViewColumnDefsOptions = {
   columns: ComputedRef<ColumnMeta[]>
   isTableEditable: ComputedRef<boolean>
   editKeyColumns: ComputedRef<string[]>

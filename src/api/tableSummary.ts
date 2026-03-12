@@ -57,7 +57,3 @@ export async function getTableSummary(
     throw handleApiError(error)
   }
 }
-
-export default {
-  getTableSummary
-}

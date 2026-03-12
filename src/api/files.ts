@@ -3,11 +3,8 @@ import { handleApiError } from '@/utils/errorHandler'
 import type { FileMetadata, FileDataResponse, CSVSniffResult } from '@/types/files'
 import type { FileFormat } from '@/utils/fileFormat'
 import type {
-  S3ConfigRequest,
-  S3ConfigResponse,
   S3ListRequest,
   S3ListResponse,
-  S3ValidationResponse,
   S3ManifestResponse,
   S3CreateBucketRequest,
   S3CreateBucketResponse
@@ -43,7 +40,7 @@ export async function getFileMetadata(
   }
 }
 
-export async function getFileData(
+async function getFileData(
   path: string,
   format: FileFormat,
   params: FileDataParams = {},
@@ -68,7 +65,7 @@ export async function getFileData(
   }
 }
 
-export async function sniffCSV(path: string, connectionId?: string): Promise<CSVSniffResult> {
+async function sniffCSV(path: string, connectionId?: string): Promise<CSVSniffResult> {
   try {
     const response = await apiClient.post<CSVSniffResult>('/files/csv/sniff', {
       path,
@@ -81,30 +78,7 @@ export async function sniffCSV(path: string, connectionId?: string): Promise<CSV
   }
 }
 
-export async function getFileExactCount(
-  path: string,
-  format: FileFormat
-): Promise<{ count: number }> {
-  try {
-    const response = await apiClient.get<{ count: number }>('/files/count', {
-      params: { path, format }
-    })
-    return response.data
-  } catch (error) {
-    throw handleApiError(error)
-  }
-}
-
 // S3 API Functions
-
-export async function configureS3Session(config: S3ConfigRequest): Promise<S3ConfigResponse> {
-  try {
-    const response = await apiClient.post<S3ConfigResponse>('/files/s3/configure', config)
-    return response.data
-  } catch (error) {
-    throw handleApiError(error)
-  }
-}
 
 export async function listS3Objects(params: S3ListRequest): Promise<S3ListResponse> {
   try {
@@ -152,17 +126,6 @@ export async function createS3Bucket(
   }
 }
 
-export async function validateS3Path(path: string): Promise<S3ValidationResponse> {
-  try {
-    const response = await apiClient.get<S3ValidationResponse>('/files/s3/validate', {
-      params: { path }
-    })
-    return response.data
-  } catch (error) {
-    throw handleApiError(error)
-  }
-}
-
 export async function readS3Manifest(
   path: string,
   connectionId?: string,
@@ -184,33 +147,33 @@ export async function readS3Manifest(
 
 // File SQL Query Execution (DuckDB Console)
 
-export interface FileQueryRequest {
+interface FileQueryRequest {
   query: string
   connectionId?: string
   scopePath?: string
 }
 
-export interface FileQueryResponse {
+interface FileQueryResponse {
   columns: string[]
   rows: unknown[][]
   count: number
   status: string
 }
 
-export interface FileRowEdit {
+interface FileRowEdit {
   rowId: number
   changes: Record<string, unknown>
 }
 
-export interface FileRowInsert {
+interface FileRowInsert {
   values: Record<string, unknown>
 }
 
-export interface FileRowDelete {
+interface FileRowDelete {
   rowId: number
 }
 
-export interface ApplyFileRowChangesRequest {
+interface ApplyFileRowChangesRequest {
   path: string
   format: FileFormat
   connectionId?: string
@@ -219,7 +182,7 @@ export interface ApplyFileRowChangesRequest {
   deletes?: FileRowDelete[]
 }
 
-export interface ApplyFileRowChangesResponse {
+interface ApplyFileRowChangesResponse {
   status: string
   updated: number
   inserted: number
@@ -254,7 +217,7 @@ export async function executeFileQuery(
   }
 }
 
-export async function applyFileRowChanges(
+async function applyFileRowChanges(
   payload: ApplyFileRowChangesRequest
 ): Promise<ApplyFileRowChangesResponse> {
   try {
@@ -269,12 +232,9 @@ export default {
   getFileMetadata,
   getFileData,
   sniffCSV,
-  getFileExactCount,
-  configureS3Session,
   listS3Objects,
   listS3Buckets,
   createS3Bucket,
-  validateS3Path,
   readS3Manifest,
   executeFileQuery,
   applyFileRowChanges

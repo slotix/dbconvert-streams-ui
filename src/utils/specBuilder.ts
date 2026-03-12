@@ -90,7 +90,7 @@ export function buildDatabaseTargetSpec(
   return { db: spec }
 }
 
-export function buildFileFormatSpec(
+function buildFileFormatSpec(
   fileFormat: string,
   compression?: string,
   parquetConfig?: ParquetConfig,

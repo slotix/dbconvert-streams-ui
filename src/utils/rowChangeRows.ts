@@ -14,7 +14,7 @@ export interface RowChangeRow {
   allItems?: Array<{ field: string; oldValue: string; newValue: string }>
 }
 
-export interface BuildRowChangeRowsOptions {
+interface BuildRowChangeRowsOptions {
   pendingEdits: Record<string, PendingEdit>
   pendingInserts: Record<string, PendingInsert>
   pendingDeletes: Record<string, PendingDelete>

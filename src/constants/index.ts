@@ -19,30 +19,16 @@ export * from './fileFormats'
 export * from './status'
 
 // Logging
-export {
-  LOG_LEVELS,
-  LOG_CATEGORIES,
-  NODE_TYPES,
-  QUERY_PURPOSE,
-  LOG_LEVEL_LABELS,
-  LOG_CATEGORY_LABELS,
-  STREAM_PROGRESS_CATEGORIES,
-  TERMINAL_LOG_CATEGORIES,
-  NODE_TYPE_DISPLAY
-} from './logTypes'
+export { LOG_LEVELS, LOG_CATEGORIES, NODE_TYPES, STREAM_PROGRESS_CATEGORIES } from './logTypes'
 
-export type { LogLevel, LogCategory, NodeType, QueryPurpose } from './logTypes'
+export type { LogLevel, LogCategory, NodeType } from './logTypes'
 
 // Service-related
 export * from './serviceStatus'
 
 // UI-related
 export * from './viewTypes'
-export * from './notificationTypes'
 export * from './iconSizes'
 
 // Storage
 export * from './storageKeys'
-
-// Network
-export * from './network'

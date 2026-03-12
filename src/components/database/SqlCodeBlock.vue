@@ -210,9 +210,9 @@ onBeforeUnmount(() => {
 
       <button
         v-if="showCopyButton"
+        v-tooltip="copied ? 'Copied' : 'Copy SQL'"
         type="button"
         class="sql-code-overlay-control sql-code-copy-control absolute top-2 right-2 z-10 inline-flex items-center rounded-md border border-gray-300 dark:border-gray-600 bg-white/95 dark:bg-gray-800/95 px-2 py-1 text-[11px] font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-        :title="copied ? 'Copied' : 'Copy SQL'"
         @click="copyCode"
       >
         {{ copied ? 'Copied' : 'Copy' }}
@@ -220,10 +220,10 @@ onBeforeUnmount(() => {
 
       <button
         v-if="resizable"
+        v-tooltip="'Resize SQL block'"
         type="button"
         class="sql-code-overlay-control sql-code-resize-grip absolute bottom-0 right-0 z-10 cursor-nwse-resize"
         aria-label="Resize SQL block"
-        title="Resize SQL block"
         @mousedown="startResize"
       />
     </div>

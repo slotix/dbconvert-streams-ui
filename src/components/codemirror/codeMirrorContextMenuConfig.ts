@@ -18,7 +18,7 @@ export type CodeMirrorMenuCapability =
   | 'canSelectAll'
   | 'canFormat'
 
-export interface CodeMirrorMenuItemDefinition {
+interface CodeMirrorMenuItemDefinition {
   label: string
   capability: CodeMirrorMenuCapability
   hideWhenDisabled?: boolean

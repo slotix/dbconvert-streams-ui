@@ -132,8 +132,8 @@ function toggleExpanded() {
           </span>
         </span>
         <span
+          v-tooltip="locationLabel"
           class="text-[0.7rem] text-gray-700 dark:text-gray-300 overflow-hidden text-ellipsis whitespace-nowrap"
-          :title="locationLabel"
         >
           {{ locationLabel }}
         </span>
@@ -161,8 +161,8 @@ function toggleExpanded() {
 
         <!-- Query text inline - clickable -->
         <span
+          v-tooltip="fullQuery"
           class="cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap"
-          :title="fullQuery"
         >
           <code
             class="text-xs font-mono bg-gray-50 dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 px-2 py-1 rounded whitespace-nowrap overflow-hidden text-ellipsis block text-gray-700 dark:text-gray-300"

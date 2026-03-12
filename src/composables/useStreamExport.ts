@@ -46,7 +46,7 @@ export function buildExportStreamName(table: string, format: StreamExportFormat)
   return `export_${table}_to_${format}_${timestamp}`
 }
 
-export interface StreamExportOptions {
+interface StreamExportOptions {
   /** Source connection ID */
   connectionId: string
   /** Database name */
@@ -81,7 +81,7 @@ export interface StreamExportOptions {
   limit?: number
 }
 
-export interface StreamExportResult {
+interface StreamExportResult {
   success: boolean
   streamConfigId?: string
   streamId?: string

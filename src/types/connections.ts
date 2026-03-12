@@ -7,12 +7,6 @@ export interface SSLConfig {
   client_key?: string
 }
 
-// File format types
-export type FileFormat = 'csv' | 'json' | 'jsonl' | 'parquet'
-
-// Storage provider types - used internally and can be inferred from spec
-export type StorageProvider = 'local' | 's3' | 'gcs' | 'azure' | 'sftp' | 'ftp'
-
 export interface Connection {
   id: string | ''
   name: string
@@ -31,18 +25,6 @@ export interface Connection {
   password?: string
 }
 
-export interface Schema {
-  name: string
-  isSystem?: boolean
-  systemReason?: string
-}
-
-export interface Database {
-  name: string
-  isSystem?: boolean
-  systemReason?: string
-}
-
 export interface DbType {
   id: number
   type: string
@@ -51,7 +33,7 @@ export interface DbType {
   description?: string
 }
 
-export type ConnectionCategory = 'all' | 'database' | 'file'
+type ConnectionCategory = 'all' | 'database' | 'file'
 
 /**
  * Determine the connection category for a DbType or type string.

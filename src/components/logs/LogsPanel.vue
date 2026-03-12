@@ -512,10 +512,10 @@ onBeforeUnmount(() => {
           >
             <!-- Resize Handle -->
             <div
+              v-tooltip="'Drag to resize'"
               role="separator"
               aria-orientation="horizontal"
               class="absolute top-0 left-0 right-0 z-50 h-2 cursor-ns-resize select-none group pointer-events-auto"
-              title="Drag to resize"
               @mousedown.prevent="startResize"
             >
               <div
@@ -579,8 +579,8 @@ onBeforeUnmount(() => {
               <!-- Message Type Filter Dropdown (matching SQL Logs pattern) -->
               <div ref="messageTypeMenuRef" class="relative">
                 <button
+                  v-tooltip="'Filter by message type'"
                   class="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 focus:border-gray-400 dark:focus:border-gray-500 focus:ring-1 focus:ring-gray-300 dark:focus:ring-gray-600 transition-colors text-left"
-                  :title="`Filter by message type`"
                   @click="showMessageTypeMenu = !showMessageTypeMenu"
                 >
                   <Filter class="w-4 h-4 text-gray-600 dark:text-gray-400" />
@@ -680,8 +680,10 @@ onBeforeUnmount(() => {
 
               <!-- Sort Order Toggle (matching SQL Logs pattern) -->
               <button
+                v-tooltip="
+                  `Sort: ${systemLogsSortOrder === 'newest' ? 'Newest on top' : 'Oldest on top'} (S)`
+                "
                 class="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                :title="`Sort: ${systemLogsSortOrder === 'newest' ? 'Newest on top' : 'Oldest on top'} (S)`"
                 @click="toggleSystemLogsSortOrder"
               >
                 <component
@@ -712,8 +714,8 @@ onBeforeUnmount(() => {
               <!-- Open Logs Folder (desktop only) -->
               <button
                 v-if="canOpenLogsFolder"
+                v-tooltip="systemStatusMeta.join('\n')"
                 type="button"
-                :title="systemStatusMeta.join('\n')"
                 class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-200"
                 @click="openLogsFolder()"
               >
@@ -723,8 +725,8 @@ onBeforeUnmount(() => {
 
               <!-- Copy All Button -->
               <button
+                v-tooltip="`Copy ${logsWithContent.length} visible logs to clipboard (C)`"
                 type="button"
-                :title="`Copy ${logsWithContent.length} visible logs to clipboard (C)`"
                 class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-200"
                 @click="copyAllLogs"
               >
@@ -736,8 +738,8 @@ onBeforeUnmount(() => {
 
               <!-- Clear Button -->
               <button
+                v-tooltip="'Clear logs (K)'"
                 type="button"
-                title="Clear logs (K)"
                 class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-white bg-orange-600 dark:bg-orange-500 rounded hover:bg-orange-700 dark:hover:bg-orange-600 transition-colors shadow-sm"
                 @click="store.clearLogs()"
               >
@@ -771,13 +773,13 @@ onBeforeUnmount(() => {
                     <button
                       v-for="[tabId, tab] of systemLogTabs"
                       :key="tabId"
+                      v-tooltip="tab.fullLabel || tab.label"
                       class="flex items-center gap-2 px-3 py-1.5 text-xs rounded transition-colors whitespace-nowrap"
                       :class="[
                         selectedSystemLogTabId === tabId
                           ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700'
                           : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
                       ]"
-                      :title="tab.fullLabel || tab.label"
                       @click="selectedSystemLogTabId = tabId"
                     >
                       <span class="font-medium">{{ tab.label }}</span>
@@ -790,13 +792,13 @@ onBeforeUnmount(() => {
                       <!-- Close button (X) - not for General tab -->
                       <button
                         v-if="tabId !== 'general'"
+                        v-tooltip="'Close tab'"
                         class="flex items-center justify-center w-4 h-4 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors ml-1"
                         :class="[
                           selectedSystemLogTabId === tabId
                             ? 'hover:bg-blue-200 dark:hover:bg-blue-800'
                             : 'hover:bg-gray-200 dark:hover:bg-gray-600'
                         ]"
-                        :title="`Close tab`"
                         @click.stop="store.removeSystemLogTab(tabId)"
                       >
                         ✕

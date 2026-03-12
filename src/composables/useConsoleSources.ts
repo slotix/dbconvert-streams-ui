@@ -12,7 +12,7 @@ import { getConnectionKindFromSpec, getConnectionTypeLabel, isDatabaseKind } fro
 export type ConsoleMode = 'database' | 'file'
 export type SqlRunMode = 'single' | 'federated'
 
-export interface UseConsoleSourcesOptions {
+interface UseConsoleSourcesOptions {
   /** Current connection ID */
   connectionId: ComputedRef<string> | Ref<string>
   /** Console mode: 'database' or 'file' */
@@ -25,7 +25,7 @@ export interface UseConsoleSourcesOptions {
   consoleKey: ComputedRef<string> | Ref<string>
 }
 
-export interface UseConsoleSourcesReturn {
+interface UseConsoleSourcesReturn {
   // State
   selectedConnections: Ref<ConnectionMapping[]>
   userModifiedSources: Ref<boolean>
@@ -378,5 +378,3 @@ export function useConsoleSources(options: UseConsoleSourcesOptions): UseConsole
     isDuckDbFileQuery
   }
 }
-
-export type ConsoleSourcesReturn = ReturnType<typeof useConsoleSources>

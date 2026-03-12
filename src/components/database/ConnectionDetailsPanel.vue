@@ -555,8 +555,8 @@ const isLoadingDatabases = computed(() => {
     >
       <div class="flex items-center gap-3 min-w-0">
         <h3
+          v-tooltip="connection.name"
           class="text-lg font-bold text-slate-900 dark:text-gray-100 truncate bg-clip-text"
-          :title="connection.name"
         >
           {{ connection.name || hostWithPort || 'Connection' }}
         </h3>
@@ -810,13 +810,13 @@ const isLoadingDatabases = computed(() => {
                   </span>
                   <button
                     v-if="displayS3URI && displayS3URI !== 's3://'"
+                    v-tooltip="isPathCopied ? 'Copied!' : 'Copy storage URI to clipboard'"
                     class="shrink-0 transition-colors"
                     :class="
                       isPathCopied
                         ? 'text-green-400'
                         : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
                     "
-                    :title="isPathCopied ? 'Copied!' : 'Copy storage URI to clipboard'"
                     @click.stop="copyFolderPath"
                   >
                     <Clipboard v-if="!isPathCopied" class="h-4 w-4" />
@@ -903,13 +903,13 @@ const isLoadingDatabases = computed(() => {
                 </span>
                 <button
                   v-if="basePath"
+                  v-tooltip="isPathCopied ? 'Copied!' : 'Copy folder path to clipboard'"
                   class="shrink-0 transition-colors"
                   :class="
                     isPathCopied
                       ? 'text-green-400'
                       : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
                   "
-                  :title="isPathCopied ? 'Copied!' : 'Copy folder path to clipboard'"
                   @click.stop="copyFolderPath"
                 >
                   <Clipboard v-if="!isPathCopied" class="h-4 w-4" />
@@ -961,8 +961,8 @@ const isLoadingDatabases = computed(() => {
                 >Host</label
               >
               <p
+                v-tooltip="hostWithPort"
                 class="mt-0.5 font-medium text-gray-900 dark:text-gray-100 truncate text-sm"
-                :title="hostWithPort"
               >
                 {{ hostWithPort }}
               </p>
@@ -993,23 +993,23 @@ const isLoadingDatabases = computed(() => {
                 </span>
                 <div class="flex flex-col gap-1">
                   <button
-                    class="shrink-0 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
-                    :title="
+                    v-tooltip="
                       showPassword ? 'Hide password and truncate' : 'Show password and full details'
                     "
+                    class="shrink-0 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
                     @click="showPassword = !showPassword"
                   >
                     <Eye v-if="!showPassword" class="h-3.5 w-3.5" />
                     <EyeOff v-else class="h-3.5 w-3.5" />
                   </button>
                   <button
+                    v-tooltip="isCopied ? 'Copied!' : 'Copy connection string to clipboard'"
                     class="shrink-0 transition-colors"
                     :class="
                       isCopied
                         ? 'text-green-400'
                         : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
                     "
-                    :title="isCopied ? 'Copied!' : 'Copy connection string to clipboard'"
                     @click="copyConnectionString"
                   >
                     <Clipboard v-if="!isCopied" class="h-3.5 w-3.5" />

@@ -1,8 +1,6 @@
 import type { StreamConnectionMapping } from '@/types/streamConfig'
 import type { ConnectionKind } from '@/types/specs'
 
-export type ConnectionKindResolver = (connectionId: string) => ConnectionKind | null
-
 export function getSourceSelectionValue(
   mapping: StreamConnectionMapping,
   kind: ConnectionKind | null
@@ -12,7 +10,7 @@ export function getSourceSelectionValue(
   return mapping.database
 }
 
-export function isSameSourceSelection(
+function isSameSourceSelection(
   a: StreamConnectionMapping,
   b: { connectionId: string; selectionValue?: string },
   kind: ConnectionKind | null
@@ -20,7 +18,7 @@ export function isSameSourceSelection(
   return a.connectionId === b.connectionId && getSourceSelectionValue(a, kind) === b.selectionValue
 }
 
-export function makeDatabaseSourceMapping(params: {
+function makeDatabaseSourceMapping(params: {
   connectionId: string
   alias: string
   database?: string
@@ -32,7 +30,7 @@ export function makeDatabaseSourceMapping(params: {
   }
 }
 
-export function makeFileSourceMapping(params: {
+function makeFileSourceMapping(params: {
   connectionId: string
   alias: string
   basePath: string
@@ -48,7 +46,7 @@ export function makeFileSourceMapping(params: {
   }
 }
 
-export function makeS3SourceMapping(params: {
+function makeS3SourceMapping(params: {
   connectionId: string
   alias: string
   bucket: string

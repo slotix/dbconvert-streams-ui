@@ -1,6 +1,6 @@
-export type ColumnEditorKind = 'integer' | 'number' | 'date' | 'datetime' | 'text'
+type ColumnEditorKind = 'integer' | 'number' | 'date' | 'datetime' | 'text'
 
-export function normalizeSqlType(sqlType: string): string {
+function normalizeSqlType(sqlType: string): string {
   return sqlType.trim().toLowerCase()
 }
 
@@ -110,7 +110,7 @@ export function normalizeDateTimeString(raw: unknown, isNullable: boolean): unkn
   return s
 }
 
-export function valuesEqual(a: unknown, b: unknown): boolean {
+function valuesEqual(a: unknown, b: unknown): boolean {
   if (Object.is(a, b)) return true
   try {
     return JSON.stringify(a) === JSON.stringify(b)
@@ -119,7 +119,7 @@ export function valuesEqual(a: unknown, b: unknown): boolean {
   }
 }
 
-export function isNumericType(sqlType: string | undefined): boolean {
+function isNumericType(sqlType: string | undefined): boolean {
   if (!sqlType) return false
   const t = normalizeSqlType(sqlType)
   return (
@@ -132,7 +132,7 @@ export function isNumericType(sqlType: string | undefined): boolean {
   )
 }
 
-export function numbersEqual(a: unknown, b: unknown, scale?: number): boolean {
+function numbersEqual(a: unknown, b: unknown, scale?: number): boolean {
   if (a === null || a === undefined) return b === null || b === undefined
   if (b === null || b === undefined) return false
 

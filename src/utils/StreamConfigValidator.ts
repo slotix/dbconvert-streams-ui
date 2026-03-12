@@ -7,13 +7,13 @@
 
 import type { StreamConfig } from '@/types/streamConfig'
 
-export interface ValidationError {
+interface ValidationError {
   path: string
   message: string
   line?: number
 }
 
-export interface ValidationResult {
+interface ValidationResult {
   valid: boolean
   errors: ValidationError[]
 }

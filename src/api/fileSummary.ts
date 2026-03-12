@@ -61,7 +61,3 @@ export async function getFileSummary(
     throw handleApiError(error)
   }
 }
-
-export default {
-  getFileSummary
-}

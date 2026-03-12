@@ -29,7 +29,7 @@ export type SortConfig = {
   direction: 'ASC' | 'DESC'
 }
 
-export type FilterPanelState = {
+type FilterPanelState = {
   filters: FilterConfig[]
   sorts: SortConfig[]
   selectedColumns: string[]
@@ -38,7 +38,7 @@ export type FilterPanelState = {
   limit?: number | null
 }
 
-export type DiagramZoomTransformState = {
+type DiagramZoomTransformState = {
   x: number
   y: number
   k: number

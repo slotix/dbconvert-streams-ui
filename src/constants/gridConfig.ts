@@ -12,7 +12,7 @@ export const PAGE_SIZE_OPTIONS = [25, 50, 100, 250] as const
 /** Default page size for AG Grid pagination */
 export const DEFAULT_PAGE_SIZE = 50
 
-export type PageSizeOption = (typeof PAGE_SIZE_OPTIONS)[number]
+type PageSizeOption = (typeof PAGE_SIZE_OPTIONS)[number]
 
 export function isPageSizeOption(value: number): value is PageSizeOption {
   return (PAGE_SIZE_OPTIONS as readonly number[]).includes(value)

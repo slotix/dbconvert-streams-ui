@@ -59,5 +59,3 @@ export function useCopyToClipboard(feedbackDuration = 1200) {
     reset
   }
 }
-
-export type CopyToClipboardReturn = ReturnType<typeof useCopyToClipboard>

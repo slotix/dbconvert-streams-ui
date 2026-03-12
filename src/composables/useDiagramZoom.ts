@@ -4,7 +4,7 @@ import { zoom as createZoom, zoomIdentity } from 'd3-zoom'
 import type { D3ZoomEvent, ZoomBehavior, ZoomTransform } from 'd3-zoom'
 import 'd3-transition'
 
-export interface DiagramZoomOptions {
+interface DiagramZoomOptions {
   minZoom?: number
   maxZoom?: number
   initialZoom?: number

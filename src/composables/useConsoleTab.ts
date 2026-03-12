@@ -25,7 +25,7 @@ export interface QueryStats {
   duration: number
 }
 
-export interface ConsoleTabOptions {
+interface ConsoleTabOptions {
   /**
    * Unique console key for store (e.g., 'federated-console', 'file:connId', 'connId:database')
    */
@@ -661,5 +661,3 @@ export function useConsoleTab(options: ConsoleTabOptions) {
     cleanup
   }
 }
-
-export type ConsoleTabReturn = ReturnType<typeof useConsoleTab>

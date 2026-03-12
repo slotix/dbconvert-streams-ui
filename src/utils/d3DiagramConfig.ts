@@ -80,7 +80,7 @@ export function getDiagramColors(isDark: boolean) {
 /**
  * Marker configuration for relationship lines
  */
-export interface MarkerConfig {
+interface MarkerConfig {
   id: string
   viewBox: string
   refX: number
@@ -95,7 +95,7 @@ export interface MarkerConfig {
 /**
  * Base marker definitions (color-agnostic)
  */
-export const MARKER_DEFINITIONS: Record<string, Omit<MarkerConfig, 'id'>> = {
+const MARKER_DEFINITIONS: Record<string, Omit<MarkerConfig, 'id'>> = {
   'mandatory-one': {
     viewBox: '-10 -10 20 20',
     refX: 10,
@@ -149,7 +149,7 @@ export const MARKER_DEFINITIONS: Record<string, Omit<MarkerConfig, 'id'>> = {
 /**
  * Color variants for markers
  */
-export const MARKER_VARIANTS = {
+const MARKER_VARIANTS = {
   primary: {
     prefix: '',
     color: BRAND_COLORS.primary
@@ -160,7 +160,7 @@ export const MARKER_VARIANTS = {
   }
 } as const
 
-export type MarkerVariant = keyof typeof MARKER_VARIANTS
+type MarkerVariant = keyof typeof MARKER_VARIANTS
 
 /**
  * Creates all marker definitions on the given SVG defs element
@@ -200,39 +200,3 @@ export function createMarkerDefinitions(
     })
   })
 }
-
-/**
- * Diagram layout constants
- */
-export const DIAGRAM_LAYOUT = {
-  nodeWidth: 200,
-  nodeMinHeight: 50,
-  nodePadding: 20,
-  fieldHeight: 24,
-  headerHeight: 32,
-  cornerRadius: 8,
-  linkStrokeWidth: 2,
-  linkStrokeWidthHover: 3
-} as const
-
-/**
- * Tooltip styling constants
- */
-export const TOOLTIP_STYLE = {
-  padding: 8,
-  borderRadius: 6,
-  fontSize: 12,
-  lineHeight: 16,
-  backgroundColor: {
-    light: 'rgba(255, 255, 255, 0.95)',
-    dark: 'rgba(31, 41, 55, 0.95)'
-  },
-  textColor: {
-    light: '#1f2937',
-    dark: '#f3f4f6'
-  },
-  borderColor: {
-    light: '#e5e7eb',
-    dark: '#374151'
-  }
-} as const

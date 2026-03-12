@@ -641,8 +641,8 @@ function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
                           </div>
                           <div
                             v-if="getEnumSetSummary(column)"
+                            v-tooltip="getEnumSetTitle(column)"
                             class="mt-0.5 text-xs text-gray-400 dark:text-gray-500 max-w-[420px] truncate"
-                            :title="getEnumSetTitle(column)"
                           >
                             <span
                               class="mr-1 inline-flex items-center rounded-md border border-gray-200 bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
@@ -654,8 +654,8 @@ function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
 
                           <div
                             v-if="showAdvancedColumns && getAdvancedColumnMetaSummary(column)"
+                            v-tooltip="getAdvancedColumnMetaSummary(column)"
                             class="mt-0.5 text-xs text-gray-400 dark:text-gray-500 max-w-[420px] truncate"
-                            :title="getAdvancedColumnMetaSummary(column)"
                           >
                             {{ getAdvancedColumnMetaSummary(column) }}
                           </div>
@@ -673,8 +673,8 @@ function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
                         {{ getColumnDefault(column) }}
                       </td>
                       <td
+                        v-tooltip="getColumnCheckConstraints(column)"
                         class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400 max-w-xs truncate"
-                        :title="getColumnCheckConstraints(column)"
                       >
                         {{ getColumnCheckConstraints(column) }}
                       </td>

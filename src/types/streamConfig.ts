@@ -60,7 +60,7 @@ export interface StreamID {
   id: string
 }
 
-export interface SourceOptions {
+interface SourceOptions {
   dataBundleSize?: number
   replicationSlot?: string
   publicationName?: string

@@ -738,8 +738,8 @@ async function handleCreateSchema() {
                 >Collation</label
               >
               <p
+                v-tooltip="overview.collation"
                 class="mt-0.5 font-semibold text-gray-900 dark:text-gray-100 text-sm truncate"
-                :title="overview.collation"
               >
                 {{ overview.collation }}
               </p>
@@ -749,12 +749,12 @@ async function handleCreateSchema() {
                 >Size</label
               >
               <p
-                class="mt-0.5 font-semibold text-gray-900 dark:text-gray-100 text-base"
-                :title="
+                v-tooltip="
                   typeof sizeBytes === 'number'
                     ? Intl.NumberFormat().format(sizeBytes || 0) + ' bytes'
                     : ''
                 "
+                class="mt-0.5 font-semibold text-gray-900 dark:text-gray-100 text-base"
               >
                 {{ sizeDisplay }}
               </p>
@@ -949,7 +949,7 @@ async function handleCreateSchema() {
             >
               <div class="truncate min-w-0 flex-1">
                 <span class="text-gray-500 dark:text-gray-400">{{ q.user }}:</span>
-                <span class="ml-1 text-gray-700 dark:text-gray-300 truncate" :title="q.query">
+                <span v-tooltip="q.query" class="ml-1 text-gray-700 dark:text-gray-300 truncate">
                   {{ q.query.slice(0, 40) }}{{ q.query.length > 40 ? '...' : '' }}
                 </span>
               </div>
@@ -1039,21 +1039,21 @@ async function handleCreateSchema() {
               >
                 <td class="py-1.5 pr-4">
                   <button
+                    v-tooltip="t.name"
                     type="button"
                     class="truncate text-left hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors max-w-[200px] block"
-                    :title="t.name"
                     @click="$emit('open-table', { name: t.name })"
                   >
                     {{ t.name }}
                   </button>
                 </td>
                 <td
-                  class="py-1.5 text-right text-gray-500 dark:text-gray-400 text-xs font-medium tabular-nums"
-                  :title="
+                  v-tooltip="
                     t.sizeBytes > 0
                       ? Intl.NumberFormat().format(t.sizeBytes) + ' bytes'
                       : 'Size not available'
                   "
+                  class="py-1.5 text-right text-gray-500 dark:text-gray-400 text-xs font-medium tabular-nums"
                 >
                   {{ formatDataSize(t.sizeBytes, true) }}
                 </td>

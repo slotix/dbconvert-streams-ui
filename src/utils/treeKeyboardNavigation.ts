@@ -4,7 +4,7 @@ export interface TreeKeyboardNodeState {
   expanded: boolean
 }
 
-export type TreeKeyboardIntent =
+type TreeKeyboardIntent =
   | { type: 'focus'; index: number }
   | { type: 'expand'; index: number }
   | { type: 'expand-many'; indexes: number[] }

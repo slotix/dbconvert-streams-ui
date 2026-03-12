@@ -22,7 +22,7 @@ export type ContextTarget =
       format?: string
     }
 
-export type DatabaseObjectTarget = Extract<
+type DatabaseObjectTarget = Extract<
   ContextTarget,
   { kind: 'table' | 'view' | 'function' | 'procedure' | 'sequence' }
 >

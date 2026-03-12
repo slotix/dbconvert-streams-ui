@@ -3,12 +3,12 @@ import type { ConnectionMapping } from '@/api/federated'
 import type { Connection } from '@/types/connections'
 import { getConnectionKindFromSpec, getConnectionTypeLabel, isDatabaseKind } from '@/types/specs'
 
-export interface UseSqlSourcePresentationOptions {
+interface UseSqlSourcePresentationOptions {
   selectedConnections: Ref<ConnectionMapping[]> | ComputedRef<ConnectionMapping[]>
   getConnectionById: (connectionId: string) => Connection | null
 }
 
-export interface UseSqlSourcePresentationReturn {
+interface UseSqlSourcePresentationReturn {
   sourcePills: ComputedRef<Array<{ connectionId: string; key: string; label: string }>>
   isDatabaseMapping: (mapping: { connectionId: string }) => boolean
   getDatabaseTypeDisplay: (connectionId: string) => string | null

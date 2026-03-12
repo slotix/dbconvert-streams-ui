@@ -2,7 +2,7 @@ import type { PathSegment } from '@/utils/pathUtils'
 
 type ConsoleTabType = 'sql-console' | 'file-console'
 
-export interface ConsoleBreadcrumbData {
+interface ConsoleBreadcrumbData {
   connectionLabel: null
   database: null
   schema: null

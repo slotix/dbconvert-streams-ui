@@ -1,4 +1,4 @@
-export interface DatabaseCapabilities {
+interface DatabaseCapabilities {
   // Organizational structure
   hasSchemas: boolean
   hasMultipleSchemas: boolean
@@ -24,11 +24,11 @@ export interface DatabaseCapabilities {
   primaryColor: string
 }
 
-export interface DatabaseTypeRegistry {
+interface DatabaseTypeRegistry {
   [key: string]: DatabaseCapabilities
 }
 
-export const DATABASE_CAPABILITIES: DatabaseTypeRegistry = {
+const DATABASE_CAPABILITIES: DatabaseTypeRegistry = {
   postgresql: {
     hasSchemas: true,
     hasMultipleSchemas: true,

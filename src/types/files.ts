@@ -43,7 +43,7 @@ export interface CSVSniffResult {
   prompt: string
 }
 
-export interface JSONStructurePathStats {
+interface JSONStructurePathStats {
   jsonPath: string
   occurrences: number
   type: string

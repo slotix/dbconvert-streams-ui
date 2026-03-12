@@ -145,9 +145,9 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
           <button
             v-if="showObjectPicker"
             ref="anchorRef"
+            v-tooltip="'Switch object'"
             type="button"
             class="text-gray-900 dark:text-gray-100 font-medium hover:underline"
-            title="Switch object"
             @click.stop="togglePicker"
           >
             {{ props.name }}
@@ -158,8 +158,8 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
 
           <span
             v-if="props.databaseStatusLabel === 'Read-only'"
+            v-tooltip="props.databaseStatusTooltip || undefined"
             class="inline-flex items-center gap-1 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-100/80 dark:bg-gray-800/70 px-2 py-0.5 text-[11px] font-medium text-gray-500 dark:text-gray-400"
-            :title="props.databaseStatusTooltip || undefined"
           >
             <Lock class="h-3 w-3 shrink-0" />
             Read-only
@@ -167,7 +167,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
           <span
             v-else-if="props.databaseStatusLabel === 'Editable'"
             class="inline-flex items-center rounded-full border border-gray-200 dark:border-gray-700 bg-gray-100/80 dark:bg-gray-800/70 px-2 py-0.5 text-[11px] font-medium text-gray-500 dark:text-gray-400"
-            :title="props.databaseStatusTooltip || undefined"
+            v-tooltip="props.databaseStatusTooltip || undefined"
           >
             Editable
           </span>
@@ -196,7 +196,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
           >
           <span
             class="text-gray-700 dark:text-gray-300 font-medium truncate max-w-[150px]"
-            :title="segment.name"
+            v-tooltip="segment.name"
           >
             {{ segment.name }}
           </span>
@@ -214,7 +214,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
             ref="anchorRef"
             type="button"
             class="text-gray-900 dark:text-gray-100 font-medium hover:underline"
-            title="Switch file"
+            v-tooltip="'Switch file'"
             @click.stop="togglePicker"
           >
             {{ props.name }}
@@ -226,7 +226,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
           <span
             v-if="props.fileStatusLabel === 'Read-only'"
             class="inline-flex items-center gap-1 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-100/80 dark:bg-gray-800/70 px-2 py-0.5 text-[11px] font-medium text-gray-500 dark:text-gray-400"
-            :title="props.fileStatusTooltip || undefined"
+            v-tooltip="props.fileStatusTooltip || undefined"
           >
             <Lock class="h-3 w-3 shrink-0" />
             Read-only
@@ -234,7 +234,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
           <span
             v-else-if="props.fileStatusLabel === 'Editable'"
             class="inline-flex items-center rounded-full border border-gray-200 dark:border-gray-700 bg-gray-100/80 dark:bg-gray-800/70 px-2 py-0.5 text-[11px] font-medium text-gray-500 dark:text-gray-400"
-            :title="props.fileStatusTooltip || undefined"
+            v-tooltip="props.fileStatusTooltip || undefined"
           >
             Editable
           </span>

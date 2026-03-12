@@ -19,7 +19,7 @@ type DesktopStatus = {
   services?: DesktopServiceStatus[]
 }
 
-export type StatusRow = {
+type StatusRow = {
   name: string
   label: string
   status: HealthStatus

@@ -88,35 +88,6 @@ export function useIconSizes(
 }
 
 /**
- * Composable that returns all standard icon sizes.
- * Useful when you need multiple icon sizes in the same component.
- *
- * @example
- * ```vue
- * <script setup>
- * const sizes = useAllIconSizes()
- * </script>
- * <template>
- *   <Loader2 :class="sizes.xs" /> <!-- Small spinner -->
- *   <Trash :class="sizes.base" />  <!-- Normal icon -->
- *   <Menu :class="sizes.lg" />     <!-- Large icon -->
- * </template>
- * ```
- */
-export function useAllIconSizes() {
-  return {
-    xs: ICON_SIZES.XS,
-    sm: ICON_SIZES.SM,
-    base: ICON_SIZES.BASE,
-    md: ICON_SIZES.MD,
-    lg: ICON_SIZES.LG,
-    xl: ICON_SIZES.XL,
-    xxl: ICON_SIZES.XXL,
-    xxxl: ICON_SIZES.XXXL
-  }
-}
-
-/**
  * Helper composable for context-specific icon sizes.
  * Returns recommended icon sizes for different UI contexts.
  *

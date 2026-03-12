@@ -1,10 +1,10 @@
 import { computed, type Ref, type ComputedRef } from 'vue'
 
-export interface SelectableItem {
+interface SelectableItem {
   selected?: boolean
 }
 
-export interface SelectableListOptions<T extends SelectableItem> {
+interface SelectableListOptions<T extends SelectableItem> {
   /**
    * Optional function to filter items before calculating selection state.
    * Useful when you want to only consider visible/filtered items.
@@ -12,7 +12,7 @@ export interface SelectableListOptions<T extends SelectableItem> {
   filterFn?: (items: T[]) => T[]
 }
 
-export interface SelectableListReturn<T extends SelectableItem> {
+interface SelectableListReturn<T extends SelectableItem> {
   /**
    * Items that are currently selected
    */

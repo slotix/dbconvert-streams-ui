@@ -19,20 +19,20 @@ export type PendingInsert = {
   values: Record<string, unknown>
 }
 
-export type RowChangePayload = {
+type RowChangePayload = {
   inserts: Array<{ values: Record<string, unknown> }>
   edits: Array<{ keys: Record<string, unknown>; changes: Record<string, unknown> }>
   deletes: Array<{ keys: Record<string, unknown> }>
 }
 
-export type RowChangeResult = {
+type RowChangeResult = {
   rows?: Record<string, unknown>[]
   inserted?: number
   updated?: number
   deleted?: number
 }
 
-export type RowChangeAdapter = {
+type RowChangeAdapter = {
   applyChanges?: (payload: RowChangePayload) => Promise<RowChangeResult>
   insertRows?: (payload: { inserts: Array<{ values: Record<string, unknown> }> }) => Promise<{
     inserted: number
@@ -52,7 +52,7 @@ type ToastLike = {
   info: (message: string) => void
 }
 
-export type UseAgGridRowChangeTrackingOptions = {
+type UseAgGridRowChangeTrackingOptions = {
   isTableEditable: ComputedRef<boolean>
   editKeyColumns: ComputedRef<string[]>
   makeRowId: (row: Record<string, unknown>) => string

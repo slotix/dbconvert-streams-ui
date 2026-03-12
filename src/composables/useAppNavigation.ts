@@ -1,7 +1,7 @@
 import { computed, type Component } from 'vue'
 import { RefreshCw, Sheet } from 'lucide-vue-next'
 
-export type AppNavigationItem = {
+type AppNavigationItem = {
   name: string
   href: string
   icon: Component

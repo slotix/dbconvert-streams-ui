@@ -36,7 +36,7 @@ export interface SystemLog {
   elapsed?: number
 }
 
-export interface SystemLogTab {
+interface SystemLogTab {
   id: string // Format: "{streamId}:{timestamp}" or "general"
   streamId: string | null // null for General tab
   timestamp: number | null // null for General tab
@@ -55,11 +55,11 @@ export type QueryPurpose =
   | 'SYSTEM_TASK'
   | 'UTILITY'
 
-export type TimeWindow = '5m' | '1h' | 'session' | 'all'
+type TimeWindow = '5m' | '1h' | 'session' | 'all'
 export type ExportFormat = 'text' | 'csv' | 'json'
 export type SQLCaptureMode = 'off' | 'minimal' | 'verbose'
 
-export interface LogFilters {
+interface LogFilters {
   purposes: Set<QueryPurpose>
   timeWindow: TimeWindow
   searchText: string
@@ -85,14 +85,14 @@ export interface SQLQueryLog {
 }
 
 // Helper interface for display with location headers
-export interface LogWithHeader {
+interface LogWithHeader {
   log: SQLQueryLog
   showHeader: boolean
   location: string
   queriesInGroup?: number
 }
 
-export interface RuntimeLoggingSettings {
+interface RuntimeLoggingSettings {
   sqlCaptureMode: SQLCaptureMode
   forwardSQLLogs: boolean
 }

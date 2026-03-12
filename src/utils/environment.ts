@@ -62,14 +62,3 @@ export function getSentryDsn(): string {
 
   return '' // Sentry is optional, so return empty string if not configured
 }
-
-/**
- * Log all environment variables for debugging
- */
-export function logEnvironment(): void {
-  console.log('[Environment] Configuration:', {
-    backendUrl: getBackendUrl(),
-    sentryDsn: getSentryDsn(),
-    mode: import.meta.env.MODE
-  })
-}

@@ -202,9 +202,6 @@ import {
   quoteIdentifier as sharedQuoteIdentifier
 } from './sql-utils'
 
-// Re-export types for consumers
-export type { ColumnDef, SortCondition, FilterCondition }
-
 interface Props {
   /** Normalized column definitions */
   columns: ColumnDef[]

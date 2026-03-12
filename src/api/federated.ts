@@ -33,7 +33,7 @@ export interface ConnectionMapping {
 /**
  * Request payload for executing a federated query
  */
-export interface FederatedQueryRequest {
+interface FederatedQueryRequest {
   /** SQL query that may reference multiple connection aliases */
   query: string
   /** List of connections to attach with their aliases */
@@ -43,7 +43,7 @@ export interface FederatedQueryRequest {
 /**
  * Response from a successful federated query execution
  */
-export interface FederatedQueryResponse {
+interface FederatedQueryResponse {
   /** Column names in result set order */
   columns: string[]
   /** Result rows as arrays of values (matching column order) */
@@ -54,18 +54,6 @@ export interface FederatedQueryResponse {
   status: string
   /** Query execution duration in milliseconds */
   duration?: number
-}
-
-/**
- * Schema information for an attached database
- */
-export interface AttachedDatabaseSchema {
-  /** Alias of the attached database */
-  alias: string
-  /** List of schemas/databases available */
-  schemas: string[]
-  /** Tables per schema */
-  tables: Record<string, string[]>
 }
 
 /**
@@ -105,65 +93,6 @@ export async function executeFederatedQuery(
   } catch (error) {
     throw handleApiError(error)
   }
-}
-
-/**
- * Validate a federated query without executing it.
- * Checks SQL syntax and verifies all referenced aliases are valid.
- *
- * @param request - The query and connection mappings to validate
- * @returns Validation result with any errors found
- */
-export async function validateFederatedQuery(
-  request: FederatedQueryRequest
-): Promise<{ valid: boolean; errors?: string[] }> {
-  try {
-    const normalizedRequest: FederatedQueryRequest = {
-      ...request,
-      connections: normalizeFederatedConnectionMappings(request.connections)
-    }
-    const response: AxiosResponse<{ valid: boolean; errors?: string[] }> = await apiClient.post(
-      '/query/federated/validate',
-      normalizedRequest,
-      {
-        timeout: API_TIMEOUTS.SHORT
-      }
-    )
-    return response.data
-  } catch (error) {
-    throw handleApiError(error)
-  }
-}
-
-/**
- * Get schema information for attached databases.
- * Useful for autocomplete and schema browsing in the federated console.
- *
- * @param connections - Connection mappings to get schema for
- * @returns Schema information for each attached database
- */
-export async function getFederatedSchemas(
-  connections: ConnectionMapping[]
-): Promise<AttachedDatabaseSchema[]> {
-  try {
-    const normalizedConnections = normalizeFederatedConnectionMappings(connections)
-    const response: AxiosResponse<AttachedDatabaseSchema[]> = await apiClient.post(
-      '/query/federated/schemas',
-      { connections: normalizedConnections },
-      {
-        timeout: API_TIMEOUTS.MEDIUM
-      }
-    )
-    return response.data
-  } catch (error) {
-    throw handleApiError(error)
-  }
-}
-
-export default {
-  executeFederatedQuery,
-  validateFederatedQuery,
-  getFederatedSchemas
 }
 
 function normalizeFederatedConnectionMappings(

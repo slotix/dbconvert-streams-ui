@@ -6,14 +6,14 @@ import { useUnsavedChangesGuard } from '@/composables/useUnsavedChangesGuard'
 import { getConnectionKindFromSpec, getSqlDialectFromConnection } from '@/types/specs'
 import { getParentPath, parseS3Uri } from '@/utils/pathUtils'
 
-export interface OpenTableSqlConsolePayload {
+interface OpenTableSqlConsolePayload {
   connectionId: string
   database: string
   tableName: string
   schema?: string
 }
 
-export interface OpenFileDuckDbConsolePayload {
+interface OpenFileDuckDbConsolePayload {
   connectionId: string
   filePath: string
   fileName: string

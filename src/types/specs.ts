@@ -30,7 +30,7 @@ export interface S3ConnectionSpec {
   scope?: S3ConnectionScope // Optional: for Data Explorer browsing only
 }
 
-export interface GCSConnectionScope {
+interface GCSConnectionScope {
   bucket?: string
   prefix?: string
 }
@@ -43,7 +43,7 @@ export interface GCSConnectionSpec {
   scope?: GCSConnectionScope
 }
 
-export interface AzureConnectionScope {
+interface AzureConnectionScope {
   container?: string
   prefix?: string
 }
@@ -206,7 +206,7 @@ export interface AzureBlobSpec {
   upload?: AzureUploadConfig
 }
 
-export interface SnowflakeConfig {
+interface SnowflakeConfig {
   fileFormat?: string
   compressionType?: string
   outputDirectory?: string
@@ -251,7 +251,7 @@ export interface TargetSpec {
 export type ConnectionKind = 'database' | 's3' | 'gcs' | 'azure' | 'snowflake' | 'files'
 
 // Target kind type - all possible target types
-export type TargetKind = 'database' | 's3' | 'gcs' | 'azure' | 'snowflake' | 'files'
+type TargetKind = 'database' | 's3' | 'gcs' | 'azure' | 'snowflake' | 'files'
 
 /**
  * Get the kind from a ConnectionSpec - spec is the ONLY source of truth.

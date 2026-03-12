@@ -157,6 +157,7 @@ async function handleLoadMore() {
   <div class="file-entry-container">
     <!-- Entry row -->
     <div
+      v-tooltip="manifestHint || unsupportedTooltip || undefined"
       class="flex items-center py-1.5 text-sm text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer select-none"
       :class="{
         'bg-slate-100/90 dark:bg-slate-800/80': isSelected,
@@ -174,7 +175,6 @@ async function handleLoadMore() {
       :aria-selected="isSelected && isSelectableFile ? 'true' : 'false'"
       tabindex="-1"
       :style="indentStyle"
-      :title="unsupportedTooltip"
       @click="handleSelect"
       @dblclick.stop="handleDoubleClick"
       @click.middle.stop="isSelectableFile && emit('open', { entry, mode: 'pinned' })"
@@ -216,12 +216,9 @@ async function handleLoadMore() {
       </span>
 
       <span
-        v-if="(entry.manifestUsed && isFolder) || entry.isManifest"
-        class="ml-2 shrink-0 rounded-full border border-teal-500/30 bg-teal-500/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.16em] text-teal-600 dark:text-teal-300"
-        :title="manifestHint"
-      >
-        Manifest
-      </span>
+        v-if="entry.manifestUsed && isFolder"
+        class="ml-1.5 shrink-0 h-1.5 w-1.5 rounded-full bg-teal-500"
+      />
     </div>
 
     <!-- Recursively render children if expanded -->

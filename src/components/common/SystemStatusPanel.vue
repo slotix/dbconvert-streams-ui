@@ -71,8 +71,8 @@ onMounted(async () => {
           <span class="truncate">{{ row.label }}</span>
           <span
             v-if="row.meta"
+            v-tooltip="row.meta"
             class="text-[10px] text-gray-500 dark:text-gray-400 truncate"
-            :title="row.meta"
           >
             {{ row.meta }}
           </span>
