@@ -19,8 +19,8 @@
         :class="[
           connectionHeaderClass(connection.id),
           props.mode === 'source'
-            ? 'focus-visible:ring-sky-500 dark:focus-visible:ring-sky-400'
-            : 'focus-visible:ring-emerald-500 dark:focus-visible:ring-emerald-400'
+            ? 'focus-visible:ring-indigo-500 dark:focus-visible:ring-indigo-400'
+            : 'focus-visible:ring-amber-500 dark:focus-visible:ring-amber-400'
         ]"
         :title="connectionTooltip(connection)"
         @click="toggleConnectionExpansion(connection)"
@@ -68,7 +68,7 @@
           >
             <Loader2
               class="h-4 w-4 animate-spin"
-              :class="props.mode === 'source' ? 'text-sky-500' : 'text-emerald-500'"
+              :class="props.mode === 'source' ? 'text-indigo-500' : 'text-amber-500'"
             />
             Loading buckets…
           </div>
@@ -103,7 +103,7 @@
                   v-if="props.enableMultiSelect && props.mode === 'source'"
                   type="checkbox"
                   :checked="isS3BucketSelected(connection.id, bucket)"
-                  class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-sky-600 focus:ring-sky-500 bg-white dark:bg-gray-800 shrink-0"
+                  class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500 bg-white dark:bg-gray-800 shrink-0"
                   @click.stop
                   @change="
                     handleS3BucketCheckboxChange(
@@ -133,7 +133,7 @@
                 v-if="props.enableMultiSelect && props.mode === 'source'"
                 type="checkbox"
                 :checked="isFileConnectionSelected(connection.id)"
-                class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-sky-600 focus:ring-sky-500 bg-white dark:bg-gray-800 shrink-0 mt-0.5"
+                class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500 bg-white dark:bg-gray-800 shrink-0 mt-0.5"
                 @click.stop
                 @change="
                   handleFilePathCheckboxChange(
@@ -188,7 +188,7 @@
           >
             <Loader2
               class="h-4 w-4 animate-spin"
-              :class="props.mode === 'source' ? 'text-sky-500' : 'text-emerald-500'"
+              :class="props.mode === 'source' ? 'text-indigo-500' : 'text-amber-500'"
             />
             Loading databases…
           </div>
@@ -218,7 +218,7 @@
                   v-if="props.enableMultiSelect && props.mode === 'source'"
                   type="checkbox"
                   :checked="isDatabaseSelected(connection.id, database.name)"
-                  class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-sky-600 focus:ring-sky-500 bg-white dark:bg-gray-800 shrink-0"
+                  class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500 bg-white dark:bg-gray-800 shrink-0"
                   @change="
                     handleDatabaseCheckboxChange(
                       connection.id,

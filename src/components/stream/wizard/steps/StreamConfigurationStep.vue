@@ -79,13 +79,13 @@
                 </div>
 
                 <div
-                  class="relative overflow-hidden rounded-2xl border border-gray-200/80 bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.10),_transparent_30%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.10),_transparent_30%)] px-4 py-5 dark:border-gray-700/80 dark:bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.14),_transparent_30%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.14),_transparent_30%)] sm:px-5"
+                  class="relative overflow-hidden rounded-2xl border border-gray-200/80 bg-[radial-gradient(circle_at_top_left,_rgba(30,64,175,0.12),_transparent_30%),radial-gradient(circle_at_top_right,_rgba(217,119,6,0.10),_transparent_30%)] px-4 py-5 dark:border-gray-700/80 dark:bg-[radial-gradient(circle_at_top_left,_rgba(30,64,175,0.18),_transparent_30%),radial-gradient(circle_at_top_right,_rgba(217,119,6,0.14),_transparent_30%)] sm:px-5"
                 >
                   <div
                     class="pointer-events-none absolute left-12 right-12 top-[4.2rem] hidden xl:block"
                   >
                     <div
-                      class="h-px bg-gradient-to-r from-sky-500/40 via-gray-400/20 to-emerald-500/40"
+                      class="h-px bg-gradient-to-r from-blue-700/45 via-gray-400/20 to-amber-500/40"
                     />
                   </div>
 
@@ -95,19 +95,19 @@
                     <section class="min-w-0">
                       <div class="flex items-start gap-3">
                         <div
-                          class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-sky-100/80 text-sky-700 shadow-[0_0_0_1px_rgba(14,165,233,0.14)] dark:bg-sky-900/30 dark:text-sky-300 dark:shadow-[0_0_0_1px_rgba(125,211,252,0.12)]"
+                          class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-950/90 text-blue-200 shadow-[0_0_0_1px_rgba(30,64,175,0.18)] dark:bg-blue-950/80 dark:text-blue-100 dark:shadow-[0_0_0_1px_rgba(96,165,250,0.12)]"
                         >
                           <component :is="sourceKindIcon" class="w-5 h-5" />
                         </div>
                         <div class="min-w-0 flex-1">
                           <div class="flex flex-wrap items-center gap-2">
                             <p
-                              class="text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-700 dark:text-sky-300"
+                              class="text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-300 dark:text-blue-200"
                             >
                               Source
                             </p>
                             <span
-                              class="inline-flex items-center rounded-full bg-sky-100/80 px-2.5 py-1 text-[11px] font-semibold text-sky-700 dark:bg-sky-900/30 dark:text-sky-300"
+                              class="inline-flex items-center rounded-full bg-blue-950/80 px-2.5 py-1 text-[11px] font-semibold text-blue-200 dark:bg-blue-950/70 dark:text-blue-100"
                             >
                               {{ sourceTypeLabel }}
                             </span>
@@ -130,10 +130,10 @@
                         <div
                           v-for="fact in sourceSummaryFacts"
                           :key="fact.label"
-                          class="inline-flex items-center gap-2 rounded-full border border-sky-200/80 bg-sky-50/70 px-3 py-1.5 text-sm dark:border-sky-700/40 dark:bg-sky-900/20"
+                          class="inline-flex items-center gap-2 rounded-full border border-blue-900/40 bg-blue-950/35 px-3 py-1.5 text-sm dark:border-blue-800/50 dark:bg-blue-950/30"
                         >
                           <span
-                            class="text-[11px] font-semibold uppercase tracking-wide text-sky-700 dark:text-sky-300"
+                            class="text-[11px] font-semibold uppercase tracking-wide text-blue-300 dark:text-blue-200"
                           >
                             {{ fact.label }}
                           </span>
@@ -194,19 +194,19 @@
                     <section class="min-w-0">
                       <div class="flex items-start gap-3">
                         <div
-                          class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-100/80 text-emerald-700 shadow-[0_0_0_1px_rgba(16,185,129,0.16)] dark:bg-emerald-900/30 dark:text-emerald-300 dark:shadow-[0_0_0_1px_rgba(110,231,183,0.12)]"
+                          class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-stone-100/90 text-amber-800 shadow-[0_0_0_1px_rgba(217,119,6,0.16)] dark:bg-stone-900/50 dark:text-amber-200 dark:shadow-[0_0_0_1px_rgba(252,211,77,0.12)]"
                         >
                           <component :is="targetKindIcon" class="w-5 h-5" />
                         </div>
                         <div class="min-w-0 flex-1">
                           <div class="flex flex-wrap items-center gap-2">
                             <p
-                              class="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300"
+                              class="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-800 dark:text-amber-200"
                             >
                               Target
                             </p>
                             <span
-                              class="inline-flex items-center rounded-full bg-emerald-100/80 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
+                              class="inline-flex items-center rounded-full bg-stone-100/90 px-2.5 py-1 text-[11px] font-semibold text-amber-800 dark:bg-stone-900/50 dark:text-amber-200"
                             >
                               {{ targetTypeLabel }}
                             </span>
@@ -225,14 +225,14 @@
                         </div>
                       </div>
 
-                      <div class="mt-5 flex flex-wrap gap-2.5">
+                      <div v-if="targetSummaryFacts.length > 0" class="mt-5 flex flex-wrap gap-2.5">
                         <div
                           v-for="fact in targetSummaryFacts"
                           :key="fact.label"
-                          class="inline-flex items-center gap-2 rounded-full border border-emerald-200/80 bg-emerald-50/70 px-3 py-1.5 text-sm dark:border-emerald-700/40 dark:bg-emerald-900/20"
+                          class="inline-flex items-center gap-2 rounded-full border border-amber-200/80 bg-stone-100/80 px-3 py-1.5 text-sm dark:border-amber-700/40 dark:bg-stone-900/50"
                         >
                           <span
-                            class="text-[11px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300"
+                            class="text-[11px] font-semibold uppercase tracking-wide text-amber-800 dark:text-amber-200"
                           >
                             {{ fact.label }}
                           </span>
@@ -249,7 +249,7 @@
                         <div class="flex items-start justify-between gap-4">
                           <dt class="text-gray-600 dark:text-gray-400">S3 Bucket</dt>
                           <dd
-                            class="max-w-[65%] text-right font-medium text-emerald-700 dark:text-emerald-300 break-all"
+                            class="max-w-[65%] text-right font-medium text-amber-800 dark:text-amber-200 break-all"
                           >
                             {{ currentStreamConfig.target.spec.s3.upload.bucket || 'Not set' }}
                           </dd>
@@ -656,10 +656,6 @@ const targetSummaryFacts = computed<SummaryDetailCard[]>(() => {
 
   if (isS3Target.value && !isCDCMode.value) {
     cards.push({ label: 'Output manifest', value: 'Automatic' })
-  }
-
-  if (cards.length === 0) {
-    cards.push({ label: 'Mode', value: modeLabel.value })
   }
 
   return cards

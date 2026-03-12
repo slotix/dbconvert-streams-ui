@@ -53,11 +53,11 @@
           <template #footer-left>
             <div v-if="showStepOneSelectionFooter" class="flex min-w-0 flex-1 items-center gap-2">
               <div
-                class="min-w-0 max-w-xl truncate bg-sky-50 dark:bg-sky-900/20 border border-sky-200 dark:border-sky-600/60 rounded-lg px-3 py-1.5 text-sm shadow-sm shadow-sky-900/10 dark:shadow-sky-900/40"
+                class="min-w-0 max-w-xl truncate bg-slate-100/80 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600/60 rounded-lg px-3 py-1.5 text-sm shadow-sm shadow-slate-900/10 dark:shadow-slate-950/40"
                 :title="sourceFooterLabel"
               >
-                <span class="font-semibold text-sky-700 dark:text-sky-200">Source:</span>
-                <span class="text-sky-900 dark:text-sky-100 ml-1 font-medium">
+                <span class="font-semibold text-indigo-700 dark:text-indigo-200">Source:</span>
+                <span class="text-slate-900 dark:text-slate-100 ml-1 font-medium">
                   {{ sourceFooterLabel }}
                 </span>
               </div>
@@ -75,11 +75,11 @@
                 />
               </svg>
               <div
-                class="min-w-0 max-w-xl truncate bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-600/60 rounded-lg px-3 py-1.5 text-sm shadow-sm shadow-emerald-900/10 dark:shadow-emerald-900/40"
+                class="min-w-0 max-w-xl truncate bg-stone-100/80 dark:bg-stone-900/50 border border-amber-200 dark:border-amber-700/60 rounded-lg px-3 py-1.5 text-sm shadow-sm shadow-stone-900/10 dark:shadow-stone-950/40"
                 :title="targetFooterLabel"
               >
-                <span class="font-semibold text-emerald-700 dark:text-emerald-200">Target:</span>
-                <span class="text-emerald-900 dark:text-emerald-100 ml-1 font-medium">
+                <span class="font-semibold text-amber-800 dark:text-amber-200">Target:</span>
+                <span class="text-stone-900 dark:text-stone-100 ml-1 font-medium">
                   {{ targetFooterLabel }}
                 </span>
               </div>

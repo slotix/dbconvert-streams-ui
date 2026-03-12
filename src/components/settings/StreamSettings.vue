@@ -196,7 +196,7 @@
         >
           <h4 class="text-base font-medium text-gray-900 dark:text-gray-100 mb-4">Safety Limits</h4>
           <div class="space-y-4">
-            <div class="rounded-lg border border-gray-200 dark:border-gray-700 p-3">
+            <div>
               <FormSwitch
                 v-model="isRowsLimitEnabled"
                 label="Limit rows"
@@ -224,7 +224,7 @@
               </div>
             </div>
 
-            <div class="rounded-lg border border-gray-200 dark:border-gray-700 p-3">
+            <div>
               <FormSwitch
                 v-model="isExecutionTimeLimitEnabled"
                 label="Limit execution time"
