@@ -36,7 +36,7 @@ export default defineConfig({
           utils: ['@vueuse/core', 'axios'],
 
           // Heavy visualization and export libraries (already dynamically imported)
-          'd3-viz': ['d3'],
+          'd3-viz': ['d3-drag', 'd3-force', 'd3-selection', 'd3-transition', 'd3-zoom'],
           'export-libs': ['html2canvas', 'jspdf']
         }
       }
