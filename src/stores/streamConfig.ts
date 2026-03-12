@@ -46,7 +46,8 @@ function normalizeSource(source: StreamConfig['source']): StreamConfig['source']
   }))
 
   if (connections.length === 1) {
-    const { alias: _alias, ...singleSource } = connections[0]
+    const singleSource: StreamConnectionMapping = { ...connections[0] }
+    delete singleSource.alias
     normalized.connections = [singleSource]
   } else {
     normalized.connections = normalizeStreamConnections(connections)

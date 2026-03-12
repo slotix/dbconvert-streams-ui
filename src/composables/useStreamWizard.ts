@@ -398,7 +398,8 @@ export function useStreamWizard() {
     connections: StreamConnectionMapping[]
   ): StreamConnectionMapping[] {
     if (connections.length === 1) {
-      const { alias: _alias, ...singleSource } = connections[0]
+      const singleSource: StreamConnectionMapping = { ...connections[0] }
+      delete singleSource.alias
       return [singleSource]
     }
     return normalizeConnectionAliases(connections) as StreamConnectionMapping[]
