@@ -47,6 +47,7 @@
 import { computed } from 'vue'
 import type { StreamConfig } from '@/types/streamConfig'
 import { getFileSpec, getFormatSpec } from '@/composables/useTargetSpec'
+import { defaultCompressionForFileFormat } from '@/utils/specBuilder'
 
 const props = withDefaults(
   defineProps<{
@@ -65,14 +66,14 @@ const fileFormat = computed(() => getFileSpec(props.stream.target?.spec)?.fileFo
 const compressionLabel = computed(() => {
   const spec = props.stream.target?.spec
   const format = getFormatSpec(spec)
-  return (format?.compression || 'zstd').toUpperCase()
+  return (format?.compression || defaultCompressionForFileFormat(fileFormat.value)).toUpperCase()
 })
 
 const compressionBadgeClass = computed(() => {
   const base =
     'inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium ring-1 ring-inset '
   const format = getFormatSpec(props.stream.target?.spec)
-  const compressionType = format?.compression
+  const compressionType = format?.compression || defaultCompressionForFileFormat(fileFormat.value)
   if (compressionType === 'zstd') {
     return `${base}bg-green-50 text-green-700 ring-green-600/20 dark:bg-green-900/30 dark:text-green-300 dark:ring-green-500/30`
   }

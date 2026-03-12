@@ -151,7 +151,7 @@ const streamConfig = {
   source: 'database-connection-id',
   target: 'file-connection-id',
   targetFileFormat: 'csv',           // csv | json | jsonl | parquet
-  compressionType: 'zstd',           // uncompressed | gzip | zstd
+  compressionType: 'uncompressed',   // csv/jsonl default; use zstd for parquet or smaller files
   tables: [
     { name: 'my_table', selected: true }
   ]
@@ -285,4 +285,3 @@ await api.pingConnectionById(connectionId)
 
 // Both work for file and database connections
 ```
-

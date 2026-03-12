@@ -6,6 +6,7 @@
 import { computed } from 'vue'
 import type { TargetSpec, FileFormatSpec, S3UploadConfig, S3Spec } from '@/types/specs'
 import type { StreamConfig } from '@/types/streamConfig'
+import { defaultCompressionForFileFormat } from '@/utils/specBuilder'
 
 /**
  * Get the active file spec from a target spec (files, s3, gcs, azure, or snowflake staging)
@@ -105,7 +106,9 @@ export function useTargetSpec(streamConfig: StreamConfig) {
 
   // Compression
   const compression = computed({
-    get: () => getFormatSpec(streamConfig.target.spec)?.compression || 'zstd',
+    get: () =>
+      getFormatSpec(streamConfig.target.spec)?.compression ||
+      defaultCompressionForFileFormat(getFileSpec(streamConfig.target.spec)?.fileFormat),
     set: (value: string) => {
       const format = ensureFormat()
       format.compression = value

@@ -3,7 +3,8 @@ import {
   buildDatabaseConnectionSpec,
   buildS3ConnectionSpec,
   buildDatabaseTargetSpec,
-  buildS3TargetSpec
+  buildS3TargetSpec,
+  defaultCompressionForFileFormat
 } from '../utils/specBuilder'
 
 describe('Connection Spec Builders', () => {
@@ -39,6 +40,12 @@ describe('Connection Spec Builders', () => {
 })
 
 describe('Target Spec Builders', () => {
+  it('returns format-aware default compression', () => {
+    expect(defaultCompressionForFileFormat('csv')).toBe('uncompressed')
+    expect(defaultCompressionForFileFormat('jsonl')).toBe('uncompressed')
+    expect(defaultCompressionForFileFormat('parquet')).toBe('zstd')
+  })
+
   it('builds database target spec', () => {
     const spec = buildDatabaseTargetSpec(
       'targetdb',

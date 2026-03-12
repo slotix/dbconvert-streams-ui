@@ -71,6 +71,18 @@ export function buildS3ConnectionSpec(
 
 // ===== Target Spec Builders =====
 
+export function defaultCompressionForFileFormat(fileFormat?: string): string {
+  switch (fileFormat?.toLowerCase()) {
+    case 'parquet':
+      return 'zstd'
+    case 'csv':
+    case 'jsonl':
+      return 'uncompressed'
+    default:
+      return 'uncompressed'
+  }
+}
+
 export function buildDatabaseTargetSpec(
   database: string,
   schema?: string,

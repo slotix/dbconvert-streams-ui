@@ -324,6 +324,7 @@ import type { Connection } from '@/types/connections'
 import type { StreamRun } from '@/types/streamHistory'
 import JsonViewer from '@/components/common/JsonViewer.vue'
 import { getFileSpec, getFormatSpec } from '@/composables/useTargetSpec'
+import { defaultCompressionForFileFormat } from '@/utils/specBuilder'
 import { getConnectionKindFromSpec } from '@/types/specs'
 import { formatDataSize, formatNumber, parseDataSize } from '@/utils/formats'
 import StreamSettings from '@/components/settings/StreamSettings.vue'
@@ -496,7 +497,7 @@ const sourceManifestPath = computed(() => {
 const compressionDisplay = computed(() => {
   const spec = currentStreamConfig.value?.target?.spec
   const format = getFormatSpec(spec)
-  return format?.compression || 'zstd'
+  return format?.compression || defaultCompressionForFileFormat(fileFormatDisplay.value)
 })
 
 interface SummaryDetailCard {

@@ -20,7 +20,8 @@ import {
   buildS3TargetSpec,
   buildGCSTargetSpec,
   buildAzureTargetSpec,
-  buildSnowflakeTargetSpec
+  buildSnowflakeTargetSpec,
+  defaultCompressionForFileFormat
 } from '@/utils/specBuilder'
 import { getFileSpec } from '@/composables/useTargetSpec'
 import { normalizeStreamConnections } from '@/utils/federatedUtils'
@@ -1015,7 +1016,8 @@ export const useStreamsStore = defineStore('streams', {
         const resolvedFileFormat = fileFormat || 'parquet'
 
         // Read format settings from existing spec (spec is source of truth)
-        const compressionType = existingFormat?.compression || 'zstd'
+        const compressionType =
+          existingFormat?.compression || defaultCompressionForFileFormat(resolvedFileFormat)
         const parquetConfig = existingFormat?.parquet
         const csvConfig = existingFormat?.csv
 

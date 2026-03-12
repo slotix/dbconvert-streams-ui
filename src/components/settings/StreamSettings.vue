@@ -264,7 +264,11 @@ import { useStreamsStore, defaultStreamConfigOptions } from '@/stores/streamConf
 import { useConnectionsStore } from '@/stores/connections'
 import { type StreamConfig } from '@/types/streamConfig'
 import { useTargetSpec, getFileSpec } from '@/composables/useTargetSpec'
-import { buildFileTargetSpec, buildS3TargetSpec } from '@/utils/specBuilder'
+import {
+  buildFileTargetSpec,
+  buildS3TargetSpec,
+  defaultCompressionForFileFormat
+} from '@/utils/specBuilder'
 import SelectionButtonGroup from '@/components/base/SelectionButtonGroup.vue'
 import FormSelect from '@/components/base/FormSelect.vue'
 import FormSwitch from '@/components/base/FormSwitch.vue'
@@ -312,7 +316,7 @@ const compressionOptions = computed(() => {
   if (isParquet) {
     // Parquet has built-in compression - no file extension added
     return [
-      { value: 'zstd', label: 'ZSTD - Recommended' },
+      { value: 'zstd', label: 'ZSTD - Default' },
       { value: 'snappy', label: 'SNAPPY - Fast Decoding' },
       { value: 'gzip', label: 'GZIP - Legacy Compatibility' },
       { value: 'uncompressed', label: 'Uncompressed - No Compression' }
@@ -321,9 +325,9 @@ const compressionOptions = computed(() => {
 
   // CSV/JSONL - compression adds file extension (.zst, .gz)
   return [
-    { value: 'zstd', label: 'ZSTD (.zst) - Recommended' },
+    { value: 'uncompressed', label: 'Uncompressed - Default' },
     { value: 'gzip', label: 'GZIP (.gz) - Legacy Compatibility' },
-    { value: 'uncompressed', label: 'Uncompressed - No Compression' }
+    { value: 'zstd', label: 'ZSTD (.zst) - Smaller Files' }
   ]
 })
 
@@ -374,7 +378,7 @@ function ensureTargetSpec() {
   // Initialize spec based on connection type
   if (conn.spec?.files) {
     // Local file target
-    config.target.spec = buildFileTargetSpec('csv', 'zstd')
+    config.target.spec = buildFileTargetSpec('csv', defaultCompressionForFileFormat('csv'))
   } else if (conn.spec?.s3) {
     // S3 target - get bucket from connection scope if available
     // Empty outputDirectory lets backend use platform-appropriate temp directory
@@ -386,7 +390,7 @@ function ensureTargetSpec() {
       conn.spec.s3.scope?.prefix,
       undefined,
       undefined,
-      'zstd'
+      defaultCompressionForFileFormat('csv')
     )
   }
 }
@@ -414,7 +418,8 @@ const targetFileFormat = computed({
 
 // Compression type - reads/writes directly to target.spec via composable
 const compressionType = computed({
-  get: () => targetSpec.value?.compression.value ?? 'zstd',
+  get: () =>
+    targetSpec.value?.compression.value ?? defaultCompressionForFileFormat(targetFileFormat.value),
   set: (value) => {
     if (targetSpec.value) {
       targetSpec.value.compression.value = value
@@ -429,13 +434,17 @@ const compressionDescription = computed(() => {
 
   switch (compressionType.value) {
     case 'zstd':
-      return `Best compression ratio with fast decompression - modern standard (recommended)${parquetNote}`
+      return targetFileFormat.value === 'parquet'
+        ? `Best compression ratio with fast decompression - default for Parquet${parquetNote}`
+        : `Best compression ratio with fast decompression - creates .zst files${parquetNote}`
     case 'snappy':
       return `Fast compression and decompression - common Parquet default${parquetNote}`
     case 'gzip':
       return `Good balance of compression and speed - for legacy system compatibility${parquetNote}`
     case 'uncompressed':
-      return 'No compression - fastest write speed, largest file size'
+      return targetFileFormat.value === 'parquet'
+        ? 'No compression inside the Parquet file'
+        : 'No compression - default for CSV and JSONL'
     default:
       return 'Select compression method'
   }
