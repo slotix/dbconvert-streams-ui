@@ -367,9 +367,9 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeyDown))
                 formatRowLabel(row.label)
               }}</span>
               <button
+                v-tooltip="'Undo'"
                 type="button"
                 class="ui-surface-raised ui-border-default w-7 h-7 inline-flex items-center justify-center rounded border text-gray-500 dark:text-gray-400 hover:border-red-300 dark:hover:border-red-700 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                v-tooltip="'Undo'"
                 @click="emit('revert-row', row.rowId)"
               >
                 <Undo2 class="h-3.5 w-3.5" />
@@ -425,9 +425,9 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeyDown))
 
               <div class="flex items-center gap-2" @click.stop>
                 <button
+                  v-tooltip="'Undo'"
                   type="button"
                   class="ui-surface-raised ui-border-default w-7 h-7 inline-flex items-center justify-center rounded border text-gray-500 dark:text-gray-400 hover:border-red-300 dark:hover:border-red-700 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                  v-tooltip="'Undo'"
                   @click="emit('revert-row', row.rowId)"
                 >
                   <Undo2 class="h-3.5 w-3.5" />

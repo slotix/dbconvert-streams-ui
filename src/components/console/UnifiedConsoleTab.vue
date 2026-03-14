@@ -1,5 +1,5 @@
 <template>
-  <div class="console-tab ui-surface-panel flex h-full flex-col pb-2">
+  <div class="console-tab flex h-full flex-col overflow-hidden">
     <!-- Unified header: breadcrumb + pills + settings -->
     <div
       class="ui-surface-toolbar ui-border-default flex min-w-0 items-center gap-2 border-b px-4 py-2"

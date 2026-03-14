@@ -112,11 +112,11 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
 </script>
 
 <template>
-  <nav aria-label="Breadcrumb" class="text-sm relative">
-    <ol class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+  <nav aria-label="Breadcrumb" class="text-sm relative min-w-0">
+    <ol class="flex items-center gap-2 text-gray-600 dark:text-gray-400 min-w-0 overflow-hidden">
       <!-- Connection label (shown first, except in console mode where consoleName already includes it) -->
-      <li v-if="props.connectionLabel && !isConsoleMode" class="inline-flex items-center gap-2">
-        <span class="text-gray-700 dark:text-gray-300 font-medium">{{
+      <li v-if="props.connectionLabel && !isConsoleMode" class="inline-flex shrink-0 items-center gap-2 min-w-0">
+        <span class="text-gray-700 dark:text-gray-300 font-medium truncate">{{
           props.connectionLabel
         }}</span>
       </li>
@@ -124,7 +124,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
       <!-- DATABASE MODE: database / schema / table -->
       <template v-if="isDatabaseMode">
         <!-- Database -->
-        <li v-if="props.database" class="inline-flex items-center gap-2">
+        <li v-if="props.database" class="inline-flex shrink-0 items-center gap-2">
           <span v-if="props.connectionLabel" class="text-gray-400 dark:text-gray-500">/</span>
           <span class="text-gray-700 dark:text-gray-300 font-medium">
             {{ props.database }}
@@ -132,7 +132,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
         </li>
 
         <!-- Schema -->
-        <li v-if="props.schema" class="inline-flex items-center gap-2">
+        <li v-if="props.schema" class="inline-flex shrink-0 items-center gap-2">
           <span class="text-gray-400 dark:text-gray-500">/</span>
           <span class="text-gray-700 dark:text-gray-300 font-medium">
             {{ props.schema }}
@@ -140,8 +140,8 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
         </li>
 
         <!-- Table/View name (clickable picker) -->
-        <li v-if="props.name" class="inline-flex items-center gap-2">
-          <span class="text-gray-400 dark:text-gray-500">/</span>
+        <li v-if="props.name" class="inline-flex shrink items-center gap-2 min-w-0">
+          <span class="text-gray-400 dark:text-gray-500 shrink-0">/</span>
           <button
             v-if="showObjectPicker"
             ref="anchorRef"
@@ -166,8 +166,8 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
           </span>
           <span
             v-else-if="props.databaseStatusLabel === 'Editable'"
-            class="ui-chip-muted ui-border-default inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium text-gray-500 dark:text-gray-400"
             v-tooltip="props.databaseStatusTooltip || undefined"
+            class="ui-chip-muted ui-border-default inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium text-gray-500 dark:text-gray-400"
           >
             Editable
           </span>
@@ -189,14 +189,14 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
         <li
           v-for="(segment, index) in props.pathSegments"
           :key="segment.path"
-          class="inline-flex items-center gap-2"
+          class="inline-flex shrink-0 items-center gap-2"
         >
           <span v-if="index > 0 || props.connectionLabel" class="text-gray-400 dark:text-gray-500"
             >/</span
           >
           <span
-            class="text-gray-700 dark:text-gray-300 font-medium truncate max-w-[150px]"
             v-tooltip="segment.name"
+            class="text-gray-700 dark:text-gray-300 font-medium truncate max-w-[150px]"
           >
             {{ segment.name }}
           </span>
@@ -212,9 +212,9 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
           <button
             v-if="showFilePicker"
             ref="anchorRef"
+            v-tooltip="'Switch file'"
             type="button"
             class="text-gray-900 dark:text-gray-100 font-medium hover:underline"
-            v-tooltip="'Switch file'"
             @click.stop="togglePicker"
           >
             {{ props.name }}
@@ -225,16 +225,16 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
 
           <span
             v-if="props.fileStatusLabel === 'Read-only'"
-            class="ui-chip-muted ui-border-default inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium text-gray-500 dark:text-gray-400"
             v-tooltip="props.fileStatusTooltip || undefined"
+            class="ui-chip-muted ui-border-default inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium text-gray-500 dark:text-gray-400"
           >
             <Lock class="h-3 w-3 shrink-0" />
             Read-only
           </span>
           <span
             v-else-if="props.fileStatusLabel === 'Editable'"
-            class="ui-chip-muted ui-border-default inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium text-gray-500 dark:text-gray-400"
             v-tooltip="props.fileStatusTooltip || undefined"
+            class="ui-chip-muted ui-border-default inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium text-gray-500 dark:text-gray-400"
           >
             Editable
           </span>
