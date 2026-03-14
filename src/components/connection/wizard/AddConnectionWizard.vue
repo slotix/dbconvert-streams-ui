@@ -2,7 +2,7 @@
   <div class="mx-auto flex min-h-[calc(100vh-65px)] max-w-[1600px] flex-col px-4 sm:px-6 lg:px-8">
     <div class="flex-1 py-6">
       <div class="grid h-full min-h-0 gap-8 xl:grid-cols-[320px_minmax(0,1fr)] xl:gap-10">
-        <aside class="min-h-0 xl:border-r xl:border-gray-200 xl:pr-6 dark:xl:border-gray-800">
+        <aside class="min-h-0 xl:border-r xl:pr-6 ui-border-default">
           <DatabaseTypeStep
             :selected-type="selectedDBType?.type"
             @update:selected-db-type="handleDBTypeUpdate"
@@ -10,7 +10,7 @@
         </aside>
 
         <section class="flex min-h-0 flex-col overflow-hidden">
-          <div class="border-b border-gray-200 py-5 dark:border-gray-800">
+          <div class="border-b py-5 ui-border-default">
             <div v-if="selectedDBType" class="flex flex-wrap items-start justify-between gap-4">
               <div class="flex items-start gap-3">
                 <DatabaseIcon
@@ -53,9 +53,7 @@
 
           <div class="flex-1 overflow-y-auto">
             <div v-if="selectedDBType" class="space-y-5 py-5">
-              <div
-                class="rounded-xl border border-gray-200 bg-gray-50/70 p-4 dark:border-gray-700 dark:bg-gray-900/60"
-              >
+              <div class="ui-surface-muted ui-border-default rounded-xl border p-4">
                 <div class="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <p
@@ -135,7 +133,7 @@
             >
               <div class="max-w-md">
                 <div
-                  class="mx-auto flex h-14 w-14 items-center justify-center rounded-xl border border-gray-200 bg-gray-50 text-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-500"
+                  class="ui-surface-muted ui-border-default mx-auto flex h-14 w-14 items-center justify-center rounded-xl border text-gray-400 dark:text-gray-500"
                 >
                   <Database class="h-7 w-7" />
                 </div>
@@ -154,7 +152,7 @@
     </div>
 
     <div
-      class="sticky bottom-0 z-20 -mx-4 border-t border-slate-200/80 bg-white/92 backdrop-blur sm:-mx-6 lg:-mx-8 dark:border-gray-700/80 dark:bg-gray-900/92"
+      class="ui-surface-panel ui-border-default sticky bottom-0 z-20 -mx-4 border-t backdrop-blur sm:-mx-6 lg:-mx-8"
     >
       <div
         class="mx-auto flex max-w-[1600px] flex-col gap-3 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8"

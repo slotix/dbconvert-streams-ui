@@ -27,7 +27,7 @@
         <span class="hidden truncate @[560px]/filter-row:inline">{{ groupLabel(group.key) }}</span>
         <span
           v-if="groupSelectedTypes(group.key).length > 0"
-          class="ml-1 shrink-0 rounded-full bg-slate-200 px-1.5 py-0.5 text-[10px] leading-none text-slate-700 dark:bg-slate-600/70 dark:text-slate-100 @[560px]/filter-row:hidden"
+          class="ui-chip-muted ml-1 shrink-0 rounded-full px-1.5 py-0.5 text-[10px] leading-none @[560px]/filter-row:hidden"
         >
           {{ groupMatchedConnectionCount(group.key) }}
         </span>
@@ -41,7 +41,7 @@
         v-if="groupSelectedTypes(group.key).length > 0"
         type="button"
         :data-testid="`explorer-filter-clear-${group.key}`"
-        class="absolute right-1 top-1/2 inline-flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded text-slate-500 hover:bg-slate-200/80 hover:text-slate-700 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white"
+        class="absolute right-1 top-1/2 inline-flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded text-slate-500 hover:[background-color:var(--ui-surface-muted)] hover:text-slate-700 dark:text-gray-300 dark:hover:text-white"
         :title="`Clear ${group.title.toLowerCase()} filters`"
         @click.stop="clearGroup(group.key)"
       >
@@ -56,11 +56,9 @@
       ref="dropdownRef"
       data-testid="explorer-filter-dropdown"
       :style="dropdownStyle"
-      class="fixed z-50 w-72 overflow-hidden rounded-md border border-slate-200/90 bg-white shadow-lg shadow-slate-900/8 dark:border-gray-700 dark:bg-gray-850 dark:shadow-gray-950/30"
+      class="ui-surface-floating ui-border-default fixed z-50 w-72 overflow-hidden rounded-md border"
     >
-      <div
-        class="flex items-center justify-between border-b border-slate-200 px-3 py-2 dark:border-gray-700"
-      >
+      <div class="ui-border-default flex items-center justify-between border-b px-3 py-2">
         <span
           class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-gray-400"
         >
@@ -82,7 +80,7 @@
           :key="option.type"
           class="px-3 py-2"
           :class="
-            isComingSoon(option) ? 'opacity-65' : 'hover:bg-slate-50/80 dark:hover:bg-gray-800'
+            isComingSoon(option) ? 'opacity-65' : 'hover:[background-color:var(--ui-surface-muted)]'
           "
         >
           <div
@@ -96,7 +94,7 @@
               :checked="isTypeSelected(option.type)"
               :disabled="isComingSoon(option)"
               tabindex="-1"
-              class="pointer-events-none h-4 w-4 shrink-0 rounded border-gray-300 bg-white text-sky-600 dark:border-gray-600 dark:bg-gray-800 focus:outline-none"
+              class="ui-surface-raised ui-border-default pointer-events-none h-4 w-4 shrink-0 rounded border text-sky-600 focus:outline-none"
             />
             <img
               :src="option.logo"
@@ -108,7 +106,7 @@
             }}</span>
             <span
               v-if="isComingSoon(option)"
-              class="ml-auto shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+              class="ui-chip-muted ml-auto shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide"
             >
               Coming soon
             </span>
@@ -171,8 +169,8 @@ const selectedTypes = computed(() => props.selectedTypes || [])
 
 const allChipClass = computed(() =>
   selectedTypes.value.length === 0
-    ? 'border-slate-400 bg-slate-100 text-slate-700 dark:border-slate-500 dark:bg-slate-700/30 dark:text-slate-200'
-    : 'border-slate-300 bg-white text-slate-600 hover:bg-slate-50 dark:border-gray-700 dark:bg-gray-850 dark:text-gray-300 dark:hover:bg-gray-800'
+    ? 'ui-surface-muted ui-border-default text-slate-700 dark:text-slate-200'
+    : 'ui-surface-raised ui-border-default text-slate-600 dark:text-gray-300 hover:[background-color:var(--ui-surface-muted)]'
 )
 
 function setChipRef(key: FilterGroupKey, element: Element | ComponentPublicInstance | null) {
@@ -234,11 +232,9 @@ function groupChipClass(group: FilterGroupKey): string {
   const isActive = groupSelectedTypes(group).length > 0
   return [
     isActive
-      ? 'border-slate-400 bg-slate-100 pr-7 text-slate-700 dark:border-slate-500 dark:bg-slate-700/30 dark:text-slate-200'
-      : 'border-slate-300 bg-white pr-2 text-slate-600 hover:bg-slate-50 dark:border-gray-700 dark:bg-gray-850 dark:text-gray-300 dark:hover:bg-gray-800',
-    openGroup.value === group
-      ? 'border-slate-400 bg-slate-50 dark:border-slate-500 dark:bg-gray-800'
-      : ''
+      ? 'ui-surface-muted ui-border-default pr-7 text-slate-700 dark:text-slate-200'
+      : 'ui-surface-raised ui-border-default pr-2 text-slate-600 dark:text-gray-300 hover:[background-color:var(--ui-surface-muted)]',
+    openGroup.value === group ? 'ui-accent-selection-active' : ''
   ].join(' ')
 }
 

@@ -4,7 +4,7 @@
     <div class="px-3 pt-2.5 pb-1 flex items-center gap-2">
       <button
         type="button"
-        class="lg:hidden flex items-center justify-center p-1.5 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700"
+        class="lg:hidden flex items-center justify-center p-1.5 rounded-md text-gray-600 hover:text-gray-900 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-400 dark:hover:text-white"
         @click="sidebarMenuToggle?.openSidebar()"
       >
         <Menu class="h-4 w-4" aria-hidden="true" />

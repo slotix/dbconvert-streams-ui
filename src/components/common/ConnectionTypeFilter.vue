@@ -4,7 +4,7 @@
     <button
       ref="buttonRef"
       v-tooltip="buttonTooltip"
-      class="inline-flex min-w-[100px] items-center gap-2 rounded border border-gray-300 bg-white px-2 py-1.5 text-xs font-medium whitespace-nowrap text-gray-700 hover:bg-gray-50 focus:outline-none focus-visible:border-gray-400 focus-visible:bg-gray-50 dark:border-gray-700 dark:bg-gray-850 dark:text-gray-300 dark:hover:bg-gray-800 dark:focus-visible:border-gray-500 dark:focus-visible:bg-gray-800"
+      class="ui-accent-focus ui-surface-raised ui-border-default inline-flex min-w-[100px] items-center gap-2 rounded border px-2 py-1.5 text-xs font-medium whitespace-nowrap text-gray-700 hover:[background-color:var(--ui-surface-muted)] focus:outline-none dark:text-gray-300"
       @click="isOpen = !isOpen"
     >
       <Layers v-if="selectedTypes.length === 0" class="h-5 w-5 text-gray-500 dark:text-gray-300" />
@@ -25,11 +25,11 @@
         v-if="isOpen"
         ref="dropdownRef"
         :style="dropdownStyle"
-        class="ui-surface-floating fixed z-50 w-56 dark:bg-gray-850 dark:shadow-gray-900/50"
+        class="ui-surface-floating fixed z-50 w-56"
       >
         <div class="py-1">
           <!-- Select All / Clear All -->
-          <div class="px-3 py-2 border-b border-gray-200 dark:border-gray-700">
+          <div class="ui-border-default px-3 py-2 border-b">
             <button
               v-if="selectedTypes.length > 0"
               class="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 font-medium"
@@ -51,7 +51,7 @@
             <button
               v-for="option in availableTypes"
               :key="option.id"
-              class="w-full text-left px-3 py-2 text-sm text-gray-900 dark:text-gray-100 flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-800"
+              class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-900 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-100"
               @click.stop="toggleType(option.type)"
             >
               <!-- Checkbox -->
@@ -59,8 +59,8 @@
                 :class="[
                   'shrink-0 w-4 h-4 rounded border flex items-center justify-center',
                   isTypeSelected(option.type)
-                    ? 'bg-gray-600 dark:bg-gray-500 border-gray-600 dark:border-gray-500'
-                    : 'bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600'
+                    ? 'ui-accent-primary'
+                    : 'ui-surface-raised ui-border-default'
                 ]"
               >
                 <Check v-if="isTypeSelected(option.type)" class="h-3 w-3 text-white" />

@@ -13,7 +13,7 @@
                 >Configure database access for IP:</span
               >
               <code
-                class="ml-2 rounded border border-gray-300 bg-transparent px-2 py-1 font-mono text-sm text-gray-800 dark:border-gray-600 dark:text-gray-200"
+                class="ui-surface-raised ui-border-default ml-2 rounded border px-2 py-1 font-mono text-sm text-gray-800 dark:text-gray-200"
               >
                 {{ publicIp }}
               </code>
@@ -57,7 +57,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const containerClass = computed(() =>
   props.layout === 'workspace'
-    ? 'rounded-xl border border-gray-200 bg-transparent p-5 dark:border-gray-700'
-    : 'mx-4 rounded-xl border border-gray-200 bg-transparent p-5 md:mx-6 dark:border-gray-700'
+    ? 'ui-border-default rounded-xl border bg-transparent p-5'
+    : 'ui-border-default mx-4 rounded-xl border bg-transparent p-5 md:mx-6'
 )
 </script>

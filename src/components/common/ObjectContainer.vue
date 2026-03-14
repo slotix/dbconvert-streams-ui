@@ -411,12 +411,12 @@ function onOpenDiagram() {
 <template>
   <div
     :class="[
-      'bg-white dark:bg-gray-850 h-full flex flex-col min-h-0',
-      $attrs.class ? $attrs.class : 'border border-gray-200 dark:border-gray-700'
+      'ui-surface-panel h-full flex flex-col min-h-0 border',
+      $attrs.class ? $attrs.class : ''
     ]"
   >
     <!-- Header with segmented control tabs and refresh button -->
-    <div class="border-b border-gray-200 dark:border-gray-700 px-4 py-2.5">
+    <div class="ui-surface-toolbar ui-border-default border-b px-4 py-2.5">
       <div class="flex items-center justify-between">
         <!-- Left: Tabs -->
         <div class="flex items-center gap-2">
@@ -434,7 +434,7 @@ function onOpenDiagram() {
                 i !== 0 ? '-ml-px' : '',
                 selectedIndex === i
                   ? 'ui-accent-selection-checked z-10'
-                  : 'ui-accent-action ui-accent-focus bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100'
+                  : 'ui-accent-action ui-accent-focus ui-surface-raised ui-border-default border text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100'
               ]"
               @click="onTabChange(i)"
             >
@@ -449,7 +449,7 @@ function onOpenDiagram() {
           <button
             v-if="isDataObject"
             type="button"
-            class="ui-accent-action inline-flex items-center rounded-md bg-white dark:bg-gray-800 px-2.5 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 shadow-sm dark:shadow-gray-900/30 border border-gray-200 dark:border-gray-600 transition-colors"
+            class="ui-accent-action ui-surface-raised ui-border-default inline-flex items-center rounded-md px-2.5 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 shadow-sm border transition-colors"
             title="Open in SQL Console"
             @click="onOpenSqlConsole"
           >
@@ -459,7 +459,7 @@ function onOpenDiagram() {
           <button
             v-if="isDataObject"
             type="button"
-            class="inline-flex items-center rounded-md bg-white dark:bg-gray-800 px-2.5 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 shadow-sm dark:shadow-gray-900/30 border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
+            class="ui-surface-raised ui-border-default ui-accent-action inline-flex items-center rounded-md border px-2.5 py-1.5 text-xs font-medium text-gray-700 shadow-sm transition-colors hover:text-purple-600 dark:text-gray-300 dark:hover:text-purple-400"
             title="Show in Diagram"
             @click="onOpenDiagram"
           >
@@ -469,7 +469,7 @@ function onOpenDiagram() {
           <button
             v-if="objectType === 'file' && !isManifestFileObject"
             type="button"
-            class="ui-accent-action inline-flex items-center rounded-md bg-white dark:bg-gray-800 px-2.5 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 shadow-sm dark:shadow-gray-900/30 border border-gray-200 dark:border-gray-600 transition-colors"
+            class="ui-accent-action ui-surface-raised ui-border-default inline-flex items-center rounded-md px-2.5 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 shadow-sm border transition-colors"
             title="Open in DuckDB Console"
             @click="onOpenFileConsole"
           >
@@ -477,7 +477,7 @@ function onOpenDiagram() {
           </button>
           <button
             type="button"
-            class="inline-flex items-center rounded-md bg-white dark:bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 shadow-sm dark:shadow-gray-900/30 border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            class="ui-surface-raised ui-border-default ui-accent-action inline-flex items-center rounded-md border px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-300"
             :disabled="isRefreshing"
             @click="onRefreshClick"
           >

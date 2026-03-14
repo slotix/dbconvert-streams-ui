@@ -28,10 +28,10 @@
               :class="[
                 'flex w-full items-center gap-3 rounded-xl border px-3 py-3 text-left transition-colors',
                 isComingSoon(dbType)
-                  ? 'cursor-not-allowed border-gray-200/80 bg-gray-50/60 opacity-70 dark:border-gray-800 dark:bg-gray-900/50'
+                  ? 'ui-surface-muted ui-border-default cursor-not-allowed opacity-70'
                   : isSelected(dbType)
-                    ? 'border-gray-300 bg-gray-100/80 dark:border-gray-700 dark:bg-gray-800/90'
-                    : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:hover:border-gray-700 dark:hover:bg-gray-850'
+                    ? 'ui-accent-selection-checked'
+                    : 'ui-surface-raised ui-border-default hover:[background-color:var(--ui-surface-muted)]'
               ]"
               @click="selectType(dbType)"
             >
@@ -49,7 +49,7 @@
                   </span>
                   <span
                     v-if="isComingSoon(dbType)"
-                    class="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                    class="ui-chip-muted inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide"
                   >
                     Coming soon
                   </span>

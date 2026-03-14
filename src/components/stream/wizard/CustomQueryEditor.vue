@@ -15,9 +15,9 @@
       />
 
       <!-- Query Content -->
-      <div v-if="activeQuery" class="flex-1 flex flex-col min-h-0 bg-white dark:bg-gray-850">
+      <div v-if="activeQuery" class="ui-surface-raised flex min-h-0 flex-1 flex-col">
         <!-- Query Controls Row -->
-        <div class="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+        <div class="ui-border-default border-b px-4 py-2">
           <div class="flex items-start justify-between gap-4">
             <div class="min-w-0 flex-1">
               <div v-if="sourceConnections.length > 1" class="flex items-start gap-3">
@@ -28,13 +28,13 @@
                   <div
                     v-for="conn in sourceConnections"
                     :key="getConnectionMappingKey(conn)"
-                    class="inline-flex flex-col gap-1 px-2 py-1 text-xs bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded"
+                    class="ui-surface-raised ui-border-default inline-flex flex-col gap-1 rounded border px-2 py-1 text-xs"
                   >
                     <div class="inline-flex items-center gap-1.5 min-w-0">
                       <input
                         type="text"
                         :value="getAliasDraft(conn)"
-                        class="w-16 rounded border border-sky-300 dark:border-sky-700/80 bg-sky-50/60 dark:bg-sky-900/20 px-1.5 py-0.5 text-xs font-mono font-semibold text-sky-700 dark:text-sky-300 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                        class="ui-accent-focus ui-surface-inset ui-border-default w-16 rounded border px-1.5 py-0.5 text-xs font-mono font-semibold text-gray-700 focus:outline-none dark:text-gray-200"
                         title="Edit source alias"
                         @input="onAliasInput(conn, $event)"
                         @keydown.enter.prevent="commitAlias(conn)"
@@ -46,13 +46,13 @@
                       }}</span>
                       <span
                         v-if="isFileConnection(conn.connectionId)"
-                        class="ml-1 px-1.5 py-0.5 text-[10px] bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded"
+                        class="ui-chip-muted ml-1 rounded px-1.5 py-0.5 text-[10px]"
                         title="File sources are read directly using DuckDB functions"
                         >file</span
                       >
                       <span
                         v-else
-                        class="ml-1 px-1.5 py-0.5 text-[10px] bg-sky-100 dark:bg-sky-900/50 text-sky-700 dark:text-sky-300 rounded"
+                        class="ui-accent-selection-checked ui-accent-text ml-1 rounded px-1.5 py-0.5 text-[10px]"
                         title="Use alias.table syntax to reference tables"
                         >{{ getAliasDraft(conn) }}.table</span
                       >
@@ -72,7 +72,7 @@
               <div v-if="wizardTemplates.length > 0" ref="wizardTemplatesRef" class="relative">
                 <button
                   type="button"
-                  class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors shadow-sm"
+                  class="ui-surface-raised ui-border-default ui-accent-action inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors shadow-sm dark:text-gray-300"
                   title="Insert a SQL template"
                   @click="templatePickerRef?.toggle()"
                 >
@@ -108,7 +108,7 @@
           <!-- SQL Editor Pane -->
           <div
             ref="leftPaneRef"
-            class="border-r border-gray-200 dark:border-gray-700 min-h-0"
+            class="ui-border-default min-h-0 border-r"
             :style="{ width: `${editorWidth}%` }"
           >
             <SqlCodeMirror
@@ -124,16 +124,14 @@
 
           <!-- Resizable Divider -->
           <div
-            class="w-1 cursor-col-resize bg-gray-200 transition-colors hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-500"
+            class="ui-border-default w-1 cursor-col-resize bg-[var(--ui-border-default)] transition-colors hover:bg-[var(--ui-accent-soft-border)]"
             @mousedown="startResize"
           ></div>
 
           <!-- Results Pane -->
           <div class="min-h-0 flex flex-col" :style="{ width: `${100 - editorWidth}%` }">
             <!-- Results Header -->
-            <div
-              class="flex items-center justify-between px-3 py-1.5 border-b border-gray-200 dark:border-gray-700"
-            >
+            <div class="ui-border-default flex items-center justify-between border-b px-3 py-1.5">
               <div class="flex items-center gap-2">
                 <Sheet class="ui-accent-icon w-4 h-4" />
                 <span class="text-xs font-medium text-gray-600 dark:text-gray-300">
@@ -146,7 +144,7 @@
             </div>
 
             <!-- Results Content -->
-            <div class="flex-1 overflow-auto bg-white dark:bg-gray-900">
+            <div class="ui-surface-raised flex-1 overflow-auto">
               <!-- Preview Error -->
               <div
                 v-if="previewErrors[activeQueryIndex]"
@@ -170,22 +168,22 @@
                 "
               >
                 <table class="w-full text-xs">
-                  <thead class="bg-gray-50 dark:bg-gray-900 sticky top-0">
+                  <thead class="ui-surface-muted sticky top-0">
                     <tr>
                       <th
                         v-for="col in previewData[activeQueryIndex].columns"
                         :key="col"
-                        class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700 whitespace-nowrap"
+                        class="ui-border-default whitespace-nowrap border-b px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-400"
                       >
                         {{ col }}
                       </th>
                     </tr>
                   </thead>
-                  <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                  <tbody class="divide-y divide-[var(--ui-border-default)]">
                     <tr
                       v-for="(row, idx) in previewData[activeQueryIndex].rows"
                       :key="idx"
-                      class="hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                      class="hover:[background-color:var(--ui-surface-muted)]"
                     >
                       <td
                         v-for="col in previewData[activeQueryIndex].columns"
@@ -219,7 +217,7 @@
             <!-- Detected Schema Info (bottom section) -->
             <div
               v-if="activeQuery.columns && activeQuery.columns.length > 0"
-              class="border-t border-gray-200 dark:border-gray-700 p-3 bg-gray-50 dark:bg-gray-900/50"
+              class="ui-surface-muted ui-border-default border-t p-3"
             >
               <div class="flex items-center gap-2 mb-2">
                 <CheckCircle class="w-4 h-4 text-green-500" />
@@ -231,7 +229,7 @@
                 <span
                   v-for="col in activeQuery.columns"
                   :key="col.name"
-                  class="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded"
+                  class="ui-surface-raised ui-border-default inline-flex items-center gap-1 rounded border px-2 py-0.5 text-xs"
                 >
                   <span class="font-medium text-gray-900 dark:text-gray-100">{{ col.name }}</span>
                   <span class="text-gray-500 dark:text-gray-400">{{ col.type }}</span>

@@ -1,16 +1,16 @@
 <template>
   <div
-    class="bg-white dark:bg-gray-850"
+    class="ui-surface-raised"
     :class="{
       'h-full flex flex-col': props.compact && !props.showHeader,
-      'border-b border-gray-200 dark:border-gray-700': props.showHeader,
+      'ui-border-default border-b': props.showHeader,
       'border-b-0': props.showHeader && isCollapsed
     }"
   >
     <!-- Header -->
     <button
       v-if="props.showHeader"
-      class="w-full flex items-center justify-between px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+      class="w-full flex items-center justify-between px-4 py-2.5 transition-colors hover:[background-color:var(--ui-surface-muted)]"
       @click="toggleCollapse"
     >
       <!-- Left side: Icon + Label -->
@@ -26,7 +26,7 @@
           <span
             v-for="item in selectedPreview"
             :key="item.connectionId"
-            class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 max-w-[180px]"
+            class="ui-chip-muted ui-border-default inline-flex max-w-[180px] items-center gap-1 rounded-md border px-2 py-1 text-xs text-gray-600 dark:text-gray-300"
           >
             <span v-if="item.showAlias" class="ui-accent-text font-mono font-medium">
               {{ item.alias }}
@@ -36,7 +36,7 @@
           </span>
           <span
             v-if="selectedOverflowCount > 0"
-            class="px-1.5 py-0.5 text-xs font-medium rounded bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
+            class="ui-surface-muted rounded px-1.5 py-0.5 text-xs font-medium text-gray-600 dark:text-gray-300"
           >
             +{{ selectedOverflowCount }}
           </span>
@@ -84,7 +84,7 @@
       class="px-4 pb-3"
       :class="{
         'flex-1 min-h-0 flex flex-col': props.compact && !props.showHeader,
-        'border-t border-gray-100 dark:border-gray-700/50': props.showHeader,
+        'ui-border-default border-t': props.showHeader,
         'pt-2': !props.showHeader
       }"
     >
@@ -107,33 +107,32 @@
         >
           <p>
             <strong class="text-gray-700 dark:text-gray-300">Database:</strong>
-            <code class="ml-1 px-1 py-0.5 bg-gray-200/80 dark:bg-gray-700/70 rounded font-mono"
+            <code class="ui-surface-muted ml-1 rounded px-1 py-0.5 font-mono"
               >alias.schema.table</code
             >
           </p>
           <p>
             <strong class="text-gray-700 dark:text-gray-300">S3:</strong>
-            <code class="ml-1 px-1 py-0.5 bg-gray-200/80 dark:bg-gray-700/70 rounded font-mono"
+            <code class="ui-surface-muted ml-1 rounded px-1 py-0.5 font-mono"
               >read_parquet('alias://bucket/path/*.parquet')</code
             >
           </p>
           <p>
             <strong class="text-gray-700 dark:text-gray-300">Local file:</strong>
-            <code class="ml-1 px-1 py-0.5 bg-gray-200/80 dark:bg-gray-700/70 rounded font-mono"
+            <code class="ui-surface-muted ml-1 rounded px-1 py-0.5 font-mono"
               >read_parquet('/path/file.parquet')</code
             >
           </p>
           <p v-if="hasSelectedLocalFilesConnections">
             <strong class="text-gray-700 dark:text-gray-300">Federated files:</strong>
-            <code class="ml-1 px-1 py-0.5 bg-gray-200/80 dark:bg-gray-700/70 rounded font-mono"
+            <code class="ui-surface-muted ml-1 rounded px-1 py-0.5 font-mono"
               >read_csv_auto('./')</code
             >
             resolves relative to selected folder scope in FILES.
           </p>
           <p v-if="hasMultipleS3Connections">
             <strong class="text-gray-700 dark:text-gray-300">Multi-S3:</strong>
-            <code
-              class="ml-1 px-1 py-0.5 bg-gray-200/80 dark:bg-gray-700/70 rounded font-mono text-[10px]"
+            <code class="ui-surface-muted ml-1 rounded px-1 py-0.5 font-mono text-[10px]"
               >read_parquet('aws://...') JOIN read_parquet('do://...')</code
             >
           </p>
@@ -175,11 +174,11 @@
               </RouterLink>
             </div>
 
-            <div class="divide-y divide-gray-200 dark:divide-gray-700/70">
+            <div class="divide-y divide-[var(--ui-border-default)]">
               <div
                 v-for="conn in group.items"
                 :key="conn.id"
-                class="py-2 rounded-sm hover:bg-gray-100/40 dark:hover:bg-gray-800/20"
+                class="rounded-sm py-2 hover:[background-color:var(--ui-surface-muted)]"
               >
                 <template v-if="isDatabaseConnection(conn)">
                   <div class="flex items-center justify-between gap-2 px-1">
@@ -228,9 +227,9 @@
 
                   <div
                     v-if="isSelected(conn.id)"
-                    class="ml-7 mr-1 mt-1 rounded-md bg-gray-100/45 dark:bg-gray-800/20 px-2 py-1.5"
+                    class="ui-surface-muted ml-7 mr-1 mt-1 rounded-md px-2 py-1.5"
                   >
-                    <div class="divide-y divide-gray-200/70 dark:divide-gray-700/50">
+                    <div class="divide-y divide-[var(--ui-border-default)]">
                       <div
                         v-for="mapping in getMappingsByConnection(conn.id)"
                         :key="getMappingTargetId(mapping)"
@@ -241,7 +240,7 @@
                           type="text"
                           :value="mapping.alias || ''"
                           placeholder="alias"
-                          class="ui-accent-focus text-xs leading-none border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded px-2 h-7 w-[5rem]"
+                          class="ui-accent-focus ui-surface-raised ui-border-default h-7 w-[5rem] rounded border px-2 text-xs leading-none text-gray-900 dark:text-gray-100"
                           @input="
                             updateAliasForMapping(
                               mapping,
@@ -328,7 +327,7 @@
                       showAliasForConnection(conn) &&
                       getPrimaryMapping(conn.id)
                     "
-                    class="ml-7 mr-1 mt-1 rounded-md bg-gray-100/45 dark:bg-gray-800/20 px-2 py-1.5"
+                    class="ui-surface-muted ml-7 mr-1 mt-1 rounded-md px-2 py-1.5"
                   >
                     <div class="flex items-center gap-2 px-0.5">
                       <button
@@ -359,7 +358,7 @@
                         "
                         :title="`Alias for ${conn.name}`"
                         placeholder="alias"
-                        class="alias-inline-input ui-accent-focus text-xs font-mono leading-none bg-transparent border-0 border-b border-gray-400 dark:border-gray-500 rounded-none text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-0 w-[4.25rem] py-0.5"
+                        class="alias-inline-input ui-accent-focus ui-border-default w-[4.25rem] rounded-none border-0 border-b bg-transparent py-0.5 text-xs font-mono leading-none text-gray-900 focus:outline-none focus:ring-0 dark:text-gray-200"
                         @input="
                           setAliasDraft(
                             getMappingTargetId(getPrimaryMapping(conn.id)!),
@@ -376,7 +375,7 @@
                   <!-- Optional Folder Scope (file connections) -->
                   <div
                     v-if="isSelected(conn.id) && shouldShowFolderScopeSelector(conn)"
-                    class="ml-7 mr-1 mt-1 rounded-md bg-gray-100/45 dark:bg-gray-800/20 px-2 py-1.5"
+                    class="ui-surface-muted ml-7 mr-1 mt-1 rounded-md px-2 py-1.5"
                   >
                     <div class="flex items-center gap-2 px-0.5">
                       <FormSelect

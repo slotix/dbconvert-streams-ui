@@ -93,7 +93,7 @@ function handleFocusConsumed() {
 </script>
 
 <template>
-  <div class="h-full relative bg-white dark:bg-gray-900">
+  <div class="ui-surface-raised relative h-full">
     <!-- Loading state -->
     <div v-if="isLoading" class="h-full flex items-center justify-center">
       <div class="text-gray-500 dark:text-gray-400">Loading schema...</div>

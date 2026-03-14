@@ -151,10 +151,10 @@ const optionsBehaviorClass = computed(() => {
           'focus:outline-none focus-visible:outline-none',
           error
             ? 'border border-red-300 dark:border-red-600 focus:border-red-500 dark:focus:border-red-400 focus:bg-red-50/40 dark:focus:bg-red-950/20'
-            : 'border border-gray-300 dark:border-gray-600 ui-accent-focus',
+            : 'ui-border-default ui-accent-focus border',
           disabled
-            ? 'bg-gray-100 dark:bg-gray-700 cursor-not-allowed text-gray-500 dark:text-gray-400'
-            : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 cursor-pointer',
+            ? 'ui-surface-muted cursor-not-allowed text-gray-500 dark:text-gray-400'
+            : 'ui-surface-raised text-gray-900 dark:text-gray-100 cursor-pointer',
           buttonClass
         ]"
       >
@@ -231,7 +231,7 @@ const optionsBehaviorClass = computed(() => {
           <li
             v-if="dropdownFooter"
             aria-hidden="true"
-            class="px-3 py-1.5 text-[11px] text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-gray-700 mt-1"
+            class="ui-border-default mt-1 border-t px-3 py-1.5 text-[11px] text-gray-500 dark:text-gray-400"
           >
             {{ dropdownFooter }}
           </li>

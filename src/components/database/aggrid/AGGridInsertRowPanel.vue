@@ -172,7 +172,7 @@ function inputTypeFor(col: SQLColumnMeta): string {
     <div class="h-full overflow-y-auto px-4 py-4 space-y-4">
       <div
         v-if="missingRequired.length > 0"
-        class="rounded-md border border-amber-300/80 dark:border-amber-500/60 bg-gray-50 dark:bg-gray-900/40 p-3"
+        class="ui-surface-muted rounded-md border border-amber-300/80 p-3 dark:border-amber-500/60"
       >
         <div class="text-xs font-semibold text-amber-700 dark:text-amber-300">
           Required fields missing
@@ -185,7 +185,7 @@ function inputTypeFor(col: SQLColumnMeta): string {
       <div
         v-for="col in columns"
         :key="col.name"
-        class="py-2.5 border-b border-gray-200/70 dark:border-gray-700/60 last:border-b-0"
+        class="ui-border-default border-b py-2.5 last:border-b-0"
       >
         <div class="flex items-start justify-between gap-3">
           <div class="min-w-0">
@@ -223,12 +223,12 @@ function inputTypeFor(col: SQLColumnMeta): string {
         <div class="mt-1.5">
           <input
             :type="inputTypeFor(col)"
-            class="ui-accent-focus w-full rounded-md border px-2.5 py-2 text-sm bg-white dark:bg-gray-850 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none"
+            class="ui-surface-raised ui-accent-focus w-full rounded-md border px-2.5 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none dark:text-gray-100 dark:placeholder-gray-500"
             :disabled="isGeneratedColumn(col)"
             :class="
               isMissingRequired(col.name)
                 ? 'border-red-400 dark:border-red-600'
-                : 'border-gray-200 dark:border-gray-700'
+                : 'ui-border-default'
             "
             :placeholder="placeholderFor(col)"
             :value="toInputValue(draft[col.name])"
@@ -241,7 +241,7 @@ function inputTypeFor(col: SQLColumnMeta): string {
     <template #footer>
       <button
         type="button"
-        class="text-xs rounded-md px-2.5 py-1 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+        class="ui-surface-raised ui-border-default ui-accent-action rounded-md border px-2.5 py-1 text-xs text-gray-700 dark:text-gray-200"
         @click="emit('close')"
       >
         Cancel

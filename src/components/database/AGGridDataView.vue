@@ -781,7 +781,7 @@ export default {
       <!-- Grid Actions Toolbar (container for responsive badges) -->
       <div
         v-if="props.showToolbarActions"
-        class="toolbar-container flex flex-wrap items-start justify-between gap-2 px-3 py-1.5 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700"
+        class="toolbar-container ui-surface-toolbar ui-border-default flex flex-wrap items-start justify-between gap-2 border-b px-3 py-1.5"
       >
         <!-- Left side: Filter -->
         <div v-if="props.showToolbarActions" class="flex items-center gap-2 min-w-0">
@@ -792,7 +792,7 @@ export default {
             :class="
               hasAnyFilterActivity
                 ? 'bg-transparent text-amber-600 dark:text-amber-400 border border-amber-500/80 dark:border-amber-500 hover:bg-amber-50/30 dark:hover:bg-amber-500/10'
-                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 border border-transparent'
+                : 'text-gray-600 dark:text-gray-400 hover:[background-color:var(--ui-surface-muted)] border border-transparent'
             "
             @click="openFilterPanel"
           >
@@ -860,7 +860,7 @@ export default {
             </button>
             <button
               type="button"
-              class="text-xs rounded-md px-2.5 py-1 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed shrink-0 whitespace-nowrap"
+              class="ui-surface-raised ui-border-default ui-accent-action inline-flex shrink-0 whitespace-nowrap rounded-md border px-2.5 py-1 text-xs text-gray-700 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-200"
               title="Discard pending changes"
               :disabled="isSaving"
               @click="cancelChanges"
@@ -872,7 +872,7 @@ export default {
           <!-- Export dropdown -->
           <Menu v-if="hasDataForExport" as="div" class="relative">
             <MenuButton
-              class="text-xs rounded-md px-2.5 py-1 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 inline-flex shrink-0 whitespace-nowrap items-center gap-1"
+              class="ui-surface-raised ui-border-default ui-accent-action inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-md border px-2.5 py-1 text-xs text-gray-700 dark:text-gray-200"
               :disabled="isStreamExporting"
             >
               <Download class="h-3.5 w-3.5" :stroke-width="iconStroke" />
@@ -888,13 +888,13 @@ export default {
               leave-to-class="transform scale-95 opacity-0"
             >
               <MenuItems
-                class="absolute right-0 mt-1 w-36 origin-top-right rounded-md bg-white dark:bg-gray-850 shadow-lg ring-1 ring-black/5 dark:ring-white/10 focus:outline-none z-50"
+                class="ui-surface-floating ui-border-default absolute right-0 z-50 mt-1 w-36 origin-top-right rounded-md border focus:outline-none"
               >
                 <div class="py-1">
                   <MenuItem v-slot="{ active }">
                     <button
                       :class="[
-                        active ? 'bg-gray-100 dark:bg-gray-700' : '',
+                        active ? 'ui-surface-muted' : '',
                         'w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-200'
                       ]"
                       @click="handleExport('csv')"
@@ -905,7 +905,7 @@ export default {
                   <MenuItem v-slot="{ active }">
                     <button
                       :class="[
-                        active ? 'bg-gray-100 dark:bg-gray-700' : '',
+                        active ? 'ui-surface-muted' : '',
                         'w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-200'
                       ]"
                       @click="handleExport('json')"
@@ -916,7 +916,7 @@ export default {
                   <MenuItem v-slot="{ active }">
                     <button
                       :class="[
-                        active ? 'bg-gray-100 dark:bg-gray-700' : '',
+                        active ? 'ui-surface-muted' : '',
                         'w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-200'
                       ]"
                       @click="handleExport('excel')"
@@ -924,11 +924,11 @@ export default {
                       Excel
                     </button>
                   </MenuItem>
-                  <div class="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+                  <div class="ui-border-default my-1 border-t"></div>
                   <MenuItem v-slot="{ active }">
                     <button
                       :class="[
-                        active ? 'bg-gray-100 dark:bg-gray-700' : '',
+                        active ? 'ui-surface-muted' : '',
                         'w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-200',
                         isStreamExporting ? 'opacity-50 cursor-not-allowed' : ''
                       ]"

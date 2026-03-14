@@ -224,7 +224,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div
-    class="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-850 border-b border-gray-200 dark:border-gray-700 shadow-sm"
+    class="ui-surface-panel ui-border-default flex items-center gap-2 px-4 py-2 border-b shadow-sm"
   >
     <div class="flex items-center gap-2">
       <!-- Visual Grouping Toggle -->
@@ -233,8 +233,8 @@ onBeforeUnmount(() => {
         :class="[
           'flex items-center gap-1.5 px-3 py-1.5 text-xs border rounded transition-colors',
           visuallyGrouped
-            ? 'border-gray-400 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600'
-            : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+            ? 'ui-surface-muted ui-border-default text-gray-700 dark:text-gray-200 hover:bg-[var(--ui-surface-inset)]'
+            : 'ui-surface-raised ui-border-default text-gray-600 dark:text-gray-300 hover:[background-color:var(--ui-surface-muted)]'
         ]"
         @click="toggleVisualGrouping"
       >
@@ -246,12 +246,7 @@ onBeforeUnmount(() => {
       <button
         v-if="visuallyGrouped && hasLocations"
         v-tooltip="`${expandCollapseLabel} all location groups (X)`"
-        :class="[
-          'flex items-center gap-1.5 px-3 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded transition-colors shadow-sm',
-          isAllExpanded
-            ? 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-            : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-        ]"
+        class="ui-surface-raised ui-border-default flex items-center gap-1.5 rounded border px-3 py-1.5 text-xs text-gray-600 transition-colors shadow-sm hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
         @click="toggleExpandCollapse"
       >
         <component :is="isAllExpanded ? Minimize2 : Maximize2" class="w-4 h-4" />
@@ -264,7 +259,7 @@ onBeforeUnmount(() => {
           v-tooltip="
             `Filter by query type (${selectedPurposes.size}/${queryPurposeOptions.length})`
           "
-          class="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 focus:border-gray-400 dark:focus:border-gray-500 focus:ring-1 focus:ring-gray-300 dark:focus:ring-gray-600 transition-colors text-left"
+          class="ui-accent-focus ui-surface-raised ui-border-default flex items-center gap-1.5 rounded border px-3 py-1.5 text-left text-xs transition-colors hover:[background-color:var(--ui-surface-muted)]"
           @click="showQueryTypeMenu = !showQueryTypeMenu"
         >
           <Filter class="w-4 h-4 text-gray-600 dark:text-gray-400" />
@@ -279,12 +274,12 @@ onBeforeUnmount(() => {
         >
           <div
             v-if="showQueryTypeMenu"
-            class="absolute left-0 mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md shadow-lg z-50"
+            class="ui-surface-floating absolute left-0 mt-2 w-48 border rounded-md z-50"
             @click.stop
           >
             <!-- Select All / Clear All -->
             <button
-              class="w-full text-left px-3 py-2 text-xs hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 font-semibold text-gray-700 dark:text-gray-200 transition-colors"
+              class="ui-border-default w-full border-b px-3 py-2 text-left text-xs font-semibold text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] dark:text-gray-200"
               @click="selectAllPurposes"
             >
               {{ allPurposesSelected ? '✓ All Selected' : 'Select All' }}
@@ -294,15 +289,15 @@ onBeforeUnmount(() => {
             <button
               v-for="option in queryPurposeOptions"
               :key="option.value"
-              class="w-full text-left px-3 py-2 text-xs hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 transition-colors group"
+              class="group flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition-colors hover:[background-color:var(--ui-surface-muted)]"
               @click="toggleQueryPurpose(option.value)"
             >
               <div
                 :class="[
                   'w-4 h-4 rounded border transition-colors',
                   selectedPurposes.has(option.value)
-                    ? 'bg-gray-700 dark:bg-gray-600 border-gray-700 dark:border-gray-600'
-                    : 'border-gray-300 dark:border-gray-600 group-hover:border-gray-400 dark:group-hover:border-gray-500'
+                    ? 'ui-accent-selection-checked ui-accent-text'
+                    : 'ui-surface-raised ui-border-default group-hover:border-gray-400 dark:group-hover:border-gray-500'
                 ]"
               >
                 <span
@@ -322,13 +317,13 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <div class="hidden sm:block h-6 border-l border-gray-200 dark:border-gray-700" />
+    <div class="ui-border-default hidden h-6 border-l sm:block" />
 
     <div class="flex items-center gap-2">
       <!-- Sort Order Toggle -->
       <button
         v-tooltip="`Sort: ${sortOrder === 'newest' ? 'Newest on top' : 'Oldest on top'} (S)`"
-        class="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+        class="ui-surface-raised ui-border-default flex items-center gap-1.5 rounded border px-3 py-1.5 text-xs transition-colors hover:[background-color:var(--ui-surface-muted)]"
         @click="toggleSortOrder"
       >
         <component
@@ -343,7 +338,7 @@ onBeforeUnmount(() => {
       <!-- Time Window - HIDDEN -->
       <!-- <Listbox v-model="timeWindow" as="div" class="relative">
         <ListboxButton
-          class="relative flex items-center gap-1.5 text-xs border border-gray-300 rounded pl-2 pr-6 py-1 bg-white hover:border-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors text-left min-w-[88px]"
+          class="ui-accent-focus ui-surface-raised ui-border-default relative flex min-w-[88px] items-center gap-1.5 rounded border pl-2 pr-6 py-1 text-left text-xs transition-colors hover:[border-color:var(--ui-accent-soft-border)]"
           title="Time Window"
         >
           <ClockIcon class="w-4 h-4 text-gray-500" />
@@ -360,7 +355,7 @@ onBeforeUnmount(() => {
           leave-to-class="opacity-0"
         >
           <ListboxOptions
-            class="absolute z-10 mt-1 max-h-60 w-28 overflow-auto rounded-md bg-white py-1 text-xs shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+            class="ui-surface-floating ui-border-default absolute z-10 mt-1 max-h-60 w-28 overflow-auto rounded-md border py-1 text-xs focus:outline-none"
           >
             <ListboxOption
               v-for="option in timeWindowOptions"
@@ -394,7 +389,7 @@ onBeforeUnmount(() => {
       </Listbox> -->
     </div>
 
-    <div class="hidden sm:block h-6 border-l border-gray-200 dark:border-gray-700" />
+    <div class="ui-border-default hidden h-6 border-l sm:block" />
 
     <div class="flex items-center gap-2 flex-1 min-w-0">
       <!-- Search -->
@@ -407,7 +402,7 @@ onBeforeUnmount(() => {
           v-model="searchText"
           type="text"
           placeholder="Search queries, tables, errors..."
-          class="w-full text-xs border border-gray-300 dark:border-gray-600 rounded pl-9 pr-3 py-1.5 bg-white dark:bg-gray-800 dark:text-gray-200 dark:placeholder-gray-500 hover:border-gray-400 dark:hover:border-gray-500 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-1 focus:ring-blue-500 dark:focus:ring-blue-400 transition-colors"
+          class="ui-accent-focus ui-surface-raised ui-border-default w-full rounded border pl-9 pr-3 py-1.5 text-xs transition-colors hover:[border-color:var(--ui-accent-soft-border)] dark:text-gray-200 dark:placeholder-gray-500"
         />
       </div>
 
@@ -422,14 +417,14 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <div class="hidden sm:block h-6 border-l border-gray-200 dark:border-gray-700" />
+    <div class="ui-border-default hidden h-6 border-l sm:block" />
 
     <div class="flex items-center gap-2">
       <!-- Export Button -->
       <div ref="exportMenuRef" class="relative">
         <button
           title="Export logs"
-          class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-white bg-gray-600 dark:bg-gray-700 rounded hover:bg-gray-500 dark:hover:bg-gray-600 transition-colors shadow-sm"
+          class="ui-surface-raised ui-border-default ui-accent-action inline-flex items-center gap-1 rounded border px-3 py-1.5 text-xs font-semibold text-gray-700 transition-colors shadow-sm dark:text-gray-200"
           @click.stop="toggleExportMenu"
         >
           <Download class="w-3.5 h-3.5" />
@@ -438,22 +433,22 @@ onBeforeUnmount(() => {
 
         <div
           v-if="showExportMenu"
-          class="absolute right-0 mt-2 w-36 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded shadow-lg z-50"
+          class="ui-surface-floating ui-border-default absolute right-0 z-50 mt-2 w-36 rounded border"
         >
           <button
-            class="w-full text-left px-3 py-2 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            class="w-full px-3 py-2 text-left text-xs text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] dark:text-gray-200"
             @click="selectExportFormat('text')"
           >
             Export as Text
           </button>
           <button
-            class="w-full text-left px-3 py-2 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            class="w-full px-3 py-2 text-left text-xs text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] dark:text-gray-200"
             @click="selectExportFormat('csv')"
           >
             Export as CSV
           </button>
           <button
-            class="w-full text-left px-3 py-2 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            class="w-full px-3 py-2 text-left text-xs text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] dark:text-gray-200"
             @click="selectExportFormat('json')"
           >
             Export as JSON
@@ -474,7 +469,7 @@ onBeforeUnmount(() => {
       <!-- Keyboard Shortcuts Help -->
       <div class="relative">
         <button
-          class="p-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+          class="rounded p-1.5 text-gray-500 transition-colors hover:text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-400 dark:hover:text-gray-300"
           title="Keyboard shortcuts"
           @click="showShortcuts = !showShortcuts"
         >
@@ -484,49 +479,49 @@ onBeforeUnmount(() => {
         <!-- Shortcuts Tooltip -->
         <div
           v-if="showShortcuts"
-          class="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg p-3 z-50 text-xs"
+          class="ui-surface-floating ui-border-default absolute right-0 top-full z-50 mt-2 w-64 rounded-lg border p-3 text-xs"
         >
           <div class="font-semibold text-gray-700 dark:text-gray-200 mb-2">Keyboard Shortcuts</div>
           <div class="space-y-1.5">
             <div class="flex justify-between">
               <span class="text-gray-600 dark:text-gray-300">Focus search</span>
               <kbd
-                class="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300"
+                class="ui-surface-muted ui-border-default rounded border px-2 py-0.5 text-gray-700 dark:text-gray-300"
                 >F</kbd
               >
             </div>
             <div class="flex justify-between">
               <span class="text-gray-600 dark:text-gray-300">Toggle grouped/ungrouped</span>
               <kbd
-                class="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300"
+                class="ui-surface-muted ui-border-default rounded border px-2 py-0.5 text-gray-700 dark:text-gray-300"
                 >G</kbd
               >
             </div>
             <div class="flex justify-between">
               <span class="text-gray-600 dark:text-gray-300">Toggle expand/collapse</span>
               <kbd
-                class="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300"
+                class="ui-surface-muted ui-border-default rounded border px-2 py-0.5 text-gray-700 dark:text-gray-300"
                 >X</kbd
               >
             </div>
             <div class="flex justify-between">
               <span class="text-gray-600 dark:text-gray-300">Toggle errors only</span>
               <kbd
-                class="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300"
+                class="ui-surface-muted ui-border-default rounded border px-2 py-0.5 text-gray-700 dark:text-gray-300"
                 >E</kbd
               >
             </div>
             <div class="flex justify-between">
               <span class="text-gray-600 dark:text-gray-300">Toggle sort order</span>
               <kbd
-                class="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300"
+                class="ui-surface-muted ui-border-default rounded border px-2 py-0.5 text-gray-700 dark:text-gray-300"
                 >S</kbd
               >
             </div>
             <div class="flex justify-between">
               <span class="text-gray-600 dark:text-gray-300">Clear logs</span>
               <kbd
-                class="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300"
+                class="ui-surface-muted ui-border-default rounded border px-2 py-0.5 text-gray-700 dark:text-gray-300"
                 >K</kbd
               >
             </div>

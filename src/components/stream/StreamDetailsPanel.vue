@@ -1,9 +1,7 @@
 <template>
-  <div class="h-[calc(100vh-140px)] flex flex-col bg-white dark:bg-gray-850">
+  <div class="ui-surface-app h-[calc(100vh-140px)] flex flex-col">
     <!-- Top Level Tabs (always visible) -->
-    <div
-      class="px-6 pt-4 pb-0 bg-white dark:bg-gray-850 shrink-0 border-b border-gray-200 dark:border-gray-700"
-    >
+    <div class="ui-surface-panel ui-border-default px-6 pt-4 pb-0 shrink-0 border-b">
       <nav class="flex gap-4" aria-label="Tabs">
         <button
           v-for="tab in visibleTabs"
@@ -11,7 +9,7 @@
           :class="[
             activeTab === tab.id
               ? 'ui-accent-text [border-color:var(--ui-accent-indicator)]'
-              : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700',
+              : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:[border-color:var(--ui-border-default)]',
             'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors'
           ]"
           @click="activeTab = tab.id"
@@ -22,7 +20,7 @@
     </div>
 
     <!-- Context-Aware Header Per Tab -->
-    <div class="px-6 py-4 bg-white dark:bg-gray-850 shrink-0">
+    <div class="ui-surface-panel px-6 py-4 shrink-0">
       <!-- Configuration Tab Header -->
       <div v-if="activeTab === 'configuration'" class="flex items-center justify-between">
         <div class="flex items-center min-w-0 flex-1 gap-3">
@@ -141,7 +139,7 @@
         </div>
         <div
           v-if="monitoringStore.logTransportDegraded"
-          class="rounded-lg border border-amber-300/80 dark:border-amber-500/60 bg-gray-50 dark:bg-gray-900/40 px-4 py-3 text-sm text-gray-700 dark:text-gray-200"
+          class="ui-surface-muted rounded-lg border border-amber-300/80 dark:border-amber-500/60 px-4 py-3 text-sm text-gray-700 dark:text-gray-200"
         >
           <div class="flex items-start justify-between gap-3">
             <div class="space-y-1">
@@ -161,7 +159,7 @@
         </div>
         <div
           v-if="hasActiveStreamGate"
-          class="rounded-lg border border-amber-300/80 dark:border-amber-500/60 bg-gray-50 dark:bg-gray-900/40 px-4 py-3 text-sm text-gray-700 dark:text-gray-200"
+          class="ui-surface-muted rounded-lg border border-amber-300/80 dark:border-amber-500/60 px-4 py-3 text-sm text-gray-700 dark:text-gray-200"
         >
           <div class="flex items-start justify-between gap-3">
             <div class="space-y-1">
@@ -188,7 +186,7 @@
         </div>
         <div
           v-if="isViewingOtherRunningStream"
-          class="rounded-lg border border-amber-300/80 dark:border-amber-500/60 bg-gray-50 dark:bg-gray-900/40 px-4 py-3 text-sm text-gray-700 dark:text-gray-200 flex items-center justify-between gap-3"
+          class="ui-surface-muted rounded-lg border border-amber-300/80 dark:border-amber-500/60 px-4 py-3 text-sm text-gray-700 dark:text-gray-200 flex items-center justify-between gap-3"
         >
           <span> Another stream is currently running. </span>
           <BaseButton variant="secondary" @click="switchToActiveRun"
@@ -240,7 +238,7 @@
       <!-- Evaluation Banner (always visible when user is near/over limits) -->
       <div
         v-if="evaluationBanner"
-        class="mt-3 rounded-lg border border-amber-300/80 dark:border-amber-500/60 bg-gray-50 dark:bg-gray-900/40 px-4 py-3 text-gray-900 dark:text-gray-100"
+        class="ui-surface-muted mt-3 rounded-lg border border-amber-300/80 dark:border-amber-500/60 px-4 py-3 text-gray-900 dark:text-gray-100"
       >
         <div class="flex items-start gap-3">
           <AlertTriangle class="h-5 w-5 text-amber-600 dark:text-amber-300 mt-0.5" />
@@ -281,7 +279,7 @@
           />
           <div
             v-else
-            class="rounded-lg border border-amber-300/80 dark:border-amber-500/60 bg-gray-50 dark:bg-gray-900/40 p-4 text-sm text-gray-700 dark:text-gray-200"
+            class="ui-surface-muted rounded-lg border border-amber-300/80 dark:border-amber-500/60 p-4 text-sm text-gray-700 dark:text-gray-200"
           >
             JSON configuration editing is disabled while the stream is running.
           </div>
@@ -302,10 +300,7 @@
             @compare-table="handleCompareTable"
           />
         </div>
-        <div
-          v-else
-          class="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/30 p-8 text-center"
-        >
+        <div v-else class="ui-surface-muted ui-border-default rounded-xl border p-8 text-center">
           <h4 class="text-base font-semibold text-gray-900 dark:text-gray-100">No data yet</h4>
           <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
             Run the stream to see live statistics

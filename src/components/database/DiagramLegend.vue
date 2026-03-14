@@ -137,10 +137,10 @@ onBeforeUnmount(() => {
   <div
     ref="panelRef"
     :style="panelStyle"
-    class="absolute z-10 w-[180px] rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg"
+    class="ui-surface-floating ui-border-default absolute z-10 w-[180px] rounded-xl border"
   >
     <div
-      class="flex items-center justify-between px-2.5 py-1.5 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 select-none touch-none"
+      class="ui-surface-toolbar ui-border-default flex select-none touch-none items-center justify-between border-b px-2.5 py-1.5"
       :class="[isDragging ? 'cursor-grabbing' : 'cursor-grab', isCollapsed ? 'border-b-0' : '']"
       @pointerdown="handlePointerDown"
     >
@@ -151,7 +151,7 @@ onBeforeUnmount(() => {
       </h4>
       <div class="flex items-center gap-1">
         <button
-          class="p-0.5 rounded text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          class="rounded p-0.5 text-slate-400 transition-colors hover:text-slate-600 hover:[background-color:var(--ui-surface-muted)] dark:text-slate-500 dark:hover:text-slate-300"
           title="Toggle collapse"
           @pointerdown.stop
           @click="toggleCollapse"
@@ -165,9 +165,7 @@ onBeforeUnmount(() => {
 
     <div v-show="!isCollapsed" class="px-2.5 py-2 space-y-1.5 text-xs">
       <div class="flex items-center gap-2 px-1 py-0.5">
-        <div
-          class="w-3.5 h-3.5 rounded bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700"
-        ></div>
+        <div class="ui-surface-raised ui-border-default h-3.5 w-3.5 rounded border"></div>
         <span class="font-medium text-slate-700 dark:text-slate-200">Table</span>
       </div>
       <div class="flex items-center gap-2 px-1 py-0.5">

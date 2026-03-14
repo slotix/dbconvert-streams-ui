@@ -6,14 +6,14 @@
 
     <div
       v-if="connection"
-      class="bg-white dark:bg-gray-850 rounded-xl border border-gray-100 dark:border-gray-700 p-6 mb-6 shadow-sm dark:shadow-gray-900/30"
+      class="ui-surface-raised ui-border-default mb-6 rounded-xl border p-6 shadow-sm dark:shadow-gray-900/30"
     >
       <div class="space-y-4">
         <div v-if="connection.id" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
           <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Connection ID</label>
           <div class="md:col-span-2">
             <div
-              class="w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2.5 px-4 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 shadow-sm text-sm"
+              class="ui-surface-muted ui-border-default w-full rounded-lg border px-4 py-2.5 text-sm text-gray-700 shadow-sm dark:text-gray-300"
             >
               {{ connection.id }}
             </div>
@@ -26,7 +26,7 @@
             <input
               v-model="connection.name"
               type="text"
-              class="ui-accent-focus w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm transition-colors"
+              class="ui-surface-raised ui-border-default ui-accent-focus w-full rounded-lg border px-4 py-2.5 text-sm text-gray-700 shadow-sm transition-colors dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500"
               placeholder="Connection Name"
             />
           </div>
@@ -36,7 +36,7 @@
 
     <div v-if="connection && ((isEdit && connection.id) || !isEdit)">
       <div
-        class="bg-white dark:bg-gray-850 rounded-xl border border-gray-100 dark:border-gray-700 p-6 mb-6 shadow-sm dark:shadow-gray-900/30"
+        class="ui-surface-raised ui-border-default mb-6 rounded-xl border p-6 shadow-sm dark:shadow-gray-900/30"
       >
         <h3 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-6 flex items-center">
           <Cloud class="ui-accent-icon h-5 w-5 mr-2" />
@@ -97,7 +97,7 @@
                 <input
                   v-model="accessKeyId"
                   type="text"
-                  class="ui-accent-focus w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm transition-colors"
+                  class="ui-surface-raised ui-border-default ui-accent-focus w-full rounded-lg border px-4 py-2.5 text-sm text-gray-700 shadow-sm transition-colors dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500"
                   placeholder="AKIAIOSFODNN7EXAMPLE"
                 />
               </div>
@@ -112,7 +112,7 @@
                 <input
                   v-model="secretAccessKey"
                   type="password"
-                  class="ui-accent-focus w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm transition-colors"
+                  class="ui-surface-raised ui-border-default ui-accent-focus w-full rounded-lg border px-4 py-2.5 text-sm text-gray-700 shadow-sm transition-colors dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500"
                   placeholder="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
                 />
               </div>
@@ -127,7 +127,7 @@
                 <input
                   v-model="sessionToken"
                   type="password"
-                  class="ui-accent-focus w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm transition-colors"
+                  class="ui-surface-raised ui-border-default ui-accent-focus w-full rounded-lg border px-4 py-2.5 text-sm text-gray-700 shadow-sm transition-colors dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500"
                   placeholder="Temporary session token"
                 />
               </div>
@@ -142,7 +142,7 @@
                 <input
                   v-model="region"
                   type="text"
-                  class="ui-accent-focus w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm transition-colors"
+                  class="ui-surface-raised ui-border-default ui-accent-focus w-full rounded-lg border px-4 py-2.5 text-sm text-gray-700 shadow-sm transition-colors dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500"
                   :class="{ 'pr-24': regionAutoDetected }"
                   placeholder="us-east-1"
                   @input="regionAutoDetected = false"
@@ -170,7 +170,7 @@
               <input
                 v-model="endpoint"
                 type="text"
-                class="ui-accent-focus w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm transition-colors"
+                class="ui-accent-focus ui-surface-raised ui-border-default w-full rounded-lg border px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm transition-colors"
                 placeholder="Leave empty for AWS S3"
               />
               <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -180,7 +180,7 @@
           </div>
 
           <!-- Optional Scope -->
-          <div class="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-4">
+          <div class="ui-border-default space-y-4 border-t pt-4">
             <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300">Scope (Optional)</h4>
             <p class="text-xs text-gray-500 dark:text-gray-400">
               Optional: Scope the Data Explorer view to a specific bucket/prefix. When using this
@@ -196,7 +196,7 @@
                 <input
                   v-model="bucket"
                   type="text"
-                  class="ui-accent-focus w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm transition-colors"
+                  class="ui-surface-raised ui-border-default ui-accent-focus w-full rounded-lg border px-4 py-2.5 text-sm text-gray-700 shadow-sm transition-colors dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500"
                   placeholder="my-data-bucket (optional)"
                 />
                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -214,7 +214,7 @@
                 <input
                   v-model="prefix"
                   type="text"
-                  class="ui-accent-focus w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm transition-colors"
+                  class="ui-surface-raised ui-border-default ui-accent-focus w-full rounded-lg border px-4 py-2.5 text-sm text-gray-700 shadow-sm transition-colors dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500"
                   placeholder="data/exports/"
                 />
                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -226,7 +226,7 @@
         </div>
       </div>
 
-      <div class="rounded-xl border border-gray-200 bg-transparent p-5 dark:border-gray-700">
+      <div class="ui-border-default rounded-xl border bg-transparent p-5">
         <div class="flex items-start">
           <FileText class="mr-3 mt-0.5 h-5 w-5 shrink-0 text-sky-500 dark:text-sky-400" />
           <div>

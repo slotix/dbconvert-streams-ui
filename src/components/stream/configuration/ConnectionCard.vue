@@ -37,7 +37,7 @@
         v-if="connection?.id"
         v-tooltip="'View connection in Explorer'"
         type="button"
-        class="ui-accent-action-active shrink-0 inline-flex items-center rounded-md border bg-white dark:bg-gray-900 px-2 py-1 text-xs font-medium transition-colors"
+        class="ui-accent-action-active ui-surface-raised shrink-0 inline-flex items-center rounded-md border px-2 py-1 text-xs font-medium transition-colors"
         @click="emit('navigate')"
       >
         <ExternalLink class="w-3 h-3 mr-1" />
@@ -58,9 +58,7 @@
     >
       {{ label }}
     </label>
-    <div
-      class="bg-gray-50 dark:bg-gray-900/40 rounded-md p-4 border border-gray-300 dark:border-gray-700"
-    >
+    <div class="ui-surface-muted ui-border-default rounded-md border p-4">
       <div class="flex items-center justify-between gap-3 mb-2">
         <div class="flex items-center gap-2 min-w-0 flex-1">
           <DatabaseIcon
@@ -91,7 +89,7 @@
           v-if="connection?.id"
           v-tooltip="'View connection in Explorer'"
           type="button"
-          class="ui-accent-action-active shrink-0 inline-flex items-center rounded-md border bg-white dark:bg-gray-900 px-2.5 py-1.5 text-xs font-medium transition-colors"
+          class="ui-accent-action-active ui-surface-raised shrink-0 inline-flex items-center rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors"
           @click="emit('navigate')"
         >
           <ExternalLink class="w-3.5 h-3.5 mr-1" />

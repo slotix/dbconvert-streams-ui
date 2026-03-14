@@ -30,7 +30,7 @@ const emit = defineEmits<{
 
 const variantClasses: Record<string, string> = {
   default:
-    'hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300',
+    'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:[background-color:var(--ui-surface-muted)]',
   primary: 'ui-accent-action ui-accent-text',
   danger:
     'hover:bg-red-100 dark:hover:bg-red-900/30 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400'
@@ -39,7 +39,7 @@ const variantClasses: Record<string, string> = {
 
 <template>
   <div
-    class="absolute right-2 top-2 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity bg-white/95 dark:bg-gray-850/95 backdrop-blur-sm rounded-md shadow-sm border border-gray-200 dark:border-gray-700 p-0.5"
+    class="ui-surface-floating ui-border-default absolute right-2 top-2 flex items-center gap-0.5 rounded-md border p-0.5 opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100"
     @click.stop
   >
     <!-- Slot for custom leading buttons (e.g. play/pause) -->

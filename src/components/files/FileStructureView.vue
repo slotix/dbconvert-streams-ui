@@ -455,9 +455,7 @@ defineExpose({
     <UnsupportedFileMessage v-if="isUnsupportedFile" :file-name="entry.name" variant="structure" />
 
     <div v-if="!isUnsupportedFile" class="space-y-3">
-      <section
-        class="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/30 px-3 py-2.5"
-      >
+      <section class="ui-surface-raised rounded-lg border px-3 py-2.5">
         <div class="text-sm font-semibold text-gray-900 dark:text-gray-100">
           {{ entry.name }}
           <span v-if="fileFormat" class="ui-accent-text">[{{ fileFormat.toUpperCase() }}]</span>
@@ -467,9 +465,7 @@ defineExpose({
         </div>
       </section>
 
-      <section
-        class="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/30 px-3 py-2.5"
-      >
+      <section class="ui-surface-raised rounded-lg border px-3 py-2.5">
         <div
           class="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400"
         >
@@ -497,7 +493,7 @@ defineExpose({
           <div class="shrink-0 flex items-center gap-1">
             <button
               type="button"
-              class="inline-flex items-center rounded-md bg-white dark:bg-gray-800 px-2 py-1 text-xs font-medium shadow-sm dark:shadow-gray-900/30 border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              class="ui-surface-raised ui-border-default inline-flex items-center rounded-md px-2 py-1 text-xs font-medium border hover:[background-color:var(--ui-surface-muted)] transition-colors"
               :class="
                 isPathCopied
                   ? 'text-green-600 dark:text-green-400'
@@ -513,7 +509,7 @@ defineExpose({
             <button
               v-if="isLocalPath"
               type="button"
-              class="inline-flex items-center rounded-md bg-white dark:bg-gray-800 px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-300 shadow-sm dark:shadow-gray-900/30 border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              class="ui-surface-raised ui-border-default inline-flex items-center rounded-md px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-300 border hover:[background-color:var(--ui-surface-muted)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               :disabled="!canRevealInFolder"
               :title="
                 canRevealInFolder
@@ -531,7 +527,7 @@ defineExpose({
 
       <section
         v-if="metadata?.columns?.length"
-        class="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/30 px-3 py-2.5"
+        class="ui-surface-raised rounded-lg border px-3 py-2.5"
       >
         <div class="flex items-center justify-between gap-3">
           <div
@@ -547,7 +543,7 @@ defineExpose({
               v-model="columnFilterQuery"
               type="text"
               placeholder="Filter columns..."
-              class="ui-accent-focus h-7 w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 pl-8 pr-2 text-xs text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none"
+              class="ui-accent-focus ui-surface-raised h-7 w-full rounded-md border pl-8 pr-2 text-xs text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none"
             />
           </div>
         </div>
@@ -587,7 +583,7 @@ defineExpose({
                 </th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
+            <tbody class="divide-y divide-[var(--ui-border-default)]">
               <tr v-for="col in filteredSortedColumns" :key="col.name">
                 <td class="py-1.5 pr-4 font-medium text-gray-900 dark:text-gray-100">
                   {{ col.name }}
@@ -618,7 +614,7 @@ defineExpose({
 
       <section
         v-if="isCSVFile || metadata?.csvDialect"
-        class="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/30 px-3 py-2.5"
+        class="ui-surface-raised rounded-lg border px-3 py-2.5"
       >
         <div class="flex items-center justify-between gap-2">
           <div
@@ -629,7 +625,7 @@ defineExpose({
           <button
             v-if="isCSVFile"
             type="button"
-            class="inline-flex items-center rounded-md bg-white dark:bg-gray-800 px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-300 shadow-sm dark:shadow-gray-900/30 border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            class="ui-surface-raised ui-border-default inline-flex items-center rounded-md border px-2 py-1 text-xs font-medium text-gray-600 transition-colors hover:[background-color:var(--ui-surface-muted)] disabled:cursor-not-allowed disabled:opacity-60 dark:text-gray-300"
             :disabled="csvSniffLoading"
             title="Re-run DuckDB sniff_csv"
             @click="loadCSVSniff"
@@ -663,10 +659,7 @@ defineExpose({
         </div>
       </section>
 
-      <section
-        v-if="sqlPreview"
-        class="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/30 px-3 py-2.5"
-      >
+      <section v-if="sqlPreview" class="ui-surface-raised rounded-lg border px-3 py-2.5">
         <div class="flex items-center justify-between gap-2">
           <div
             class="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400"
@@ -676,7 +669,7 @@ defineExpose({
           <div class="flex items-center gap-1">
             <button
               type="button"
-              class="inline-flex items-center rounded-md bg-white dark:bg-gray-800 px-2 py-1 text-xs font-medium shadow-sm dark:shadow-gray-900/30 border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              class="ui-surface-raised ui-border-default inline-flex items-center rounded-md border px-2 py-1 text-xs font-medium transition-colors hover:[background-color:var(--ui-surface-muted)]"
               :class="
                 isSQLCopied
                   ? 'text-green-600 dark:text-green-400'
@@ -701,7 +694,7 @@ defineExpose({
           </div>
         </div>
         <pre
-          class="mt-2 p-2 rounded-md bg-slate-50 dark:bg-gray-950/70 ring-1 ring-slate-200 dark:ring-gray-700 text-xs font-mono text-gray-900 dark:text-gray-100 overflow-x-auto"
+          class="ui-surface-muted ui-border-muted mt-2 overflow-x-auto rounded-md border p-2 text-xs font-mono text-gray-900 dark:text-gray-100"
         ><code>{{ sqlPreview }}</code></pre>
       </section>
     </div>

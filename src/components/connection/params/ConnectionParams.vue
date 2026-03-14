@@ -92,7 +92,7 @@ const paramsComponent = computed(() => {
 const isWorkspaceLayout = computed(() => props.layout === 'workspace')
 const tabsContainerClass = computed(() =>
   isWorkspaceLayout.value
-    ? 'mb-5 flex flex-wrap items-center gap-2 border-b border-gray-200 px-4 pb-4 pt-4 dark:border-gray-700 md:px-6'
+    ? 'ui-border-default mb-5 flex flex-wrap items-center gap-2 border-b px-4 pb-4 pt-4 md:px-6'
     : 'mx-auto mb-4 mt-8 flex max-w-sm flex-col sm:flex-row'
 )
 
@@ -102,7 +102,7 @@ function getTabClass(tab: string): string[] {
       'inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium transition-colors focus:outline-none',
       currentTab.value === tab
         ? 'ui-accent-selection-checked ui-accent-text'
-        : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800'
+        : 'ui-surface-raised ui-border-default text-gray-600 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300'
     ]
   }
 
@@ -110,7 +110,7 @@ function getTabClass(tab: string): string[] {
     'flex flex-1 items-center justify-center gap-2 px-6 py-4 focus:outline-none transition-all duration-200',
     currentTab.value === tab
       ? 'ui-accent-text border-b-2 font-semibold [border-color:var(--ui-accent-indicator)]'
-      : 'border-b-2 border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:border-gray-600 dark:hover:text-gray-300'
+      : 'border-b-2 border-transparent text-gray-500 hover:[border-color:var(--ui-border-default)] hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
   ]
 }
 

@@ -1,10 +1,7 @@
 <template>
   <div class="space-y-8">
     <!-- Output Configuration Section (for file and S3 targets) -->
-    <div
-      v-if="isFileBasedTarget"
-      class="bg-white dark:bg-gray-850 rounded-xl border border-gray-100 dark:border-gray-700 p-6 shadow-sm dark:shadow-gray-900/30"
-    >
+    <div v-if="isFileBasedTarget" class="ui-surface-raised ui-border-default rounded-xl border p-6">
       <h4 class="text-base font-medium text-gray-900 dark:text-gray-100 mb-4">
         Output Configuration
       </h4>
@@ -30,10 +27,7 @@
     </div>
 
     <!-- S3 Upload Configuration (only for S3 targets) -->
-    <div
-      v-if="isS3Target"
-      class="bg-white dark:bg-gray-850 rounded-xl border border-gray-100 dark:border-gray-700 p-6 shadow-sm dark:shadow-gray-900/30"
-    >
+    <div v-if="isS3Target" class="ui-surface-raised ui-border-default rounded-xl border p-6">
       <div class="flex items-center mb-4">
         <Cloud class="ui-accent-icon h-5 w-5 mr-2" />
         <h4 class="text-base font-medium text-gray-900 dark:text-gray-100">
@@ -69,7 +63,7 @@
             id="s3-prefix"
             v-model="s3Prefix"
             type="text"
-            class="ui-accent-focus block w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm sm:text-sm"
+            class="ui-accent-focus ui-surface-raised ui-border-default block w-full rounded-md border text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm sm:text-sm"
             placeholder="data/exports/"
           />
           <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -109,7 +103,7 @@
             id="s3-kms-key"
             v-model="s3KmsKeyId"
             type="text"
-            class="ui-accent-focus block w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm sm:text-sm"
+            class="ui-accent-focus ui-surface-raised ui-border-default block w-full rounded-md border text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm sm:text-sm"
             placeholder="arn:aws:kms:us-east-1:123456789012:key/12345678..."
           />
           <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -118,7 +112,7 @@
         </div>
 
         <!-- Keep Local Files Toggle -->
-        <div class="pt-4 border-t border-gray-100 dark:border-gray-700">
+        <div class="ui-border-default pt-4 border-t">
           <FormSwitch
             v-model="s3KeepLocalFiles"
             label="Keep Local Files After Upload"
@@ -132,9 +126,7 @@
     <div class="space-y-2">
       <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <!-- Execution Performance Section -->
-        <div
-          class="bg-white dark:bg-gray-850 rounded-xl border border-gray-100 dark:border-gray-700 p-6 shadow-sm dark:shadow-gray-900/30"
-        >
+        <div class="ui-surface-raised ui-border-default rounded-xl border p-6">
           <h4 class="text-base font-medium text-gray-900 dark:text-gray-100 mb-4">
             Execution Performance
           </h4>
@@ -153,7 +145,7 @@
                 min="10"
                 max="1000"
                 step="10"
-                class="ui-accent-focus block w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm sm:text-sm"
+                class="ui-accent-focus ui-surface-raised ui-border-default block w-full rounded-md border text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm sm:text-sm"
                 placeholder="10-1000"
                 @focus="isEditingDataBundleSize = true"
                 @input="onDataBundleSizeInput"
@@ -182,16 +174,14 @@
                 v-model.number="reportingInterval"
                 type="number"
                 min="1"
-                class="ui-accent-focus block w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm sm:text-sm"
+                class="ui-accent-focus ui-surface-raised ui-border-default block w-full rounded-md border text-gray-900 dark:text-gray-100 shadow-sm sm:text-sm"
               />
             </div>
           </div>
         </div>
 
         <!-- Safety Limits Section -->
-        <div
-          class="bg-white dark:bg-gray-850 rounded-xl border border-gray-100 dark:border-gray-700 p-6 shadow-sm dark:shadow-gray-900/30"
-        >
+        <div class="ui-surface-raised ui-border-default rounded-xl border p-6">
           <h4 class="text-base font-medium text-gray-900 dark:text-gray-100 mb-4">Safety Limits</h4>
           <div class="space-y-4">
             <div>
@@ -212,7 +202,7 @@
                   v-model.number="limitsNumberOfEvents"
                   type="number"
                   min="1"
-                  class="ui-accent-focus mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm sm:text-sm"
+                  class="ui-accent-focus ui-surface-raised ui-border-default mt-1 block w-full rounded-md border text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm sm:text-sm"
                   placeholder="0 (unlimited)"
                   @input="onRowsLimitInput"
                 />
@@ -240,7 +230,7 @@
                   v-model.number="limitsElapsedTime"
                   type="number"
                   min="1"
-                  class="ui-accent-focus mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm sm:text-sm"
+                  class="ui-accent-focus ui-surface-raised ui-border-default mt-1 block w-full rounded-md border text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm sm:text-sm"
                   placeholder="0 (unlimited)"
                   @input="onElapsedLimitInput"
                 />

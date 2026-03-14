@@ -1,12 +1,10 @@
 <template>
   <div class="h-screen flex flex-col overflow-hidden">
-    <header
-      class="sticky top-0 z-30 bg-white dark:bg-gray-900 border-b border-slate-200 dark:border-gray-700"
-    >
+    <header class="ui-surface-panel ui-border-default sticky top-0 z-30 border-b">
       <div class="px-4 py-2 flex items-center gap-3">
         <button
           type="button"
-          class="lg:hidden flex items-center justify-center p-1.5 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700"
+          class="lg:hidden flex items-center justify-center rounded-md p-1.5 text-gray-600 transition-colors hover:text-gray-900 hover:[background-color:var(--ui-surface-raised)] dark:text-gray-400 dark:hover:text-white"
           @click="sidebarMenuToggle?.openSidebar()"
         >
           <Menu class="h-5 w-5" :stroke-width="iconStroke" aria-hidden="true" />
@@ -14,7 +12,7 @@
         </button>
         <button
           type="button"
-          class="flex items-center justify-center p-1.5 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700"
+          class="flex items-center justify-center rounded-md p-1.5 text-gray-600 transition-colors hover:text-gray-900 hover:[background-color:var(--ui-surface-raised)] dark:text-gray-400 dark:hover:text-white"
           @click="goBack"
         >
           <ArrowLeft class="h-5 w-5" :stroke-width="iconStroke" aria-hidden="true" />
@@ -29,7 +27,7 @@
       </div>
     </header>
 
-    <main class="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 py-8">
+    <main class="ui-surface-app flex-1 overflow-y-auto py-8">
       <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <ConnectionConfigJsonEditor
           v-if="connection"

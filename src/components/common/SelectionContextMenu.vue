@@ -107,20 +107,20 @@ function revertCellAndClose() {
   <div v-if="open" class="fixed inset-0 z-50" @click="onBackdropClick">
     <div
       ref="menuEl"
-      class="fixed min-w-48 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-850 shadow-lg dark:shadow-gray-900/50 text-sm py-1"
+      class="ui-surface-floating fixed min-w-48 rounded-md border text-sm py-1"
       :style="menuStyle"
       @click="onMenuClick"
     >
       <button
         type="button"
-        class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+        class="w-full px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
         @click="selectAllAndClose"
       >
         Select all (page)
       </button>
       <button
         type="button"
-        class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+        class="w-full px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
         @click="deselectAllAndClose"
       >
         Deselect all
@@ -135,11 +135,11 @@ function revertCellAndClose() {
         Revert cell
       </button>
 
-      <div class="my-1 border-t border-gray-200 dark:border-gray-700"></div>
+      <div class="ui-border-default my-1 border-t"></div>
 
       <button
         type="button"
-        class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        class="w-full px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-300"
         :disabled="!hasSelection"
         @click="copyAndClose('tsv')"
       >
@@ -147,7 +147,7 @@ function revertCellAndClose() {
       </button>
       <button
         type="button"
-        class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        class="w-full px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-300"
         :disabled="!hasSelection"
         @click="copyAndClose('csv')"
       >
@@ -155,7 +155,7 @@ function revertCellAndClose() {
       </button>
       <button
         type="button"
-        class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        class="w-full px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-300"
         :disabled="!hasSelection"
         @click="copyAndClose('json')"
       >
@@ -163,7 +163,7 @@ function revertCellAndClose() {
       </button>
 
       <template v-if="isEditable">
-        <div class="my-1 border-t border-gray-200 dark:border-gray-700"></div>
+        <div class="ui-border-default my-1 border-t"></div>
         <button
           type="button"
           class="w-full text-left px-3 py-2 text-sm text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-colors"

@@ -5,8 +5,8 @@
       props.rounded ? 'rounded-lg' : 'rounded-none',
       isDarkTheme ? 'sql-cm-dark' : 'sql-cm-light',
       props.readOnly
-        ? 'border-gray-200 dark:border-gray-700'
-        : 'border-gray-300 dark:border-gray-600 focus-within:ring-2 focus-within:ring-slate-600 dark:focus-within:ring-emerald-400 focus-within:border-transparent'
+        ? 'ui-border-default'
+        : 'ui-border-default focus-within:ring-2 focus-within:[border-color:var(--ui-accent-focus-border)] focus-within:ring-[var(--ui-accent-focus-border)]/35'
     ]"
     :style="containerStyle"
   >

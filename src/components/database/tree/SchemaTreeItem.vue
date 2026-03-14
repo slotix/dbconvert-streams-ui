@@ -256,7 +256,7 @@ function toggleSection(section: ExplorerObjectSection) {
   <div>
     <div
       :class="[
-        'flex items-center px-2 py-1 text-sm text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer select-none',
+        'flex items-center px-2 py-1 text-sm text-gray-700 dark:text-gray-300 rounded-md hover:[background-color:var(--ui-surface-muted)] cursor-pointer select-none',
         isSelected ? 'bg-slate-100/90 dark:bg-slate-800/85' : ''
       ]"
       :data-explorer-schema="`${connectionId}:${database}:${schema.name}`"
@@ -278,11 +278,7 @@ function toggleSection(section: ExplorerObjectSection) {
       <Grid2X2 class="w-4 h-4 mr-1.5 text-purple-500 dark:text-purple-400 shrink-0" />
       <HighlightedText class="font-medium" :text="schema.name || 'default'" :query="searchQuery" />
     </div>
-    <div
-      v-if="isExpanded"
-      role="group"
-      class="ml-4 border-l border-gray-200 dark:border-gray-700 pl-2"
-    >
+    <div v-if="isExpanded" role="group" class="ui-border-default ml-4 border-l pl-2">
       <button
         v-if="showTablesSection"
         type="button"

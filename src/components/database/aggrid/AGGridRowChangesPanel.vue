@@ -208,11 +208,9 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeyDown))
     </div>
 
     <div v-else class="space-y-4">
-      <div class="space-y-2 rounded-md border border-gray-200/80 dark:border-gray-700/60 p-3">
+      <div class="ui-border-default space-y-2 rounded-md border p-3">
         <p class="text-xs text-gray-500 dark:text-gray-400">{{ summaryLine }}</p>
-        <div
-          class="flex items-center gap-1 pt-1 border-b border-gray-200/70 dark:border-gray-700/60"
-        >
+        <div class="ui-border-default flex items-center gap-1 pt-1 border-b">
           <button
             v-for="kind in ['all', 'insert', 'edit', 'delete'] as const"
             :key="kind"
@@ -238,9 +236,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeyDown))
             >
               {{ sectionTitle(kind) }}
             </h3>
-            <span
-              class="text-[10px] px-1.5 py-0.5 rounded bg-gray-200/60 dark:bg-gray-700/60 text-gray-500 dark:text-gray-300"
-            >
+            <span class="ui-chip-muted text-[10px] px-1.5 py-0.5 rounded">
               {{ sectionCount(kind) }}
             </span>
           </div>
@@ -248,7 +244,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeyDown))
           <div v-if="kind === 'insert'" class="flex items-center gap-2">
             <button
               type="button"
-              class="text-xs rounded-md px-2 py-1 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-red-300 dark:hover:border-red-700 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+              class="ui-surface-raised ui-border-default text-xs rounded-md px-2 py-1 border text-gray-600 dark:text-gray-300 hover:border-red-300 dark:hover:border-red-700 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
               @click="undoAllInserts"
             >
               Undo all
@@ -256,7 +252,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeyDown))
             <button
               v-if="insertTableColumns.length > 6"
               type="button"
-              class="text-xs rounded-md px-2 py-1 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              class="ui-surface-raised ui-border-default text-xs rounded-md px-2 py-1 border text-gray-600 dark:text-gray-300 hover:[background-color:var(--ui-surface-muted)] transition-colors"
               @click="toggleInsertColumns"
             >
               {{ showAllInsertColumns ? 'Collapse' : 'Expand' }}
@@ -266,11 +262,11 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeyDown))
 
         <div
           v-if="kind === 'insert' && sectionCount(kind) > 0"
-          class="rounded-md border border-gray-200/80 dark:border-gray-700/60"
+          class="ui-border-default rounded-md border"
         >
           <div class="overflow-x-auto">
             <table class="min-w-full text-xs">
-              <thead class="bg-gray-50/70 dark:bg-gray-800/70">
+              <thead class="ui-surface-muted">
                 <tr>
                   <th
                     class="text-left px-3 py-2 font-medium text-gray-600 dark:text-gray-300 whitespace-nowrap"
@@ -294,10 +290,10 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeyDown))
               <tbody>
                 <template v-for="row in insertRows" :key="`insert-table-${row.rowId}`">
                   <tr
-                    class="border-t border-gray-100 dark:border-gray-700/50"
+                    class="ui-border-default border-t"
                     :class="
                       canExpandInsertRow(row)
-                        ? 'cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-800/30'
+                        ? 'cursor-pointer hover:[background-color:var(--ui-surface-muted)]'
                         : ''
                     "
                     @click="canExpandInsertRow(row) ? toggleExpanded(row.rowId) : undefined"
@@ -319,7 +315,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeyDown))
                       <button
                         v-tooltip="'Undo'"
                         type="button"
-                        class="w-7 h-7 inline-flex items-center justify-center rounded border border-gray-300 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-red-300 dark:hover:border-red-700 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                        class="ui-surface-raised ui-border-default w-7 h-7 inline-flex items-center justify-center rounded border text-gray-500 dark:text-gray-400 hover:border-red-300 dark:hover:border-red-700 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                         @click="emit('revert-row', row.rowId)"
                       >
                         <Undo2 class="h-3.5 w-3.5" />
@@ -329,11 +325,11 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeyDown))
 
                   <tr
                     v-if="isExpanded(row.rowId) && canExpandInsertRow(row)"
-                    class="border-t border-gray-100 dark:border-gray-700/50"
+                    class="ui-border-default border-t"
                   >
                     <td
                       :colspan="visibleInsertColumns.length + 2"
-                      class="px-3 py-2 bg-gray-50/40 dark:bg-gray-800/30"
+                      class="ui-surface-muted px-3 py-2"
                     >
                       <ul class="space-y-1 text-xs">
                         <li
@@ -359,9 +355,9 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeyDown))
 
         <div
           v-else-if="kind === 'delete' && sectionCount(kind) > 0"
-          class="rounded-md border border-gray-200/80 dark:border-gray-700/60"
+          class="ui-border-default rounded-md border"
         >
-          <ul class="divide-y divide-gray-100 dark:divide-gray-700/50">
+          <ul class="divide-y [border-color:var(--ui-border-default)]">
             <li
               v-for="row in deleteRows"
               :key="`delete-list-${row.rowId}`"
@@ -372,7 +368,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeyDown))
               }}</span>
               <button
                 type="button"
-                class="w-7 h-7 inline-flex items-center justify-center rounded border border-gray-300 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-red-300 dark:hover:border-red-700 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                class="ui-surface-raised ui-border-default w-7 h-7 inline-flex items-center justify-center rounded border text-gray-500 dark:text-gray-400 hover:border-red-300 dark:hover:border-red-700 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                 v-tooltip="'Undo'"
                 @click="emit('revert-row', row.rowId)"
               >
@@ -386,11 +382,9 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeyDown))
           <div
             v-for="row in sectionRows(kind)"
             :key="`${kind}-${row.rowId}`"
-            class="rounded-md border border-gray-200/80 dark:border-gray-700/60 overflow-hidden"
+            class="ui-border-default rounded-md border overflow-hidden"
           >
-            <div
-              class="flex items-start justify-between gap-3 px-3 py-2 bg-gray-50/70 dark:bg-gray-800/50"
-            >
+            <div class="ui-surface-muted flex items-start justify-between gap-3 px-3 py-2">
               <div class="min-w-0 space-y-1">
                 <div class="flex items-center gap-2">
                   <span
@@ -432,7 +426,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeyDown))
               <div class="flex items-center gap-2" @click.stop>
                 <button
                   type="button"
-                  class="w-7 h-7 inline-flex items-center justify-center rounded border border-gray-300 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-red-300 dark:hover:border-red-700 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                  class="ui-surface-raised ui-border-default w-7 h-7 inline-flex items-center justify-center rounded border text-gray-500 dark:text-gray-400 hover:border-red-300 dark:hover:border-red-700 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                   v-tooltip="'Undo'"
                   @click="emit('revert-row', row.rowId)"
                 >
@@ -453,7 +447,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeyDown))
           <div class="flex items-center">
             <button
               type="button"
-              class="text-xs rounded-l-md px-3 py-1.5 border border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 bg-white dark:bg-gray-900 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors whitespace-nowrap"
+              class="ui-surface-raised text-xs rounded-l-md px-3 py-1.5 border border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors whitespace-nowrap"
               @click="onDiscardAll"
             >
               Discard all
@@ -461,30 +455,30 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeyDown))
 
             <details class="relative">
               <summary
-                class="list-none text-xs rounded-r-md px-2 py-1.5 border border-l-0 border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 bg-white dark:bg-gray-900 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors cursor-pointer"
+                class="ui-surface-raised list-none text-xs rounded-r-md px-2 py-1.5 border border-l-0 border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors cursor-pointer"
               >
                 ▾
               </summary>
               <div
-                class="absolute right-0 bottom-8 min-w-[170px] rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm py-1 z-20"
+                class="ui-surface-floating ui-border-default absolute right-0 bottom-8 min-w-[170px] rounded-md border shadow-sm py-1 z-20"
               >
                 <button
                   type="button"
-                  class="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+                  class="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-200 hover:[background-color:var(--ui-surface-muted)]"
                   @click="onDiscardKind('insert')"
                 >
                   Discard inserts
                 </button>
                 <button
                   type="button"
-                  class="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+                  class="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-200 hover:[background-color:var(--ui-surface-muted)]"
                   @click="onDiscardKind('edit')"
                 >
                   Discard updates
                 </button>
                 <button
                   type="button"
-                  class="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+                  class="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-200 hover:[background-color:var(--ui-surface-muted)]"
                   @click="onDiscardKind('delete')"
                 >
                   Discard deletes

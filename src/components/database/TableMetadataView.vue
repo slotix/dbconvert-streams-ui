@@ -459,12 +459,12 @@ function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
 </script>
 
 <template>
-  <div :class="['bg-white dark:bg-gray-850', $attrs.class || '']">
+  <div :class="['ui-surface-raised', $attrs.class || '']">
     <!-- Header removed; DatabaseObjectContainer renders tabs, title, and actions -->
 
     <!-- HeadlessUI Tab Implementation with Store Integration - Underline Style -->
     <TabGroup :selectedIndex="activeTabIndex" as="div" @change="onSubTabChange">
-      <TabList class="flex space-x-1 border-b border-gray-200 dark:border-gray-700 px-4">
+      <TabList class="ui-border-default flex space-x-1 border-b px-4">
         <Tab v-for="tab in tabs" :key="tab.name" v-slot="{ selected }" as="template">
           <button
             :class="[
@@ -472,7 +472,7 @@ function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
               'focus:outline-none focus-visible:border-gray-400 dark:focus-visible:border-gray-500',
               selected
                 ? 'border-b-2 border-gray-400 dark:border-gray-500 text-gray-900 dark:text-gray-100 -mb-px'
-                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 [border-color:transparent] hover:[border-color:var(--ui-border-default)]'
             ]"
           >
             {{ tab.name }}
@@ -480,8 +480,8 @@ function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
               :class="[
                 'ml-2 rounded-full px-2 py-0.5 text-xs font-medium transition-colors duration-150',
                 selected
-                  ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                  ? 'ui-chip-muted text-gray-700 dark:text-gray-300'
+                  : 'ui-chip-muted text-gray-500 dark:text-gray-400'
               ]"
             >
               {{ tab.count }}
@@ -502,7 +502,7 @@ function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
                 v-model="columnFilterQuery"
                 type="text"
                 placeholder="Filter columns..."
-                class="ui-accent-focus h-8 w-full rounded-md border border-gray-200 bg-white pl-8 pr-2 text-xs text-gray-900 placeholder:text-gray-400 focus:outline-none dark:border-gray-700 dark:bg-gray-850 dark:text-gray-100 dark:placeholder:text-gray-500"
+                class="ui-accent-focus ui-surface-raised ui-border-default h-8 w-full rounded-md border pl-8 pr-2 text-xs text-gray-900 placeholder:text-gray-400 focus:outline-none dark:text-gray-100 dark:placeholder:text-gray-500"
               />
             </div>
 
@@ -515,8 +515,8 @@ function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
                 class="inline-flex items-center rounded-md border px-2 py-1 text-xs font-medium transition-colors"
                 :class="
                   showAdvancedColumns
-                    ? 'border-gray-300 bg-gray-100 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100'
-                    : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-850 dark:text-gray-300 dark:hover:bg-gray-800'
+                    ? 'ui-surface-muted ui-border-default text-gray-900 dark:text-gray-100'
+                    : 'ui-surface-raised ui-border-default text-gray-600 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300'
                 "
                 :aria-pressed="showAdvancedColumns"
                 @click="showAdvancedColumns = !showAdvancedColumns"
@@ -528,10 +528,10 @@ function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
 
           <div class="overflow-x-auto">
             <div class="min-w-[640px]">
-              <div class="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+              <div class="ui-border-default overflow-hidden rounded-lg border">
                 <table class="min-w-full divide-y divide-gray-300 dark:divide-gray-700">
                   <thead>
-                    <tr class="bg-gray-50 dark:bg-gray-900">
+                    <tr class="ui-surface-muted">
                       <th
                         class="px-3 py-2 text-left text-sm font-semibold text-gray-900 dark:text-gray-100 whitespace-nowrap"
                       >
@@ -594,13 +594,11 @@ function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
                       </th>
                     </tr>
                   </thead>
-                  <tbody
-                    class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-850"
-                  >
+                  <tbody class="ui-surface-raised divide-y divide-[var(--ui-border-default)]">
                     <tr
                       v-for="column in filteredSortedColumns"
                       :key="column.name"
-                      class="hover:bg-gray-50 dark:hover:bg-gray-800"
+                      class="hover:[background-color:var(--ui-surface-muted)]"
                     >
                       <td class="whitespace-nowrap px-3 py-2 text-sm">
                         <div class="flex items-center">
@@ -645,7 +643,7 @@ function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
                             class="mt-0.5 text-xs text-gray-400 dark:text-gray-500 max-w-[420px] truncate"
                           >
                             <span
-                              class="mr-1 inline-flex items-center rounded-md border border-gray-200 bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                              class="ui-chip-muted ui-border-default mr-1 inline-flex items-center rounded-md border px-1.5 py-0.5 text-[10px] font-medium text-gray-700 dark:text-gray-200"
                             >
                               {{ getEnumSetLabel(column) }}
                             </span>
@@ -700,7 +698,7 @@ function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
               <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-4">
                 Primary Keys
               </h4>
-              <ul role="list" class="divide-y divide-gray-100 dark:divide-gray-700">
+              <ul role="list" class="divide-y divide-[var(--ui-border-default)]">
                 <li
                   v-for="key in primaryKeys"
                   :key="key"
@@ -723,7 +721,7 @@ function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
               <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-4">
                 Foreign Keys
               </h4>
-              <ul role="list" class="divide-y divide-gray-100 dark:divide-gray-700">
+              <ul role="list" class="divide-y divide-[var(--ui-border-default)]">
                 <li
                   v-for="key in foreignKeys"
                   :key="key.name"
@@ -755,10 +753,10 @@ function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
         <TabPanel>
           <div class="overflow-x-auto">
             <div class="inline-block min-w-full align-middle">
-              <div class="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+              <div class="ui-border-default overflow-hidden rounded-lg border">
                 <table class="min-w-full divide-y divide-gray-300 dark:divide-gray-700">
                   <thead>
-                    <tr class="bg-gray-50 dark:bg-gray-900">
+                    <tr class="ui-surface-muted">
                       <th
                         class="px-3 py-2 text-left text-sm font-semibold text-gray-900 dark:text-gray-100"
                       >
@@ -776,13 +774,11 @@ function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
                       </th>
                     </tr>
                   </thead>
-                  <tbody
-                    class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-850"
-                  >
+                  <tbody class="ui-surface-raised divide-y divide-[var(--ui-border-default)]">
                     <tr
                       v-for="index in indexes"
                       :key="index.name"
-                      class="hover:bg-gray-50 dark:hover:bg-gray-800"
+                      class="hover:[background-color:var(--ui-surface-muted)]"
                     >
                       <td
                         class="whitespace-nowrap px-3 py-2 text-sm font-medium text-gray-900 dark:text-gray-100"
@@ -813,7 +809,7 @@ function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
             <div
               v-for="trigger in tableTriggers"
               :key="`${trigger.schema || 'default'}:${trigger.name}`"
-              class="border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-850 overflow-hidden"
+              class="ui-surface-raised ui-border-default overflow-hidden border"
             >
               <TriggerDefinitionView
                 :trigger-meta="trigger"
@@ -862,10 +858,10 @@ function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
 
           <div class="overflow-x-auto">
             <div class="inline-block min-w-full align-middle">
-              <div class="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+              <div class="ui-border-default overflow-hidden rounded-lg border">
                 <table class="min-w-full divide-y divide-gray-300 dark:divide-gray-700">
                   <thead>
-                    <tr class="bg-gray-50 dark:bg-gray-900">
+                    <tr class="ui-surface-muted">
                       <th
                         class="px-3 py-2 text-left text-sm font-semibold text-gray-900 dark:text-gray-100"
                       >
@@ -888,13 +884,11 @@ function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
                       </th>
                     </tr>
                   </thead>
-                  <tbody
-                    class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-850"
-                  >
+                  <tbody class="ui-surface-raised divide-y divide-[var(--ui-border-default)]">
                     <tr
                       v-for="partition in partitions"
                       :key="partition.name"
-                      class="hover:bg-gray-50 dark:hover:bg-gray-800"
+                      class="hover:[background-color:var(--ui-surface-muted)]"
                     >
                       <td
                         class="whitespace-nowrap px-3 py-2 text-sm font-medium text-gray-900 dark:text-gray-100"
@@ -902,14 +896,14 @@ function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
                         {{ partition.name }}
                         <span
                           v-if="partition.isDefault"
-                          class="ml-2 inline-flex items-center rounded-md bg-gray-100 dark:bg-gray-700 px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-300"
+                          class="ui-chip-muted ml-2 inline-flex items-center rounded-md px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-300"
                         >
                           DEFAULT
                         </span>
                       </td>
                       <td class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
                         <code
-                          class="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded font-mono"
+                          class="ui-surface-muted ui-border-muted rounded border px-2 py-1 text-xs font-mono"
                         >
                           {{ partition.values || 'N/A' }}
                         </code>

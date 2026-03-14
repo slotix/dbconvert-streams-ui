@@ -59,7 +59,7 @@ const providerLogo = computed(() => {
 })
 
 const badgeStyle = computed(() => {
-  if (!props.cloudProvider) return { bgColor: 'bg-gray-100', textColor: 'text-gray-700' }
+  if (!props.cloudProvider) return { bgColor: 'ui-chip-muted', textColor: '' }
   return getCloudProviderBadgeStyle(props.cloudProvider)
 })
 

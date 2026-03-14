@@ -24,7 +24,7 @@
           leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
         >
           <DialogPanel
-            class="w-full max-w-md transform overflow-hidden rounded-2xl bg-white dark:bg-gray-850 p-6 text-left align-middle shadow-2xl dark:shadow-gray-900/50 transition-all border border-gray-100 dark:border-gray-800"
+            class="ui-surface-floating ui-border-default w-full max-w-md transform overflow-hidden rounded-2xl border p-6 text-left align-middle transition-all"
           >
             <DialogTitle as="h3" class="text-lg font-semibold text-gray-900 dark:text-gray-100">
               {{ title }}

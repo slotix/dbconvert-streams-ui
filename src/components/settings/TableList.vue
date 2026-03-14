@@ -66,7 +66,7 @@
                 <!-- Schema Header (if applicable) -->
                 <div
                   v-if="schemaGroup.schema"
-                  class="sticky top-[52px] z-10 flex items-center justify-between px-4 py-2 bg-gray-50 dark:bg-gray-800/70 border-b border-gray-200 dark:border-gray-700 cursor-pointer backdrop-blur-sm ml-6"
+                  class="ui-surface-toolbar ui-border-default sticky top-[52px] z-10 ml-6 flex items-center justify-between border-b px-4 py-2 cursor-pointer backdrop-blur-sm"
                   @click="toggleSchema(`${connectionGroup.alias}-${schemaGroup.schema}`)"
                 >
                   <div class="flex items-center gap-2">
@@ -83,7 +83,7 @@
                       {{ schemaGroup.schema }}
                     </span>
                     <span
-                      class="text-xs text-gray-500 dark:text-gray-400 bg-gray-200 dark:bg-gray-700 rounded px-2 py-0.5"
+                      class="ui-chip-muted rounded px-2 py-0.5 text-xs text-gray-500 dark:text-gray-400"
                     >
                       {{ schemaGroup.tables.length }}
                     </span>
@@ -124,7 +124,7 @@
             <!-- Schema Header - PostgreSQL only -->
             <div
               v-if="sourceConnectionType === 'postgresql' && schemaGroup.schema"
-              class="sticky top-0 z-10 flex items-center justify-between px-4 py-2.5 bg-gray-50 dark:bg-gray-800/70 border-b border-gray-200 dark:border-gray-700 cursor-pointer backdrop-blur-sm"
+              class="ui-surface-toolbar ui-border-default sticky top-0 z-10 flex items-center justify-between border-b px-4 py-2.5 cursor-pointer backdrop-blur-sm"
               @click="toggleSchema(schemaGroup.schema)"
             >
               <div class="flex items-center gap-2">
@@ -137,7 +137,7 @@
                   schemaGroup.schema
                 }}</span>
                 <span
-                  class="text-xs text-gray-500 dark:text-gray-400 bg-gray-200 dark:bg-gray-700 rounded px-2 py-0.5"
+                  class="ui-chip-muted rounded px-2 py-0.5 text-xs text-gray-500 dark:text-gray-400"
                 >
                   {{ schemaGroup.tables.length }}
                 </span>
@@ -164,7 +164,7 @@
               class=""
               :class="
                 sourceConnectionType === 'postgresql' && schemaGroup.schema
-                  ? 'border-l-2 border-gray-200 dark:border-gray-700 ml-3'
+                  ? 'ui-border-default border-l-2 ml-3'
                   : ''
               "
             >
@@ -268,7 +268,7 @@ const listContainerClass = computed(() =>
   [
     props.embedded
       ? 'overflow-hidden overflow-y-auto'
-      : 'bg-white dark:bg-gray-850 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden overflow-y-auto',
+      : 'ui-surface-raised ui-border-default border rounded-lg overflow-hidden overflow-y-auto',
     'min-h-0',
     isFillHeightWithToolbar.value ? 'flex-1' : ''
   ]

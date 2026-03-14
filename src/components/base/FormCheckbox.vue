@@ -115,10 +115,10 @@ const checkboxId = props.id || `form-checkbox-${Math.random().toString(36).subst
             'transition-colors duration-150',
             error
               ? 'border-red-300 dark:border-red-600 text-red-600 dark:text-red-300 focus:border-red-500 dark:focus:border-red-400'
-              : 'ui-accent-icon ui-accent-focus border-gray-300 dark:border-gray-600',
+              : 'ui-accent-icon ui-accent-focus ui-border-default',
             disabled
-              ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed'
-              : 'cursor-pointer bg-white dark:bg-gray-800 focus:outline-none focus-visible:outline-none'
+              ? 'ui-surface-muted cursor-not-allowed'
+              : 'ui-surface-raised cursor-pointer focus:outline-none focus-visible:outline-none'
           ]"
           @change="handleChange"
           @blur="handleBlur"

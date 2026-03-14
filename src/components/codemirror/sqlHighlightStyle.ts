@@ -82,7 +82,7 @@ const sqlDarkSearchTheme = EditorView.theme(
   {
     ...searchPanelBase,
     '.cm-panels': {
-      backgroundColor: 'var(--color-gray-850, #1a1f2e)',
+      backgroundColor: 'var(--ui-surface-raised, #1a1f2e)',
       color: '#e5e7eb'
     },
     '.cm-panel.cm-search input[type="text"]': {

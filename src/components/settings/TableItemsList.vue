@@ -3,16 +3,14 @@
     <div class="grid grid-cols-1 lg:grid-cols-2">
       <template v-for="(table, idx) in tables" :key="table.name">
         <div
-          class="group flex items-center gap-3 px-4 py-2.5 border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
-          :class="[
-            idx % 2 === 0 ? 'lg:border-r lg:border-r-gray-100 lg:dark:border-r-gray-800' : ''
-          ]"
+          class="ui-border-muted group flex items-center gap-3 border-b px-4 py-2.5 transition-colors hover:[background-color:var(--ui-surface-muted)]"
+          :class="[idx % 2 === 0 ? 'lg:border-r lg:border-r-[var(--ui-border-muted)]' : '']"
         >
           <input
             :id="`table-${table.name}`"
             v-model="table.selected"
             type="checkbox"
-            class="ui-accent-icon h-4 w-4 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 shrink-0"
+            class="ui-accent-icon ui-surface-raised ui-border-default h-4 w-4 rounded shrink-0"
             @change="
               emit('checkbox-change', {
                 table,
@@ -31,7 +29,7 @@
           <span
             v-if="showRowCount && getTableRowCount(table.name) !== undefined"
             v-tooltip="'Approximate row count'"
-            class="text-xs px-1.5 py-0.5 rounded shrink-0 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
+            class="ui-chip-muted text-xs px-1.5 py-0.5 rounded shrink-0 text-gray-500 dark:text-gray-400"
           >
             {{ formatRowCount(getTableRowCount(table.name)) }}
           </span>
@@ -45,7 +43,7 @@
                 ? 'ui-accent-action-active'
                 : hasTableFilter(table)
                   ? 'bg-sky-500/20 text-sky-600 dark:text-sky-400'
-                  : 'text-gray-400 opacity-0 group-hover:opacity-100 hover:bg-gray-200 dark:hover:bg-gray-700'
+                  : 'text-gray-400 opacity-0 group-hover:opacity-100 hover:[background-color:var(--ui-surface-muted)]'
             "
             @click="emit('toggle-filter', table.name)"
           >
@@ -70,13 +68,13 @@
         :key="table.name"
         :data-virtual-index="index"
         :style="{ height: `${ITEM_HEIGHT}px` }"
-        class="group flex items-center gap-3 px-4 border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+        class="ui-border-muted group flex items-center gap-3 border-b px-4 transition-colors hover:[background-color:var(--ui-surface-muted)]"
       >
         <input
           :id="`table-${table.name}`"
           v-model="table.selected"
           type="checkbox"
-          class="ui-accent-icon h-4 w-4 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 shrink-0"
+          class="ui-accent-icon ui-surface-raised ui-border-default h-4 w-4 rounded shrink-0"
           @change="
             emit('checkbox-change', {
               table,
@@ -95,7 +93,7 @@
         <span
           v-if="showRowCount && getTableRowCount(table.name) !== undefined"
           v-tooltip="'Approximate row count'"
-          class="text-xs px-1.5 py-0.5 rounded shrink-0 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
+          class="ui-chip-muted text-xs px-1.5 py-0.5 rounded shrink-0 text-gray-500 dark:text-gray-400"
         >
           {{ formatRowCount(getTableRowCount(table.name)) }}
         </span>
@@ -109,7 +107,7 @@
               ? 'ui-accent-action-active'
               : hasTableFilter(table)
                 ? 'bg-sky-500/20 text-sky-600 dark:text-sky-400'
-                : 'text-gray-400 opacity-0 group-hover:opacity-100 hover:bg-gray-200 dark:hover:bg-gray-700'
+                : 'text-gray-400 opacity-0 group-hover:opacity-100 hover:[background-color:var(--ui-surface-muted)]'
           "
           @click="emit('toggle-filter', table.name)"
         >

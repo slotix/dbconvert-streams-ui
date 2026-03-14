@@ -15,7 +15,7 @@
       <!-- Browse button -->
       <button
         type="button"
-        class="ui-accent-action ui-accent-focus inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+        class="ui-surface-raised ui-border-default ui-accent-action ui-accent-focus inline-flex items-center rounded-lg border px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors dark:text-gray-300"
         @click="openModal"
       >
         <FolderOpen class="h-4 w-4 mr-2" />
@@ -79,14 +79,14 @@ const inputClass = computed(() => {
     'block w-full rounded-lg border shadow-sm px-4 py-2.5 text-sm focus:outline-none transition-colors'
 
   if (props.error) {
-    return `${baseClass} border-red-300 dark:border-red-700 bg-white dark:bg-gray-800 text-red-900 dark:text-red-300 placeholder-red-300 dark:placeholder-red-600 focus:border-red-500 dark:focus:border-red-400 focus:bg-red-50/40 dark:focus:bg-red-950/20`
+    return `${baseClass} ui-surface-raised border-red-300 dark:border-red-700 text-red-900 dark:text-red-300 placeholder-red-300 dark:placeholder-red-600 focus:border-red-500 dark:focus:border-red-400 focus:bg-red-50/40 dark:focus:bg-red-950/20`
   }
 
   if (props.disabled) {
-    return `${baseClass} border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed`
+    return `${baseClass} ui-surface-muted ui-border-default text-gray-500 dark:text-gray-400 cursor-not-allowed`
   }
 
-  return `${baseClass} ui-accent-focus border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500`
+  return `${baseClass} ui-surface-raised ui-border-default ui-accent-focus text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500`
 })
 
 const openModal = async () => {

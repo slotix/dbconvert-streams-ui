@@ -159,14 +159,14 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
           <span
             v-if="props.databaseStatusLabel === 'Read-only'"
             v-tooltip="props.databaseStatusTooltip || undefined"
-            class="inline-flex items-center gap-1 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-100/80 dark:bg-gray-800/70 px-2 py-0.5 text-[11px] font-medium text-gray-500 dark:text-gray-400"
+            class="ui-chip-muted ui-border-default inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium text-gray-500 dark:text-gray-400"
           >
             <Lock class="h-3 w-3 shrink-0" />
             Read-only
           </span>
           <span
             v-else-if="props.databaseStatusLabel === 'Editable'"
-            class="inline-flex items-center rounded-full border border-gray-200 dark:border-gray-700 bg-gray-100/80 dark:bg-gray-800/70 px-2 py-0.5 text-[11px] font-medium text-gray-500 dark:text-gray-400"
+            class="ui-chip-muted ui-border-default inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium text-gray-500 dark:text-gray-400"
             v-tooltip="props.databaseStatusTooltip || undefined"
           >
             Editable
@@ -225,7 +225,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
 
           <span
             v-if="props.fileStatusLabel === 'Read-only'"
-            class="inline-flex items-center gap-1 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-100/80 dark:bg-gray-800/70 px-2 py-0.5 text-[11px] font-medium text-gray-500 dark:text-gray-400"
+            class="ui-chip-muted ui-border-default inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium text-gray-500 dark:text-gray-400"
             v-tooltip="props.fileStatusTooltip || undefined"
           >
             <Lock class="h-3 w-3 shrink-0" />
@@ -233,7 +233,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
           </span>
           <span
             v-else-if="props.fileStatusLabel === 'Editable'"
-            class="inline-flex items-center rounded-full border border-gray-200 dark:border-gray-700 bg-gray-100/80 dark:bg-gray-800/70 px-2 py-0.5 text-[11px] font-medium text-gray-500 dark:text-gray-400"
+            class="ui-chip-muted ui-border-default inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium text-gray-500 dark:text-gray-400"
             v-tooltip="props.fileStatusTooltip || undefined"
           >
             Editable
@@ -246,7 +246,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
     <div
       v-if="showPicker && isDatabaseMode"
       ref="menuRef"
-      class="absolute z-30 mt-2 w-80 bg-white dark:bg-gray-850 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg dark:shadow-gray-900/50 p-2"
+      class="ui-surface-floating ui-border-default absolute z-30 mt-2 w-80 rounded-md border p-2"
       style="left: 0"
     >
       <SearchInput v-model="search" placeholder="Search tables or views…" size="md" />
@@ -255,7 +255,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
         <button
           v-for="o in filteredObjects"
           :key="`${o.schema || ''}:${o.type}:${o.name}`"
-          class="w-full text-left px-2 py-1.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded flex items-center gap-2"
+          class="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:[background-color:var(--ui-surface-muted)]"
           :class="{ 'bg-blue-50 dark:bg-blue-900/20': o.name === props.name }"
           @click="onPickObject(o)"
         >
@@ -279,7 +279,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
     <div
       v-if="showPicker && isFileMode"
       ref="menuRef"
-      class="absolute z-30 mt-2 w-80 bg-white dark:bg-gray-850 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg dark:shadow-gray-900/50 p-2"
+      class="ui-surface-floating ui-border-default absolute z-30 mt-2 w-80 rounded-md border p-2"
       style="left: 0"
     >
       <SearchInput v-model="search" placeholder="Search files…" size="md" />
@@ -288,7 +288,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
         <button
           v-for="f in filteredFiles"
           :key="f.path"
-          class="w-full text-left px-2 py-1.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded flex items-center gap-2"
+          class="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:[background-color:var(--ui-surface-muted)]"
           :class="{ 'bg-blue-50 dark:bg-blue-900/20': f.name === props.name }"
           @click="onPickFile(f)"
         >

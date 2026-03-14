@@ -100,14 +100,14 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="h-full overflow-auto bg-white p-4 dark:bg-gray-850">
+  <div class="ui-surface-app h-full overflow-auto p-4">
     <div
       class="mx-auto flex max-w-6xl flex-col gap-4"
       :class="{ 'justify-center': isLoading || !!errorMessage }"
     >
       <div
         v-if="isLoading"
-        class="flex min-h-[260px] items-center justify-center rounded-lg border border-gray-200 bg-white/80 text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-900/60 dark:text-gray-400"
+        class="ui-surface-raised ui-border-default flex min-h-[260px] items-center justify-center rounded-lg border text-sm text-gray-500 dark:text-gray-400"
       >
         <RefreshCw class="mr-2 h-4 w-4 animate-spin" />
         Loading manifest
@@ -125,9 +125,7 @@ onMounted(() => {
       </div>
 
       <template v-else-if="manifest && stats">
-        <div
-          class="rounded-lg border border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-900/60"
-        >
+        <div class="ui-surface-raised ui-border-default rounded-lg border px-4 py-3">
           <div class="flex flex-wrap items-start justify-between gap-3">
             <div class="min-w-0">
               <div class="flex items-center gap-2">
@@ -148,7 +146,7 @@ onMounted(() => {
 
         <div
           v-if="mode === 'data' || mode === 'summary'"
-          class="overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900/60"
+          class="ui-surface-raised ui-border-default overflow-hidden rounded-lg border"
         >
           <div class="grid grid-cols-3 divide-x divide-gray-200 dark:divide-gray-700">
             <div class="px-3 py-2.5 sm:px-4 sm:py-3">
@@ -193,11 +191,9 @@ onMounted(() => {
 
         <div
           v-if="mode === 'data'"
-          class="overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900/60"
+          class="ui-surface-raised ui-border-default overflow-hidden rounded-lg border"
         >
-          <div
-            class="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-gray-700"
-          >
+          <div class="ui-border-default flex items-center justify-between border-b px-4 py-3">
             <div>
               <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">Referenced files</p>
               <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -205,7 +201,7 @@ onMounted(() => {
               </p>
             </div>
             <div
-              class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-300"
+              class="ui-surface-muted ui-border-muted inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs text-gray-600 dark:text-gray-300"
             >
               <HardDrive class="h-3.5 w-3.5" />
               {{ manifestFiles.length.toLocaleString() }} items
@@ -213,8 +209,8 @@ onMounted(() => {
           </div>
 
           <div v-if="manifestFiles.length" class="max-h-[480px] overflow-auto">
-            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <thead class="bg-gray-50 dark:bg-gray-800/80">
+            <table class="min-w-full divide-y divide-[var(--ui-border-default)]">
+              <thead class="ui-surface-toolbar">
                 <tr>
                   <th
                     class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400"
@@ -228,7 +224,7 @@ onMounted(() => {
                   </th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
+              <tbody class="divide-y divide-[var(--ui-border-default)]">
                 <tr v-for="(filePath, index) in manifestFiles" :key="filePath">
                   <td class="whitespace-nowrap px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
                     {{ index + 1 }}
@@ -249,15 +245,13 @@ onMounted(() => {
           v-if="mode === 'structure'"
           class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]"
         >
-          <div
-            class="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900/60"
-          >
-            <div class="border-b border-gray-200 px-4 py-3 dark:border-gray-700">
+          <div class="ui-surface-raised ui-border-default rounded-lg border">
+            <div class="ui-border-default border-b px-4 py-3">
               <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">Metadata</p>
             </div>
             <div
               v-if="structuredMetadataEntries.length"
-              class="divide-y divide-gray-200 dark:divide-gray-800"
+              class="divide-y divide-[var(--ui-border-default)]"
             >
               <div v-for="entry in structuredMetadataEntries" :key="entry.key" class="px-4 py-3">
                 <p class="text-xs uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">
@@ -265,7 +259,7 @@ onMounted(() => {
                 </p>
                 <pre
                   v-if="entry.isComplex"
-                  class="mt-2 whitespace-pre-wrap break-words rounded-md bg-gray-50 p-3 text-xs text-gray-700 dark:bg-gray-950 dark:text-gray-200"
+                  class="ui-surface-muted ui-border-muted mt-2 whitespace-pre-wrap break-words rounded-md border p-3 text-xs text-gray-700 dark:text-gray-200"
                   >{{ entry.value }}</pre
                 >
                 <p v-else class="mt-2 break-words text-sm text-gray-900 dark:text-gray-100">
@@ -278,10 +272,8 @@ onMounted(() => {
             </div>
           </div>
 
-          <div
-            class="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900/60"
-          >
-            <div class="border-b border-gray-200 px-4 py-3 dark:border-gray-700">
+          <div class="ui-surface-raised ui-border-default rounded-lg border">
+            <div class="ui-border-default border-b px-4 py-3">
               <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">Raw manifest</p>
             </div>
             <pre
@@ -293,7 +285,7 @@ onMounted(() => {
 
         <div
           v-if="mode === 'summary'"
-          class="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900/60"
+          class="ui-surface-raised ui-border-default rounded-lg border"
         >
           <div class="grid gap-4 px-4 py-4 md:grid-cols-2">
             <div>

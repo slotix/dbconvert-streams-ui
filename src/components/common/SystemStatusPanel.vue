@@ -40,7 +40,7 @@ const getStatusBadgeClass = (status: HealthStatus) => {
     case SERVICE_STATUS.INITIALIZING:
       return 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200'
     default:
-      return 'bg-gray-100 text-gray-700 dark:bg-gray-800/70 dark:text-gray-300'
+      return 'ui-chip-muted'
   }
 }
 
@@ -65,7 +65,7 @@ onMounted(async () => {
       <div
         v-for="row in rows"
         :key="row.name"
-        class="flex items-center justify-between rounded-md px-2 py-1.5 text-xs text-gray-800 dark:text-gray-200 bg-gray-50/60 dark:bg-gray-900/50"
+        class="ui-surface-muted flex items-center justify-between rounded-md px-2 py-1.5 text-xs text-gray-800 dark:text-gray-200"
       >
         <div class="flex min-w-0 flex-col gap-0.5">
           <span class="truncate">{{ row.label }}</span>
@@ -95,7 +95,7 @@ onMounted(async () => {
     <button
       v-if="props.showOpenLogs && canOpenLogsFolder"
       type="button"
-      class="inline-flex items-center gap-2 rounded-md bg-gray-100 px-2.5 py-1 text-[11px] font-semibold text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+      class="ui-surface-muted ui-border-default inline-flex items-center gap-2 rounded-md border px-2.5 py-1 text-[11px] font-semibold text-gray-700 hover:[background-color:var(--ui-surface-inset)] dark:text-gray-200"
       @click="openLogsFolder"
     >
       <FileText class="h-3.5 w-3.5" />

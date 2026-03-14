@@ -93,17 +93,15 @@ function getColumnType(column: SQLColumnMeta) {
   <div
     v-if="viewMeta"
     :class="[
-      'bg-white dark:bg-gray-850',
-      $attrs.class
-        ? $attrs.class
-        : 'rounded-lg border border-gray-200 shadow-sm dark:border-gray-700'
+      'ui-surface-raised',
+      $attrs.class ? $attrs.class : 'ui-border-default rounded-lg border'
     ]"
   >
     <!-- Header removed; DatabaseObjectContainer renders tabs, title, and actions -->
 
     <!-- HeadlessUI Tab Implementation with Store Integration - Underline Style -->
     <TabGroup :selectedIndex="activeTabIndex" as="div" @change="onSubTabChange">
-      <TabList class="flex space-x-1 border-b border-gray-200 dark:border-gray-700 px-4">
+      <TabList class="ui-border-default flex space-x-1 border-b px-4">
         <Tab v-for="tab in tabs" :key="tab.name" v-slot="{ selected }" as="template">
           <button
             :class="[
@@ -111,7 +109,7 @@ function getColumnType(column: SQLColumnMeta) {
               'focus:outline-none focus-visible:border-gray-400 dark:focus-visible:border-gray-500',
               selected
                 ? 'border-b-2 border-gray-400 dark:border-gray-500 text-gray-900 dark:text-gray-100 -mb-px'
-                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 [border-color:transparent] hover:[border-color:var(--ui-border-default)]'
             ]"
           >
             {{ tab.name }}
@@ -119,8 +117,8 @@ function getColumnType(column: SQLColumnMeta) {
               :class="[
                 'ml-2 rounded-full px-2 py-0.5 text-xs font-medium transition-colors duration-150',
                 selected
-                  ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                  ? 'ui-chip-muted text-gray-700 dark:text-gray-300'
+                  : 'ui-chip-muted text-gray-500 dark:text-gray-400'
               ]"
             >
               {{ tab.count }}
@@ -134,10 +132,10 @@ function getColumnType(column: SQLColumnMeta) {
         <TabPanel>
           <div class="overflow-x-auto">
             <div class="min-w-[640px]">
-              <div class="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
-                <table class="min-w-full divide-y divide-gray-300 dark:divide-gray-700">
+              <div class="ui-border-default overflow-hidden rounded-lg border">
+                <table class="min-w-full divide-y [border-color:var(--ui-border-default)]">
                   <thead>
-                    <tr class="bg-gray-50 dark:bg-gray-900">
+                    <tr class="ui-surface-muted">
                       <th
                         scope="col"
                         class="py-2 pl-6 pr-4 text-left text-sm font-medium text-gray-500 dark:text-gray-400 sm:pl-6"
@@ -164,13 +162,11 @@ function getColumnType(column: SQLColumnMeta) {
                       </th>
                     </tr>
                   </thead>
-                  <tbody
-                    class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-850"
-                  >
+                  <tbody class="ui-surface-raised divide-y [border-color:var(--ui-border-default)]">
                     <tr
                       v-for="column in viewMeta.columns"
                       :key="column.name"
-                      class="hover:bg-gray-50 dark:hover:bg-gray-800"
+                      class="hover:[background-color:var(--ui-surface-muted)]"
                     >
                       <td
                         class="whitespace-nowrap py-2 pl-6 pr-4 text-sm text-gray-900 dark:text-gray-100 sm:pl-6"
@@ -233,11 +229,16 @@ function getColumnType(column: SQLColumnMeta) {
 }
 
 .overflow-x-auto::-webkit-scrollbar-track {
-  @apply bg-gray-50;
+  background-color: var(--ui-surface-muted);
 }
 
 .overflow-x-auto::-webkit-scrollbar-thumb {
-  @apply bg-gray-300 rounded-full hover:bg-gray-400 transition-colors;
+  @apply rounded-full transition-colors;
+  background-color: var(--ui-border-default);
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb:hover {
+  background-color: var(--ui-text-muted);
 }
 
 /* Override tab-size for SQL code blocks (different from default tab-size: 2) */

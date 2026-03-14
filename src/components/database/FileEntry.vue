@@ -158,7 +158,7 @@ async function handleLoadMore() {
     <!-- Entry row -->
     <div
       v-tooltip="manifestHint || unsupportedTooltip || undefined"
-      class="flex items-center py-1.5 text-sm text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer select-none"
+      class="flex cursor-pointer select-none items-center rounded-md py-1.5 text-sm text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
       :class="{
         'bg-slate-100/90 dark:bg-slate-800/80': isSelected,
         'opacity-60': !isSupported && entry.type !== 'dir'
@@ -187,7 +187,7 @@ async function handleLoadMore() {
       <!-- Chevron for folders -->
       <button
         v-if="isFolder"
-        class="shrink-0 mr-1 p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-transform duration-150"
+        class="mr-1 shrink-0 rounded p-0.5 transition-transform duration-150 hover:[background-color:var(--ui-surface-muted)]"
         :class="{ 'rotate-90': isExpanded }"
         @click.stop="handleChevronClick"
       >

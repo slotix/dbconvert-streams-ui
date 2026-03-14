@@ -43,13 +43,13 @@ const themes = [
       leave-to-class="transform opacity-0 scale-95"
     >
       <MenuItems
-        class="absolute left-full z-9999 ml-2 w-40 origin-top-left rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-gray-800 dark:ring-gray-700"
+        class="ui-surface-floating absolute left-full z-9999 ml-2 w-40 origin-top-left rounded-md border focus:outline-none"
       >
         <div class="py-1">
           <MenuItem v-for="theme in themes" :key="theme.value" v-slot="{ active }">
             <button
               :class="[
-                active ? 'bg-gray-100 dark:bg-gray-700' : '',
+                active ? 'ui-surface-muted' : '',
                 themeStore.mode === theme.value
                   ? 'ui-accent-selection-checked'
                   : 'text-gray-700 dark:text-gray-300',

@@ -1415,21 +1415,19 @@ async function selectTable(tableName: string) {
 <template>
   <div class="h-full flex flex-col">
     <!-- Table Selector -->
-    <div
-      class="px-6 py-3 bg-gray-50 dark:bg-gray-900/40 border-b border-gray-200 dark:border-gray-700 shrink-0"
-    >
+    <div class="ui-surface-toolbar ui-border-default shrink-0 border-b px-6 py-3">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
           <span class="text-sm font-medium text-gray-700 dark:text-gray-200">Compare Table:</span>
           <Menu as="div" class="relative z-1200">
             <MenuButton
-              class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              class="ui-surface-raised ui-border-default inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium text-gray-900 transition-colors hover:[background-color:var(--ui-surface-muted)] dark:text-gray-100"
             >
               {{ selectedCompareItem?.label || 'Select a table' }}
               <ChevronDown class="h-4 w-4 text-gray-500 dark:text-gray-400" />
             </MenuButton>
             <MenuItems
-              class="absolute left-0 top-full z-1300 mt-1 w-56 origin-top-left rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-lg ring-1 ring-black ring-opacity-5 dark:ring-white/10 border border-gray-200 dark:border-gray-700 focus:outline-none"
+              class="ui-surface-floating absolute left-0 top-full z-1300 mt-1 w-56 origin-top-left rounded-md border text-gray-900 dark:text-gray-100 focus:outline-none"
             >
               <div class="py-1">
                 <MenuItem
@@ -1440,7 +1438,7 @@ async function selectTable(tableName: string) {
                 >
                   <button
                     :class="[
-                      active ? 'bg-gray-100 dark:bg-gray-800' : '',
+                      active ? 'ui-surface-muted' : '',
                       selectedTable === item.value
                         ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 font-medium'
                         : '',
@@ -1509,9 +1507,7 @@ async function selectTable(tableName: string) {
     <!-- Split View -->
     <div class="flex-1 flex overflow-hidden">
       <!-- Source Pane (Left) - Blue Theme -->
-      <div
-        class="flex-1 flex flex-col border-r border-gray-200 dark:border-gray-800 overflow-hidden"
-      >
+      <div class="ui-border-default flex-1 flex flex-col overflow-hidden border-r">
         <!-- Source Header -->
         <div
           class="px-4 py-3 border-b border-blue-100 dark:border-blue-800/60 bg-linear-to-r from-blue-50 to-white dark:from-blue-900/20 dark:to-gray-900/20 shrink-0"
@@ -1581,25 +1577,25 @@ async function selectTable(tableName: string) {
             </div>
             <div
               v-else-if="sourceQueryPreview && sourceQueryPreview.rows.length > 0"
-              class="rounded-md border border-gray-200 dark:border-gray-700 overflow-auto"
+              class="ui-border-default overflow-auto rounded-md border"
             >
               <table class="w-full text-xs">
-                <thead class="bg-gray-50 dark:bg-gray-900 sticky top-0 z-10">
+                <thead class="ui-surface-muted sticky top-0 z-10">
                   <tr>
                     <th
                       v-for="col in sourceQueryPreview.columns"
                       :key="col"
-                      class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700 whitespace-nowrap"
+                      class="ui-border-default whitespace-nowrap border-b px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-400"
                     >
                       {{ col }}
                     </th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                <tbody class="divide-y divide-[var(--ui-border-default)]">
                   <tr
                     v-for="(row, idx) in sourceQueryPreview.rows"
                     :key="idx"
-                    class="hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                    class="hover:[background-color:var(--ui-surface-muted)]"
                   >
                     <td
                       v-for="col in sourceQueryPreview.columns"

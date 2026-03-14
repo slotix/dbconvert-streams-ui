@@ -70,13 +70,9 @@ function formatDuration(seconds: number) {
 </script>
 
 <template>
-  <div
-    class="bg-white dark:bg-gray-850 rounded-xl shadow-lg dark:shadow-gray-900/30 overflow-hidden border border-gray-200 dark:border-gray-700"
-  >
+  <div class="ui-surface-raised ui-border-default overflow-hidden rounded-xl border">
     <!-- Header -->
-    <div
-      class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/30"
-    >
+    <div class="ui-surface-toolbar ui-border-default border-b px-4 py-3">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
           <PanelHeaderIcon :icon="Sheet" tone="slate" />
@@ -97,7 +93,7 @@ function formatDuration(seconds: number) {
           <button
             v-if="collapsible"
             type="button"
-            class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 transition-all hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800"
+            class="ui-surface-raised ui-border-default ui-accent-action inline-flex h-8 w-8 items-center justify-center rounded-md border text-gray-600 transition-all dark:text-gray-300"
             :aria-expanded="isExpanded"
             aria-label="Toggle tables"
             @click="$emit('toggle')"
@@ -105,7 +101,7 @@ function formatDuration(seconds: number) {
             <ChevronDown class="h-4 w-4 transition-transform" :class="{ 'rotate-180': isOpen }" />
           </button>
           <span
-            class="inline-flex items-center rounded-full px-3 py-1.5 text-sm font-semibold bg-gray-600 text-white dark:bg-gray-500 dark:text-gray-100"
+            class="ui-chip-muted inline-flex items-center rounded-full px-3 py-1.5 text-sm font-semibold"
           >
             {{ statusCounts.total }}
           </span>
@@ -116,8 +112,8 @@ function formatDuration(seconds: number) {
     <!-- Tables Grid -->
     <div v-if="isExpanded && hasAnyTables" class="p-0">
       <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
-          <thead class="bg-gray-50 dark:bg-gray-900/30">
+        <table class="min-w-full divide-y [border-color:var(--ui-border-default)]">
+          <thead class="ui-surface-muted">
             <tr>
               <th
                 scope="col"
@@ -164,11 +160,11 @@ function formatDuration(seconds: number) {
               </th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900/20">
+          <tbody class="ui-surface-raised divide-y [border-color:var(--ui-border-default)]">
             <tr
               v-for="table in allTables"
               :key="table.table"
-              class="hover:bg-gray-50 dark:hover:bg-gray-900/40 transition-colors"
+              class="transition-colors hover:[background-color:var(--ui-surface-muted)]"
             >
               <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">
                 <span v-tooltip="table.table" class="truncate block max-w-xs">{{
@@ -206,7 +202,7 @@ function formatDuration(seconds: number) {
                 <button
                   v-if="table.status === STATUS.FINISHED"
                   type="button"
-                  class="inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium bg-white dark:bg-gray-900 border ui-accent-action ui-accent-action-active transition-all"
+                  class="ui-surface-raised ui-border-default ui-accent-action ui-accent-action-active inline-flex items-center justify-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition-all"
                   @click="handleCompareTable(table.table)"
                 >
                   Compare
@@ -221,8 +217,8 @@ function formatDuration(seconds: number) {
     </div>
 
     <!-- Empty State -->
-    <div v-else-if="isExpanded" class="px-6 py-12 text-center bg-gray-50 dark:bg-gray-900/30">
-      <div class="inline-flex p-4 bg-gray-100 dark:bg-gray-800 rounded-full mb-4">
+    <div v-else-if="isExpanded" class="ui-surface-muted px-6 py-12 text-center">
+      <div class="ui-surface-inset mb-4 inline-flex rounded-full p-4">
         <Sheet class="h-8 w-8 text-gray-400 dark:text-gray-500" />
       </div>
       <h4 class="text-base font-medium text-gray-900 dark:text-gray-100 mb-1">No tables yet</h4>

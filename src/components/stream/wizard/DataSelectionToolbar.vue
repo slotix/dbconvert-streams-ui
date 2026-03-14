@@ -1,9 +1,7 @@
 <template>
   <div
     class="flex flex-wrap items-center gap-3 pb-3"
-    :class="
-      sticky ? 'sticky top-0 z-30 bg-gray-50/95 dark:bg-gray-900/95 backdrop-blur-sm pt-1' : ''
-    "
+    :class="sticky ? 'ui-surface-toolbar sticky top-0 z-30 pt-1 backdrop-blur-sm' : ''"
   >
     <div
       class="ui-chip-muted inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded border text-sm font-medium"
@@ -27,7 +25,7 @@
           :value="searchValue"
           type="text"
           :placeholder="searchPlaceholder"
-          class="ui-accent-focus w-full rounded-md border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 py-2 pl-8 pr-3 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400"
+          class="ui-surface-raised ui-border-default ui-accent-focus w-full rounded-md border py-2 pl-8 pr-3 text-sm text-gray-900 placeholder:text-gray-400 dark:text-gray-100"
           @input="onSearchInput"
         />
       </div>
@@ -59,7 +57,7 @@
 
     <button
       type="button"
-      class="ui-accent-action inline-flex items-center gap-1.5 rounded-md border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+      class="ui-surface-raised ui-border-default ui-accent-action inline-flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium text-gray-600 transition-colors disabled:cursor-not-allowed disabled:opacity-60 dark:text-gray-300"
       :title="refreshTitle"
       :disabled="refreshDisabled"
       @click="$emit('refresh')"

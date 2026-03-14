@@ -46,13 +46,13 @@
             </TransitionChild>
 
             <div
-              class="flex grow flex-col gap-y-5 overflow-y-auto bg-gray-50 dark:bg-gray-900 px-6 pb-2 ring-1 ring-gray-200/80 dark:ring-white/5 border-r border-gray-200 dark:border-gray-800/80"
+              class="ui-surface-panel ui-border-default flex grow flex-col gap-y-5 overflow-y-auto border-r px-6 pb-2"
             >
               <nav class="flex flex-1 flex-col">
                 <ul role="list" class="-mx-2 flex-1 space-y-1">
                   <SidebarNavItems
                     :active-class="'ui-nav-active shadow-sm'"
-                    :inactive-class="'text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700'"
+                    :inactive-class="'text-gray-600 hover:text-gray-900 hover:[background-color:var(--ui-surface-raised)] dark:text-gray-400 dark:hover:text-white'"
                     item-class="group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
                     :icon-class="mobileIconClass"
                     :icon-stroke="iconStroke"
@@ -61,10 +61,10 @@
                 </ul>
 
                 <!-- Account Overview Link (web only - desktop has native menu) -->
-                <div class="pt-4 border-t border-gray-200 dark:border-gray-600">
+                <div class="border-t pt-4 ui-border-default">
                   <RouterLink
                     to="/"
-                    class="w-full group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700"
+                    class="group flex w-full gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-600 transition-colors hover:text-gray-900 hover:[background-color:var(--ui-surface-raised)] dark:text-gray-400 dark:hover:text-white"
                     @click="closeSidebar"
                   >
                     <CircleUser
@@ -77,10 +77,10 @@
                 </div>
 
                 <!-- Logs Button -->
-                <div class="pt-4 border-t border-gray-200 dark:border-gray-600">
+                <div class="border-t pt-4 ui-border-default">
                   <button
                     type="button"
-                    class="w-full group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700"
+                    class="group flex w-full gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-600 transition-colors hover:text-gray-900 hover:[background-color:var(--ui-surface-raised)] dark:text-gray-400 dark:hover:text-white"
                     @click="handleLogsClick"
                   >
                     <AlertCircle
@@ -99,7 +99,7 @@
                     <div class="ml-auto flex items-center gap-1">
                       <span
                         v-if="logsStore.logs.length > 0"
-                        class="bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-200 px-1.5 py-0.5 text-xs rounded-full"
+                        class="ui-chip-muted rounded-full px-1.5 py-0.5 text-xs"
                         title="System Logs"
                       >
                         {{ logsStore.logs.length > 99 ? '99+' : logsStore.logs.length }}
@@ -116,7 +116,7 @@
                 </div>
 
                 <!-- Theme Toggle for Mobile -->
-                <div class="mt-auto pt-4 border-t border-gray-200 dark:border-gray-600">
+                <div class="mt-auto border-t pt-4 ui-border-default">
                   <div class="flex items-center justify-between px-2 py-2">
                     <span class="text-sm text-gray-400">Theme</span>
                     <ThemeToggle />
@@ -124,10 +124,10 @@
                 </div>
 
                 <!-- External Links for Mobile (hidden in desktop mode - available in Help menu) -->
-                <div v-if="!isDesktop" class="pt-4 border-t border-gray-200 dark:border-gray-600">
+                <div v-if="!isDesktop" class="border-t pt-4 ui-border-default">
                   <div class="-mx-2 space-y-1">
                     <SidebarExternalLinks
-                      :link-class="'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700'"
+                      :link-class="'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-600 transition-colors hover:text-gray-900 hover:[background-color:var(--ui-surface-raised)] dark:text-gray-400 dark:hover:text-white'"
                       :icon-class="mobileIconClass"
                       :icon-stroke="iconStroke"
                       @navigate="closeSidebar"

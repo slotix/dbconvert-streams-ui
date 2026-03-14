@@ -1,8 +1,6 @@
 <template>
   <div class="min-w-0">
-    <div
-      class="flex items-center justify-between gap-2 px-1 pb-2 border-b border-gray-200 dark:border-gray-700"
-    >
+    <div class="ui-border-default flex items-center justify-between gap-2 border-b px-1 pb-2">
       <div class="flex items-center gap-1.5 min-w-0">
         <Filter class="ui-accent-icon w-4 h-4" />
         <span class="text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide"
@@ -81,13 +79,13 @@
       </div>
 
       <!-- Preview Results Panel -->
-      <div v-if="showPreview" class="mt-4 pt-3 border-t border-gray-200/80 dark:border-gray-700/80">
+      <div v-if="showPreview" class="ui-border-default mt-4 border-t pt-3">
         <div
-          class="bg-white dark:bg-gray-800/70 rounded-md border border-gray-200 dark:border-gray-700 shadow-xs overflow-hidden"
+          class="ui-surface-raised ui-border-default overflow-hidden rounded-md border shadow-xs"
         >
           <!-- Preview Header -->
           <div
-            class="flex items-center justify-between px-2.5 py-2 bg-gray-50/90 dark:bg-gray-800/90 border-b border-gray-200 dark:border-gray-700"
+            class="ui-surface-muted ui-border-default flex items-center justify-between border-b px-2.5 py-2"
           >
             <div class="flex items-center gap-2">
               <Sheet class="ui-accent-icon w-3.5 h-3.5" />
@@ -130,22 +128,22 @@
             class="overflow-auto max-h-96"
           >
             <table class="w-full text-xs">
-              <thead class="bg-gray-50 dark:bg-gray-900 sticky top-0">
+              <thead class="ui-surface-muted sticky top-0">
                 <tr>
                   <th
                     v-for="col in previewData.columns"
                     :key="col"
-                    class="px-2 py-1.5 text-left font-medium text-gray-600 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700 whitespace-nowrap"
+                    class="ui-border-default whitespace-nowrap border-b px-2 py-1.5 text-left font-medium text-gray-600 dark:text-gray-400"
                   >
                     {{ col }}
                   </th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+              <tbody class="divide-y divide-[var(--ui-border-default)]">
                 <tr
                   v-for="(row, idx) in previewData.rows"
                   :key="idx"
-                  class="hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                  class="hover:[background-color:var(--ui-surface-muted)]"
                 >
                   <td
                     v-for="col in previewData.columns"

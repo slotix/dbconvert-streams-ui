@@ -41,7 +41,7 @@ const rowBackgroundClass = computed(() => {
   if (props.isError) {
     return 'bg-red-50 dark:bg-red-900/30'
   }
-  return 'hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors'
+  return 'transition-colors hover:[background-color:var(--ui-surface-muted)]'
 })
 
 async function copyToClipboard() {
@@ -66,7 +66,7 @@ function toggleExpand() {
 </script>
 
 <template>
-  <div class="border-b border-gray-200 dark:border-gray-700">
+  <div class="ui-border-default border-b">
     <!-- Main Row -->
     <div
       :class="[rowBackgroundClass, 'flex items-center gap-2 px-4 py-2 cursor-pointer']"
@@ -75,7 +75,7 @@ function toggleExpand() {
       <!-- Expand/Collapse Icon (if expandable) -->
       <button
         v-if="expandable"
-        class="flex-shrink-0 p-0.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+        class="flex-shrink-0 rounded p-0.5 transition-colors hover:[background-color:var(--ui-surface-muted)]"
         @click.stop="toggleExpand"
       >
         <component
@@ -119,7 +119,7 @@ function toggleExpand() {
     <!-- Expanded Content -->
     <div
       v-if="expandable && isExpanded"
-      class="px-12 py-3 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700"
+      class="ui-surface-muted ui-border-default border-t px-12 py-3"
     >
       <slot name="expanded-content" />
     </div>

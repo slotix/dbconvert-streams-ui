@@ -508,7 +508,7 @@ onBeforeUnmount(() => {
           leave-to="translate-y-full"
         >
           <div
-            class="w-full h-full bg-white dark:bg-gray-850 shadow-xl dark:shadow-gray-900/50 rounded-t-lg overflow-hidden border border-gray-200 dark:border-gray-700 lg:px-20"
+            class="ui-surface-floating ui-border-default h-full w-full overflow-hidden rounded-t-lg border lg:px-20"
           >
             <!-- Resize Handle -->
             <div
@@ -519,27 +519,27 @@ onBeforeUnmount(() => {
               @mousedown.prevent="startResize"
             >
               <div
-                class="absolute inset-x-0 top-1/2 -translate-y-1/2 h-px group-hover:h-[3px] bg-gray-200 dark:bg-gray-700 group-hover:bg-gray-400 dark:group-hover:bg-gray-500 transition-all duration-150"
+                class="ui-border-default absolute inset-x-0 top-1/2 h-px -translate-y-1/2 transition-all duration-150 group-hover:h-[3px] group-hover:bg-[var(--ui-accent-soft-border)]"
               />
             </div>
 
             <!-- View Tabs: System Logs vs SQL Logs -->
             <div
-              class="bg-white dark:bg-gray-850 px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between"
+              class="ui-surface-raised ui-border-default flex items-center justify-between border-b px-6 py-4"
             >
               <nav class="flex space-x-6" aria-label="Tabs">
                 <button
                   class="px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 flex items-center gap-2"
                   :class="[
                     selectedView === 'system'
-                      ? 'text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-gray-800 shadow-sm'
-                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+                      ? 'ui-surface-muted text-gray-900 dark:text-gray-100 shadow-sm'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:[background-color:var(--ui-surface-muted)]'
                   ]"
                   @click="selectedView = 'system'"
                 >
                   System Logs
                   <span
-                    class="ml-2 text-xs px-1.5 py-0.5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
+                    class="ui-chip-muted ml-2 rounded-full px-1.5 py-0.5 text-xs text-gray-600 dark:text-gray-300"
                   >
                     {{ totalLogs }}
                   </span>
@@ -548,14 +548,14 @@ onBeforeUnmount(() => {
                   class="px-4 py-2 text-sm font-medium rounded-md transition-all duration-200"
                   :class="[
                     selectedView === 'sql'
-                      ? 'text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-gray-800 shadow-sm'
-                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+                      ? 'ui-surface-muted text-gray-900 dark:text-gray-100 shadow-sm'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:[background-color:var(--ui-surface-muted)]'
                   ]"
                   @click="selectedView = 'sql'"
                 >
                   <span class="text-green-600 dark:text-green-400 font-semibold">SQL Logs</span>
                   <span
-                    class="ml-2 text-xs px-1.5 py-0.5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
+                    class="ui-chip-muted ml-2 rounded-full px-1.5 py-0.5 text-xs text-gray-600 dark:text-gray-300"
                   >
                     {{ store.flatLogs.size }}
                   </span>
@@ -574,13 +574,13 @@ onBeforeUnmount(() => {
             <!-- Filters (only for system logs) - Unified with SQL Logs style -->
             <div
               v-if="selectedView === 'system'"
-              class="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-850 border-b border-gray-200 dark:border-gray-700 shadow-sm flex-wrap"
+              class="ui-surface-raised ui-border-default flex flex-wrap items-center gap-2 border-b px-4 py-2 shadow-sm"
             >
               <!-- Message Type Filter Dropdown (matching SQL Logs pattern) -->
               <div ref="messageTypeMenuRef" class="relative">
                 <button
                   v-tooltip="'Filter by message type'"
-                  class="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 focus:border-gray-400 dark:focus:border-gray-500 focus:ring-1 focus:ring-gray-300 dark:focus:ring-gray-600 transition-colors text-left"
+                  class="ui-surface-raised ui-border-default flex items-center gap-1.5 rounded border px-3 py-1.5 text-left text-xs transition-colors hover:[background-color:var(--ui-surface-muted)]"
                   @click="showMessageTypeMenu = !showMessageTypeMenu"
                 >
                   <Filter class="w-4 h-4 text-gray-600 dark:text-gray-400" />
@@ -603,12 +603,12 @@ onBeforeUnmount(() => {
                 >
                   <div
                     v-if="showMessageTypeMenu"
-                    class="absolute left-0 mt-2 w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md shadow-lg z-50"
+                    class="ui-surface-floating ui-border-default absolute left-0 z-50 mt-2 w-56 rounded-md border"
                     @click.stop
                   >
                     <!-- Select All / Clear All -->
                     <button
-                      class="w-full text-left px-3 py-2 text-xs hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 transition-colors group border-b border-gray-100 dark:border-gray-700"
+                      class="ui-border-default group flex w-full items-center gap-2 border-b px-3 py-2 text-left text-xs transition-colors hover:[background-color:var(--ui-surface-muted)]"
                       @click="
                         selectedMessageTypes.size === messageTypeOptions.length
                           ? selectedMessageTypes.clear()
@@ -619,8 +619,8 @@ onBeforeUnmount(() => {
                         :class="[
                           'w-4 h-4 rounded border transition-colors',
                           selectedMessageTypes.size === messageTypeOptions.length
-                            ? 'bg-gray-700 dark:bg-gray-600 border-gray-700 dark:border-gray-600'
-                            : 'border-gray-300 dark:border-gray-600 group-hover:border-gray-400 dark:group-hover:border-gray-500'
+                            ? 'ui-accent-selection-checked ui-accent-text'
+                            : 'ui-surface-raised ui-border-default group-hover:border-gray-400 dark:group-hover:border-gray-500'
                         ]"
                       >
                         <span
@@ -645,7 +645,7 @@ onBeforeUnmount(() => {
                     <button
                       v-for="type in messageTypeOptions"
                       :key="type"
-                      class="w-full text-left px-3 py-2 text-xs hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 transition-colors group"
+                      class="group flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition-colors hover:[background-color:var(--ui-surface-muted)]"
                       @click="
                         selectedMessageTypes.has(type)
                           ? selectedMessageTypes.delete(type)
@@ -656,8 +656,8 @@ onBeforeUnmount(() => {
                         :class="[
                           'w-4 h-4 rounded border transition-colors',
                           selectedMessageTypes.has(type)
-                            ? 'bg-gray-700 dark:bg-gray-600 border-gray-700 dark:border-gray-600'
-                            : 'border-gray-300 dark:border-gray-600 group-hover:border-gray-400 dark:group-hover:border-gray-500'
+                            ? 'ui-accent-selection-checked ui-accent-text'
+                            : 'ui-surface-raised ui-border-default group-hover:border-gray-400 dark:group-hover:border-gray-500'
                         ]"
                       >
                         <span
@@ -676,14 +676,14 @@ onBeforeUnmount(() => {
                 </transition>
               </div>
 
-              <div class="hidden sm:block h-6 border-l border-gray-200 dark:border-gray-700" />
+              <div class="ui-border-default hidden h-6 border-l sm:block" />
 
               <!-- Sort Order Toggle (matching SQL Logs pattern) -->
               <button
                 v-tooltip="
                   `Sort: ${systemLogsSortOrder === 'newest' ? 'Newest on top' : 'Oldest on top'} (S)`
                 "
-                class="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                class="ui-surface-raised ui-border-default flex items-center gap-1.5 rounded border px-3 py-1.5 text-xs transition-colors hover:[background-color:var(--ui-surface-muted)]"
                 @click="toggleSystemLogsSortOrder"
               >
                 <component
@@ -695,7 +695,7 @@ onBeforeUnmount(() => {
                 }}</span>
               </button>
 
-              <div class="hidden sm:block h-6 border-l border-gray-200 dark:border-gray-700" />
+              <div class="ui-border-default hidden h-6 border-l sm:block" />
 
               <!-- Search Input (matching SQL Logs search style) -->
               <div class="flex-1 relative min-w-0 sm:min-w-48">
@@ -707,7 +707,7 @@ onBeforeUnmount(() => {
                   v-model="searchText"
                   type="text"
                   placeholder="Search logs..."
-                  class="w-full text-xs border border-gray-300 dark:border-gray-600 rounded pl-9 pr-3 py-1.5 bg-white dark:bg-gray-800 dark:text-gray-200 dark:placeholder-gray-500 hover:border-gray-400 dark:hover:border-gray-500 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-1 focus:ring-blue-500 dark:focus:ring-blue-400 transition-colors"
+                  class="ui-accent-focus ui-surface-raised ui-border-default w-full rounded border pl-9 pr-3 py-1.5 text-xs transition-colors hover:border-gray-400 dark:text-gray-200 dark:placeholder-gray-500 dark:hover:border-gray-500"
                 />
               </div>
 
@@ -716,7 +716,7 @@ onBeforeUnmount(() => {
                 v-if="canOpenLogsFolder"
                 v-tooltip="systemStatusMeta.join('\n')"
                 type="button"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-200"
+                class="ui-surface-raised ui-border-default inline-flex items-center gap-1.5 rounded border px-3 py-1.5 text-xs text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] dark:text-gray-200"
                 @click="openLogsFolder()"
               >
                 <FolderOpen class="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
@@ -727,7 +727,7 @@ onBeforeUnmount(() => {
               <button
                 v-tooltip="`Copy ${logsWithContent.length} visible logs to clipboard (C)`"
                 type="button"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-200"
+                class="ui-surface-raised ui-border-default inline-flex items-center gap-1.5 rounded border px-3 py-1.5 text-xs text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] dark:text-gray-200"
                 @click="copyAllLogs"
               >
                 <ClipboardCopy class="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
@@ -751,7 +751,7 @@ onBeforeUnmount(() => {
             <!-- SQL Console View -->
             <div
               v-if="selectedView === 'sql'"
-              class="h-full bg-white dark:bg-gray-850"
+              class="ui-surface-raised h-full"
               :style="{ height: `calc(${panelHeight} - ${CONTENT_HEIGHT_OFFSET}px)` }"
             >
               <SqlConsoleView />
@@ -760,12 +760,12 @@ onBeforeUnmount(() => {
             <!-- System Logs View -->
             <div
               v-else
-              class="flex flex-col h-full bg-white dark:bg-gray-850"
+              class="ui-surface-raised flex h-full flex-col"
               :style="{ height: `calc(${panelHeight} - ${CONTENT_HEIGHT_OFFSET}px)` }"
             >
               <!-- Stream Tabs Bar -->
               <div
-                class="bg-white dark:bg-gray-850 border-b border-gray-200 dark:border-gray-700 px-4 py-2 shadow-sm overflow-x-auto shrink-0"
+                class="ui-surface-raised ui-border-default shrink-0 overflow-x-auto border-b px-4 py-2 shadow-sm"
               >
                 <div class="flex items-center gap-2">
                   <!-- Tabs Container -->
@@ -777,15 +777,15 @@ onBeforeUnmount(() => {
                       class="flex items-center gap-2 px-3 py-1.5 text-xs rounded transition-colors whitespace-nowrap"
                       :class="[
                         selectedSystemLogTabId === tabId
-                          ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700'
-                          : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                          ? 'ui-accent-selection-checked ui-accent-text border'
+                          : 'ui-surface-raised ui-border-default text-gray-600 dark:text-gray-300 border hover:[background-color:var(--ui-surface-muted)]'
                       ]"
                       @click="selectedSystemLogTabId = tabId"
                     >
                       <span class="font-medium">{{ tab.label }}</span>
                       <!-- Log count badge -->
                       <span
-                        class="text-xs bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 px-1.5 py-0.5 rounded"
+                        class="ui-chip-muted rounded px-1.5 py-0.5 text-xs text-gray-700 dark:text-gray-200"
                       >
                         {{ getTabLogCount(tabId, tab) }}
                       </span>
@@ -793,11 +793,11 @@ onBeforeUnmount(() => {
                       <button
                         v-if="tabId !== 'general'"
                         v-tooltip="'Close tab'"
-                        class="flex items-center justify-center w-4 h-4 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors ml-1"
+                        class="ml-1 flex h-4 w-4 items-center justify-center rounded transition-colors hover:[background-color:var(--ui-surface-muted)]"
                         :class="[
                           selectedSystemLogTabId === tabId
-                            ? 'hover:bg-blue-200 dark:hover:bg-blue-800'
-                            : 'hover:bg-gray-200 dark:hover:bg-gray-600'
+                            ? 'hover:[background-color:var(--ui-accent-soft-bg-strong)]'
+                            : 'hover:[background-color:var(--ui-surface-muted)]'
                         ]"
                         @click.stop="store.removeSystemLogTab(tabId)"
                       >

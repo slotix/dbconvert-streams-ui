@@ -117,14 +117,14 @@ defineExpose({
       v-if="showClear"
       type="button"
       aria-label="Clear search"
-      class="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus-visible:bg-gray-100 focus-visible:text-gray-700 dark:text-gray-500 dark:hover:bg-gray-800 dark:hover:text-gray-300 dark:focus-visible:bg-gray-800 dark:focus-visible:text-gray-200"
+      class="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-gray-400 hover:bg-[var(--ui-surface-muted)] hover:text-gray-600 focus:outline-none focus-visible:bg-[var(--ui-surface-muted)] focus-visible:text-gray-700 dark:text-gray-500 dark:hover:text-gray-300 dark:focus-visible:text-gray-200"
       @click="clear"
     >
       <X :class="iconClass" />
     </button>
     <span
       v-if="showTrailingBadge"
-      class="pointer-events-none absolute right-7 top-1/2 -translate-y-1/2 rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium leading-none text-gray-600 dark:bg-gray-800 dark:text-gray-300"
+      class="ui-chip-muted pointer-events-none absolute right-7 top-1/2 -translate-y-1/2 rounded px-1.5 py-0.5 text-[10px] font-medium leading-none"
     >
       {{ trailingBadgeText }}
     </span>
@@ -133,7 +133,7 @@ defineExpose({
       v-model="local"
       type="text"
       :placeholder="props.placeholder || 'Filter...'"
-      class="w-full rounded border border-gray-300 bg-white pl-8 pr-8 text-gray-900 placeholder-gray-400 focus:border-slate-400 focus:bg-slate-50 focus:outline-none dark:border-gray-700 dark:bg-gray-850 dark:text-gray-100 dark:placeholder-gray-500 dark:focus:border-gray-500 dark:focus:bg-gray-800"
+      class="ui-surface-raised ui-border-default ui-accent-focus w-full rounded border pl-8 pr-8 text-gray-900 placeholder-gray-400 focus:outline-none dark:text-gray-100 dark:placeholder-gray-500"
       :class="[sizes[props.size || 'sm'], inputRightPaddingClass]"
       @keydown="handleKeydown"
     />

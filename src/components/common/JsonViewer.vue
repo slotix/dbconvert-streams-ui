@@ -31,19 +31,15 @@ const jsonString = computed(() => {
 </script>
 
 <template>
-  <div
-    class="rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-gray-900/30"
-  >
-    <div
-      class="flex items-center justify-between px-4 py-2 bg-gray-100 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700"
-    >
+  <div class="ui-surface-raised rounded-lg overflow-hidden border">
+    <div class="ui-surface-toolbar flex items-center justify-between border-b px-4 py-2">
       <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
         {{ title }}
       </span>
       <CopyButton :text="jsonString" />
     </div>
 
-    <div class="bg-white dark:bg-gray-900">
+    <div class="ui-surface-raised">
       <JsonCodeMirror :model-value="jsonString" :height="height" read-only :resizable="false" />
     </div>
   </div>

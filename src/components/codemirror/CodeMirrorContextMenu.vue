@@ -97,7 +97,7 @@ const menuSections = computed<MenuItem[][]>(() => {
   return sections.filter((section) => section.length > 0)
 })
 const itemButtonClass =
-  'w-full text-left text-gray-700 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-400 dark:text-gray-200 dark:hover:bg-gray-800 dark:disabled:text-gray-500'
+  'w-full text-left text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] disabled:cursor-not-allowed disabled:text-gray-400 dark:text-gray-200 dark:disabled:text-gray-500'
 
 function closeMenu() {
   emit('close')
@@ -142,7 +142,7 @@ onUnmounted(() => {
 <template>
   <div
     ref="menuRef"
-    class="fixed z-1200 border border-gray-300 bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-gray-850 dark:shadow-gray-900/50"
+    class="ui-surface-floating ui-border-default fixed z-1200 border py-1"
     role="menu"
     :style="menuStyle"
     @click.stop
@@ -162,7 +162,7 @@ onUnmounted(() => {
       </button>
       <div
         v-if="sectionIndex < menuSections.length - 1"
-        class="my-1 border-t border-gray-200 dark:border-gray-700"
+        class="ui-border-default my-1 border-t"
         :style="sectionDividerStyle"
       ></div>
     </template>

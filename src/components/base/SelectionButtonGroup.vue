@@ -106,7 +106,7 @@ const activeDescription = computed(() => {
           :class="[
             checked
               ? 'ui-accent-selection-checked'
-              : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700',
+              : 'ui-surface-raised ui-border-default hover:[background-color:var(--ui-surface-muted)]',
             active && !checked ? 'ui-accent-selection-active' : '',
             'relative flex items-start cursor-pointer rounded-lg border p-3 transition-all duration-150 focus:outline-none focus-visible:outline-none flex-1',
             (disabled || option.disabled) && 'opacity-60 cursor-not-allowed'
@@ -116,7 +116,7 @@ const activeDescription = computed(() => {
             <input
               :checked="checked"
               type="radio"
-              class="ui-accent-icon h-4 w-4 border-gray-300 bg-white dark:border-gray-500 dark:bg-gray-700 focus:outline-none"
+              class="ui-accent-icon ui-surface-raised ui-border-default h-4 w-4 border focus:outline-none"
             />
           </div>
           <div class="ml-3 flex-1">

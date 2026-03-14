@@ -73,12 +73,12 @@ const bodyClass = computed(() => ({
               leave-to="translate-x-full"
             >
               <DialogPanel
-                class="pointer-events-auto w-screen bg-white dark:bg-gray-850 shadow-2xl dark:shadow-gray-900/50 border-l border-gray-200 dark:border-gray-700"
+                class="ui-surface-floating ui-border-default pointer-events-auto w-screen border-l"
                 :class="panelWidthClass"
               >
                 <div class="h-full flex flex-col">
                   <div
-                    class="px-4 py-4 border-b border-gray-200 dark:border-gray-700 flex items-start justify-between"
+                    class="ui-border-default flex items-start justify-between border-b px-4 py-4"
                   >
                     <div class="min-w-0">
                       <DialogTitle class="text-sm font-semibold text-gray-900 dark:text-gray-100">
@@ -104,7 +104,7 @@ const bodyClass = computed(() => ({
 
                   <div
                     v-if="hasFooter"
-                    class="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex items-center gap-2"
+                    class="ui-border-default flex items-center gap-2 border-t px-4 py-3"
                   >
                     <slot name="footer" />
                   </div>

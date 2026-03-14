@@ -15,7 +15,7 @@
       <!-- Tab-based Data Source Selector -->
       <div
         v-if="!isFileSourceConnection"
-        class="shrink-0 flex items-center gap-2 mb-4 border-b border-gray-200 dark:border-gray-700"
+        class="mb-4 flex shrink-0 items-center gap-2 border-b ui-border-default"
       >
         <!-- Tables Tab -->
         <button
@@ -125,7 +125,7 @@
               <div
                 v-for="fileConn in fileSourceConnections"
                 :key="fileConn.connectionId"
-                class="border-t first:border-t-0 border-gray-200 dark:border-gray-700"
+                class="border-t first:border-t-0 ui-border-default"
               >
                 <template v-if="isS3Type(fileConn.connectionId)">
                   <div
@@ -150,7 +150,7 @@
                       :icon="Cloud"
                       icon-class="text-sky-500/80 dark:text-sky-400/80"
                       sticky
-                      class="rounded-none border-x-0 border-t-0 border-b border-b-gray-200/70 dark:border-b-gray-700/70"
+                      class="ui-border-default rounded-none border-x-0 border-t-0 border-b"
                     >
                       <template v-if="showPerGroupFileActions" #actions>
                         <SourceHeaderActions
@@ -179,7 +179,7 @@
                     :icon="FolderOpen"
                     icon-class="text-sky-500/80 dark:text-sky-400/80"
                     sticky
-                    class="rounded-none border-x-0 border-t-0 border-b border-b-gray-200/70 dark:border-b-gray-700/70"
+                    class="ui-border-default rounded-none border-x-0 border-t-0 border-b"
                   >
                     <template v-if="showPerGroupFileActions" #actions>
                       <SourceHeaderActions
@@ -218,10 +218,7 @@
     </div>
 
     <!-- Structure Options Section - Only show for database targets -->
-    <div
-      v-if="isTargetDatabase"
-      class="shrink-0 border-t border-gray-200/70 dark:border-gray-700/70 bg-white dark:bg-gray-900 pt-3"
-    >
+    <div v-if="isTargetDatabase" class="ui-surface-panel ui-border-default shrink-0 border-t pt-3">
       <!-- Warning when nothing is selected -->
       <div
         v-if="!anyStructureEnabled && !copyData"
@@ -250,16 +247,14 @@
 
       <div class="grid grid-cols-2 gap-4 overflow-visible">
         <!-- Create Structure Column -->
-        <div
-          class="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-850 p-4 overflow-visible"
-        >
+        <div class="ui-surface-muted ui-border-default overflow-visible rounded-lg border p-4">
           <!-- Checkbox Header -->
           <div class="flex items-center gap-2.5">
             <input
               id="create-structure"
               v-model="createStructure"
               type="checkbox"
-              class="ui-accent-icon h-4 w-4 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
+              class="ui-surface-raised ui-border-default ui-accent-icon h-4 w-4 rounded"
               @change="handleStructureToggle"
             />
             <label
@@ -304,10 +299,7 @@
                 <span class="font-medium">Advanced options</span>
               </button>
 
-              <div
-                v-if="showAdvanced"
-                class="mt-2 pl-4 space-y-2 border-l-2 border-gray-200 dark:border-gray-700"
-              >
+              <div v-if="showAdvanced" class="mt-2 space-y-2 border-l-2 pl-4 ui-border-default">
                 <label
                   class="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300 cursor-pointer"
                 >
@@ -315,7 +307,7 @@
                     id="create-tables"
                     v-model="createTables"
                     type="checkbox"
-                    class="ui-accent-icon h-3.5 w-3.5 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
+                    class="ui-surface-raised ui-border-default ui-accent-icon h-3.5 w-3.5 rounded"
                     :disabled="isFileSourceConnection"
                     @change="handleOptionsChange"
                   />
@@ -328,7 +320,7 @@
                     id="create-indexes"
                     v-model="createIndexes"
                     type="checkbox"
-                    class="ui-accent-icon h-3.5 w-3.5 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
+                    class="ui-surface-raised ui-border-default ui-accent-icon h-3.5 w-3.5 rounded"
                     :disabled="isFileSourceConnection"
                     @change="handleOptionsChange"
                   />
@@ -341,7 +333,7 @@
                     id="create-foreign-keys"
                     v-model="createForeignKeys"
                     type="checkbox"
-                    class="ui-accent-icon h-3.5 w-3.5 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
+                    class="ui-surface-raised ui-border-default ui-accent-icon h-3.5 w-3.5 rounded"
                     :disabled="isFileSourceConnection"
                     @change="handleOptionsChange"
                   />
@@ -354,7 +346,7 @@
                     id="create-check-constraints"
                     v-model="createCheckConstraints"
                     type="checkbox"
-                    class="ui-accent-icon h-3.5 w-3.5 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
+                    class="ui-surface-raised ui-border-default ui-accent-icon h-3.5 w-3.5 rounded"
                     :disabled="isFileSourceConnection"
                     @change="handleOptionsChange"
                   />
@@ -364,10 +356,7 @@
             </div>
 
             <!-- Schema Policy -->
-            <div
-              v-if="isPolicySupportedTarget"
-              class="pt-2 border-t border-gray-200/60 dark:border-gray-700/60"
-            >
+            <div v-if="isPolicySupportedTarget" class="border-t pt-2 ui-border-default">
               <FormSelect
                 :model-value="schemaPolicy"
                 label="Schema policy"
@@ -393,16 +382,14 @@
         </div>
 
         <!-- Copy Data Column -->
-        <div
-          class="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-850 p-4 overflow-visible"
-        >
+        <div class="ui-surface-muted ui-border-default overflow-visible rounded-lg border p-4">
           <!-- Checkbox Header -->
           <div class="flex items-center gap-2.5">
             <input
               id="copy-data"
               v-model="copyData"
               type="checkbox"
-              class="ui-accent-icon h-4 w-4 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
+              class="ui-surface-raised ui-border-default ui-accent-icon h-4 w-4 rounded"
               @change="handleOptionsChange"
             />
             <label
@@ -416,10 +403,7 @@
           <!-- Content area -->
           <div class="mt-3">
             <!-- Write Mode -->
-            <div
-              v-if="isPolicySupportedTarget"
-              class="pt-2 border-t border-gray-200/60 dark:border-gray-700/60"
-            >
+            <div v-if="isPolicySupportedTarget" class="border-t pt-2 ui-border-default">
               <FormSelect
                 :model-value="writeMode"
                 label="Write mode"
@@ -706,7 +690,7 @@ const showPerGroupFileActions = computed(
 const showCombinedObjectsToolbar = computed(() => hasBrowsableFileSourceGroups.value)
 const sourceObjectsContainerClass = computed(() =>
   showCombinedObjectsToolbar.value
-    ? 'flex-1 min-h-0 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-850 overflow-hidden'
+    ? 'ui-surface-raised ui-border-default flex-1 min-h-0 rounded-lg border overflow-hidden'
     : 'flex-1 min-h-0 overflow-hidden'
 )
 

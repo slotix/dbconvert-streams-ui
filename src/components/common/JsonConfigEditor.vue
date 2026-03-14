@@ -16,21 +16,21 @@
       <div v-show="!isCollapsed" class="flex items-center gap-2">
         <button
           v-tooltip="'Find in configuration (Ctrl+F)'"
-          class="p-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          class="rounded-md p-1.5 text-gray-500 transition-colors hover:text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-400 dark:hover:text-gray-200"
           @click="openSearch"
         >
           <Search class="h-4 w-4" />
         </button>
         <button
           v-tooltip="'Copy configuration'"
-          class="p-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          class="rounded-md p-1.5 text-gray-500 transition-colors hover:text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-400 dark:hover:text-gray-200"
           @click="copyConfig"
         >
           <Clipboard class="h-4 w-4" />
         </button>
         <button
           v-tooltip="'Revert changes'"
-          class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors"
+          class="ui-surface-muted ui-border-default inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:text-gray-800 hover:[background-color:var(--ui-surface-inset)] dark:text-gray-300 dark:hover:text-white"
           :disabled="!isDirty"
           :class="{ 'opacity-50 cursor-not-allowed': !isDirty }"
           @click="handleRevert"
@@ -40,7 +40,7 @@
         </button>
         <button
           v-tooltip="'Format JSON (Ctrl+Shift+F)'"
-          class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors"
+          class="ui-surface-muted ui-border-default inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:text-gray-800 hover:[background-color:var(--ui-surface-inset)] dark:text-gray-300 dark:hover:text-white"
           @click="formatJson"
         >
           <Code class="h-4 w-4" />
@@ -69,7 +69,7 @@
 
     <div
       v-show="!isCollapsed"
-      class="rounded-lg border overflow-hidden transition-colors border-gray-300 dark:border-gray-700"
+      class="ui-border-default overflow-hidden rounded-lg border transition-colors"
     >
       <JsonCodeMirror
         ref="editorRef"

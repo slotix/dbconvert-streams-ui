@@ -130,14 +130,14 @@ function getDataQualityHints(col: ColumnSummary): SummaryHint[] {
   if (col.count > 0 && col.approxUnique <= 1) {
     hints.push({
       label: 'Constant',
-      className: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+      className: 'ui-chip-muted',
       title: 'Single distinct value'
     })
   }
   if (isAtMaxLength(col)) {
     hints.push({
       label: 'Max length',
-      className: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+      className: 'ui-chip-muted',
       title: 'Values always at declared max length'
     })
   }
@@ -164,13 +164,13 @@ function getCardinalityIndicator(col: ColumnSummary): string {
 function getCardinalityClass(indicator: string): string {
   switch (indicator) {
     case 'unique':
-      return 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+      return 'ui-chip-muted'
     case 'low':
-      return 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+      return 'ui-chip-muted'
     case 'empty':
-      return 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+      return 'ui-chip-muted'
     default:
-      return 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'
+      return 'ui-chip-muted'
   }
 }
 
@@ -200,7 +200,7 @@ function getCardinalityLabel(indicator: string): string {
 
     <button
       type="button"
-      class="mt-4 inline-flex items-center rounded-md bg-white dark:bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 shadow-sm dark:shadow-gray-900/30 border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+      class="ui-surface-raised ui-border-default ui-accent-action mt-4 inline-flex items-center rounded-md border px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm transition-colors dark:text-gray-300 dark:shadow-gray-900/30"
       @click="emit('cancel')"
     >
       Cancel
@@ -233,7 +233,7 @@ function getCardinalityLabel(indicator: string): string {
   <div v-else-if="summary" class="space-y-6">
     <!-- Overview Cards -->
     <div class="flex flex-wrap gap-3">
-      <div class="flex-1 min-w-[110px] rounded-lg bg-gray-50 dark:bg-gray-800/50 p-3">
+      <div class="ui-surface-muted ui-border-muted flex-1 min-w-[110px] rounded-lg border p-3">
         <div
           class="flex items-center gap-1.5 text-gray-500 dark:text-gray-400 text-[11px] font-medium uppercase tracking-wide"
         >
@@ -250,7 +250,7 @@ function getCardinalityLabel(indicator: string): string {
           {{ summary.samplePercent }}% sample
         </div>
       </div>
-      <div class="flex-1 min-w-[90px] rounded-lg bg-gray-50 dark:bg-gray-800/50 p-3">
+      <div class="ui-surface-muted ui-border-muted flex-1 min-w-[90px] rounded-lg border p-3">
         <div
           class="flex items-center gap-1.5 text-gray-500 dark:text-gray-400 text-[11px] font-medium uppercase tracking-wide"
         >
@@ -261,7 +261,7 @@ function getCardinalityLabel(indicator: string): string {
           {{ summary.columnCount }}
         </div>
       </div>
-      <div class="flex-1 min-w-20 rounded-lg bg-gray-50 dark:bg-gray-800/50 p-3">
+      <div class="ui-surface-muted ui-border-muted flex-1 min-w-20 rounded-lg border p-3">
         <div
           class="text-gray-500 dark:text-gray-400 text-[11px] font-medium uppercase tracking-wide truncate"
         >
@@ -278,10 +278,10 @@ function getCardinalityLabel(indicator: string): string {
     </div>
 
     <!-- Column Statistics Table -->
-    <div class="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+    <div class="ui-surface-raised ui-border-default overflow-hidden rounded-lg border">
       <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-          <thead class="bg-gray-50 dark:bg-gray-800">
+        <table class="min-w-full divide-y [border-color:var(--ui-border-default)]">
+          <thead class="ui-surface-toolbar">
             <tr>
               <th
                 scope="col"
@@ -327,11 +327,11 @@ function getCardinalityLabel(indicator: string): string {
               </th>
             </tr>
           </thead>
-          <tbody class="bg-white dark:bg-gray-850 divide-y divide-gray-200 dark:divide-gray-700">
+          <tbody class="ui-surface-raised divide-y [border-color:var(--ui-border-default)]">
             <tr
               v-for="col in summary.columns"
               :key="col.name"
-              class="hover:bg-gray-50 dark:hover:bg-gray-800/50"
+              class="hover:bg-[var(--ui-surface-muted)]"
             >
               <td class="px-4 py-3 whitespace-nowrap">
                 <div class="flex flex-col gap-1">
@@ -416,7 +416,7 @@ function getCardinalityLabel(indicator: string): string {
         <div
           v-for="col in summary.columns.filter((c) => isNumericColumn(c) && c.q25 != null)"
           :key="`dist-${col.name}`"
-          class="rounded-lg border border-gray-200 dark:border-gray-700 p-3"
+          class="ui-surface-raised ui-border-default rounded-lg border p-3"
         >
           <h4
             v-tooltip="col.name"

@@ -28,14 +28,14 @@ const statusClass = computed(() => {
     case STATUS.FAILED:
       return 'bg-red-50 text-red-700 ring-red-600/20 dark:bg-red-900/30 dark:text-red-200 dark:ring-red-500/40'
     case STATUS.STOPPED:
-      return 'bg-gray-100 text-gray-700 ring-gray-600/20 dark:bg-gray-800 dark:text-gray-200 dark:ring-gray-500/40'
+      return 'ui-chip-muted'
     case STATUS.PAUSED:
       return 'bg-cyan-50 text-cyan-700 ring-cyan-600/20 dark:bg-cyan-900/30 dark:text-cyan-200 dark:ring-cyan-500/40'
     case STATUS.TIME_LIMIT_REACHED:
     case STATUS.EVENT_LIMIT_REACHED:
       return 'bg-purple-50 text-purple-700 ring-purple-600/20 dark:bg-purple-900/30 dark:text-purple-200 dark:ring-purple-500/40'
     default:
-      return 'bg-gray-50 text-gray-700 ring-gray-600/20 dark:bg-gray-900/30 dark:text-gray-200 dark:ring-gray-500/40'
+      return 'ui-chip-muted'
   }
 })
 
@@ -49,14 +49,14 @@ const dotClass = computed(() => {
     case STATUS.FAILED:
       return 'bg-red-500'
     case STATUS.STOPPED:
-      return 'bg-gray-600 dark:bg-gray-400'
+      return '[background-color:var(--ui-text-muted)]'
     case STATUS.PAUSED:
       return 'bg-cyan-500'
     case STATUS.TIME_LIMIT_REACHED:
     case STATUS.EVENT_LIMIT_REACHED:
       return 'bg-purple-500'
     default:
-      return 'bg-gray-500'
+      return '[background-color:var(--ui-text-muted)]'
   }
 })
 

@@ -58,7 +58,7 @@ const eventDisplay = computed(() => (eventValue.value ? eventValue.value.toUpper
             'inline-flex items-center gap-2 rounded-md border px-2 py-1 text-xs font-medium',
             hasTiming
               ? 'ui-chip-muted'
-              : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400'
+              : 'ui-surface-muted ui-border-default text-gray-500 dark:text-gray-400'
           ]"
         >
           <span class="text-[10px] uppercase tracking-wide">Timing</span>
@@ -71,7 +71,7 @@ const eventDisplay = computed(() => (eventValue.value ? eventValue.value.toUpper
             'inline-flex items-center gap-2 rounded-md border px-2 py-1 text-xs font-medium',
             hasEvent
               ? 'border-blue-200 dark:border-blue-500/40 bg-blue-50/60 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
-              : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400'
+              : 'ui-surface-muted ui-border-default text-gray-500 dark:text-gray-400'
           ]"
         >
           <span class="text-[10px] uppercase tracking-wide">Event</span>

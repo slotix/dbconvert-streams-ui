@@ -1,6 +1,6 @@
 <template>
   <div
-    class="sql-query-tabs bg-gray-100 dark:bg-gray-850 border-b border-gray-200 dark:border-gray-700 flex items-center overflow-x-auto scrollbar-thin min-h-[44px] py-1"
+    class="sql-query-tabs ui-surface-toolbar ui-border-default flex min-h-[44px] items-center overflow-x-auto border-b py-1 scrollbar-thin"
   >
     <!-- Query Tabs with drag support -->
     <template v-for="(tab, index) in tabs" :key="tab.id">
@@ -11,11 +11,11 @@
       />
       <div
         :draggable="renamingTabId !== tab.id"
-        class="group flex items-center gap-1 px-3 py-2 border-r border-gray-200 dark:border-gray-700 cursor-pointer text-xs transition-colors min-w-0 shrink-0"
+        class="group ui-border-default flex min-w-0 shrink-0 cursor-pointer items-center gap-1 border-r px-3 py-2 text-xs transition-colors"
         :class="[
           tab.id === activeTabId
             ? 'ui-tab-active text-gray-900 dark:text-gray-100'
-            : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800',
+            : 'text-gray-600 dark:text-gray-400 hover:[background-color:var(--ui-surface-muted)]',
           dragState.isDragging && dragState.draggedIndex === index && 'opacity-50'
         ]"
         @click="$emit('select', tab.id)"
@@ -33,7 +33,7 @@
           ref="renameInputRef"
           v-model="renameValue"
           type="text"
-          class="ui-accent-focus w-24 px-1 py-0 text-xs bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded focus:outline-none"
+          class="ui-surface-raised ui-border-default ui-accent-focus w-24 rounded border px-1 py-0 text-xs focus:outline-none"
           @blur="finishRename"
           @keydown.enter="finishRename"
           @keydown.escape="cancelRename"
@@ -41,7 +41,7 @@
         />
         <button
           v-if="tabs.length > 1 && renamingTabId !== tab.id"
-          class="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-opacity"
+          class="rounded p-0.5 opacity-0 transition-opacity group-hover:opacity-100 hover:[background-color:var(--ui-surface-muted)]"
           title="Close tab"
           @click.stop="$emit('close', tab.id)"
         >
@@ -65,7 +65,7 @@
     <!-- Close All Tabs Button -->
     <button
       v-if="tabs.length > 1"
-      class="shrink-0 px-2 py-2 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ml-auto"
+      class="ml-auto shrink-0 px-2 py-2 text-gray-500 transition-colors hover:bg-[var(--ui-surface-muted)] hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400"
       title="Close All Tabs"
       @click="$emit('closeAll')"
     >
@@ -77,36 +77,36 @@
       <div
         v-if="contextMenu.visible"
         ref="contextMenuRef"
-        class="fixed z-50 bg-white dark:bg-gray-850 shadow-lg dark:shadow-gray-900/30 border border-gray-200 dark:border-gray-700 rounded-md py-1 min-w-40"
+        class="ui-surface-floating ui-border-default fixed z-50 min-w-40 rounded-md border py-1"
         :style="{ left: `${contextMenu.x}px`, top: `${contextMenu.y}px` }"
       >
         <button
-          class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+          class="w-full px-3 py-2 text-left text-sm text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
           @click="handleContextMenuAction('close')"
         >
           Close
         </button>
         <button
           v-if="tabs.length > 1"
-          class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+          class="w-full px-3 py-2 text-left text-sm text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
           @click="handleContextMenuAction('close-others')"
         >
           Close Others
         </button>
         <button
           v-if="tabs.length > 1"
-          class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+          class="w-full px-3 py-2 text-left text-sm text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
           @click="handleContextMenuAction('close-all')"
         >
           Close All
         </button>
-        <div class="border-t border-gray-100 dark:border-gray-700 my-1" />
+        <div class="ui-border-default my-1 border-t" />
         <button
           :disabled="!canReopenTab"
           :class="[
-            'w-full text-left px-3 py-2 text-sm flex items-center justify-between',
+            'flex w-full items-center justify-between px-3 py-2 text-left text-sm',
             canReopenTab
-              ? 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+              ? 'text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300'
               : 'text-gray-400 dark:text-gray-500 cursor-not-allowed'
           ]"
           @click="handleReopenClosedTab"

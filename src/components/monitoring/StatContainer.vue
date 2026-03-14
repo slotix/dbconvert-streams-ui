@@ -13,7 +13,7 @@
 
   <!-- Source and Target Stats -->
   <div
-    class="grid grid-cols-1 divide-y divide-gray-200 dark:divide-gray-700 overflow-hidden rounded-md border border-gray-200 bg-white/80 dark:border-gray-700 dark:bg-gray-900/40 lg:grid-cols-2 lg:divide-x lg:divide-y-0"
+    class="ui-surface-raised ui-border-default grid grid-cols-1 divide-y overflow-hidden rounded-md border [border-color:var(--ui-border-default)] lg:grid-cols-2 lg:divide-x lg:divide-y-0"
   >
     <!-- Source Stats - Blue Theme -->
     <div class="flex flex-col">
@@ -22,7 +22,7 @@
           'px-3 py-2 border-b border-l-2',
           isRunning
             ? 'bg-blue-50/60 border-blue-300/70 dark:bg-blue-900/10 dark:border-blue-500/40'
-            : 'bg-gray-50/70 border-gray-200 dark:bg-gray-900/40 dark:border-gray-700'
+            : 'ui-surface-muted ui-border-default'
         ]"
       >
         <div class="flex items-center justify-between gap-3 sm:gap-4">
@@ -55,7 +55,7 @@
             <StatusBadge v-if="sourceStats" :status="sourceBadgeStatus" />
             <div
               v-else
-              class="px-3 py-1.5 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 text-xs font-medium rounded-full border border-gray-300 dark:border-gray-700"
+              class="ui-surface-raised ui-border-default rounded-full border px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400"
             >
               Ready
             </div>
@@ -101,7 +101,7 @@
           'px-3 py-2 border-b border-l-2',
           isRunning
             ? 'bg-emerald-50/60 border-emerald-300/70 dark:bg-emerald-900/10 dark:border-emerald-500/40'
-            : 'bg-gray-50/70 border-gray-200 dark:bg-gray-900/40 dark:border-gray-700'
+            : 'ui-surface-muted ui-border-default'
         ]"
       >
         <div class="flex items-center justify-between gap-3 sm:gap-4">
@@ -144,7 +144,7 @@
             <StatusBadge v-if="targetStats" :status="targetBadgeStatus" />
             <div
               v-else
-              class="px-3 py-1.5 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 text-xs font-medium rounded-full border border-gray-300 dark:border-gray-700"
+              class="ui-surface-raised ui-border-default rounded-full border px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400"
             >
               Ready
             </div>

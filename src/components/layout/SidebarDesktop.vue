@@ -1,7 +1,7 @@
 <template>
   <div
     :class="[
-      'hidden lg:fixed lg:top-0 lg:bottom-0 lg:left-0 lg:z-20 lg:block lg:bg-gray-50 dark:lg:bg-gray-900 lg:pb-10 lg:border-r lg:border-gray-200 dark:lg:border-gray-800/80',
+      'ui-surface-app hidden lg:fixed lg:top-0 lg:bottom-0 lg:left-0 lg:z-20 lg:block lg:pb-10 lg:border-r ui-border-default',
       isSidebarExpanded ? 'lg:w-64' : 'lg:w-20'
     ]"
   >
@@ -14,7 +14,7 @@
     >
       <button
         type="button"
-        class="flex items-center justify-center p-1.5 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700"
+        class="flex items-center justify-center rounded-md p-1.5 text-gray-600 transition-colors hover:text-gray-900 hover:[background-color:var(--ui-surface-raised)] dark:text-gray-400 dark:hover:text-white"
         :title="isSidebarExpanded ? 'Collapse sidebar' : 'Expand sidebar'"
         @click="toggleSidebarWidth()"
       >
@@ -33,7 +33,7 @@
       >
         <SidebarNavItems
           :active-class="'ui-nav-active shadow-sm'"
-          :inactive-class="'text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700'"
+          :inactive-class="'text-gray-600 hover:text-gray-900 hover:[background-color:var(--ui-surface-raised)] dark:text-gray-400 dark:hover:text-white'"
           item-class="group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold relative overflow-visible"
           expanded-class="w-full justify-start px-3"
           collapsed-class="justify-center"
@@ -44,11 +44,11 @@
         />
 
         <!-- Logs Button -->
-        <li class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600 overflow-visible">
+        <li class="mt-4 overflow-visible border-t pt-4 ui-border-default">
           <button
             type="button"
             :class="[
-              'group flex items-center p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700 rounded-md relative w-full overflow-visible',
+              'group relative flex w-full items-center overflow-visible rounded-md p-2 text-gray-600 transition-colors hover:text-gray-900 hover:[background-color:var(--ui-surface-raised)] dark:text-gray-400 dark:hover:text-white',
               isSidebarExpanded ? 'justify-start px-3 gap-3' : 'justify-center'
             ]"
             @click="logsStore.toggleLogsPanel"
@@ -73,7 +73,7 @@
               <!-- System logs badge -->
               <span
                 v-if="logsStore.logs.length > 0"
-                class="bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-200 text-xs rounded-full px-1.5 py-0.5 min-w-5 text-center"
+                class="ui-chip-muted min-w-5 rounded-full px-1.5 py-0.5 text-center text-xs"
                 title="System Logs"
               >
                 {{ logsStore.logs.length > 99 ? '99+' : logsStore.logs.length }}
@@ -91,7 +91,7 @@
             <!-- Log count badge (collapsed) - show total -->
             <span
               v-if="!isSidebarExpanded && (logsStore.logs.length > 0 || logsStore.sqlLogsCount > 0)"
-              class="absolute -top-1 -right-1 bg-gray-200 text-gray-700 dark:bg-gray-500 dark:text-white text-xs rounded-full h-5 w-5 flex items-center justify-center"
+              class="ui-chip-muted absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full text-xs"
             >
               {{
                 logsStore.logs.length + logsStore.sqlLogsCount > 99
@@ -115,10 +115,7 @@
 
     <!-- External Links -->
     <div
-      :class="[
-        'fixed bottom-0 left-0 pb-5 bg-gray-50 dark:bg-gray-900',
-        isSidebarExpanded ? 'w-64' : 'w-20'
-      ]"
+      :class="['ui-surface-app fixed bottom-0 left-0 pb-5', isSidebarExpanded ? 'w-64' : 'w-20']"
     >
       <div
         :class="[
@@ -130,7 +127,7 @@
         <RouterLink
           to="/"
           :class="[
-            'group flex items-center p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700 rounded-md relative',
+            'group relative flex items-center rounded-md p-2 text-gray-600 transition-colors hover:text-gray-900 hover:[background-color:var(--ui-surface-raised)] dark:text-gray-400 dark:hover:text-white',
             isSidebarExpanded ? 'justify-start gap-3 px-3 w-full' : 'justify-center'
           ]"
         >
@@ -154,7 +151,7 @@
           <button
             type="button"
             :class="[
-              'group flex items-center p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700 relative',
+              'group relative flex items-center rounded-md p-2 text-gray-600 transition-colors hover:text-gray-900 hover:[background-color:var(--ui-surface-raised)] dark:text-gray-400 dark:hover:text-white',
               isSidebarExpanded ? 'justify-start gap-3 px-3 w-full' : 'justify-center'
             ]"
             @click="toggleSettings"
@@ -176,13 +173,13 @@
           </button>
           <div
             v-if="settingsOpen"
-            class="absolute bottom-0 left-full z-9999 ml-2 w-72 rounded-lg bg-white p-3 shadow-lg ring-1 ring-black/10 dark:bg-gray-800 dark:ring-gray-700"
+            class="ui-surface-floating absolute bottom-0 left-full z-9999 ml-2 w-72 rounded-lg border p-3"
           >
             <div class="flex items-center justify-between">
               <span class="text-sm font-medium text-gray-700 dark:text-gray-200">Theme</span>
               <button
                 type="button"
-                class="inline-flex items-center gap-2 rounded-md px-2 py-1 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white"
+                class="inline-flex items-center gap-2 rounded-md px-2 py-1 text-sm font-medium text-gray-600 transition-colors hover:text-gray-900 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300 dark:hover:text-white"
                 title="Toggle theme"
                 @click="themeStore.toggleTheme"
               >
@@ -218,7 +215,7 @@
                   />
                   <div
                     v-if="isZoomActive"
-                    class="absolute -top-6 -translate-x-1/2 rounded bg-white px-2 py-0.5 text-[11px] font-medium text-gray-700 shadow dark:bg-gray-900 dark:text-gray-200"
+                    class="ui-surface-floating absolute -top-6 -translate-x-1/2 rounded border px-2 py-0.5 text-[11px] font-medium text-gray-700 dark:text-gray-200"
                     :style="zoomTooltipStyle"
                   >
                     {{ zoomPendingPercent }}
@@ -232,7 +229,7 @@
                 </div>
                 <button
                   type="button"
-                  class="rounded-md px-2 py-1 text-xs font-medium hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-gray-700"
+                  class="rounded-md px-2 py-1 text-xs font-medium transition-colors hover:[background-color:var(--ui-surface-muted)] disabled:cursor-not-allowed disabled:opacity-40"
                   title="Reset zoom"
                   :disabled="isZoomDefault"
                   @click="resetZoom"
@@ -241,14 +238,14 @@
                 </button>
               </div>
             </div>
-            <div class="mt-4 border-t border-gray-200 pt-3 dark:border-gray-700">
-              <div class="grid grid-cols-2 gap-1 rounded-md bg-gray-100/70 p-1 dark:bg-gray-900/70">
+            <div class="mt-4 border-t pt-3 ui-border-default">
+              <div class="ui-surface-muted grid grid-cols-2 gap-1 rounded-md border p-1">
                 <button
                   type="button"
                   :class="[
                     'rounded-md px-2 py-1.5 text-xs font-medium transition-colors',
                     settingsTab === 'logging'
-                      ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-700 dark:text-white'
+                      ? 'ui-surface-raised ui-border-default border text-gray-900 shadow-sm dark:text-white'
                       : 'text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white'
                   ]"
                   @click="settingsTab = 'logging'"
@@ -260,7 +257,7 @@
                   :class="[
                     'rounded-md px-2 py-1.5 text-xs font-medium transition-colors',
                     settingsTab === 'system'
-                      ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-700 dark:text-white'
+                      ? 'ui-surface-raised ui-border-default border text-gray-900 shadow-sm dark:text-white'
                       : 'text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white'
                   ]"
                   @click="settingsTab = 'system'"
@@ -278,7 +275,7 @@
               </div>
 
               <div v-if="settingsTab === 'logging'" class="mt-3 space-y-3">
-                <div class="space-y-2 rounded-md bg-gray-50/70 p-2 dark:bg-gray-900/60">
+                <div class="ui-surface-muted space-y-2 rounded-md border p-2">
                   <div class="flex items-center justify-between">
                     <div class="text-xs font-medium text-gray-600 dark:text-gray-300">
                       SQL Capture Level
@@ -310,9 +307,7 @@
                   </div>
                 </div>
 
-                <div
-                  class="space-y-2 rounded-md border border-gray-200/70 bg-white/70 p-2 dark:border-gray-700/80 dark:bg-gray-900/50"
-                >
+                <div class="ui-surface-raised ui-border-default space-y-2 rounded-md border p-2">
                   <div class="text-[11px] font-medium uppercase tracking-wide text-gray-500">
                     Logs Folder
                   </div>
@@ -332,7 +327,7 @@
                   <button
                     v-if="canOpenLogsFolder"
                     type="button"
-                    class="inline-flex items-center gap-2 rounded-md bg-gray-100 px-2.5 py-1 text-[11px] font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                    class="ui-surface-raised ui-border-default inline-flex items-center gap-2 rounded-md border px-2.5 py-1 text-[11px] font-medium text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] dark:text-gray-200"
                     @click="openLogsFolder"
                   >
                     Open Logs Folder
@@ -353,10 +348,7 @@
                 </div>
               </div>
 
-              <div
-                v-else
-                class="mt-3 rounded-lg border border-gray-200/60 bg-white/70 p-3 shadow-sm dark:border-gray-700/80 dark:bg-gray-900/60"
-              >
+              <div v-else class="ui-surface-raised mt-3 rounded-lg border p-3 shadow-sm">
                 <div class="max-h-[45vh] overflow-y-auto">
                   <SystemStatusPanel
                     compact
@@ -374,7 +366,7 @@
         <SidebarExternalLinks
           :link-class="
             [
-              'group flex items-center p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700 rounded-md relative',
+              'group relative flex items-center rounded-md p-2 text-gray-600 transition-colors hover:text-gray-900 hover:[background-color:var(--ui-surface-raised)] dark:text-gray-400 dark:hover:text-white',
               isSidebarExpanded ? 'justify-start gap-3 px-3 w-full' : 'justify-center'
             ].join(' ')
           "

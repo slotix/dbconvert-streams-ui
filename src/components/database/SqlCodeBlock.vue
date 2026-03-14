@@ -191,7 +191,7 @@ onBeforeUnmount(() => {
     <div
       v-if="showHeader"
       :class="[
-        'px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-300 border border-b-0 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-850',
+        'ui-surface-toolbar ui-border-default border border-b-0 px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-300',
         rounded ? 'rounded-t-md' : 'rounded-none'
       ]"
     >
@@ -212,7 +212,7 @@ onBeforeUnmount(() => {
         v-if="showCopyButton"
         v-tooltip="copied ? 'Copied' : 'Copy SQL'"
         type="button"
-        class="sql-code-overlay-control sql-code-copy-control absolute top-2 right-2 z-10 inline-flex items-center rounded-md border border-gray-300 dark:border-gray-600 bg-white/95 dark:bg-gray-800/95 px-2 py-1 text-[11px] font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+        class="sql-code-overlay-control sql-code-copy-control ui-surface-floating ui-border-default absolute top-2 right-2 z-10 inline-flex items-center rounded-md border px-2 py-1 text-[11px] font-medium text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] dark:text-gray-200"
         @click="copyCode"
       >
         {{ copied ? 'Copied' : 'Copy' }}

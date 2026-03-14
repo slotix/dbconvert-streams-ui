@@ -3,7 +3,7 @@
     class="flex flex-col items-center justify-center gap-3 py-16 px-4 text-center text-gray-500 dark:text-gray-400"
   >
     <div
-      class="inline-flex h-20 w-20 items-center justify-center rounded-full border border-gray-200 bg-gray-100 text-gray-700 shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+      class="ui-surface-muted ui-border-muted inline-flex h-20 w-20 items-center justify-center rounded-full border text-gray-700 shadow-sm dark:text-gray-200"
     >
       <component :is="icon" class="h-10 w-10" />
     </div>

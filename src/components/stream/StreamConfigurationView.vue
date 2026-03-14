@@ -23,7 +23,7 @@
       </div>
       <p
         v-if="streamDescription"
-        class="mt-2 text-sm text-gray-700 dark:text-gray-300 rounded-md bg-gray-50 dark:bg-gray-900/40 border border-gray-200 dark:border-gray-700 px-3 py-2"
+        class="ui-surface-muted ui-border-default mt-2 text-sm text-gray-700 dark:text-gray-300 rounded-md border px-3 py-2"
       >
         {{ streamDescription }}
       </p>
@@ -49,9 +49,7 @@
         <label class="block text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
           Target Connection
         </label>
-        <div
-          class="bg-gray-50 dark:bg-gray-900/40 rounded-md p-3 border border-gray-300 dark:border-gray-700 overflow-hidden"
-        >
+        <div class="ui-surface-muted ui-border-default rounded-md p-3 border overflow-hidden">
           <ConnectionCard
             :connection="target"
             :logo-src="targetLogo"

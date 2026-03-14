@@ -65,7 +65,7 @@ function click(action: string) {
       <div class="fixed inset-0 z-40" @click="emit('close')"></div>
       <!-- Menu -->
       <div
-        class="fixed z-50 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg dark:shadow-gray-900/40 py-1 text-sm text-gray-900 dark:text-gray-100"
+        class="ui-surface-floating ui-border-default fixed z-50 rounded-md border py-1 text-sm text-gray-900 dark:text-gray-100"
         :style="{ left: adjustedX + 'px', top: adjustedY + 'px', minWidth: '180px' }"
       >
         <!-- Start/Run Again -->
@@ -81,7 +81,7 @@ function click(action: string) {
         <!-- Pause -->
         <button
           v-if="canPause"
-          class="w-full text-left px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 text-yellow-600 dark:text-yellow-300 flex items-center gap-2"
+          class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-yellow-600 hover:[background-color:var(--ui-surface-muted)] dark:text-yellow-300"
           @click="click('pause-stream')"
         >
           <Pause class="w-4 h-4 shrink-0" />
@@ -98,14 +98,11 @@ function click(action: string) {
           <span>Resume</span>
         </button>
 
-        <div
-          v-if="canStart || canPause || canResume"
-          class="my-1 border-t border-gray-100 dark:border-gray-800"
-        ></div>
+        <div v-if="canStart || canPause || canResume" class="ui-border-default my-1 border-t"></div>
 
         <!-- Edit -->
         <button
-          class="w-full text-left px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200 flex items-center gap-2"
+          class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-200"
           @click="click('edit-stream')"
         >
           <Pencil class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
@@ -114,18 +111,18 @@ function click(action: string) {
 
         <!-- Clone -->
         <button
-          class="w-full text-left px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200 flex items-center gap-2"
+          class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-200"
           @click="click('clone-stream')"
         >
           <Copy class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
           <span>Clone</span>
         </button>
 
-        <div class="my-1 border-t border-gray-100 dark:border-gray-800"></div>
+        <div class="ui-border-default my-1 border-t"></div>
 
         <!-- Delete -->
         <button
-          class="w-full text-left px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 text-red-600 dark:text-red-300 flex items-center gap-2"
+          class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-red-600 hover:[background-color:var(--ui-surface-muted)] dark:text-red-300"
           @click="click('delete-stream')"
         >
           <Trash2 class="w-4 h-4 shrink-0" />

@@ -5,7 +5,7 @@
       v-for="format in visiblePrimaryFormats"
       :key="format.id"
       v-tooltip="`Export current page as ${format.label}`"
-      class="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 text-xs rounded text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+      class="ui-surface-raised ui-border-default ui-accent-action inline-flex items-center rounded border px-2 py-1 text-xs text-gray-600 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-400"
       :disabled="disabled"
       @click="handleExport(format.id)"
     >
@@ -16,7 +16,7 @@
     <!-- More Formats Dropdown -->
     <div ref="triggerRef" class="relative">
       <button
-        class="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 text-xs rounded text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        class="ui-surface-raised ui-border-default ui-accent-action inline-flex items-center rounded border px-2 py-1 text-xs text-gray-600 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-400"
         :disabled="disabled"
         title="More export formats"
         @click="toggleMenu"
@@ -29,20 +29,20 @@
         <div
           v-if="showExportMenu"
           ref="menuRef"
-          class="fixed w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-50"
+          class="ui-surface-floating fixed z-50 w-48 rounded-md border"
           :style="menuStyle"
           @mouseleave="showExportMenu = false"
         >
           <!-- Current Page Export Section -->
           <div
-            class="px-3 py-1.5 text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider border-b border-gray-200 dark:border-gray-700"
+            class="ui-border-default px-3 py-1.5 text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider border-b"
           >
             Current Page
           </div>
           <button
             v-for="format in allFormats"
             :key="format.id"
-            class="w-full px-3 py-1.5 text-left text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+            class="w-full px-3 py-1.5 text-left text-xs text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
             @click="handleExport(format.id)"
           >
             {{ format.label }}
@@ -51,14 +51,14 @@
           <!-- Stream Export Section (Full Table) -->
           <template v-if="showStreamExport">
             <div
-              class="px-3 py-1.5 text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider border-t border-b border-gray-200 dark:border-gray-700"
+              class="ui-border-default px-3 py-1.5 text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider border-t border-b"
             >
               Full Table (via Stream)
             </div>
             <button
               v-for="format in streamExportFormats"
               :key="`stream-${format.id}`"
-              class="w-full px-3 py-1.5 text-left text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+              class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
               :disabled="isExporting"
               @click="handleStreamExport(format.id)"
             >

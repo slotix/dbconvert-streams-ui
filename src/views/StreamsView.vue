@@ -9,9 +9,7 @@
         v-if="streamsCount() === 0"
         class="flex flex-col items-center justify-center py-16 px-4 text-center"
       >
-        <div
-          class="rounded-full border border-gray-200 bg-gray-100 p-6 mb-6 dark:border-gray-700 dark:bg-gray-800"
-        >
+        <div class="ui-surface-muted ui-border-default mb-6 rounded-full border p-6">
           <RefreshCw class="ui-accent-icon h-16 w-16" :stroke-width="iconStroke" />
         </div>
         <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
@@ -65,7 +63,7 @@
             @dblclick="sidebar.toggleSidebar"
           >
             <div
-              class="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px group-hover:w-[3px] bg-gray-200 dark:bg-gray-700 group-hover:bg-gray-400 dark:group-hover:bg-gray-500 transition-all duration-150"
+              class="ui-border-default absolute inset-y-0 left-1/2 -translate-x-1/2 w-px transition-all duration-150 group-hover:w-[3px] group-hover:bg-[var(--ui-accent-soft-border)]"
             />
           </div>
 
@@ -79,7 +77,7 @@
             @click="sidebar.toggleSidebar"
           >
             <div
-              class="absolute inset-y-0 left-0 w-px group-hover:w-[3px] bg-gray-200 dark:bg-gray-700 group-hover:bg-gray-400 dark:group-hover:bg-gray-500 transition-all duration-150"
+              class="ui-border-default absolute inset-y-0 left-0 w-px transition-all duration-150 group-hover:w-[3px] group-hover:bg-[var(--ui-accent-soft-border)]"
             />
           </div>
 
@@ -103,7 +101,7 @@
               class="flex flex-col items-center justify-center gap-3 py-16 px-4 text-center text-gray-500 dark:text-gray-400"
             >
               <div
-                class="inline-flex h-20 w-20 items-center justify-center rounded-full border border-gray-200 bg-gray-100 text-gray-700 shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                class="ui-surface-muted ui-border-default inline-flex h-20 w-20 items-center justify-center rounded-full border text-gray-700 shadow-sm dark:text-gray-200"
               >
                 <RefreshCw class="h-10 w-10" :stroke-width="iconStroke" />
               </div>

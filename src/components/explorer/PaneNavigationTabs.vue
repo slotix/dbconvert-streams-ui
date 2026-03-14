@@ -1,7 +1,7 @@
 <template>
   <div
     :class="[
-      'flex items-center border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-850 shrink-0 border-t-2 transition-colors duration-150',
+      'ui-surface-toolbar ui-border-default flex items-center border-b shrink-0 border-t-2 transition-colors duration-150',
       isActive ? 'ui-tab-container-active' : 'border-t-transparent'
     ]"
     :data-pane-id="paneId"
@@ -28,7 +28,7 @@
               isPreviewTab(i) ? 'italic' : '',
               isActiveTab(i)
                 ? 'ui-tab-active text-gray-900 dark:text-gray-100'
-                : 'border-b-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-white/60 dark:hover:bg-gray-800/60',
+                : 'border-b-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:[background-color:var(--ui-surface-muted)]',
               dragState.isDragging && dragState.draggedIndex === i && 'opacity-50'
             ]"
             @click="$emit('activate-tab', i)"
@@ -59,7 +59,7 @@
             <span
               role="button"
               tabindex="0"
-              class="flex h-4 w-4 items-center justify-center rounded transition hover:bg-gray-200 dark:hover:bg-gray-700 shrink-0"
+              class="flex h-4 w-4 shrink-0 items-center justify-center rounded transition hover:[background-color:var(--ui-surface-muted)]"
               :aria-label="`Close tab ${tab.name}`"
               @click.stop="$emit('close-tab', i)"
               @keydown.enter.stop.prevent="$emit('close-tab', i)"
@@ -83,7 +83,7 @@
       v-if="hasAnyTabs"
       ref="overflowButtonRef"
       type="button"
-      class="shrink-0 px-2 py-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 border-b-2 border-transparent"
+      class="shrink-0 border-b-2 border-transparent px-2 py-2 text-gray-500 hover:text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-400 dark:hover:text-gray-200"
       aria-label="Show all tabs"
       @click="toggleOverflowMenu"
     >
@@ -95,13 +95,13 @@
       <div
         v-if="overflowMenu.visible"
         ref="overflowMenuRef"
-        class="fixed z-50 bg-white dark:bg-gray-850 shadow-lg dark:shadow-gray-900/30 border border-gray-200 dark:border-gray-700 rounded-md py-1 min-w-56"
+        class="ui-surface-floating fixed z-50 border rounded-md py-1 min-w-56"
         :style="overflowMenuStyle"
       >
         <button
           v-for="(tab, i) in tabs"
           :key="`overflow-${tab.id}`"
-          class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+          class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:[background-color:var(--ui-surface-muted)]"
           :class="
             isActiveTab(i) ? 'text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-300'
           "
@@ -118,11 +118,11 @@
       <div
         v-if="contextMenu.visible"
         ref="contextMenuRef"
-        class="fixed z-50 bg-white dark:bg-gray-850 shadow-lg dark:shadow-gray-900/30 border border-gray-200 dark:border-gray-700 rounded-md py-1 min-w-40"
+        class="ui-surface-floating fixed z-50 border rounded-md py-1 min-w-40"
         :style="{ left: `${adjustedMenuX}px`, top: `${adjustedMenuY}px` }"
       >
         <button
-          class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+          class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
           @click="handleMoveToOtherPane"
         >
           <ArrowRightLeft class="h-4 w-4 text-gray-500 dark:text-gray-400" />
@@ -130,19 +130,19 @@
         </button>
         <div class="border-t border-gray-100 dark:border-gray-700 my-1" />
         <button
-          class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+          class="w-full px-3 py-2 text-left text-sm text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
           @click="handleContextMenuAction('close')"
         >
           <span>Close</span>
         </button>
         <button
-          class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+          class="w-full px-3 py-2 text-left text-sm text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
           @click="handleContextMenuAction('close-others')"
         >
           <span>Close Others</span>
         </button>
         <button
-          class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+          class="w-full px-3 py-2 text-left text-sm text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
           @click="handleContextMenuAction('close-all')"
         >
           <span>Close All</span>
@@ -153,7 +153,7 @@
           :class="[
             'w-full text-left px-3 py-2 text-sm flex items-center justify-between',
             canReopenTab
-              ? 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+              ? 'text-gray-700 dark:text-gray-300 hover:[background-color:var(--ui-surface-muted)]'
               : 'text-gray-400 dark:text-gray-500 cursor-not-allowed'
           ]"
           @click="handleReopenClosedTab"

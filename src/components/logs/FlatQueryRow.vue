@@ -89,7 +89,7 @@ function toggleExpanded() {
     <!-- Location Header (when visual grouping is enabled) -->
     <div
       v-if="showLocationHeader && location"
-      class="bg-gray-100 dark:bg-gray-800 border-b border-gray-300 dark:border-gray-700 px-4 py-2 flex items-center gap-3 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors sticky top-0 z-10"
+      class="ui-surface-toolbar ui-border-default sticky top-0 z-10 flex cursor-pointer items-center gap-3 border-b px-4 py-2 transition-colors hover:[background-color:var(--ui-surface-muted)]"
       @click="toggleLocation"
     >
       <!-- Expand/Collapse Icon -->
@@ -106,7 +106,7 @@ function toggleExpanded() {
       <!-- Query Count Badge -->
       <span
         v-if="queriesInGroup && queriesInGroup > 1"
-        class="text-xs bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 px-2 py-0.5 rounded"
+        class="ui-chip-muted rounded px-2 py-0.5 text-xs text-gray-700 dark:text-gray-200"
       >
         {{ queriesInGroup }}
       </span>
@@ -115,7 +115,7 @@ function toggleExpanded() {
     <!-- Query Row (hidden if location is collapsed) -->
     <div
       v-if="!isLocationCollapsed"
-      class="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+      class="ui-border-default border-b transition-colors hover:[background-color:var(--ui-surface-muted)]"
       :class="{ 'bg-red-50 dark:bg-red-900/30': log.error }"
     >
       <!-- Header row with all metadata -->
@@ -165,7 +165,7 @@ function toggleExpanded() {
           class="cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap"
         >
           <code
-            class="text-xs font-mono bg-gray-50 dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 px-2 py-1 rounded whitespace-nowrap overflow-hidden text-ellipsis block text-gray-700 dark:text-gray-300"
+            class="ui-surface-muted block overflow-hidden rounded px-2 py-1 text-xs font-mono text-gray-700 text-ellipsis whitespace-nowrap hover:[background-color:var(--ui-surface-inset)] dark:text-gray-300"
             >{{ oneLineQuery }}</code
           >
         </span>
@@ -188,7 +188,7 @@ function toggleExpanded() {
           'ml-2 rounded px-4 py-3',
           log.error
             ? 'border-red-300 dark:border-red-700/70 bg-red-50 dark:bg-red-900/30'
-            : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-850'
+            : 'ui-surface-raised ui-border-default'
         ]"
       >
         <!-- Full Query using SqlCodeBlock -->

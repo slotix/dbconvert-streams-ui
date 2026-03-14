@@ -3,14 +3,14 @@
     <div
       v-if="showTemplates"
       ref="templateMenuRef"
-      class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-[200] overflow-hidden flex flex-col"
+      class="ui-surface-floating ui-border-default z-[200] flex flex-col overflow-hidden rounded-lg border"
       :style="templateMenuStyle"
     >
-      <div class="px-3 pt-3 pb-2 border-b border-gray-200 dark:border-gray-700/80">
+      <div class="ui-border-default border-b px-3 pt-3 pb-2">
         <div class="flex items-center justify-between">
           <span class="text-sm font-semibold text-gray-900 dark:text-gray-100">Templates</span>
           <kbd
-            class="px-1.5 py-0.5 rounded border border-gray-300 dark:border-gray-600 text-[10px] text-gray-500 dark:text-gray-400"
+            class="ui-surface-raised ui-border-default px-1.5 py-0.5 rounded border text-[10px] text-gray-500 dark:text-gray-400"
             >{{ shortcutHint }}</kbd
           >
         </div>
@@ -28,7 +28,7 @@
             v-model="templateSearch"
             type="text"
             placeholder="Search templates..."
-            class="ui-accent-focus w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-850 py-1.5 pl-8 pr-2 text-xs text-gray-900 dark:text-gray-100"
+            class="ui-surface-raised ui-border-default ui-accent-focus w-full rounded-md border py-1.5 pl-8 pr-2 text-xs text-gray-900 dark:text-gray-100"
           />
         </div>
       </div>
@@ -39,7 +39,7 @@
             <template v-for="section in groupedTemplateSections" :key="section.name">
               <div
                 v-if="hasMultipleTemplateSections"
-                class="sticky top-0 z-10 px-2 py-1 text-[10px] uppercase tracking-wide font-semibold text-gray-500 dark:text-gray-400 bg-white/95 dark:bg-gray-800/95 backdrop-blur"
+                class="ui-surface-raised sticky top-0 z-10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-gray-500 backdrop-blur dark:text-gray-400"
               >
                 {{ section.name }}
               </div>
@@ -52,7 +52,7 @@
                 :class="
                   isTemplateActive(template)
                     ? 'ui-accent-selection-checked'
-                    : 'hover:bg-gray-100/80 dark:hover:bg-gray-700/60'
+                    : 'hover:[background-color:var(--ui-surface-muted)]'
                 "
                 :title="`${template.name}\n\n${template.description || ''}`"
                 @mouseenter="setActiveTemplate(template)"
@@ -101,7 +101,7 @@
               >
                 <button
                   type="button"
-                  class="w-full inline-flex items-center justify-between px-2 py-1.5 rounded-md text-[12px] font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/60 transition-colors"
+                  class="inline-flex w-full items-center justify-between rounded-md px-2 py-1.5 text-[12px] font-medium text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
                   @click="toggleAliasGroup(aliasGroup.key)"
                 >
                   <span class="inline-flex items-center gap-1.5">
@@ -136,7 +136,7 @@
                     :class="
                       isTemplateActive(template)
                         ? 'ui-accent-selection-checked'
-                        : 'hover:bg-gray-100/80 dark:hover:bg-gray-700/60'
+                        : 'hover:[background-color:var(--ui-surface-muted)]'
                     "
                     :title="`${template.name}\n\n${template.description || ''}`"
                     @mouseenter="setActiveTemplate(template)"
@@ -188,10 +188,8 @@
           <div aria-hidden="true" class="h-10"></div>
         </div>
 
-        <div
-          class="hidden md:flex flex-col border-l border-gray-200 dark:border-gray-700/80 bg-gray-50/70 dark:bg-gray-900/60"
-        >
-          <div class="px-3 py-2 border-b border-gray-200 dark:border-gray-700/80">
+        <div class="ui-surface-muted ui-border-default hidden border-l md:flex md:flex-col">
+          <div class="ui-border-default border-b px-3 py-2">
             <div
               class="text-[11px] uppercase tracking-wide font-semibold text-gray-500 dark:text-gray-400"
             >
@@ -200,7 +198,7 @@
           </div>
           <div v-if="activeTemplate" class="p-3 pb-8 min-h-0 flex-1 overflow-y-auto">
             <pre
-              class="text-[11px] leading-snug font-mono rounded-md p-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-850 text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words"
+              class="ui-surface-raised ui-border-default whitespace-pre-wrap break-words rounded-md border p-2 font-mono text-[11px] leading-snug text-gray-700 dark:text-gray-300"
             ><code>{{ activeTemplate.query }}</code></pre>
           </div>
           <div v-else class="p-3 text-xs text-gray-500 dark:text-gray-400">

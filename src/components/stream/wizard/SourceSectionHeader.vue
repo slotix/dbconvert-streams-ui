@@ -1,6 +1,6 @@
 <template>
   <div
-    class="flex items-center justify-between px-4 py-3 bg-linear-to-r from-gray-50/80 to-gray-100/40 dark:from-gray-850 dark:to-gray-800/70 border border-gray-200/80 dark:border-gray-700/80 rounded-lg backdrop-blur-sm"
+    class="ui-surface-toolbar ui-border-default flex items-center justify-between px-4 py-3 border rounded-lg backdrop-blur-sm"
     :class="[sticky ? 'sticky top-0 z-20' : '', collapsible ? 'cursor-pointer' : '']"
     @click="handleToggle"
   >
@@ -20,7 +20,7 @@
         </span>
         <span
           v-if="countLabel"
-          class="text-xs text-gray-600 dark:text-gray-300 bg-gray-200/70 dark:bg-gray-700/70 rounded px-2 py-0.5 font-medium shrink-0"
+          class="ui-chip-muted text-xs rounded px-2 py-0.5 font-medium shrink-0"
         >
           {{ countLabel }}
         </span>

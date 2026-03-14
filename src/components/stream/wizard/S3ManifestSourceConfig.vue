@@ -1,15 +1,13 @@
 <template>
   <div v-if="variant === 'header'" class="flex items-center gap-2">
-    <div
-      class="inline-flex overflow-hidden rounded-md border border-gray-300/80 bg-white/30 dark:border-gray-600/80 dark:bg-gray-900/80"
-    >
+    <div class="ui-surface-raised ui-border-default inline-flex overflow-hidden rounded-md border">
       <button
         type="button"
-        class="border-r border-gray-300/80 px-4 py-1.5 text-sm font-semibold transition-colors dark:border-gray-600/80"
+        class="ui-border-default border-r px-4 py-1.5 text-sm font-semibold transition-colors"
         :class="
           sourceMode === 'selection'
             ? 'ui-accent-selection-checked ui-accent-text'
-            : 'bg-transparent text-gray-600 hover:bg-gray-50/70 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-gray-100'
+            : 'bg-transparent text-gray-600 hover:[background-color:var(--ui-surface-muted)] hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100'
         "
         data-test="s3-source-mode-selection"
         @click="setSourceMode('selection')"
@@ -22,7 +20,7 @@
         :class="
           sourceMode === 'manifest'
             ? 'ui-accent-selection-checked ui-accent-text'
-            : 'bg-transparent text-gray-600 hover:bg-gray-50/70 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-gray-100'
+            : 'bg-transparent text-gray-600 hover:[background-color:var(--ui-surface-muted)] hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100'
         "
         data-test="s3-source-mode-manifest"
         @click="setSourceMode('manifest')"

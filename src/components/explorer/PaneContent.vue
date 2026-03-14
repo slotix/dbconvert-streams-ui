@@ -23,7 +23,7 @@
     </div>
     <div
       v-else-if="activeTab.tabType === 'database-overview' && activeTab.database"
-      class="rounded-2xl bg-white dark:bg-gray-900 shadow-lg dark:shadow-gray-900/40"
+      class="ui-surface-raised ui-border-default rounded-2xl border shadow-lg"
     >
       <DatabaseOverviewPanel
         :key="`overview-${activeTab.connectionId}-${activeTab.database}`"

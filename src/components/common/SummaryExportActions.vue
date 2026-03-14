@@ -187,7 +187,7 @@ function escapeCsvValue(value: string): string {
   <div class="flex flex-wrap items-center gap-2">
     <button
       type="button"
-      class="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 text-xs rounded text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+      class="ui-surface-raised ui-border-default ui-accent-action inline-flex items-center rounded border px-2 py-1 text-xs text-gray-600 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-400"
       :disabled="isDisabled"
       @click="handleDownloadMarkdown"
     >
@@ -196,7 +196,7 @@ function escapeCsvValue(value: string): string {
     </button>
     <button
       type="button"
-      class="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 text-xs rounded text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+      class="ui-surface-raised ui-border-default ui-accent-action inline-flex items-center rounded border px-2 py-1 text-xs text-gray-600 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-400"
       :disabled="isDisabled"
       @click="handleDownloadJson"
     >
@@ -205,7 +205,7 @@ function escapeCsvValue(value: string): string {
     </button>
     <button
       type="button"
-      class="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 text-xs rounded text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+      class="ui-surface-raised ui-border-default ui-accent-action inline-flex items-center rounded border px-2 py-1 text-xs text-gray-600 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-400"
       :disabled="isDisabled"
       @click="handleDownloadCsv"
     >

@@ -19,7 +19,7 @@
     />
 
     <div
-      class="flex-1 min-h-0 flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white divide-y divide-gray-200 dark:border-gray-700 dark:bg-gray-850 dark:divide-gray-800"
+      class="ui-surface-raised ui-border-default flex min-h-0 flex-1 flex-col overflow-hidden divide-y divide-[var(--ui-border-default)] rounded-lg border"
     >
       <SourceSectionHeader
         :alias="props.alias"
@@ -27,7 +27,7 @@
         :selection-label="props.bucket"
         :icon="FileJson"
         icon-class="ui-accent-icon"
-        class="rounded-none border-x-0 border-t-0 border-b border-b-gray-200/70 dark:border-b-gray-700/70"
+        class="ui-border-default rounded-none border-x-0 border-t-0 border-b"
       />
 
       <div
@@ -58,7 +58,7 @@
             v-for="row in filteredRows"
             :key="row.entry.path"
             type="button"
-            class="flex h-10 w-full items-center rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/70"
+            class="flex h-10 w-full items-center rounded-md px-3 py-2 text-left text-sm transition-colors hover:[background-color:var(--ui-surface-muted)]"
             :style="{ paddingLeft: `${row.depth * 12 + 12}px` }"
             @click="handleRowClick(row.entry)"
             @dblclick="row.entry.type === 'file' && confirmSelection()"
@@ -89,7 +89,7 @@
                   :id="`manifest-${row.entry.path}`"
                   :checked="isChecked(row.entry)"
                   type="checkbox"
-                  class="ui-accent-icon mr-3 h-4 w-4 rounded border-gray-300 bg-white focus:ring-0 dark:border-gray-600 dark:bg-gray-800"
+                  class="ui-surface-raised ui-border-default ui-accent-icon mr-3 h-4 w-4 rounded focus:ring-0"
                   @click.stop
                   @change="onCheckboxChange(row.entry, ($event.target as HTMLInputElement).checked)"
                 />

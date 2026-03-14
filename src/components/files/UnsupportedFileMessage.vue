@@ -10,7 +10,7 @@ defineProps<{
 
 <template>
   <div
-    class="flex items-center justify-center py-12 bg-gray-50 dark:bg-gray-900/40 rounded-md border border-gray-200 dark:border-gray-700 transition-colors duration-200"
+    class="ui-surface-muted flex items-center justify-center py-12 rounded-md border transition-colors duration-200"
   >
     <div class="text-center p-8 max-w-md">
       <FileText class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500 mb-4" />
@@ -28,9 +28,7 @@ defineProps<{
         <span class="font-mono font-semibold text-gray-900 dark:text-gray-100">{{ fileName }}</span>
         <template v-if="variant !== 'structure'"> cannot be previewed</template>.
       </p>
-      <div
-        class="text-xs text-gray-500 dark:text-gray-300 bg-white dark:bg-gray-900/30 rounded p-3 border border-gray-200 dark:border-gray-700"
-      >
+      <div class="ui-surface-raised text-xs text-gray-500 dark:text-gray-300 rounded p-3 border">
         <p class="font-semibold dark:text-gray-200 mb-1">Supported formats:</p>
         <ul class="list-disc list-inside text-left dark:text-gray-300">
           <li v-for="format in SUPPORTED_FILE_FORMATS" :key="format.name">

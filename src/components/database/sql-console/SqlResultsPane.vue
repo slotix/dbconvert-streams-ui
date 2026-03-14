@@ -1,9 +1,9 @@
 <template>
-  <div ref="resultsPaneRef" class="flex flex-col bg-white dark:bg-gray-850 min-h-0 h-full">
+  <div ref="resultsPaneRef" class="ui-surface-raised flex min-h-0 h-full flex-col">
     <!-- Results Toolbar -->
     <div
       ref="resultsToolbarRef"
-      class="bg-gray-100 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-3 py-1.5 flex items-center gap-2 overflow-hidden"
+      class="ui-surface-toolbar ui-border-default flex items-center gap-2 overflow-hidden border-b px-3 py-1.5"
     >
       <span class="text-xs font-medium text-gray-600 dark:text-gray-400">Results</span>
 
@@ -93,11 +93,11 @@
       <!-- Multiple Result Sets / Command-only Results -->
       <div
         v-else-if="useResultSetsView"
-        class="border-t border-gray-200 dark:border-gray-700 divide-y divide-gray-200 dark:divide-gray-700"
+        class="ui-border-default divide-y border-t [border-color:var(--ui-border-default)]"
       >
         <div v-for="(set, setIndex) in displayResultSets" :key="setIndex" class="">
           <div
-            class="bg-gray-50 dark:bg-gray-900 px-3 py-2 flex items-center gap-2 border-b border-gray-200 dark:border-gray-700"
+            class="ui-surface-muted ui-border-default flex items-center gap-2 border-b px-3 py-2"
           >
             <span class="text-xs font-medium text-gray-700 dark:text-gray-300">
               Result {{ setIndex + 1 }}
@@ -126,8 +126,8 @@
 
           <!-- Table or command-only result -->
           <div v-if="set.columns.length > 0 && set.rows.length > 0" class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <thead class="bg-gray-50 dark:bg-gray-800 sticky top-0">
+            <table class="min-w-full divide-y divide-[var(--ui-border-default)]">
+              <thead class="ui-surface-muted sticky top-0">
                 <tr>
                   <th
                     v-for="column in set.columns"
@@ -138,13 +138,11 @@
                   </th>
                 </tr>
               </thead>
-              <tbody
-                class="bg-white dark:bg-gray-850 divide-y divide-gray-200 dark:divide-gray-700"
-              >
+              <tbody class="ui-surface-raised divide-y divide-[var(--ui-border-default)]">
                 <tr
                   v-for="(row, rowIndex) in paginatedRowsBySet[setIndex] || []"
                   :key="rowIndex"
-                  class="hover:bg-gray-50 dark:hover:bg-gray-800"
+                  class="hover:[background-color:var(--ui-surface-muted)]"
                 >
                   <td
                     v-for="column in set.columns"
@@ -158,10 +156,7 @@
             </table>
           </div>
 
-          <div
-            v-else
-            class="px-3 py-3 text-xs text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-850"
-          >
+          <div v-else class="ui-surface-raised px-3 py-3 text-xs text-gray-500 dark:text-gray-400">
             <span v-if="set.columns.length === 0">Command executed successfully</span>
             <span v-else>No rows returned</span>
           </div>
@@ -169,7 +164,7 @@
           <!-- Pagination (per-set, only when needed) -->
           <div
             v-if="totalPagesBySet[setIndex] > 1"
-            class="bg-gray-50 dark:bg-gray-900 px-3 py-2 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between"
+            class="ui-surface-muted ui-border-default flex items-center justify-between border-t px-3 py-2"
           >
             <div class="text-xs text-gray-600 dark:text-gray-400">
               {{ (currentPageForSet(setIndex) - 1) * pageSize + 1 }}-{{
@@ -180,14 +175,14 @@
             <div class="flex gap-1">
               <button
                 :disabled="currentPageForSet(setIndex) === 1"
-                class="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-xs disabled:opacity-50"
+                class="ui-surface-raised ui-border-default rounded border px-2 py-1 text-xs disabled:opacity-50"
                 @click="setPageForSet(setIndex, currentPageForSet(setIndex) - 1)"
               >
                 Prev
               </button>
               <button
                 :disabled="currentPageForSet(setIndex) === (totalPagesBySet[setIndex] || 1)"
-                class="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-xs disabled:opacity-50"
+                class="ui-surface-raised ui-border-default rounded border px-2 py-1 text-xs disabled:opacity-50"
                 @click="setPageForSet(setIndex, currentPageForSet(setIndex) + 1)"
               >
                 Next
@@ -198,10 +193,10 @@
       </div>
 
       <!-- Results Table (single) -->
-      <div v-else-if="rows.length > 0" class="border-t border-gray-200 dark:border-gray-700">
+      <div v-else-if="rows.length > 0" class="ui-border-default border-t">
         <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead class="bg-gray-50 dark:bg-gray-800 sticky top-0">
+          <table class="min-w-full divide-y divide-[var(--ui-border-default)]">
+            <thead class="ui-surface-muted sticky top-0">
               <tr>
                 <th
                   v-for="column in columns"
@@ -212,11 +207,11 @@
                 </th>
               </tr>
             </thead>
-            <tbody class="bg-white dark:bg-gray-850 divide-y divide-gray-200 dark:divide-gray-700">
+            <tbody class="ui-surface-raised divide-y divide-[var(--ui-border-default)]">
               <tr
                 v-for="(row, rowIndex) in paginatedRows"
                 :key="rowIndex"
-                class="hover:bg-gray-50 dark:hover:bg-gray-800"
+                class="hover:[background-color:var(--ui-surface-muted)]"
               >
                 <td
                   v-for="column in columns"
@@ -233,7 +228,7 @@
         <!-- Pagination (single) -->
         <div
           v-if="totalPages > 1"
-          class="bg-gray-50 dark:bg-gray-900 px-3 py-2 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between"
+          class="ui-surface-muted ui-border-default flex items-center justify-between border-t px-3 py-2"
         >
           <div class="text-xs text-gray-600 dark:text-gray-400">
             {{ (currentPage - 1) * pageSize + 1 }}-{{
@@ -244,14 +239,14 @@
           <div class="flex gap-1">
             <button
               :disabled="currentPage === 1"
-              class="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-xs disabled:opacity-50"
+              class="ui-surface-raised ui-border-default rounded border px-2 py-1 text-xs disabled:opacity-50"
               @click="$emit('update:currentPage', currentPage - 1)"
             >
               Prev
             </button>
             <button
               :disabled="currentPage === totalPages"
-              class="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-xs disabled:opacity-50"
+              class="ui-surface-raised ui-border-default rounded border px-2 py-1 text-xs disabled:opacity-50"
               @click="$emit('update:currentPage', currentPage + 1)"
             >
               Next

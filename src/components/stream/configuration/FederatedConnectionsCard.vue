@@ -1,14 +1,12 @@
 <template>
-  <div
-    class="bg-gray-50 dark:bg-gray-900/40 rounded-md p-3 border border-gray-300 dark:border-gray-700 space-y-3 overflow-hidden"
-  >
+  <div class="ui-surface-muted ui-border-default space-y-3 overflow-hidden rounded-md border p-3">
     <div v-if="connections.length === 0" class="text-sm text-gray-500 dark:text-gray-400">
       No source connections configured
     </div>
     <div
       v-for="(fedConn, index) in connections"
       :key="fedConn.connectionId"
-      :class="{ 'pt-3 border-t border-gray-200 dark:border-gray-700': index > 0 }"
+      :class="{ 'ui-border-default border-t pt-3': index > 0 }"
     >
       <!-- Connection header -->
       <div class="flex items-start justify-between gap-2">
@@ -30,7 +28,7 @@
                 {{ getConnection(fedConn.connectionId)?.name || 'Connection not found' }}
               </span>
               <span
-                class="inline-flex items-center rounded px-1 py-0.5 text-xs font-mono bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 shrink-0"
+                class="ui-surface-inset ui-border-default inline-flex shrink-0 items-center rounded border px-1 py-0.5 text-xs font-mono text-gray-700 dark:text-gray-300"
               >
                 {{ fedConn.alias }}
               </span>
@@ -59,7 +57,7 @@
           v-if="getConnection(fedConn.connectionId)?.id"
           v-tooltip="'View connection in Explorer'"
           type="button"
-          class="ui-accent-action-active shrink-0 inline-flex items-center rounded-md border bg-white dark:bg-gray-900 px-2 py-1 text-xs font-medium transition-colors"
+          class="ui-accent-action-active ui-surface-raised shrink-0 inline-flex items-center rounded-md border px-2 py-1 text-xs font-medium transition-colors"
           @click="emit('navigate', fedConn.connectionId)"
         >
           <ExternalLink class="w-3 h-3 mr-1" />

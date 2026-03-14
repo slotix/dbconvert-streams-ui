@@ -41,7 +41,7 @@
       @dblclick="onDividerDoubleClick"
     >
       <div
-        class="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px group-hover:w-[3px] bg-gray-200 dark:bg-gray-700 group-hover:bg-gray-400 dark:group-hover:bg-gray-500 transition-all duration-150"
+        class="ui-border-default absolute inset-y-0 left-1/2 -translate-x-1/2 w-px transition-all duration-150 group-hover:w-[3px] group-hover:bg-[var(--ui-accent-soft-border)]"
       />
     </div>
 

@@ -548,7 +548,7 @@ const isLoadingDatabases = computed(() => {
 
 <template>
   <div
-    class="bg-white dark:bg-gray-900 shadow-lg dark:shadow-gray-900/40 rounded-2xl overflow-hidden hover:shadow-xl dark:hover:shadow-gray-900/70 transition-all duration-300"
+    class="ui-surface-raised ui-border-default shadow-lg dark:shadow-gray-900/40 rounded-2xl overflow-hidden border hover:shadow-xl dark:hover:shadow-gray-900/70 transition-all duration-300"
   >
     <div
       class="px-6 py-4 border-b border-slate-200 dark:border-gray-800 flex items-center justify-between bg-linear-to-r from-slate-50 to-white dark:from-gray-850 dark:to-gray-900"
@@ -980,7 +980,7 @@ const isLoadingDatabases = computed(() => {
                 >Connection String</label
               >
               <div
-                class="mt-1 flex items-start gap-2 rounded-lg bg-white dark:bg-gray-900 p-2 font-mono text-xs border border-gray-200 dark:border-gray-700"
+                class="ui-surface-raised ui-border-default mt-1 flex items-start gap-2 rounded-lg p-2 font-mono text-xs border"
               >
                 <span
                   class="flex-1 break-all text-gray-800 dark:text-gray-100 overflow-x-auto max-h-16 overflow-y-auto"
@@ -1140,7 +1140,7 @@ const isLoadingDatabases = computed(() => {
                 serverStats.hasData &&
                 (serverStats.maxConnections > 0 || serverStats.activeSessions > 0)
               "
-              class="pt-2 border-t border-gray-200 dark:border-gray-700"
+              class="ui-border-default pt-2 border-t"
             >
               <div class="grid grid-cols-[repeat(auto-fit,minmax(100px,1fr))] gap-x-4 gap-y-2">
                 <div v-if="serverStats.maxConnections > 0" class="min-w-0">

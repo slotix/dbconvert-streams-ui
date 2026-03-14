@@ -5,7 +5,7 @@
       <nav aria-label="Progress">
         <ol
           role="list"
-          class="divide-y divide-gray-200 dark:divide-gray-800 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm dark:shadow-gray-900/30 md:flex md:divide-y-0"
+          class="ui-surface-raised ui-border-default divide-y divide-[var(--ui-border-default)] rounded-md border shadow-sm md:flex md:divide-y-0"
         >
           <li v-for="(step, stepIdx) in steps" :key="step.name" class="relative md:flex md:flex-1">
             <!-- Completed Step -->
@@ -16,7 +16,7 @@
               :class="[
                 'group flex w-full items-center text-left',
                 canJumpToStep(stepIdx)
-                  ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-850/80'
+                  ? 'cursor-pointer hover:[background-color:var(--ui-surface-muted)]'
                   : 'cursor-default'
               ]"
               @click="handleStepClick(stepIdx)"
@@ -25,7 +25,7 @@
                 <span
                   class="ui-accent-primary flex size-10 shrink-0 items-center justify-center rounded-full border shadow-sm"
                 >
-                  <Check class="size-6 text-white" aria-hidden="true" />
+                  <Check class="ui-accent-icon size-6" aria-hidden="true" />
                 </span>
                 <span class="ml-4 min-w-0">
                   <span class="block text-sm font-medium text-gray-900 dark:text-gray-100">
@@ -83,12 +83,12 @@
             <button
               v-else-if="canJumpToStep(stepIdx)"
               type="button"
-              class="group flex items-center w-full text-left cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-850/80"
+              class="group flex w-full cursor-pointer items-center text-left hover:[background-color:var(--ui-surface-muted)]"
               @click="handleStepClick(stepIdx)"
             >
               <span class="flex items-center px-6 py-4 text-sm font-medium min-w-0">
                 <span
-                  class="flex size-10 shrink-0 items-center justify-center rounded-full border-2 border-gray-300 dark:border-gray-600"
+                  class="ui-border-default flex size-10 shrink-0 items-center justify-center rounded-full border-2"
                 >
                   <span class="text-gray-400 dark:text-gray-500">
                     {{ stepIdx + 1 }}
@@ -105,7 +105,7 @@
                     <span
                       v-for="badge in stepContext[stepIdx]"
                       :key="`upcoming-${stepIdx}-${badge}`"
-                      class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/70"
+                      class="ui-chip-muted ui-border-default inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium"
                     >
                       {{ badge }}
                     </span>
@@ -117,7 +117,7 @@
             <div v-else class="group flex items-center">
               <span class="flex items-center px-6 py-4 text-sm font-medium min-w-0">
                 <span
-                  class="flex size-10 shrink-0 items-center justify-center rounded-full border-2 border-gray-300 dark:border-gray-600"
+                  class="ui-border-default flex size-10 shrink-0 items-center justify-center rounded-full border-2"
                 >
                   <span class="text-gray-400 dark:text-gray-500">
                     {{ stepIdx + 1 }}
@@ -134,7 +134,7 @@
                     <span
                       v-for="badge in stepContext[stepIdx]"
                       :key="`upcoming-${stepIdx}-${badge}`"
-                      class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/70"
+                      class="ui-chip-muted ui-border-default inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium"
                     >
                       {{ badge }}
                     </span>
@@ -330,7 +330,7 @@ const contentContainerClass = computed(() => {
   if (props.wizardType === 'stream') {
     return 'flex flex-col flex-1 min-h-0'
   }
-  return 'bg-white dark:bg-gray-850 rounded-lg p-6 shadow-lg dark:shadow-gray-900/30 flex flex-col flex-1 min-h-0'
+  return 'ui-surface-raised ui-border-default flex flex-1 min-h-0 flex-col rounded-lg border p-6 shadow-lg dark:shadow-gray-900/30'
 })
 
 const footerContainerClass = computed(() => {

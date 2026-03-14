@@ -15,7 +15,7 @@ async function handleRetry() {
 <template>
   <div
     v-if="!isBackendConnected && !needsApiKey"
-    class="fixed inset-0 z-50 flex items-center justify-center bg-white dark:bg-gray-900 bg-opacity-95 dark:bg-opacity-95"
+    class="ui-surface-app fixed inset-0 z-50 flex items-center justify-center bg-opacity-95 dark:bg-opacity-95"
   >
     <div class="text-center max-w-md px-6">
       <!-- Icon -->

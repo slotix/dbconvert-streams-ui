@@ -44,7 +44,7 @@
             class="h-10 rounded-md px-3 py-2 text-sm"
             :class="
               row.kind === 'entry'
-                ? 'flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800/70'
+                ? 'flex items-center justify-between hover:[background-color:var(--ui-surface-muted)]'
                 : 'flex items-center'
             "
             :style="{ paddingLeft: `${row.depth * 12 + 12}px` }"
@@ -54,7 +54,7 @@
                 <button
                   v-if="row.entry.type === 'dir'"
                   type="button"
-                  class="mr-2 shrink-0 rounded p-0.5 hover:bg-gray-200 dark:hover:bg-gray-700"
+                  class="mr-2 shrink-0 rounded p-0.5 hover:[background-color:var(--ui-surface-muted)]"
                   :class="{ 'rotate-90': isExpanded(row.entry.path) }"
                   @click="toggleFolder(row.entry)"
                 >
@@ -79,7 +79,7 @@
                   :indeterminate="getCheckboxState(row.entry).indeterminate"
                   :disabled="!isSelectable(row.entry)"
                   type="checkbox"
-                  class="ui-accent-icon mr-3 h-4 w-4 rounded border-gray-300 bg-white focus:ring-0 dark:border-gray-600 dark:bg-gray-800"
+                  class="ui-accent-icon ui-surface-raised ui-border-default mr-3 h-4 w-4 rounded border focus:ring-0"
                   @click.stop
                   @change="
                     onToggle(row.entry, ($event.target as HTMLInputElement)?.checked || false)
@@ -137,7 +137,7 @@
                 class="h-10 rounded-md px-3 py-2 text-sm"
                 :class="
                   row.kind === 'entry'
-                    ? 'flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800/70'
+                    ? 'flex items-center justify-between hover:[background-color:var(--ui-surface-muted)]'
                     : 'flex items-center'
                 "
                 :style="{ paddingLeft: `${row.depth * 12 + 12}px` }"
@@ -147,7 +147,7 @@
                     <button
                       v-if="row.entry.type === 'dir'"
                       type="button"
-                      class="mr-2 shrink-0 rounded p-0.5 hover:bg-gray-200 dark:hover:bg-gray-700"
+                      class="mr-2 shrink-0 rounded p-0.5 hover:[background-color:var(--ui-surface-muted)]"
                       :class="{ 'rotate-90': isExpanded(row.entry.path) }"
                       @click="toggleFolder(row.entry)"
                     >
@@ -172,7 +172,7 @@
                       :indeterminate="getCheckboxState(row.entry).indeterminate"
                       :disabled="!isSelectable(row.entry)"
                       type="checkbox"
-                      class="ui-accent-icon mr-3 h-4 w-4 rounded border-gray-300 bg-white focus:ring-0 dark:border-gray-600 dark:bg-gray-800"
+                      class="ui-accent-icon ui-surface-raised ui-border-default mr-3 h-4 w-4 rounded border focus:ring-0"
                       @click.stop
                       @change="
                         onToggle(row.entry, ($event.target as HTMLInputElement)?.checked || false)
@@ -261,8 +261,8 @@ const embedded = computed(() => props.embedded)
 const searchQuery = ref(props.externalSearchQuery || '')
 const fileListContainerClass = computed(() =>
   props.embedded
-    ? 'flex-1 min-h-0 divide-y divide-gray-200 dark:divide-gray-800'
-    : 'flex-1 min-h-0 bg-white dark:bg-gray-850 shadow-sm dark:shadow-gray-900/30 ring-1 ring-gray-900/5 dark:ring-gray-700 rounded-lg divide-y divide-gray-200 dark:divide-gray-800'
+    ? 'flex-1 min-h-0 divide-y divide-[var(--ui-border-default)]'
+    : 'ui-surface-raised ui-border-default flex-1 min-h-0 rounded-lg border shadow-sm divide-y divide-[var(--ui-border-default)]'
 )
 
 const isS3Connection = computed(() => {

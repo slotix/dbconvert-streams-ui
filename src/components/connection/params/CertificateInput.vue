@@ -1,5 +1,5 @@
 <template>
-  <div class="certificate-input border-b border-gray-100 dark:border-gray-700 pb-6 last:border-b-0">
+  <div class="certificate-input ui-border-default border-b pb-6 last:border-b-0">
     <div class="flex items-center mb-2">
       <label :for="inputId" class="text-sm font-medium text-gray-700 dark:text-gray-300">
         {{ label }}
@@ -34,7 +34,7 @@
         <button
           type="button"
           :disabled="isLoading"
-          class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+          class="ui-surface-raised ui-border-default ui-accent-action flex items-center rounded-md border px-4 py-2 text-sm text-gray-700 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-300"
           @click="triggerFileInput"
         >
           <RefreshCw v-if="isLoading" class="animate-spin h-4 w-4 mr-2" />

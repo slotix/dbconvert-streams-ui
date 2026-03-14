@@ -619,7 +619,7 @@ async function handleCreateSchema() {
                   class="flex w-full items-center gap-2 px-3 py-2 text-sm"
                   :class="
                     active
-                      ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
+                      ? 'ui-surface-muted text-gray-900 dark:text-gray-100'
                       : 'text-gray-700 dark:text-gray-300'
                   "
                   @click="handleExportSchemaSql"
@@ -634,7 +634,7 @@ async function handleCreateSchema() {
                   class="flex w-full items-center gap-2 px-3 py-2 text-sm"
                   :class="
                     active
-                      ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
+                      ? 'ui-surface-muted text-gray-900 dark:text-gray-100'
                       : 'text-gray-700 dark:text-gray-300'
                   "
                   @click="handleDownloadSchemaSql"
@@ -934,10 +934,7 @@ async function handleCreateSchema() {
         </div>
 
         <!-- Long-running queries -->
-        <div
-          v-if="activity?.longRunning?.length"
-          class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700"
-        >
+        <div v-if="activity?.longRunning?.length" class="ui-border-default mt-3 pt-3 border-t">
           <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400 mb-2 block"
             >Long-running queries</label
           >
@@ -1035,7 +1032,7 @@ async function handleCreateSchema() {
               <tr
                 v-for="t in topTables"
                 :key="t.name"
-                class="hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors"
+                class="hover:[background-color:var(--ui-surface-muted)] transition-colors"
               >
                 <td class="py-1.5 pr-4">
                   <button
@@ -1086,7 +1083,7 @@ async function handleCreateSchema() {
             class="flex items-start gap-2 p-2 rounded-lg text-sm"
             :class="{
               'bg-sky-100/50 dark:bg-sky-900/20': n.severity === 'info',
-              'bg-gray-100/80 dark:bg-gray-900/40': n.severity === 'warn',
+              'ui-surface-muted': n.severity === 'warn',
               'bg-red-100/50 dark:bg-red-900/30': n.severity === 'error'
             }"
           >

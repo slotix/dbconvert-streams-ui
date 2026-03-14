@@ -4,7 +4,7 @@
     <div class="space-y-6">
       <div
         v-if="showConnectCta"
-        class="flex flex-col gap-4 rounded-xl border border-gray-200/70 dark:border-gray-700/70 bg-gradient-to-br from-slate-50 to-white dark:from-gray-850 dark:to-gray-900 p-5 shadow-sm"
+        class="ui-border-muted flex flex-col gap-4 rounded-xl border bg-gradient-to-br from-[var(--ui-surface-panel)] to-[var(--ui-surface-raised)] p-5 shadow-sm"
       >
         <div class="flex items-start gap-4">
           <div class="shrink-0">
@@ -32,7 +32,7 @@
           </button>
           <button
             type="button"
-            class="inline-flex items-center rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-850 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+            class="ui-surface-raised ui-border-default inline-flex items-center rounded-md border px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:[background-color:var(--ui-surface-muted)]"
             @click="openAccountPage"
           >
             Create account
@@ -41,7 +41,7 @@
       </div>
 
       <!-- User Info -->
-      <div v-else class="flex items-start p-3 rounded-lg bg-slate-50 dark:bg-gray-800/50">
+      <div v-else class="ui-surface-muted flex items-start rounded-lg p-3">
         <div class="shrink-0">
           <div class="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-3">
             <User class="h-6 w-6 text-blue-600 dark:text-blue-400" :stroke-width="iconStroke" />
@@ -60,7 +60,7 @@
 
       <div
         v-if="!showConnectCta && isCurrentInstallDeactivated"
-        class="flex items-start p-3 rounded-lg border border-amber-300/80 dark:border-amber-500/60 bg-gray-50 dark:bg-gray-900/40"
+        class="flex items-start rounded-lg border border-amber-300/80 bg-amber-50/60 p-3 dark:border-amber-500/60 dark:bg-amber-950/20"
       >
         <div class="shrink-0 mt-0.5">
           <AlertTriangle
@@ -87,10 +87,7 @@
       </div>
 
       <!-- Current Plan -->
-      <div
-        v-if="!showConnectCta"
-        class="flex items-start p-3 rounded-lg bg-slate-50 dark:bg-gray-800/50"
-      >
+      <div v-if="!showConnectCta" class="ui-surface-muted flex items-start rounded-lg p-3">
         <div class="shrink-0">
           <div class="ui-accent-selection-checked rounded-lg p-3">
             <CreditCard
@@ -218,7 +215,7 @@
       <!-- Evaluation Summary -->
       <div
         v-if="!showConnectCta && !isPaid"
-        class="flex items-start p-3 rounded-lg bg-slate-50 dark:bg-gray-800/50"
+        class="ui-surface-muted flex items-start rounded-lg p-3"
       >
         <div class="shrink-0">
           <div class="ui-accent-selection-checked rounded-lg p-3">
@@ -241,7 +238,7 @@
                   {{ formatDataSize(evalConvertLimit) }}</span
                 >
               </div>
-              <div class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2.5 mt-2">
+              <div class="ui-surface-inset w-full rounded-full h-2.5 mt-2">
                 <div
                   class="h-2.5 rounded-full transition-all duration-300 [background-color:var(--ui-accent-strong-bg)]"
                   :style="{ width: `${evalConvertPercent}%` }"
@@ -255,7 +252,7 @@
                   >{{ formatDuration(evalCdcSeconds) }} / {{ formatDuration(evalCdcLimit) }}</span
                 >
               </div>
-              <div class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2.5 mt-2">
+              <div class="ui-surface-inset w-full rounded-full h-2.5 mt-2">
                 <div
                   class="h-2.5 rounded-full transition-all duration-300 [background-color:var(--ui-accent-strong-bg)]"
                   :style="{ width: `${evalCdcPercent}%` }"
@@ -270,10 +267,7 @@
       </div>
 
       <!-- API Key Management -->
-      <div
-        v-if="!showConnectCta"
-        class="flex items-start p-3 rounded-lg bg-slate-50 dark:bg-gray-800/50"
-      >
+      <div v-if="!showConnectCta" class="ui-surface-muted flex items-start rounded-lg p-3">
         <div class="shrink-0">
           <div class="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-3">
             <Key class="h-6 w-6 text-blue-600 dark:text-blue-400" :stroke-width="iconStroke" />
@@ -296,10 +290,10 @@
                   type="text"
                   readonly
                   :value="maskedApiKey"
-                  class="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 pr-10 text-sm font-mono text-gray-900 dark:text-gray-100 focus:ring-0 focus:outline-none focus:border-blue-300 dark:focus:border-blue-600 transition-colors"
+                  class="ui-surface-inset ui-border-default w-full rounded-lg border px-3 py-2 pr-10 text-sm font-mono text-gray-900 dark:text-gray-100 focus:outline-none transition-colors"
                 />
                 <button
-                  class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors group"
+                  class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md hover:[background-color:var(--ui-surface-muted)] transition-colors group"
                   title="Copy API Key"
                   @click="copyApiKey"
                 >
@@ -317,10 +311,10 @@
                   type="text"
                   readonly
                   :value="maskedInstallId"
-                  class="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 pr-10 text-sm font-mono text-gray-900 dark:text-gray-100 focus:ring-0 focus:outline-none focus:border-blue-300 dark:focus:border-blue-600 transition-colors"
+                  class="ui-surface-inset ui-border-default w-full rounded-lg border px-3 py-2 pr-10 text-sm font-mono text-gray-900 dark:text-gray-100 focus:outline-none transition-colors"
                 />
                 <button
-                  class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors group"
+                  class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md hover:[background-color:var(--ui-surface-muted)] transition-colors group"
                   title="Copy Install ID"
                   @click="copyInstallId"
                 >
@@ -417,13 +411,12 @@ const evaluationBadgeText = computed(() => {
 })
 
 const evaluationBadgeClass = computed(() => {
-  if (!commonStore.userData?.evaluation)
-    return 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'
+  if (!commonStore.userData?.evaluation) return 'ui-chip-muted'
   if (evaluationStatus.value === 'ended')
     return 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
   if (evaluationStatus.value === 'active')
     return 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-200'
-  return 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'
+  return 'ui-chip-muted'
 })
 
 const evalConvertBytes = computed(() => commonStore.userData?.evaluation?.convert_bytes || 0)

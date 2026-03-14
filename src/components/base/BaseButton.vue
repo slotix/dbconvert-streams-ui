@@ -47,13 +47,13 @@ const baseClasses =
 
 const variantClasses: Record<Variant, string> = {
   primary:
-    'ui-accent-primary border disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:text-gray-500 dark:disabled:text-gray-400 disabled:border-gray-600',
+    'ui-accent-primary border disabled:[background-color:var(--ui-surface-inset)] disabled:[border-color:var(--ui-border-default)] disabled:text-gray-500 dark:disabled:text-gray-400',
   secondary:
-    'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 focus-visible:bg-gray-50 dark:focus-visible:bg-gray-700 focus-visible:border-gray-400 dark:focus-visible:border-gray-500 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-400',
+    'ui-surface-raised ui-border-default border text-gray-700 dark:text-gray-300 hover:[background-color:var(--ui-surface-muted)] focus-visible:[background-color:var(--ui-surface-muted)] disabled:[background-color:var(--ui-surface-inset)] disabled:[border-color:var(--ui-border-default)] disabled:text-gray-400',
   danger:
-    'bg-white dark:bg-gray-800 text-red-600 dark:text-red-300 border border-red-300 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 hover:border-red-400 dark:hover:border-red-600 focus-visible:bg-red-50 dark:focus-visible:bg-red-900/30 focus-visible:border-red-400 dark:focus-visible:border-red-600 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-400',
+    'ui-surface-raised text-red-600 dark:text-red-300 border border-red-300 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 hover:border-red-400 dark:hover:border-red-600 focus-visible:bg-red-50 dark:focus-visible:bg-red-900/30 focus-visible:border-red-400 dark:focus-visible:border-red-600 disabled:[background-color:var(--ui-surface-inset)] disabled:[border-color:var(--ui-border-default)] disabled:text-gray-400',
   ghost:
-    'bg-transparent text-gray-600 dark:text-gray-400 border border-transparent hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200 focus-visible:bg-gray-100 dark:focus-visible:bg-gray-800 focus-visible:text-gray-900 dark:focus-visible:text-gray-200 disabled:text-gray-400 disabled:hover:bg-transparent dark:disabled:hover:bg-transparent'
+    'border border-transparent bg-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 hover:[background-color:var(--ui-surface-muted)] dark:hover:text-gray-200 focus-visible:text-gray-900 focus-visible:[background-color:var(--ui-surface-muted)] dark:focus-visible:text-gray-200 disabled:text-gray-400 disabled:hover:bg-transparent dark:disabled:hover:bg-transparent'
 }
 
 const sizeClasses: Record<Size, string> = {

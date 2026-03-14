@@ -39,10 +39,10 @@
 }
 
 .sql-cm-dark {
-  --sql-editor-bg: var(--color-gray-900);
-  --sql-editor-gutter-bg: var(--color-gray-850);
+  --sql-editor-bg: var(--ui-surface-app);
+  --sql-editor-gutter-bg: var(--ui-surface-panel);
   --sql-editor-border: rgba(148, 163, 184, 0.22);
-  --sql-editor-popup-bg: var(--color-gray-850);
+  --sql-editor-popup-bg: var(--ui-surface-raised);
   --sql-editor-popup-border: rgba(148, 163, 184, 0.28);
   --sql-editor-active-line: rgba(13, 148, 136, 0.09);
   --sql-editor-selected-item: rgba(13, 148, 136, 0.25);

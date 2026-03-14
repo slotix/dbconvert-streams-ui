@@ -22,7 +22,7 @@
     <!-- Empty state -->
     <div
       v-if="safeRuns.length === 0"
-      class="text-center py-8 bg-gray-50 dark:bg-gray-900/40 rounded-lg border border-gray-200 dark:border-gray-700"
+      class="ui-surface-muted ui-border-default text-center py-8 rounded-lg border"
     >
       <History class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
       <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">No run history available</p>
@@ -193,8 +193,7 @@ function statusCellRenderer(params: ICellRendererParams) {
     classes +=
       ' bg-red-50 text-red-700 ring-red-600/20 dark:bg-red-900/30 dark:text-red-300 dark:ring-red-500/30'
   } else if (statusLower === 'stopped') {
-    classes +=
-      ' bg-gray-50 text-gray-700 ring-gray-600/20 dark:bg-gray-900/40 dark:text-gray-300 dark:ring-gray-600/40'
+    classes += ' ui-chip-muted'
   } else {
     classes +=
       ' bg-blue-50 text-blue-700 ring-blue-600/20 dark:bg-blue-900/30 dark:text-blue-300 dark:ring-blue-500/30'

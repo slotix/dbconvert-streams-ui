@@ -22,22 +22,25 @@
           <div
             :class="[
               disabled
-                ? 'bg-gray-100 dark:bg-gray-800/60 border-gray-200 dark:border-gray-700 opacity-60 cursor-not-allowed'
+                ? 'ui-surface-muted ui-border-default opacity-60 cursor-not-allowed'
                 : checked
                   ? 'ui-accent-selection-checked'
-                  : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer',
+                  : 'ui-surface-raised ui-border-default hover:[background-color:var(--ui-surface-muted)] cursor-pointer',
               active && !disabled && !checked ? 'ui-accent-selection-active' : '',
               'relative h-full min-h-[76px] flex items-start rounded-lg border p-3 transition-all duration-150 focus:outline-none'
             ]"
           >
             <div class="mt-0.5 flex items-center h-5">
-              <input
-                :checked="checked"
-                type="radio"
-                class="ui-accent-icon h-4 w-4 border-gray-300 dark:border-gray-500 bg-white dark:bg-gray-700"
-                :disabled="disabled"
-                readonly
-              />
+              <span
+                :class="[
+                  'flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors',
+                  checked
+                    ? 'border-teal-600 dark:border-teal-400'
+                    : 'border-gray-400 dark:border-gray-500'
+                ]"
+              >
+                <span v-if="checked" class="h-2 w-2 rounded-full bg-teal-600 dark:bg-teal-400" />
+              </span>
             </div>
             <div class="ml-3 flex-1">
               <RadioGroupLabel

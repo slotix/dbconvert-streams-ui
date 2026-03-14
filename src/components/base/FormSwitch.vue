@@ -64,7 +64,7 @@ const handleChange = (value: boolean) => {
         'focus:outline-none focus-visible:outline-none',
         modelValue
           ? 'ui-accent-switch-on'
-          : 'bg-gray-200 dark:bg-gray-700 focus-visible:border-gray-400 dark:focus-visible:border-gray-500',
+          : 'ui-surface-inset focus-visible:[border-color:var(--ui-border-default)]',
         disabled ? 'opacity-50 cursor-not-allowed' : ''
       ]"
       @update:model-value="handleChange"
@@ -74,7 +74,7 @@ const handleChange = (value: boolean) => {
         aria-hidden="true"
         :class="[
           modelValue ? 'translate-x-5' : 'translate-x-0',
-          'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out'
+          'ui-surface-raised pointer-events-none inline-block h-5 w-5 transform rounded-full shadow ring-0 transition duration-200 ease-in-out'
         ]"
       />
     </Switch>
@@ -124,7 +124,7 @@ const handleChange = (value: boolean) => {
         'focus:outline-none focus-visible:outline-none',
         modelValue
           ? 'ui-accent-switch-on'
-          : 'bg-gray-200 dark:bg-gray-700 focus-visible:border-gray-400 dark:focus-visible:border-gray-500',
+          : 'ui-surface-inset focus-visible:[border-color:var(--ui-border-default)]',
         disabled ? 'opacity-50 cursor-not-allowed' : ''
       ]"
       @update:model-value="handleChange"
@@ -134,7 +134,7 @@ const handleChange = (value: boolean) => {
         aria-hidden="true"
         :class="[
           modelValue ? 'translate-x-5' : 'translate-x-0',
-          'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out'
+          'ui-surface-raised pointer-events-none inline-block h-5 w-5 transform rounded-full shadow ring-0 transition duration-200 ease-in-out'
         ]"
       />
     </Switch>

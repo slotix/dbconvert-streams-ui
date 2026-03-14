@@ -266,9 +266,7 @@ function handleOpenFileConsole(payload: {
         v-if="connectionsStore.connections.length === 0"
         class="flex-1 flex flex-col items-center justify-center py-16 px-4"
       >
-        <div
-          class="rounded-full border border-gray-200 bg-gray-100 p-6 mb-6 dark:border-gray-700 dark:bg-gray-800"
-        >
+        <div class="ui-surface-muted ui-border-default mb-6 rounded-full border p-6">
           <Database class="ui-accent-icon h-16 w-16" :stroke-width="1.5" />
         </div>
         <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
@@ -336,7 +334,7 @@ function handleOpenFileConsole(payload: {
             @dblclick="sidebar.toggleSidebar"
           >
             <div
-              class="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px group-hover:w-[3px] bg-gray-200 dark:bg-gray-700 group-hover:bg-gray-400 dark:group-hover:bg-gray-500 transition-all duration-150"
+              class="ui-border-default absolute inset-y-0 left-1/2 -translate-x-1/2 w-px transition-all duration-150 group-hover:w-[3px] group-hover:bg-[var(--ui-accent-soft-border)]"
             />
           </div>
 
@@ -350,7 +348,7 @@ function handleOpenFileConsole(payload: {
             @click="sidebar.toggleSidebar"
           >
             <div
-              class="absolute inset-y-0 left-0 w-px group-hover:w-[3px] bg-gray-200 dark:bg-gray-700 group-hover:bg-gray-400 dark:group-hover:bg-gray-500 transition-all duration-150"
+              class="ui-border-default absolute inset-y-0 left-0 w-px transition-all duration-150 group-hover:w-[3px] group-hover:bg-[var(--ui-accent-soft-border)]"
             />
           </div>
 

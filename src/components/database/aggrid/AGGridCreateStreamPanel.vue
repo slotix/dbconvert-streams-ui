@@ -226,7 +226,7 @@ async function onCreateStream() {
           <span
             v-for="col in selectedColumns"
             :key="col"
-            class="px-2.5 py-1 text-[11px] rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+            class="ui-chip-muted px-2.5 py-1 text-[11px] rounded-full"
           >
             {{ col }}
           </span>
@@ -279,7 +279,7 @@ async function onCreateStream() {
         </div>
       </div>
 
-      <hr class="my-7 -mx-2 border-gray-200 dark:border-gray-700" />
+      <hr class="ui-border-default my-7 -mx-2" />
 
       <!-- Target -->
       <div class="space-y-5">
@@ -316,12 +316,12 @@ async function onCreateStream() {
             <input
               v-model="targetBasePath"
               type="text"
-              class="w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-850 px-2.5 py-2 text-sm text-gray-900 dark:text-gray-100"
+              class="ui-surface-raised ui-border-default w-full rounded-md border px-2.5 py-2 text-sm text-gray-900 dark:text-gray-100"
               placeholder="Leave blank to use default export folder"
             />
             <button
               type="button"
-              class="inline-flex items-center rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+              class="ui-surface-raised ui-border-default ui-accent-action inline-flex items-center rounded-md border px-3 text-xs text-gray-700 dark:text-gray-200"
               @click="openTargetPathPicker"
             >
               Browse
@@ -338,7 +338,7 @@ async function onCreateStream() {
         </label>
       </div>
 
-      <hr class="my-7 -mx-2 border-gray-200 dark:border-gray-700" />
+      <hr class="ui-border-default my-7 -mx-2" />
 
       <!-- Stream -->
       <div class="space-y-5">
@@ -354,7 +354,7 @@ async function onCreateStream() {
           <input
             v-model="streamName"
             type="text"
-            class="ui-accent-focus mt-2 w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-850 px-2.5 py-2 text-sm text-gray-900 dark:text-gray-100"
+            class="ui-surface-raised ui-border-default ui-accent-focus mt-2 w-full rounded-md border px-2.5 py-2 text-sm text-gray-900 dark:text-gray-100"
             @input="streamNameTouched = true"
           />
         </label>
@@ -364,7 +364,7 @@ async function onCreateStream() {
     <template #footer>
       <button
         type="button"
-        class="text-xs rounded-md px-2.5 py-1 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+        class="ui-surface-raised ui-border-default ui-accent-action rounded-md border px-2.5 py-1 text-xs text-gray-700 dark:text-gray-200"
         @click="emit('close')"
       >
         Cancel

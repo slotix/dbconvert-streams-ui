@@ -14,15 +14,13 @@
         </div>
         <div class="flex items-center gap-2">
           <span class="text-xs font-medium text-gray-500 dark:text-gray-400">View</span>
-          <TabList
-            class="flex rounded-lg bg-gray-100 dark:bg-gray-800 p-0.5 border border-gray-200 dark:border-gray-700"
-          >
+          <TabList class="ui-surface-muted ui-border-default flex rounded-lg p-0.5 border">
             <Tab v-slot="{ selected }" as="template">
               <button
                 :class="[
                   'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all',
                   selected
-                    ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                    ? 'ui-surface-raised text-gray-900 dark:text-gray-100 shadow-sm'
                     : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
                 ]"
               >
@@ -35,7 +33,7 @@
                 :class="[
                   'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all',
                   selected
-                    ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                    ? 'ui-surface-raised text-gray-900 dark:text-gray-100 shadow-sm'
                     : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
                 ]"
               >
@@ -47,13 +45,11 @@
         </div>
       </div>
 
-      <div
-        class="bg-warm-50 dark:bg-gray-900/60 rounded-xl border border-gray-100 dark:border-gray-700"
-      >
+      <div class="ui-surface-panel ui-border-muted rounded-xl border">
         <TabPanels class="p-4">
           <!-- Visual View -->
           <TabPanel>
-            <div class="divide-y divide-gray-200 dark:divide-gray-700/70">
+            <div class="divide-y [border-color:var(--ui-border-default)]">
               <section class="py-3 first:pt-0 last:pb-0">
                 <div class="flex items-start justify-between gap-3 mb-3">
                   <div>
@@ -79,7 +75,7 @@
                 </div>
 
                 <div
-                  class="relative overflow-hidden rounded-2xl border border-gray-200/80 bg-[radial-gradient(circle_at_top_left,_rgba(30,64,175,0.12),_transparent_30%),radial-gradient(circle_at_top_right,_rgba(217,119,6,0.10),_transparent_30%)] px-4 py-5 dark:border-gray-700/80 dark:bg-[radial-gradient(circle_at_top_left,_rgba(30,64,175,0.18),_transparent_30%),radial-gradient(circle_at_top_right,_rgba(217,119,6,0.14),_transparent_30%)] sm:px-5"
+                  class="ui-border-default relative overflow-hidden rounded-2xl border bg-[radial-gradient(circle_at_top_left,_rgba(30,64,175,0.12),_transparent_30%),radial-gradient(circle_at_top_right,_rgba(217,119,6,0.10),_transparent_30%)] px-4 py-5 dark:bg-[radial-gradient(circle_at_top_left,_rgba(30,64,175,0.18),_transparent_30%),radial-gradient(circle_at_top_right,_rgba(217,119,6,0.14),_transparent_30%)] sm:px-5"
                 >
                   <div
                     class="pointer-events-none absolute left-12 right-12 top-[4.2rem] hidden xl:block"
@@ -168,7 +164,7 @@
                         <div
                           v-for="detail in operationSummaryFacts"
                           :key="detail.label"
-                          class="flex items-baseline justify-between gap-4 border-b border-gray-200/70 pb-2 dark:border-gray-700/70"
+                          class="ui-border-default flex items-baseline justify-between gap-4 border-b pb-2"
                         >
                           <dt
                             class="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
@@ -279,7 +275,7 @@
                 </h5>
                 <template v-if="!isCDCMode">
                   <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                    <div class="rounded-md bg-gray-50 dark:bg-gray-900/40 px-3 py-2.5">
+                    <div class="ui-surface-muted rounded-md px-3 py-2.5">
                       <p
                         class="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400"
                       >
@@ -289,7 +285,7 @@
                         {{ estimatedRowsLabel }}
                       </p>
                     </div>
-                    <div class="rounded-md bg-gray-50 dark:bg-gray-900/40 px-3 py-2.5">
+                    <div class="ui-surface-muted rounded-md px-3 py-2.5">
                       <p
                         class="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400"
                       >
@@ -299,7 +295,7 @@
                         {{ estimatedSizeLabel }}
                       </p>
                     </div>
-                    <div class="rounded-md bg-gray-50 dark:bg-gray-900/40 px-3 py-2.5">
+                    <div class="ui-surface-muted rounded-md px-3 py-2.5">
                       <p
                         class="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400"
                       >
@@ -315,7 +311,7 @@
                   </p>
                 </template>
                 <template v-else>
-                  <div class="rounded-md bg-gray-50 dark:bg-gray-900/40 px-3 py-2.5">
+                  <div class="ui-surface-muted rounded-md px-3 py-2.5">
                     <p class="text-sm text-gray-700 dark:text-gray-300">
                       CDC streams run continuously and are stopped manually by the user.
                     </p>
@@ -325,7 +321,7 @@
 
               <section v-if="riskWarningMessage" class="py-3">
                 <div
-                  class="rounded-md border border-amber-300/80 dark:border-amber-500/60 bg-gray-50 dark:bg-gray-900/40 p-3.5"
+                  class="rounded-md border border-amber-300/80 bg-amber-50/60 p-3.5 dark:border-amber-500/60 dark:bg-amber-950/20"
                 >
                   <div class="flex items-start gap-2">
                     <AlertTriangle
@@ -360,7 +356,7 @@
                         {{ table.name }}:
                       </span>
                       <code
-                        class="flex-1 text-xs text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-900 px-2 py-1 rounded border border-gray-200 dark:border-gray-700 truncate"
+                        class="ui-surface-muted ui-border-default flex-1 text-xs text-gray-700 dark:text-gray-300 px-2 py-1 rounded border truncate"
                       >
                         {{ table.query }}
                       </code>

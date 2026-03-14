@@ -81,12 +81,10 @@ function getUploadStatus(status: string) {
 
 <template>
   <div
-    class="bg-white dark:bg-gray-850 rounded-xl shadow-lg dark:shadow-gray-900/30 overflow-hidden border border-amber-200 dark:border-amber-700/50"
+    class="ui-surface-raised overflow-hidden rounded-xl border border-amber-200 dark:border-amber-700/50"
   >
     <!-- Header with amber/orange theme for cloud uploads -->
-    <div
-      class="px-4 py-3 border-b border-amber-200 dark:border-amber-700/50 bg-gray-50 dark:bg-gray-900/40"
-    >
+    <div class="ui-surface-toolbar border-b border-amber-200 px-4 py-3 dark:border-amber-700/50">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
           <PanelHeaderIcon :icon="CloudUpload" tone="amber" />
@@ -115,7 +113,7 @@ function getUploadStatus(status: string) {
           <button
             v-if="collapsible"
             type="button"
-            class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-sky-200 bg-white text-sky-700 transition-all hover:bg-sky-50 dark:border-sky-700/50 dark:bg-gray-900 dark:text-sky-300 dark:hover:bg-gray-800"
+            class="ui-surface-raised inline-flex h-8 w-8 items-center justify-center rounded-md border border-sky-200 text-sky-700 transition-all hover:bg-sky-50 dark:border-sky-700/50 dark:text-sky-300 dark:hover:bg-gray-800"
             :aria-expanded="isExpanded"
             aria-label="Toggle upload"
             @click="emit('toggle')"
@@ -132,7 +130,7 @@ function getUploadStatus(status: string) {
 
       <!-- Overall progress bar -->
       <div v-if="hasAnyUploads" class="mt-3">
-        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+        <div class="ui-surface-inset w-full rounded-full h-2">
           <div
             class="h-2 rounded-full transition-all duration-300"
             :class="
@@ -153,8 +151,8 @@ function getUploadStatus(status: string) {
     <!-- Upload Table -->
     <div v-if="isExpanded && hasAnyUploads" class="p-0">
       <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
-          <thead class="bg-gray-50 dark:bg-gray-900/30">
+        <table class="min-w-full divide-y [border-color:var(--ui-border-default)]">
+          <thead class="ui-surface-muted">
             <tr>
               <th
                 scope="col"
@@ -200,11 +198,11 @@ function getUploadStatus(status: string) {
               </th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900/20">
+          <tbody class="ui-surface-raised divide-y [border-color:var(--ui-border-default)]">
             <tr
               v-for="upload in allUploads"
               :key="upload.table"
-              class="hover:bg-gray-50 dark:hover:bg-gray-900/40 transition-colors"
+              class="transition-colors hover:[background-color:var(--ui-surface-muted)]"
             >
               <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">
                 <span v-tooltip="upload.table" class="truncate block max-w-xs">{{
@@ -265,8 +263,8 @@ function getUploadStatus(status: string) {
     </div>
 
     <!-- Empty State -->
-    <div v-else-if="isExpanded" class="px-6 py-12 text-center bg-gray-50/80 dark:bg-gray-900/40">
-      <div class="inline-flex p-4 bg-gray-100 dark:bg-gray-800 rounded-full mb-4">
+    <div v-else-if="isExpanded" class="ui-surface-muted px-6 py-12 text-center">
+      <div class="ui-surface-inset mb-4 inline-flex rounded-full p-4">
         <CloudArrowUpIcon class="h-8 w-8 text-amber-400 dark:text-amber-500" />
       </div>
       <h4 class="text-base font-medium text-gray-900 dark:text-gray-100 mb-1">

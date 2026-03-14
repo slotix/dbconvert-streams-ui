@@ -25,7 +25,7 @@
             leave-to="opacity-0 scale-95"
           >
             <DialogPanel
-              class="w-full max-w-4xl transform overflow-hidden rounded-2xl bg-white dark:bg-gray-850 p-6 text-left align-middle shadow-xl dark:shadow-gray-900/50 transition-all"
+              class="ui-surface-floating w-full max-w-4xl transform overflow-hidden rounded-2xl border p-6 text-left align-middle transition-all"
             >
               <!-- Header -->
               <DialogTitle
@@ -55,7 +55,7 @@
                   <button
                     v-for="root in roots"
                     :key="root"
-                    class="px-3 py-2 text-sm bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-md hover:bg-blue-100 dark:hover:bg-blue-900/50 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:ring-offset-2 dark:focus:ring-offset-gray-850"
+                    class="ui-accent-selection-checked ui-accent-focus px-3 py-2 text-sm rounded-md border focus:outline-none"
                     @click="navigateToPath(root)"
                   >
                     {{ getFolderDisplayName(root) }}
@@ -74,7 +74,7 @@
                     >
                       <button
                         v-if="index < pathSegments.length - 1"
-                        class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 focus:outline-none"
+                        class="ui-accent-text hover:opacity-80 focus:outline-none"
                         @click="navigateToSegment(index)"
                       >
                         {{ segment.name }}
@@ -104,13 +104,13 @@
                 </div>
                 <div
                   v-else
-                  class="border border-gray-200 dark:border-gray-700 rounded-md max-h-96 overflow-y-auto bg-white dark:bg-gray-900"
+                  class="ui-surface-raised ui-border-default border rounded-md max-h-96 overflow-y-auto"
                 >
                   <div
                     v-for="entry in sortedEntries"
                     :key="entry.path"
-                    class="flex items-center px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer border-b border-gray-100 dark:border-gray-800 last:border-b-0"
-                    :class="{ 'bg-blue-50 dark:bg-blue-900/30': selectedPath === entry.path }"
+                    class="ui-border-default flex cursor-pointer items-center border-b px-4 py-3 hover:[background-color:var(--ui-surface-muted)] last:border-b-0"
+                    :class="{ 'ui-accent-selection-checked': selectedPath === entry.path }"
                     @click="selectEntry(entry)"
                     @dblclick="entry.type === 'dir' ? navigateToPath(entry.path) : null"
                   >
@@ -135,7 +135,7 @@
 
                     <!-- Selection indicator -->
                     <div v-if="selectedPath === entry.path" class="shrink-0 ml-2">
-                      <CheckCircle class="h-5 w-5 text-blue-500 dark:text-blue-400" />
+                      <CheckCircle class="ui-accent-icon h-5 w-5" />
                     </div>
                   </div>
                 </div>
@@ -150,8 +150,8 @@
                   <input
                     v-model="selectedPath"
                     type="text"
-                    class="block w-full rounded-md border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm dark:shadow-gray-900/30 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400 sm:text-sm placeholder-gray-400 dark:placeholder-gray-500"
-                    :class="{ 'bg-gray-50 dark:bg-gray-800': !manualPathEdit }"
+                    class="ui-accent-focus ui-surface-raised ui-border-default block w-full rounded-md border text-gray-900 dark:text-gray-100 shadow-sm sm:text-sm placeholder-gray-400 dark:placeholder-gray-500"
+                    :class="{ 'ui-surface-muted': !manualPathEdit }"
                     :readonly="!manualPathEdit"
                     placeholder="No folder selected"
                   />
@@ -169,7 +169,7 @@
               <div class="flex justify-between items-center">
                 <button
                   v-if="currentPath !== initialPath"
-                  class="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-700 shadow-sm dark:shadow-gray-900/30 text-sm leading-4 font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-850 hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-850 focus:ring-blue-500 dark:focus:ring-blue-400 transition-colors"
+                  class="ui-surface-raised ui-border-default ui-accent-action inline-flex items-center rounded-md border px-3 py-2 text-sm leading-4 font-medium text-gray-700 shadow-sm transition-colors focus:outline-none dark:text-gray-300"
                   @click="goUp"
                 >
                   <ArrowUp class="h-4 w-4 mr-1" />

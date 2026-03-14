@@ -178,10 +178,10 @@ onBeforeUnmount(() => {
   <div
     ref="panelRef"
     :style="panelStyle"
-    class="absolute z-10 min-w-[210px] rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg"
+    class="ui-surface-floating ui-border-default absolute z-10 min-w-[210px] rounded-xl border"
   >
     <div
-      class="flex items-center justify-between px-2.5 py-1.5 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 select-none touch-none"
+      class="ui-surface-toolbar ui-border-default flex items-center justify-between border-b px-2.5 py-1.5 select-none touch-none"
       :class="[isDragging ? 'cursor-grabbing' : 'cursor-grab', isCollapsed ? 'border-b-0' : '']"
       @pointerdown="handlePointerDown"
     >
@@ -244,10 +244,7 @@ onBeforeUnmount(() => {
       </div>
 
       <!-- Export Options Panel -->
-      <div
-        v-if="exportOptions"
-        class="p-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/70"
-      >
+      <div v-if="exportOptions" class="ui-surface-muted ui-border-default rounded-lg border p-1.5">
         <div class="flex items-center mb-1.5">
           <span class="text-xs font-semibold text-slate-700 dark:text-slate-200 mr-auto"
             >Export Format</span

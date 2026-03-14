@@ -1,11 +1,11 @@
 <template>
   <div
     v-if="comparison"
-    class="bg-white dark:bg-gray-850 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden"
+    class="ui-surface-raised ui-border-default overflow-hidden rounded-lg border"
   >
     <!-- Collapsed State: Summary with Badges -->
     <button
-      class="w-full px-6 py-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-b border-gray-200 dark:border-gray-700"
+      class="ui-surface-toolbar ui-border-default flex w-full items-center justify-between border-b px-6 py-3 transition-colors hover:[background-color:var(--ui-surface-muted)]"
       @click="expanded = !expanded"
     >
       <div class="flex items-center gap-3 flex-1">
@@ -54,16 +54,13 @@
       </div>
 
       <!-- View Mode Toggle - always visible -->
-      <div
-        class="flex items-center gap-2 ml-4 pl-4 border-l border-gray-300 dark:border-gray-700"
-        @click.stop
-      >
+      <div class="ui-border-default ml-4 flex items-center gap-2 border-l pl-4" @click.stop>
         <button
           class="px-3 py-1 text-xs font-medium rounded-md transition-colors"
           :class="
             viewMode === 'columns'
-              ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm border border-gray-300 dark:border-gray-600'
-              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'
+              ? 'ui-surface-raised ui-border-default text-gray-900 dark:text-gray-100 border'
+              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:[background-color:var(--ui-surface-muted)]'
           "
           @click="selectViewMode('columns')"
         >
@@ -73,8 +70,8 @@
           class="px-3 py-1 text-xs font-medium rounded-md transition-colors"
           :class="
             viewMode === 'ddl'
-              ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm border border-gray-300 dark:border-gray-600'
-              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'
+              ? 'ui-surface-raised ui-border-default text-gray-900 dark:text-gray-100 border'
+              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:[background-color:var(--ui-surface-muted)]'
           "
           @click="selectViewMode('ddl')"
         >
@@ -84,15 +81,13 @@
     </button>
 
     <!-- Expanded State: Content -->
-    <div v-if="expanded" class="bg-gray-50 dark:bg-gray-900/60">
+    <div v-if="expanded" class="ui-surface-muted">
       <!-- Columns View -->
       <div v-if="viewMode === 'columns'" class="p-4">
-        <div
-          class="bg-white dark:bg-gray-850 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden shadow-sm"
-        >
+        <div class="ui-surface-raised ui-border-default overflow-hidden rounded-lg border">
           <!-- Headers -->
           <div
-            class="grid grid-cols-[1fr_auto_1fr] gap-4 px-4 py-2 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
+            class="ui-surface-toolbar ui-border-default grid grid-cols-[1fr_auto_1fr] gap-4 border-b px-4 py-2"
           >
             <div class="flex items-center justify-between">
               <span
@@ -121,7 +116,7 @@
             <div
               v-for="col in mergedColumns"
               :key="col.name"
-              class="grid grid-cols-[1fr_auto_1fr] gap-4 px-4 py-2.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              class="grid grid-cols-[1fr_auto_1fr] gap-4 px-4 py-2.5 text-sm transition-colors hover:[background-color:var(--ui-surface-muted)]"
               :class="getRowClass(col)"
             >
               <!-- Source Column -->
@@ -150,7 +145,7 @@
                 </span>
                 <span
                   v-if="!col.sourceColumn.isNullable"
-                  class="px-1.5 py-0.5 text-[11px] bg-gray-100 text-gray-600 dark:bg-gray-900/40 dark:text-gray-400 rounded font-medium uppercase tracking-wide text-center"
+                  class="ui-chip-muted rounded px-1.5 py-0.5 text-center text-[11px] font-medium uppercase tracking-wide"
                 >
                   NOT&nbsp;NULL
                 </span>
@@ -203,7 +198,7 @@
                 </span>
                 <span
                   v-if="!col.targetColumn.isNullable"
-                  class="px-1.5 py-0.5 text-[11px] bg-gray-100 text-gray-600 dark:bg-gray-900/40 dark:text-gray-400 rounded font-medium uppercase tracking-wide text-center"
+                  class="ui-chip-muted rounded px-1.5 py-0.5 text-center text-[11px] font-medium uppercase tracking-wide"
                 >
                   NOT&nbsp;NULL
                 </span>
@@ -226,11 +221,9 @@
       <!-- DDL View -->
       <div v-else-if="viewMode === 'ddl'" class="grid grid-cols-2 gap-4 p-4">
         <!-- Source DDL -->
-        <div
-          class="bg-white dark:bg-gray-850 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden shadow-sm"
-        >
+        <div class="ui-surface-raised ui-border-default overflow-hidden rounded-lg border">
           <div
-            class="px-4 py-2 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between"
+            class="ui-surface-toolbar ui-border-default flex items-center justify-between border-b px-4 py-2"
           >
             <span
               class="text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wide"
@@ -252,11 +245,9 @@
         </div>
 
         <!-- Target DDL -->
-        <div
-          class="bg-white dark:bg-gray-850 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden shadow-sm"
-        >
+        <div class="ui-surface-raised ui-border-default overflow-hidden rounded-lg border">
           <div
-            class="px-4 py-2 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between"
+            class="ui-surface-toolbar ui-border-default flex items-center justify-between border-b px-4 py-2"
           >
             <span
               class="text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wide"

@@ -1,6 +1,6 @@
 <template>
   <!-- Compact mode: no wrapper, just content with separator -->
-  <div v-if="compact" class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700 space-y-2">
+  <div v-if="compact" class="ui-border-default mt-3 space-y-2 border-t pt-3">
     <div class="flex items-center justify-between">
       <span class="text-xs text-gray-600 dark:text-gray-400">Format:</span>
       <span
@@ -22,9 +22,7 @@
     <label class="block text-xs font-medium uppercase text-gray-500 dark:text-gray-400 mb-2">
       Output Configuration
     </label>
-    <div
-      class="bg-gray-50 dark:bg-gray-900/40 rounded-md p-4 border border-gray-300 dark:border-gray-700 space-y-2"
-    >
+    <div class="ui-surface-muted ui-border-default space-y-2 rounded-md border p-4">
       <div class="flex items-center justify-between">
         <span class="text-xs text-gray-600 dark:text-gray-400">Format:</span>
         <span
@@ -83,6 +81,6 @@ const compressionBadgeClass = computed(() => {
   if (compressionType === 'gzip') {
     return `${base}bg-yellow-50 text-yellow-700 ring-yellow-600/20 dark:bg-yellow-900/30 dark:text-yellow-300 dark:ring-yellow-500/30`
   }
-  return `${base}bg-gray-50 text-gray-700 ring-gray-600/20 dark:bg-gray-900/30 dark:text-gray-300 dark:ring-gray-600/30`
+  return `${base}ui-chip-muted`
 })
 </script>

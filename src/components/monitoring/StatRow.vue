@@ -1,6 +1,6 @@
 <template>
   <div
-    class="flex flex-col gap-1 py-2 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+    class="flex flex-col gap-1 rounded-lg px-3 py-2 transition-colors hover:[background-color:var(--ui-surface-muted)]"
   >
     <dt class="text-xs font-semibold tracking-wide uppercase" :class="labelClass">
       {{ label }}

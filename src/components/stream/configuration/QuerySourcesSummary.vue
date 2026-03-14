@@ -3,9 +3,7 @@
     <label class="block text-xs font-medium uppercase text-gray-500 dark:text-gray-400 mb-2">
       Custom SQL Queries
     </label>
-    <div
-      class="bg-gray-50 dark:bg-gray-800 rounded-md p-3 border border-gray-300 dark:border-gray-700"
-    >
+    <div class="ui-surface-muted ui-border-default rounded-md border p-3">
       <div class="flex flex-wrap gap-2">
         <span
           v-for="query in queries"

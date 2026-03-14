@@ -1,10 +1,7 @@
 <template>
   <div class="space-y-3">
     <!-- Column Selector -->
-    <div
-      v-if="showColumnSelector"
-      class="p-2 bg-white dark:bg-gray-800/70 rounded border border-gray-200 dark:border-gray-700"
-    >
+    <div v-if="showColumnSelector" class="ui-surface-raised ui-border-default rounded border p-2">
       <div class="flex items-center justify-between mb-2">
         <span class="text-xs font-medium text-gray-600 dark:text-gray-400">
           Select columns to {{ mode === 'explorer' ? 'display' : 'transfer' }}
@@ -34,7 +31,7 @@
           :class="
             selectedColumns.includes(col.name)
               ? 'ui-accent-selection-checked ui-accent-text'
-              : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 border border-transparent hover:border-gray-300 dark:hover:border-gray-600'
+              : 'ui-chip-muted border border-transparent hover:[border-color:var(--ui-border-default)]'
           "
         >
           <input
@@ -63,16 +60,14 @@
     </div>
 
     <!-- Row Limit -->
-    <div
-      class="flex items-center gap-2 p-1.5 bg-white dark:bg-gray-800/70 rounded border border-gray-200 dark:border-gray-700"
-    >
+    <div class="ui-surface-raised ui-border-default flex items-center gap-2 rounded border p-1.5">
       <span class="text-xs text-gray-400 px-1 w-12 shrink-0">Limit:</span>
       <input
         v-model.number="limitValue"
         type="number"
         min="0"
         :placeholder="mode === 'stream' ? '∞' : 'optional'"
-        class="ui-accent-focus w-24 rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-2 py-1 text-xs text-gray-900 dark:text-gray-100 placeholder:text-gray-400"
+        class="ui-accent-focus ui-surface-raised ui-border-default w-24 rounded border px-2 py-1 text-xs text-gray-900 dark:text-gray-100 placeholder:text-gray-400"
         @input="emitUpdate"
       />
       <span class="text-xs text-gray-400">rows</span>
@@ -90,7 +85,7 @@
     <!-- WHERE Filters -->
     <div
       v-if="filters.length > 0"
-      class="space-y-1.5 pr-1 p-1.5 bg-white dark:bg-gray-800/70 rounded border border-gray-200 dark:border-gray-700"
+      class="ui-surface-raised ui-border-default space-y-1.5 rounded border p-1.5 pr-1"
     >
       <div
         v-for="filter in filters"
@@ -126,7 +121,7 @@
             v-model="filter.value"
             type="text"
             :placeholder="getPlaceholder(filter.operator)"
-            class="ui-accent-focus w-full min-w-0 rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-1.5 py-1 text-xs text-gray-900 dark:text-gray-100"
+            class="ui-accent-focus ui-surface-raised ui-border-default w-full min-w-0 rounded border px-1.5 py-1 text-xs text-gray-900 dark:text-gray-100"
             @input="emitUpdate"
             @keyup.enter="$emit('apply')"
           />
@@ -144,7 +139,7 @@
     <!-- ORDER BY -->
     <div
       v-if="sorts.length > 0"
-      class="space-y-1.5 pr-1 p-1.5 bg-white dark:bg-gray-800/70 rounded border border-gray-200 dark:border-gray-700"
+      class="ui-surface-raised ui-border-default space-y-1.5 rounded border p-1.5 pr-1"
     >
       <div
         v-for="(sort, index) in sorts"

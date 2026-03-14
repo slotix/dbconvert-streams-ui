@@ -49,7 +49,7 @@
           @update:selected-type="sourceConnectionType = $event"
         />
 
-        <div class="flex-1 overflow-y-auto p-3 bg-white dark:bg-gray-900/60">
+        <div class="ui-surface-raised flex-1 overflow-y-auto p-3">
           <ConnectionTreeSelector
             :connections="filteredSourceConnections"
             :search-matches="sourceSearchMatches"
@@ -114,7 +114,7 @@
           @update:selected-type="targetConnectionType = $event"
         />
 
-        <div class="flex-1 overflow-y-auto p-3 bg-white dark:bg-gray-900/60">
+        <div class="ui-surface-raised flex-1 overflow-y-auto p-3">
           <ConnectionTreeSelector
             :connections="filteredTargetConnections"
             :search-matches="targetSearchMatches"

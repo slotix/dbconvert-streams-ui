@@ -1315,10 +1315,7 @@ function handleUpdateCollisionRadius(value: number) {
 
 <template>
   <div class="relative h-full">
-    <div
-      ref="svgContainer"
-      class="w-full h-full min-h-[480px] bg-gray-50 dark:bg-gray-900 rounded-lg"
-    ></div>
+    <div ref="svgContainer" class="ui-surface-muted w-full h-full min-h-[480px] rounded-lg"></div>
 
     <DiagramControls
       :current-zoom="zoomComposable.currentZoom.value"

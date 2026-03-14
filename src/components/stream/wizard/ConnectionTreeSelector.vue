@@ -103,7 +103,7 @@
                   v-if="props.enableMultiSelect && props.mode === 'source'"
                   type="checkbox"
                   :checked="isS3BucketSelected(connection.id, bucket)"
-                  class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500 bg-white dark:bg-gray-800 shrink-0"
+                  class="ui-surface-raised ui-border-default h-4 w-4 shrink-0 rounded border text-indigo-600 focus:ring-indigo-500"
                   @click.stop
                   @change="
                     handleS3BucketCheckboxChange(
@@ -133,7 +133,7 @@
                 v-if="props.enableMultiSelect && props.mode === 'source'"
                 type="checkbox"
                 :checked="isFileConnectionSelected(connection.id)"
-                class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500 bg-white dark:bg-gray-800 shrink-0 mt-0.5"
+                class="ui-surface-raised ui-border-default mt-0.5 h-4 w-4 shrink-0 rounded border text-indigo-600 focus:ring-indigo-500"
                 @click.stop
                 @change="
                   handleFilePathCheckboxChange(
@@ -171,7 +171,7 @@
               </span>
               <button
                 type="button"
-                class="ml-auto rounded-md border border-gray-300 dark:border-gray-600 px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-60"
+                class="ui-surface-raised ui-border-default ui-accent-action ml-auto rounded-md border px-2 py-1 text-xs font-medium text-gray-600 disabled:cursor-not-allowed disabled:opacity-60 dark:text-gray-300"
                 :disabled="getFileLoadingState(connection.id)"
                 @click.stop="refreshFileEntries(connection.id)"
               >
@@ -218,7 +218,7 @@
                   v-if="props.enableMultiSelect && props.mode === 'source'"
                   type="checkbox"
                   :checked="isDatabaseSelected(connection.id, database.name)"
-                  class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500 bg-white dark:bg-gray-800 shrink-0"
+                  class="ui-surface-raised ui-border-default h-4 w-4 shrink-0 rounded border text-indigo-600 focus:ring-indigo-500"
                   @change="
                     handleDatabaseCheckboxChange(
                       connection.id,
@@ -242,7 +242,7 @@
               </div>
               <div
                 v-if="shouldShowSchemas(connection, database.name)"
-                class="ml-7 mt-1 space-y-1 border-l border-gray-100 dark:border-gray-800 pl-3"
+                class="ui-border-default ml-7 mt-1 space-y-1 border-l pl-3"
               >
                 <div
                   v-if="isSchemasLoading(connection.id, database.name)"
@@ -567,7 +567,7 @@ function s3BucketRowClass(connectionId: string, bucket: string): string {
   const isSelected = isS3BucketSelected(connectionId, bucket)
 
   if (!isSelected) {
-    return 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/50'
+    return 'text-gray-700 dark:text-gray-200 hover:[background-color:var(--ui-surface-muted)]'
   }
 
   return `${flatSelectedRowClass} pl-2`
@@ -627,14 +627,13 @@ function getConnectionHostValue(connection: Connection): string {
 // Use imported getConnectionTooltip from utils/connectionUtils.ts
 const connectionTooltip = getConnectionTooltip
 
-const flatSelectedRowClass =
-  'bg-slate-100/90 dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 font-semibold'
+const flatSelectedRowClass = 'ui-accent-selection-checked ui-accent-text font-semibold'
 
-const flatSelectedCardClass = 'bg-slate-100/80 dark:bg-slate-800/75 shadow-sm'
+const flatSelectedCardClass = 'ui-surface-muted ui-border-default border shadow-sm'
 
 function connectionCardClass(connectionId: string): string {
   const base =
-    'border border-transparent hover:border-gray-200/60 dark:hover:border-gray-700/60 transition-all duration-200 bg-transparent'
+    'border border-transparent hover:[border-color:var(--ui-border-default)] transition-all duration-200 bg-transparent'
   if (props.selectedConnectionId !== connectionId) {
     return base
   }
@@ -658,7 +657,8 @@ function connectionCardClass(connectionId: string): string {
 }
 
 function connectionHeaderClass(connectionId: string): string {
-  const defaultClass = 'hover:bg-gray-50 dark:hover:bg-gray-800/50 text-gray-800 dark:text-gray-200'
+  const defaultClass =
+    'text-gray-800 dark:text-gray-200 hover:[background-color:var(--ui-surface-muted)]'
 
   if (props.selectedConnectionId !== connectionId) {
     return defaultClass
@@ -685,7 +685,7 @@ function filePathClass(connectionId: string): string {
   const isSelected = isFileConnectionSelected(connectionId)
 
   if (!isSelected) {
-    return 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/50 bg-transparent'
+    return 'bg-transparent text-gray-700 dark:text-gray-200 hover:[background-color:var(--ui-surface-muted)]'
   }
 
   return `${flatSelectedRowClass} pl-2`
@@ -695,7 +695,7 @@ function databaseRowClass(connectionId: string, database: string): string {
   const isSelected = isDatabaseSelected(connectionId, database)
 
   if (!isSelected) {
-    return 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/50'
+    return 'text-gray-700 dark:text-gray-200 hover:[background-color:var(--ui-surface-muted)]'
   }
 
   return `${flatSelectedRowClass} pl-2`
@@ -708,7 +708,7 @@ function schemaRowClass(connectionId: string, database: string, schema: string):
     props.selectedSchema === schema
 
   if (!isSelected) {
-    return 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/50'
+    return 'text-gray-700 dark:text-gray-200 hover:[background-color:var(--ui-surface-muted)]'
   }
 
   return flatSelectedRowClass

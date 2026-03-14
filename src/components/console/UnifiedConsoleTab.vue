@@ -1,8 +1,8 @@
 <template>
-  <div class="console-tab h-full flex flex-col bg-gray-50 dark:bg-gray-900 pb-2">
+  <div class="console-tab ui-surface-panel flex h-full flex-col pb-2">
     <!-- Unified header: breadcrumb + pills + settings -->
     <div
-      class="px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2 min-w-0"
+      class="ui-surface-toolbar ui-border-default flex min-w-0 items-center gap-2 border-b px-4 py-2"
     >
       <!-- Breadcrumb text -->
       <span class="shrink-0 text-sm font-medium text-gray-700 dark:text-gray-300">{{
@@ -15,7 +15,7 @@
           v-for="pill in sourcePills"
           :key="pill.key"
           data-source-pill
-          class="inline-flex shrink-0 items-center max-w-[140px] px-2 py-0.5 text-[11px] rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700"
+          class="ui-chip-muted ui-border-default inline-flex max-w-[140px] shrink-0 items-center rounded-full border px-2 py-0.5 text-[11px] text-gray-700 dark:text-gray-200"
         >
           <span class="truncate">{{ pill.label }}</span>
         </span>
@@ -60,7 +60,7 @@
       <!-- Editor Pane -->
       <div
         ref="leftPaneRef"
-        class="shrink-0 border-r border-gray-200 dark:border-gray-700 min-h-0"
+        class="ui-border-default min-h-0 shrink-0 border-r"
         :style="{ width: `calc(${editorWidth}% - 2px)` }"
       >
         <SqlEditorPane
@@ -84,7 +84,7 @@
 
       <!-- Resizable Divider -->
       <div
-        class="w-1 shrink-0 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 cursor-col-resize transition-colors"
+        class="ui-border-default w-1 shrink-0 cursor-col-resize bg-[var(--ui-border-default)] transition-colors hover:bg-[var(--ui-accent-soft-border)]"
         @mousedown="startResize"
       ></div>
 

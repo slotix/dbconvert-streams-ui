@@ -1,7 +1,7 @@
 <template>
   <div class="mx-auto flex min-h-[calc(100vh-65px)] max-w-[1600px] flex-col px-4 sm:px-6 lg:px-8">
     <div class="flex-1 py-6">
-      <div class="border-b border-gray-200 py-5 dark:border-gray-800">
+      <div class="border-b py-5 ui-border-default">
         <div v-if="connection" class="flex items-start gap-3">
           <div class="flex items-start gap-3">
             <DatabaseIcon
@@ -98,7 +98,7 @@
     </div>
 
     <div
-      class="sticky bottom-0 z-20 -mx-4 border-t border-slate-200/80 bg-white/92 backdrop-blur sm:-mx-6 lg:-mx-8 dark:border-gray-700/80 dark:bg-gray-900/92"
+      class="ui-surface-panel ui-border-default sticky bottom-0 z-20 -mx-4 border-t backdrop-blur sm:-mx-6 lg:-mx-8"
     >
       <div
         class="mx-auto flex max-w-[1600px] flex-col gap-3 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8"

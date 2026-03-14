@@ -2,7 +2,7 @@
   <div class="flex flex-col min-h-0 h-full">
     <!-- Toolbar -->
     <div
-      class="@container/toolbar bg-gray-100 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 gap-1.5 px-2.5 @[620px]/toolbar:gap-2 @[620px]/toolbar:px-3 py-1.5 flex items-center"
+      class="@container/toolbar ui-surface-toolbar ui-border-default flex items-center gap-1.5 border-b px-2.5 py-1.5 @[620px]/toolbar:gap-2 @[620px]/toolbar:px-3"
     >
       <button
         :disabled="isExecuting"
@@ -17,7 +17,7 @@
       <div ref="formatDropdownRef" class="relative inline-flex">
         <button
           :disabled="isFormatClickDebounced"
-          class="ui-accent-focus inline-flex items-center rounded-l border border-r-0 border-gray-300 bg-white px-2 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+          class="ui-surface-raised ui-border-default ui-accent-focus inline-flex items-center rounded-l border border-r-0 px-2 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:[background-color:var(--ui-surface-muted)] focus:outline-none dark:text-gray-300"
           :title="formatButtonTitle"
           @click="handleFormatClick"
         >
@@ -27,7 +27,7 @@
 
         <button
           :disabled="isFormatClickDebounced"
-          class="ui-accent-focus inline-flex items-center justify-center rounded-r border border-gray-300 bg-white px-2 py-1.5 text-gray-600 shadow-sm hover:bg-gray-50 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+          class="ui-surface-raised ui-border-default ui-accent-focus inline-flex items-center justify-center rounded-r border px-2 py-1.5 text-gray-600 shadow-sm hover:[background-color:var(--ui-surface-muted)] focus:outline-none dark:text-gray-300"
           :class="formatState === 'compacted' ? 'ui-accent-text' : ''"
           :title="'More formatting options'"
           @click.stop="toggleFormatMenu"
@@ -38,11 +38,11 @@
         <div
           v-if="showFormatMenu"
           ref="formatMenuRef"
-          class="absolute left-0 top-full z-210 mt-1 min-w-[140px] overflow-hidden rounded-md border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
+          class="ui-surface-floating ui-border-default absolute left-0 top-full z-210 mt-1 min-w-[140px] overflow-hidden rounded-md border"
         >
           <button
             type="button"
-            class="w-full text-left px-3 py-2 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+            class="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-200"
             :title="compactButtonTitle"
             @click="handleCompactClick"
           >
@@ -54,7 +54,7 @@
 
       <button
         :disabled="!hasQueryToCopy"
-        class="ui-accent-focus inline-flex items-center rounded border border-gray-300 bg-white px-2 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
+        class="ui-surface-raised ui-border-default ui-accent-focus inline-flex items-center rounded border px-2 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:[background-color:var(--ui-surface-muted)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-300"
         :title="isCopyFeedbackVisible ? 'Copied' : 'Copy SQL'"
         @click="copyCurrentQuery"
       >
@@ -63,12 +63,12 @@
       </button>
 
       <!-- Divider -->
-      <div class="w-px h-5 bg-gray-300 dark:bg-gray-600 mx-1"></div>
+      <div class="ui-border-default mx-1 h-5 w-px bg-[var(--ui-border-default)]"></div>
 
       <!-- Templates Dropdown -->
       <div v-if="templates.length > 0" ref="templatesDropdownRef" class="relative">
         <button
-          class="ui-accent-focus inline-flex items-center rounded border border-gray-300 bg-white px-2 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+          class="ui-surface-raised ui-border-default ui-accent-focus inline-flex items-center rounded border px-2 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:[background-color:var(--ui-surface-muted)] focus:outline-none dark:text-gray-300"
           :title="`Open template picker (${shortcutHint})`"
           @click="toggleTemplates"
         >
@@ -88,7 +88,7 @@
       <!-- History Dropdown -->
       <div ref="historyDropdownRef" class="relative">
         <button
-          class="ui-accent-focus inline-flex items-center rounded border border-gray-300 bg-white px-2 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+          class="ui-surface-raised ui-border-default ui-accent-focus inline-flex items-center rounded border px-2 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:[background-color:var(--ui-surface-muted)] focus:outline-none dark:text-gray-300"
           :disabled="history.length === 0"
           :class="{ 'opacity-50 cursor-not-allowed': history.length === 0 }"
           :title="historyButtonTitle"
@@ -101,7 +101,7 @@
           </span>
           <span
             v-if="history.length > 0"
-            class="ml-1 rounded-full bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 text-[10px] leading-none text-gray-600 dark:text-gray-300 @[620px]/toolbar:hidden"
+            class="ui-chip-muted ml-1 rounded-full px-1.5 py-0.5 text-[10px] leading-none @[620px]/toolbar:hidden"
           >
             {{ history.length }}
           </span>
@@ -111,10 +111,10 @@
         <div
           v-if="showHistory && history.length > 0"
           ref="historyMenuRef"
-          class="z-210 flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-800"
+          class="ui-surface-floating ui-border-default z-210 flex flex-col overflow-hidden rounded-lg border"
           :style="historyMenuStyle"
         >
-          <div class="px-3 pt-2.5 pb-2 border-b border-gray-200 dark:border-gray-700/80">
+          <div class="ui-border-default border-b px-3 pt-2.5 pb-2">
             <div class="flex items-center justify-between">
               <span class="text-xs font-semibold text-gray-700 dark:text-gray-300">History</span>
               <span class="text-[10px] text-gray-500 dark:text-gray-400">
@@ -130,7 +130,7 @@
                 v-model="historySearch"
                 type="text"
                 placeholder="Search history..."
-                class="ui-accent-focus w-full rounded-md border border-gray-300 bg-white py-1.5 pl-8 pr-2 text-xs text-gray-900 focus:outline-none dark:border-gray-600 dark:bg-gray-850 dark:text-gray-100"
+                class="ui-surface-raised ui-border-default ui-accent-focus w-full rounded-md border py-1.5 pl-8 pr-2 text-xs text-gray-900 focus:outline-none dark:text-gray-100"
               />
             </div>
           </div>
@@ -138,7 +138,7 @@
             <div
               v-for="(item, index) in filteredHistory"
               :key="historyKey(item, index)"
-              class="group relative flex items-center gap-2 rounded-md px-2 py-1.5 mb-1 transition-colors border border-transparent hover:bg-gray-100/80 dark:hover:bg-gray-700/50 hover:border-gray-200/70 dark:hover:border-gray-600/70"
+              class="group relative mb-1 flex items-center gap-2 rounded-md border border-transparent px-2 py-1.5 transition-colors hover:[background-color:var(--ui-surface-muted)] hover:[border-color:var(--ui-border-default)]"
               :class="{
                 'ui-accent-selection-checked':
                   mostRecentHistoryId && item.id === mostRecentHistoryId,
@@ -163,7 +163,7 @@
                 {{ historyQueryPreview(item.query) }}
               </span>
               <span
-                class="shrink-0 px-1.5 py-0.5 rounded-full border border-gray-300 dark:border-gray-600 text-[10px] leading-none text-gray-600 dark:text-gray-400"
+                class="ui-chip-muted ui-border-default shrink-0 rounded-full border px-1.5 py-0.5 text-[10px] leading-none"
               >
                 {{ historyAliasBadge(item) }}
               </span>
@@ -180,7 +180,7 @@
                 </button>
                 <button
                   type="button"
-                  class="p-1 rounded text-gray-500 hover:text-gray-700 hover:bg-gray-200/70 dark:hover:text-gray-200 dark:hover:bg-gray-700/70"
+                  class="rounded p-1 text-gray-500 hover:bg-[var(--ui-surface-muted)] hover:text-gray-700 dark:hover:text-gray-200"
                   title="Copy SQL"
                   @click.stop="copyHistoryQuery(item)"
                 >
@@ -231,7 +231,7 @@
     </div>
 
     <!-- SQL Editor -->
-    <div class="flex-1 overflow-hidden bg-white dark:bg-gray-900 h-full min-h-0">
+    <div class="ui-surface-app h-full min-h-0 flex-1 overflow-hidden">
       <SqlCodeMirror
         ref="sqlEditorRef"
         :model-value="modelValue"

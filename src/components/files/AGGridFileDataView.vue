@@ -780,7 +780,7 @@ export default {
     <!-- Grid Actions Toolbar -->
     <div
       v-if="!isUnsupportedFile && props.showToolbarActions"
-      class="toolbar-container flex flex-wrap items-start justify-between gap-2 px-3 py-1.5 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700"
+      class="toolbar-container ui-surface-toolbar flex flex-wrap items-start justify-between gap-2 border-b px-3 py-1.5"
     >
       <div v-if="props.showToolbarActions" class="flex items-center gap-2 min-w-0">
         <button
@@ -790,7 +790,7 @@ export default {
           :class="
             hasAnyFilterActivity
               ? 'bg-transparent text-amber-600 dark:text-amber-400 border border-amber-500/80 dark:border-amber-500 hover:bg-amber-50/30 dark:hover:bg-amber-500/10'
-              : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 border border-transparent'
+              : 'text-gray-600 dark:text-gray-400 hover:[background-color:var(--ui-surface-muted)] border border-transparent'
           "
           @click="openFilterPanel"
         >
@@ -857,7 +857,7 @@ export default {
           </button>
           <button
             type="button"
-            class="text-xs rounded-md px-2.5 py-1 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed shrink-0 whitespace-nowrap"
+            class="ui-surface-raised ui-border-default text-xs rounded-md px-2.5 py-1 border text-gray-700 dark:text-gray-200 hover:[background-color:var(--ui-surface-muted)] disabled:opacity-50 disabled:cursor-not-allowed shrink-0 whitespace-nowrap"
             title="Discard pending changes"
             :disabled="isSaving"
             @click="cancelChanges"
@@ -882,7 +882,7 @@ export default {
     <!-- Error State Placeholder -->
     <div
       v-if="!isUnsupportedFile && baseGrid.error.value"
-      class="flex items-center justify-center py-12 bg-gray-50 dark:bg-gray-900/40 rounded-md border border-gray-200 dark:border-gray-700"
+      class="ui-surface-muted flex items-center justify-center py-12 rounded-md border"
     >
       <div class="text-center p-8 max-w-md">
         <svg
@@ -904,9 +904,7 @@ export default {
         <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
           {{ baseGrid.error.value }}
         </p>
-        <div
-          class="text-xs text-gray-500 dark:text-gray-500 bg-white dark:bg-gray-800 rounded p-3 border border-gray-200 dark:border-gray-700"
-        >
+        <div class="ui-surface-raised text-xs text-gray-500 dark:text-gray-500 rounded p-3 border">
           <p class="font-semibold mb-1">Common causes:</p>
           <ul class="list-disc list-inside text-left space-y-1">
             <li>File was deleted or moved after being listed</li>
@@ -943,11 +941,11 @@ export default {
       <!-- Loading overlay - fully opaque to hide empty grid -->
       <div
         v-if="isInitialLoading || isRefreshing"
-        class="absolute inset-0 bg-white dark:bg-gray-850 flex items-center justify-center z-50"
+        class="ui-surface-raised absolute inset-0 flex items-center justify-center z-50"
       >
         <div class="flex flex-col items-center gap-3">
           <svg
-            class="animate-spin h-8 w-8 text-blue-600 dark:text-blue-400"
+            class="ui-accent-icon animate-spin h-8 w-8"
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"

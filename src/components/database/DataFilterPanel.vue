@@ -7,7 +7,7 @@
     :body-padding="false"
     @close="toggleExpanded"
   >
-    <div class="px-3 pt-3 pb-2 border-b border-gray-200 dark:border-gray-700">
+    <div class="ui-border-default border-b px-3 pt-3 pb-2">
       <div class="flex items-center gap-1">
         <button
           type="button"
@@ -82,7 +82,7 @@
               :class="
                 dirty
                   ? 'ui-accent-primary border'
-                  : 'text-gray-400 bg-gray-200 dark:bg-gray-700 cursor-not-allowed'
+                  : 'ui-surface-muted ui-border-default cursor-not-allowed border text-gray-400'
               "
               :disabled="!dirty"
               @click="applyFilters"

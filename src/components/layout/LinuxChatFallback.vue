@@ -22,7 +22,7 @@
       </header>
 
       <iframe
-        class="h-[calc(100%-44px)] w-full bg-white"
+        class="ui-surface-raised h-[calc(100%-44px)] w-full"
         :src="TAWK_DIRECT_CHAT_URL"
         title="Support chat"
         loading="lazy"

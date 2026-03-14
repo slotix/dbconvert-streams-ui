@@ -1,12 +1,12 @@
 <template>
   <div
     v-if="shouldShowApiKeyPrompt"
-    class="fixed inset-0 bg-gray-500/40 dark:bg-black/60 transition-opacity z-40"
+    class="fixed inset-0 bg-black/25 dark:bg-black/60 transition-opacity z-40"
   >
     <div class="fixed inset-0 z-50 overflow-y-auto">
       <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
         <div
-          class="relative transform overflow-hidden rounded-lg bg-white dark:bg-gray-850 px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6 backdrop-blur-sm"
+          class="ui-surface-floating relative transform overflow-hidden rounded-lg border px-4 pb-4 pt-5 text-left transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6 backdrop-blur-sm"
         >
           <button
             v-if="canDismissPrompt"
@@ -19,7 +19,7 @@
           </button>
           <div>
             <div
-              class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700"
+              class="ui-surface-muted ui-border-muted mx-auto flex h-12 w-12 items-center justify-center rounded-full border"
             >
               <Key class="h-6 w-6 text-gray-600 dark:text-gray-300" aria-hidden="true" />
             </div>
