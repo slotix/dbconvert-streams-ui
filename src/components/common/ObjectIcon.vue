@@ -22,7 +22,7 @@ const iconColor = computed(() => {
     case 'table':
       return 'text-blue-500 dark:text-blue-400' // Tables - blue (primary data)
     case 'view':
-      return 'text-teal-500 dark:text-teal-400' // Views - teal (derived/virtual)
+      return 'ui-accent-icon' // Views - shared accent (derived/virtual)
     case 'function':
       return 'text-indigo-500 dark:text-indigo-400' // Functions - indigo (logic)
     case 'procedure':

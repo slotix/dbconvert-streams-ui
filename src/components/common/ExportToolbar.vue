@@ -62,8 +62,8 @@
               :disabled="isExporting"
               @click="handleStreamExport(format.id)"
             >
-              <CloudUpload v-if="!isExporting" class="h-3.5 w-3.5 text-teal-500" />
-              <Loader2 v-else class="animate-spin h-3.5 w-3.5 text-teal-500" />
+              <CloudUpload v-if="!isExporting" class="ui-accent-icon h-3.5 w-3.5" />
+              <Loader2 v-else class="ui-accent-icon animate-spin h-3.5 w-3.5" />
               {{ format.label }}
             </button>
           </template>

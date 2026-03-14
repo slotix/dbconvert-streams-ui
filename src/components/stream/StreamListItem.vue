@@ -12,7 +12,7 @@
   >
     <span
       v-if="isSelected"
-      class="absolute left-0 top-2 bottom-2 w-0.5 rounded-r bg-teal-500/80 dark:bg-teal-400/80"
+      class="ui-tab-indicator absolute left-0 top-2 bottom-2 w-0.5 rounded-r"
     ></span>
 
     <!-- Stream Info - Full Width -->
@@ -60,7 +60,7 @@
           v-if="isPaused && !isFinished"
           v-tooltip="'Resume the stream'"
           type="button"
-          class="p-1.5 rounded-md hover:bg-teal-100 dark:hover:bg-teal-900/30 text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 transition-colors"
+          class="ui-accent-action ui-accent-text p-1.5 rounded-md transition-colors"
           @click.stop="resumeStream"
         >
           <Play class="h-4 w-4" />
@@ -80,7 +80,7 @@
           v-else
           v-tooltip="hasHistory ? 'Run the stream again' : 'Start the stream'"
           type="button"
-          class="p-1.5 rounded-md hover:bg-teal-100 dark:hover:bg-teal-900/30 text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 transition-colors"
+          class="ui-accent-action ui-accent-text p-1.5 rounded-md transition-colors"
           @click.stop="startStream"
         >
           <Play class="h-4 w-4" />

@@ -9,7 +9,7 @@
  * - Full v-model support via Headless UI Switch
  * - Better accessibility than checkboxes for on/off states
  * - Keyboard navigation built-in
- * - Teal active state
+ * - Restrained accent active state
  * - Label and helper text support
  * - Optional description
  *
@@ -63,7 +63,7 @@ const handleChange = (value: boolean) => {
         'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out',
         'focus:outline-none focus-visible:outline-none',
         modelValue
-          ? 'bg-teal-600 dark:bg-teal-500 focus-visible:border-teal-200 dark:focus-visible:border-teal-300'
+          ? 'ui-accent-switch-on'
           : 'bg-gray-200 dark:bg-gray-700 focus-visible:border-gray-400 dark:focus-visible:border-gray-500',
         disabled ? 'opacity-50 cursor-not-allowed' : ''
       ]"
@@ -123,7 +123,7 @@ const handleChange = (value: boolean) => {
         'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out',
         'focus:outline-none focus-visible:outline-none',
         modelValue
-          ? 'bg-teal-600 dark:bg-teal-500 focus-visible:border-teal-200 dark:focus-visible:border-teal-300'
+          ? 'ui-accent-switch-on'
           : 'bg-gray-200 dark:bg-gray-700 focus-visible:border-gray-400 dark:focus-visible:border-gray-500',
         disabled ? 'opacity-50 cursor-not-allowed' : ''
       ]"

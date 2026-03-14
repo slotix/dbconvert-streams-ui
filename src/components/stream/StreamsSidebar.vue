@@ -38,11 +38,7 @@
     >
       <!-- Enhanced loading state with gradient spinner -->
       <div v-if="isListLoading" class="flex flex-col items-center justify-center py-16">
-        <div
-          class="relative w-16 h-16 mb-4 animate-spin rounded-full bg-linear-to-tr from-blue-500 to-teal-500 p-1"
-        >
-          <div class="bg-white dark:bg-gray-850 rounded-full w-full h-full"></div>
-        </div>
+        <RefreshCw class="ui-accent-icon h-10 w-10 mb-4 animate-spin" />
         <p class="text-sm font-medium text-slate-700 dark:text-gray-300">Loading streams...</p>
         <p class="text-xs text-slate-500 dark:text-gray-500 mt-1">Please wait</p>
       </div>

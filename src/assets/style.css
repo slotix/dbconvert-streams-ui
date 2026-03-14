@@ -53,10 +53,40 @@
   :root {
     color-scheme: light;
     --app-zoom: 1;
+    --ui-accent-strong-bg: rgb(13 148 136);
+    --ui-accent-strong-bg-hover: rgb(15 118 110);
+    --ui-accent-strong-border: rgb(13 148 136);
+    --ui-accent-strong-border-hover: rgb(15 118 110);
+    --ui-accent-strong-text: rgb(255 255 255);
+    --ui-accent-soft-bg: rgb(20 184 166 / 0.1);
+    --ui-accent-soft-bg-hover: rgb(20 184 166 / 0.14);
+    --ui-accent-soft-bg-strong: rgb(20 184 166 / 0.18);
+    --ui-accent-soft-border: rgb(13 148 136 / 0.22);
+    --ui-accent-soft-border-strong: rgb(13 148 136 / 0.34);
+    --ui-accent-soft-text: rgb(15 118 110);
+    --ui-accent-soft-icon: rgb(17 94 89);
+    --ui-accent-indicator: rgb(15 118 110);
+    --ui-accent-focus-bg: rgb(20 184 166 / 0.07);
+    --ui-accent-focus-border: rgb(13 148 136 / 0.55);
   }
 
   .dark {
     color-scheme: dark;
+    --ui-accent-strong-bg: rgb(15 118 110);
+    --ui-accent-strong-bg-hover: rgb(17 94 89);
+    --ui-accent-strong-border: rgb(94 234 212 / 0.45);
+    --ui-accent-strong-border-hover: rgb(153 246 228 / 0.52);
+    --ui-accent-strong-text: rgb(240 253 250);
+    --ui-accent-soft-bg: rgb(45 212 191 / 0.1);
+    --ui-accent-soft-bg-hover: rgb(45 212 191 / 0.14);
+    --ui-accent-soft-bg-strong: rgb(45 212 191 / 0.18);
+    --ui-accent-soft-border: rgb(45 212 191 / 0.22);
+    --ui-accent-soft-border-strong: rgb(94 234 212 / 0.3);
+    --ui-accent-soft-text: rgb(153 246 228);
+    --ui-accent-soft-icon: rgb(94 234 212);
+    --ui-accent-indicator: rgb(94 234 212);
+    --ui-accent-focus-bg: rgb(45 212 191 / 0.08);
+    --ui-accent-focus-border: rgb(45 212 191 / 0.52);
   }
 
   /* Fix for Wails/WebKitGTK viewport sizing issues on Linux
@@ -252,11 +282,147 @@
   .ui-surface-floating {
     @apply rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800 dark:shadow-black/30;
   }
+
+  .ui-accent-primary {
+    background-color: var(--ui-accent-soft-bg-hover);
+    border-color: var(--ui-accent-soft-border-strong);
+    color: var(--ui-accent-soft-text);
+    box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+  }
+
+  .ui-accent-primary:hover,
+  .ui-accent-primary:focus-visible {
+    background-color: var(--ui-accent-soft-bg-strong);
+    border-color: var(--ui-accent-soft-border-strong);
+    color: var(--ui-accent-soft-text);
+  }
+
+  .ui-accent-focus:focus,
+  .ui-accent-focus:focus-visible {
+    background-color: var(--ui-accent-focus-bg);
+    border-color: var(--ui-accent-focus-border);
+  }
+
+  .ui-accent-text {
+    color: var(--ui-accent-soft-text);
+  }
+
+  .ui-accent-icon {
+    color: var(--ui-accent-soft-icon);
+  }
+
+  .ui-accent-option-active {
+    background-color: var(--ui-accent-soft-bg-strong);
+    color: var(--ui-accent-soft-text);
+  }
+
+  .ui-accent-selection-checked {
+    background-color: var(--ui-accent-soft-bg);
+    border-color: var(--ui-accent-soft-border-strong);
+    color: var(--ui-accent-soft-text);
+    box-shadow:
+      0 1px 2px rgb(15 23 42 / 0.04),
+      0 0 0 1px rgb(255 255 255 / 0.02);
+  }
+
+  .ui-accent-selection-active {
+    background-color: var(--ui-accent-soft-bg-hover);
+    border-color: var(--ui-accent-soft-border);
+  }
+
+  .ui-accent-action:hover,
+  .ui-accent-action:focus-visible {
+    background-color: var(--ui-accent-soft-bg);
+    color: var(--ui-accent-soft-text);
+  }
+
+  .ui-accent-action-active {
+    background-color: var(--ui-accent-soft-bg);
+    border-color: var(--ui-accent-soft-border);
+    color: var(--ui-accent-soft-text);
+  }
+
+  .ui-nav-active {
+    background-color: var(--ui-accent-soft-bg);
+    border: 1px solid var(--ui-accent-soft-border);
+    color: var(--color-gray-900);
+    box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+  }
+
+  .dark .ui-nav-active {
+    color: var(--color-gray-100);
+  }
+
+  .ui-pane-active {
+    border-color: var(--ui-accent-soft-border-strong);
+    box-shadow:
+      inset 0 3px 0 0 var(--ui-accent-indicator),
+      inset 0 0 0 1px var(--ui-accent-soft-border-strong);
+  }
+
+  .ui-pane-indicator {
+    background-color: var(--ui-accent-indicator);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--ui-accent-indicator) 35%, transparent);
+  }
+
+  .ui-tab-container-active {
+    border-top-color: var(--ui-accent-indicator);
+    background-color: var(--ui-accent-soft-bg);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.03);
+  }
+
+  .ui-tab-active {
+    background-color: var(--ui-accent-soft-bg);
+    border-bottom-color: var(--ui-accent-indicator);
+  }
+
+  .ui-tab-indicator {
+    background-color: var(--ui-accent-indicator);
+    opacity: 0.72;
+  }
+
+  .ui-chip-muted {
+    background-color: rgb(229 231 235 / 0.9);
+    color: rgb(55 65 81);
+  }
+
+  .dark .ui-chip-muted {
+    background-color: rgb(55 65 81 / 0.9);
+    color: rgb(229 231 235);
+  }
+
+  .ui-accent-slider {
+    accent-color: var(--ui-accent-indicator);
+  }
+
+  .ui-accent-slider:focus-visible {
+    outline: 2px solid var(--ui-accent-soft-border-strong);
+    outline-offset: 2px;
+  }
+
+  .ui-accent-switch-on {
+    background-color: var(--ui-accent-strong-bg);
+  }
+
+  .ui-accent-switch-on:focus-visible {
+    border-color: var(--ui-accent-soft-border-strong);
+  }
+
+  .ui-accent-highlight {
+    background-color: var(--ui-accent-soft-bg-strong);
+    color: var(--ui-accent-soft-text);
+    box-shadow: inset 0 0 0 1px var(--ui-accent-soft-border);
+  }
 }
 
 /* ===========================
-   Toast Notifications Dark Mode
+   Toast Notifications
    =========================== */
+
+.Vue-Toastification__toast {
+  padding: 12px 12px !important;
+  min-height: auto !important;
+}
 
 .dark .Vue-Toastification__toast {
   background-color: rgb(31 41 55 / 1) !important; /* gray-800 */

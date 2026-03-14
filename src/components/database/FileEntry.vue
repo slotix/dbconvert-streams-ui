@@ -217,7 +217,7 @@ async function handleLoadMore() {
 
       <span
         v-if="entry.manifestUsed && isFolder"
-        class="ml-1.5 shrink-0 h-1.5 w-1.5 rounded-full bg-teal-500"
+        class="ui-tab-indicator ml-1.5 shrink-0 h-1.5 w-1.5 rounded-full"
       />
     </div>
 

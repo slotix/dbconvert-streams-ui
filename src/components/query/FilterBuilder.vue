@@ -12,7 +12,7 @@
         <div class="flex items-center gap-2">
           <button
             type="button"
-            class="text-[10px] text-teal-600 dark:text-teal-400 hover:underline"
+            class="ui-accent-text text-[10px] hover:underline"
             @click="selectAllColumns"
           >
             All
@@ -33,7 +33,7 @@
           class="inline-flex items-center gap-1 px-2 py-1 rounded cursor-pointer transition-colors"
           :class="
             selectedColumns.includes(col.name)
-              ? 'bg-teal-500/20 text-teal-700 dark:text-teal-400 border border-teal-500/40'
+              ? 'ui-accent-selection-checked ui-accent-text'
               : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 border border-transparent hover:border-gray-300 dark:hover:border-gray-600'
           "
         >
@@ -72,7 +72,7 @@
         type="number"
         min="0"
         :placeholder="mode === 'stream' ? '∞' : 'optional'"
-        class="w-24 px-2 py-1 text-xs border border-gray-200 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 placeholder:text-gray-400"
+        class="ui-accent-focus w-24 rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-2 py-1 text-xs text-gray-900 dark:text-gray-100 placeholder:text-gray-400"
         @input="emitUpdate"
       />
       <span class="text-xs text-gray-400">rows</span>
@@ -126,7 +126,7 @@
             v-model="filter.value"
             type="text"
             :placeholder="getPlaceholder(filter.operator)"
-            class="w-full min-w-0 px-1.5 py-1 text-xs border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded focus:ring-1 focus:ring-teal-500"
+            class="ui-accent-focus w-full min-w-0 rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-1.5 py-1 text-xs text-gray-900 dark:text-gray-100"
             @input="emitUpdate"
             @keyup.enter="$emit('apply')"
           />

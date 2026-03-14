@@ -24,7 +24,7 @@
         v-model="streamDescription"
         rows="2"
         maxlength="500"
-        class="block w-full rounded-md shadow-sm sm:text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder:text-gray-500 transition-colors duration-150 border-gray-300 dark:border-gray-600 focus:border-teal-500 dark:focus:border-teal-400 focus:ring-1 focus:ring-teal-500 dark:focus:ring-teal-400 bg-white dark:bg-gray-800"
+        class="ui-accent-focus block w-full rounded-md shadow-sm sm:text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder:text-gray-500 transition-colors duration-150 border-gray-300 dark:border-gray-600 focus:outline-none bg-white dark:bg-gray-800"
         placeholder="Add context for this stream (purpose, dataset, owner, notes)"
       />
       <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">

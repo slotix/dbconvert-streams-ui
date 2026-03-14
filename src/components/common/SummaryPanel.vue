@@ -130,14 +130,14 @@ function getDataQualityHints(col: ColumnSummary): SummaryHint[] {
   if (col.count > 0 && col.approxUnique <= 1) {
     hints.push({
       label: 'Constant',
-      className: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300',
+      className: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
       title: 'Single distinct value'
     })
   }
   if (isAtMaxLength(col)) {
     hints.push({
       label: 'Max length',
-      className: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+      className: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
       title: 'Values always at declared max length'
     })
   }
@@ -164,9 +164,9 @@ function getCardinalityIndicator(col: ColumnSummary): string {
 function getCardinalityClass(indicator: string): string {
   switch (indicator) {
     case 'unique':
-      return 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300'
+      return 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
     case 'low':
-      return 'bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300'
+      return 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
     case 'empty':
       return 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
     default:
@@ -191,7 +191,7 @@ function getCardinalityLabel(indicator: string): string {
 <template>
   <!-- Loading State -->
   <div v-if="loading" class="flex flex-col items-center justify-center py-16">
-    <Loader2 class="h-8 w-8 animate-spin text-teal-500" />
+    <Loader2 class="ui-accent-icon h-8 w-8 animate-spin" />
     <p class="mt-4 text-sm text-gray-500 dark:text-gray-400">Analyzing summary statistics...</p>
 
     <p v-if="showSlowHint" class="mt-1 text-xs text-gray-500 dark:text-gray-500">

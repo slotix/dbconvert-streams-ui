@@ -15,7 +15,7 @@
       <!-- Browse button -->
       <button
         type="button"
-        class="inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus-visible:border-teal-500 focus-visible:bg-teal-50/60 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 dark:focus-visible:border-teal-400 dark:focus-visible:bg-teal-900/20"
+        class="ui-accent-action ui-accent-focus inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
         @click="openModal"
       >
         <FolderOpen class="h-4 w-4 mr-2" />
@@ -86,7 +86,7 @@ const inputClass = computed(() => {
     return `${baseClass} border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed`
   }
 
-  return `${baseClass} border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 focus:border-teal-500 dark:focus:border-teal-400 focus:bg-teal-50/40 dark:focus:bg-teal-950/20`
+  return `${baseClass} ui-accent-focus border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500`
 })
 
 const openModal = async () => {

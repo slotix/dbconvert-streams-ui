@@ -223,7 +223,7 @@ function inputTypeFor(col: SQLColumnMeta): string {
         <div class="mt-1.5">
           <input
             :type="inputTypeFor(col)"
-            class="w-full rounded-md border px-2.5 py-2 text-sm bg-white dark:bg-gray-850 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-teal-500/40"
+            class="ui-accent-focus w-full rounded-md border px-2.5 py-2 text-sm bg-white dark:bg-gray-850 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none"
             :disabled="isGeneratedColumn(col)"
             :class="
               isMissingRequired(col.name)
@@ -248,7 +248,7 @@ function inputTypeFor(col: SQLColumnMeta): string {
       </button>
       <button
         type="button"
-        class="text-xs rounded-md px-2.5 py-1 border border-teal-600 bg-teal-600 text-white hover:bg-teal-700 hover:border-teal-700 disabled:opacity-50 disabled:cursor-not-allowed dark:border-teal-500 dark:bg-teal-600 dark:hover:bg-teal-700"
+        class="ui-accent-primary text-xs rounded-md px-2.5 py-1 border disabled:opacity-50 disabled:cursor-not-allowed"
         :disabled="missingRequired.length > 0"
         @click="onSubmit('insert')"
       >
@@ -256,7 +256,7 @@ function inputTypeFor(col: SQLColumnMeta): string {
       </button>
       <button
         type="button"
-        class="text-xs rounded-md px-2.5 py-1 border border-teal-600/50 bg-teal-50 text-teal-800 hover:bg-teal-100 disabled:opacity-50 disabled:cursor-not-allowed dark:border-teal-400/40 dark:bg-teal-900/20 dark:text-teal-200 dark:hover:bg-teal-900/30"
+        class="ui-accent-action-active text-xs rounded-md px-2.5 py-1 border disabled:opacity-50 disabled:cursor-not-allowed"
         :disabled="missingRequired.length > 0"
         @click="onSubmit('insertAndAddAnother')"
       >

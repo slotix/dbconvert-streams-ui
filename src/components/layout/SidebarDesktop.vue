@@ -32,7 +32,7 @@
         ]"
       >
         <SidebarNavItems
-          :active-class="'bg-white dark:bg-teal-900 text-gray-900 dark:text-white shadow-sm ring-1 ring-gray-200 dark:ring-0'"
+          :active-class="'ui-nav-active shadow-sm'"
           :inactive-class="'text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700'"
           item-class="group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold relative overflow-visible"
           expanded-class="w-full justify-start px-3"
@@ -81,7 +81,7 @@
               <!-- SQL logs badge -->
               <span
                 v-if="logsStore.sqlLogsCount > 0"
-                class="bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300 text-xs rounded-full px-1.5 py-0.5 min-w-5 text-center"
+                class="ui-chip-muted text-xs rounded-full px-1.5 py-0.5 min-w-5 text-center"
                 title="SQL Logs"
               >
                 {{ logsStore.sqlLogsCount > 99 ? '99+' : logsStore.sqlLogsCount }}
@@ -205,7 +205,7 @@
                     :min="zoomMin"
                     :max="zoomMax"
                     :step="zoomStep"
-                    class="h-2 w-full accent-teal-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/60"
+                    class="ui-accent-slider h-2 w-full"
                     aria-label="Zoom"
                     :aria-valuetext="zoomPendingPercent"
                     @focus="isZoomActive = true"
@@ -294,25 +294,17 @@
                     step="1"
                     :value="sqlCaptureSliderValue"
                     :disabled="logsStore.runtimeLoggingSaving"
-                    class="h-2 w-full accent-teal-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/60 disabled:opacity-50"
+                    class="ui-accent-slider h-2 w-full disabled:opacity-50"
                     aria-label="SQL Capture Level"
                     @input="onSQLCaptureSliderInput"
                     @change="onSQLCaptureSliderInput"
                   />
                   <div class="flex justify-between text-[11px] text-gray-500 dark:text-gray-400">
-                    <span
-                      :class="sqlCaptureSliderValue === 0 ? 'text-teal-600 dark:text-teal-300' : ''"
-                    >
-                      Off
-                    </span>
-                    <span
-                      :class="sqlCaptureSliderValue === 1 ? 'text-teal-600 dark:text-teal-300' : ''"
-                    >
+                    <span :class="sqlCaptureSliderValue === 0 ? 'ui-accent-text' : ''">Off</span>
+                    <span :class="sqlCaptureSliderValue === 1 ? 'ui-accent-text' : ''">
                       Minimal
                     </span>
-                    <span
-                      :class="sqlCaptureSliderValue === 2 ? 'text-teal-600 dark:text-teal-300' : ''"
-                    >
+                    <span :class="sqlCaptureSliderValue === 2 ? 'ui-accent-text' : ''">
                       Verbose
                     </span>
                   </div>

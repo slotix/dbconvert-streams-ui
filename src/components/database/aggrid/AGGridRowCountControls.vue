@@ -46,7 +46,7 @@ function formatCount(n: number): string {
       v-tooltip="`Execute COUNT(*) query to get exact ${isView ? 'row' : 'total'} count`"
       type="button"
       :disabled="isCounting"
-      class="text-xs text-teal-600 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 bg-teal-50 dark:bg-teal-900/20 hover:bg-teal-100 dark:hover:bg-teal-800/30 rounded-full px-3 py-1 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5 w-fit"
+      class="ui-accent-action-active flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-xs disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       @click="emit('calculate')"
     >
       <Calculator v-if="!isCounting" class="w-3.5 h-3.5" />

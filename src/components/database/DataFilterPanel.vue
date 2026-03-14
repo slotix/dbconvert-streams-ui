@@ -11,8 +11,8 @@
       <div class="flex items-center gap-1">
         <button
           type="button"
-          class="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-white dark:hover:bg-gray-800 rounded transition-colors"
-          :class="showColumnSelector ? 'bg-teal-500/20 text-teal-600 dark:text-teal-400' : ''"
+          class="ui-accent-action inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 rounded border border-transparent transition-colors"
+          :class="showColumnSelector ? 'ui-accent-action-active' : ''"
           title="Select columns"
           @click="toggleColumnSelector"
         >
@@ -20,7 +20,7 @@
           <span>Columns</span>
           <span
             v-if="selectedColumns.length > 0 && selectedColumns.length < normalizedColumns.length"
-            class="px-1 py-0.5 text-[10px] bg-teal-500/30 rounded"
+            class="ui-chip-muted px-1 py-0.5 text-[10px] rounded"
           >
             {{ selectedColumns.length }}
           </span>
@@ -28,7 +28,7 @@
 
         <button
           type="button"
-          class="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-white dark:hover:bg-gray-800 rounded transition-colors"
+          class="ui-accent-action inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 rounded transition-colors"
           title="Add WHERE condition"
           @click="addFilter"
         >
@@ -38,7 +38,7 @@
 
         <button
           type="button"
-          class="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-white dark:hover:bg-gray-800 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-gray-600 dark:disabled:hover:text-gray-400"
+          class="ui-accent-action inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-gray-600 dark:disabled:hover:text-gray-400"
           :title="canAddSort ? 'Add ORDER BY' : 'All columns are already used in sorting'"
           :disabled="!canAddSort"
           @click="addSort"
@@ -81,7 +81,7 @@
               class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               :class="
                 dirty
-                  ? 'text-white bg-teal-600 hover:bg-teal-700'
+                  ? 'ui-accent-primary border'
                   : 'text-gray-400 bg-gray-200 dark:bg-gray-700 cursor-not-allowed'
               "
               :disabled="!dirty"

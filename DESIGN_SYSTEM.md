@@ -22,56 +22,56 @@
 
 ## 2. Principles & Quick Reference
 ### Core principles
-1. **Color = signal.** Teal appears only when guiding users through primary actions, active selections, focus states, success, or progress. Neutral grays handle everything else.
+1. **Color = signal.** Accent color stays muted by default. Use the stronger accent only for primary CTA and the current active item. Neutral grays handle informational structure and low-priority controls.
 2. **Clarity for operators.** Surfaces stay calm so DB engineers can spot the next action instantly.
 3. **Accessibility first.** Every interactive element must expose a visible focus state, predictable keyboard order, and semantic color contrast.
 4. **Centralized styling.** Extend base components instead of scattering ad-hoc Tailwind strings. Document any exception.
 5. **One icon language.** Tree roots, explorer summaries, and panel headers should feel related. Reuse shared icon tiles instead of rebuilding colored squares per view.
 
-### When to use teal
-| Element | Teal? | Notes |
+### When to use accent
+| Element | Accent? | Notes |
 | --- | --- | --- |
-| Primary buttons | ✅ | `bg-teal-600` / `hover:bg-teal-700`, teal border/background focus state |
+| Primary buttons | ✅ | Use the strong accent tier with white text |
 | Secondary buttons (Cancel/Back) | ❌ | `bg-white border-gray-300 text-gray-700` |
-| Active selections (tabs, segmented controls) | ✅ | Selected option gains teal fill or border |
-| Form inputs | ⚠️ | Gray borders by default; teal only on focus border/background |
-| Success state badges | ✅ | Finished/completed indicators |
-| Progress indicators | ✅ | Bars/spinners use teal fill |
+| Active selections (tabs, segmented controls) | ✅ | Use the muted accent tier; reserve stronger accent for the current primary surface |
+| Form inputs | ⚠️ | Gray borders by default; muted accent only on focus border/background |
+| Success state badges | ❌ | Use semantic green, not brand accent |
+| Progress indicators | ✅ | Use muted accent unless the progress control is the primary action target |
 | Body text, helper copy | ❌ | Stick with gray-600/700 |
+| Informational chips/badges | ❌ | Default to neutral gray unless they communicate semantic state |
 | Panel header icons | ⚠️ | Use muted tile palettes; use actual connection logo when context matters |
 
 ### Button & input cheatsheet
-- **Primary:** teal background, white text, stronger teal border/background on focus.
+- **Primary:** strong accent background, white text, stronger accent hover/focus state.
 - **Secondary:** white background, gray text, gray border, `hover:bg-gray-50`.
 - **Danger:** white background, red text/border; reserve for destructive actions.
 - **Ghost:** transparent background, gray text; use for inline “Edit”/link-style actions.
-- **Inputs/selects/textareas:** `border-gray-300 text-gray-900 placeholder-gray-400`, teal focus border/background only.
-- **Checkbox/radio:** `text-teal-600`, gray border when idle; do not add halo rings.
+- **Inputs/selects/textareas:** `border-gray-300 text-gray-900 placeholder-gray-400`, muted accent focus border/background only.
+- **Checkbox/radio:** use muted accent for the checked control, gray border when idle; do not add halo rings.
 - **Panel headers:** use `PanelHeaderIcon` rather than ad hoc `p-* bg-* rounded-*` wrappers.
 
 ### Color decision flow
 1. Is the element interactive? If not, keep it gray.
-2. Does it advance/confirm the primary flow? → teal primary styling.
+2. Does it advance/confirm the primary flow? → strong accent styling.
 3. Is it destructive? → red danger palette.
 4. Is it contextual (cancel/back/filter)? → secondary gray styling.
-5. Is it showing active/selected state? → teal border/fill.
+5. Is it showing active/selected state? → muted accent border/fill.
 6. Is it a panel/card header? → use a muted icon tile (`PanelHeaderIcon` or `DatabaseIcon`) instead of a one-off color block.
 
 ### Status colors
 | Status | Background | Text | Border |
 | --- | --- | --- | --- |
 | Running | `bg-blue-50` | `text-blue-700` | `border-blue-200` |
-| Finished | `bg-teal-50` | `text-teal-700` | `border-teal-200` |
+| Finished | `bg-emerald-50` | `text-emerald-700` | `border-emerald-200` |
 | Failed | `bg-red-50` | `text-red-700` | `border-red-200` |
 | Paused | `bg-amber-50` | `text-amber-700` | `border-amber-200` |
 | Pending | `bg-gray-50` | `text-gray-600` | `border-gray-200` |
 | Initializing | `bg-purple-50` | `text-purple-700` | `border-purple-200` |
 
 ### Common mistakes
-- Giving every button a teal background (secondary actions must stay neutral).
-- Setting teal as the default input border instead of only on focus.
-- Mixing focus colors (blue inputs, teal selects). Stick with teal everywhere.
-- Using teal for body text or decorative accents with no semantic meaning.
+- Giving every button a strong accent background (secondary actions must stay neutral).
+- Setting accent as the default input border instead of only on focus.
+- Using accent for informational chips, body text, or decorative accents with no semantic meaning.
 - Rebuilding panel header icon tiles by hand instead of reusing `PanelHeaderIcon`.
 - Reintroducing `ring-*` halos for focus instead of border/background state changes.
 
@@ -80,30 +80,31 @@
 ## 3. Palette & Tokens
 | Token | Value | Usage |
 | --- | --- | --- |
-| `teal-600` | #0d9488 | Primary buttons, active selections |
-| `teal-700` | #0f766e | Hover state for primaries |
+| `ui-accent-strong-*` | CSS vars in `style.css` | Primary buttons and the current highest-priority active item |
+| `ui-accent-soft-*` | CSS vars in `style.css` | Focus states, selected tabs, selected filters, subtle indicators |
 | `gray-50 → gray-200` | #f9fafb → #e5e7eb | Backgrounds, borders, dividers |
 | `gray-600/700/900` | #4b5563 / #374151 / #111827 | Text hierarchy |
 | `blue` semantic | `blue-{50,200,700}` | Running/info |
+| `emerald` semantic | `emerald-{50,200,700}` | Success/finished |
 | `red` semantic | `red-{50,200,700}` | Errors/destructive |
 | `amber` semantic | `amber-{50,200,700}` | Warning/paused |
 | `purple` semantic | `purple-{50,200,700}` | Initializing |
 
-Teal never appears on inert surfaces, body text, or default input borders.
+Accent never appears on inert surfaces, body text, or default input borders.
 
 ---
 
 ## 4. Component Standards
 ### Buttons
-- Primary: `bg-teal-600 text-white`, `hover:bg-teal-700`, focus uses stronger border/background state, disabled = `bg-gray-300 text-gray-500`.
+- Primary: use `ui-accent-primary`, disabled = `bg-gray-300 text-gray-500`.
 - Secondary: `bg-white text-gray-700 border-gray-300`, `hover:bg-gray-50 hover:border-gray-400`, focus uses border/background state.
 - Danger: `text-red-600 border-red-300 bg-white`, `hover:bg-red-50`, focus uses red border/background state.
 - Ghost: transparent background + gray text; icons allowed with bespoke spacing.
 
 ### Forms
-- Inputs/selects/textareas: `border-gray-300 text-gray-900 placeholder-gray-400`, teal focus border/background, disabled surfaces lighten to `bg-gray-50`.
-- Checkboxes/radios: `text-teal-600`, gray outline when idle.
-- Segmented controls: neutral gray when idle, teal fill + border when selected.
+- Inputs/selects/textareas: `border-gray-300 text-gray-900 placeholder-gray-400`, muted accent focus border/background, disabled surfaces lighten to `bg-gray-50`.
+- Checkboxes/radios: muted accent for checked state, gray outline when idle.
+- Segmented controls: neutral gray when idle, muted accent fill + border when selected.
 
 ### Icons
 - **Connection/database logo tiles:** Use `DatabaseIcon.vue`. This is the source of truth for tree-style connection logos and their muted tile palettes.
@@ -115,9 +116,9 @@ Teal never appears on inert surfaces, body text, or default input borders.
 Standard statuses map to semantic colors (see table above). Use `StatusBadge` to avoid inline duplication.
 
 ### Navigation & layout
-- Sidebar: active link `text-teal-700 bg-teal-50 border-l-4 border-teal-600`; inactive links remain gray with hover highlight.
-- Tabs: active `text-teal-600 border-teal-600`; inactive `text-gray-600 border-transparent` + hover line.
-- Progress bars/spinners: teal fill/stroke over neutral track.
+- Sidebar: active link uses the muted accent surface plus subtle border; inactive links remain gray with hover highlight.
+- Tabs: active tab uses the muted accent surface and indicator; inactive tabs stay gray with neutral hover.
+- Progress bars/spinners: use the muted accent tier over a neutral track.
 
 ### Typography, spacing, and elevation
 - Headings: titles `text-3xl font-bold text-gray-900`; section headers `text-xl font-semibold`; labels `text-sm font-medium text-gray-700`; helper text `text-sm text-gray-500`.
@@ -128,7 +129,7 @@ Standard statuses map to semantic colors (see table above). Use `StatusBadge` to
 
 ## 5. Migration & Adoption Guide
 ### Pre-migration checklist
-- Review this guide to refresh teal vs. gray rules.
+- Review this guide to refresh accent hierarchy vs. neutral rules.
 - Inventory every button/input in the component and note intent.
 - Remove ad-hoc focus states or hex colors before migrating.
 - Capture flow-specific constraints so legitimate exceptions are documented.
@@ -138,12 +139,12 @@ Standard statuses map to semantic colors (see table above). Use `StatusBadge` to
 2. **Forms → base components.** Inputs, selects, textareas, checkboxes, switches, and segmented controls should reuse the shared wrappers for focus, helper text, and accessibility.
 3. **Status indicators → `StatusBadge`.** Convert inline badge styles and remap legacy labels (active→running, success→finished, error→failed, waiting→pending, stopped→paused, loading→initializing).
 4. **Panel headers → shared icon tiles.** Use `PanelHeaderIcon` for panel/card section headers and `DatabaseIcon` when the actual connection/database logo should appear.
-5. **Navigation/selection states.** Tabs, sidebars, segmented controls always show teal when active and gray when idle.
-6. **Validation/messaging.** Reserve semantic colors for real state (teal/green success, red danger, amber warning). Remove decorative teal.
+5. **Navigation/selection states.** Tabs, sidebars, segmented controls use muted accent when active and gray when idle.
+6. **Validation/messaging.** Reserve semantic colors for real state (green success, red danger, amber warning, blue info). Remove decorative accent.
 
 ### Testing checklist
 - Button variants show correct hover/disabled states.
-- Inputs default to gray borders and use teal focus border/background states.
+- Inputs default to gray borders and use muted accent focus border/background states.
 - Keyboard navigation covers every interactive element with visible focus.
 - Status badges use the semantic palettes above.
 - Panel/card headers reuse `PanelHeaderIcon` or `DatabaseIcon` where applicable.
@@ -175,7 +176,7 @@ Standard statuses map to semantic colors (see table above). Use `StatusBadge` to
 | Text primary | `text-gray-900` | `dark:text-gray-100` |
 | Text secondary | `text-gray-600` | `dark:text-gray-400` |
 | Borders | `border-gray-300` | `dark:border-gray-700` |
-| Primary button | `bg-teal-600 hover:bg-teal-700` | `dark:bg-teal-500 dark:hover:bg-teal-400` |
+| Primary button | strong accent token | strong accent token |
 | Secondary button | `bg-white border-gray-300` | `dark:bg-gray-800 dark:border-gray-600` |
 | Status colors | `bg-{color}-100 text-{color}-800` | `dark:bg-{color}-900 dark:text-{color}-300` |
 | Header icon tiles | muted solid tiles | darker muted tiles with lightened icon tint |

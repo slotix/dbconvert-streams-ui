@@ -433,8 +433,8 @@ function onOpenDiagram() {
                 i === tabs.length - 1 ? 'rounded-r-sm' : '',
                 i !== 0 ? '-ml-px' : '',
                 selectedIndex === i
-                  ? 'bg-teal-600 dark:bg-teal-900 text-white border-teal-600 dark:border-teal-600 hover:bg-teal-700 dark:hover:bg-teal-800 focus-visible:bg-teal-700 dark:focus-visible:bg-teal-800 z-10'
-                  : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100 focus-visible:border-teal-500 dark:focus-visible:border-teal-400 focus-visible:bg-teal-50/60 dark:focus-visible:bg-teal-900/20'
+                  ? 'ui-accent-selection-checked z-10'
+                  : 'ui-accent-action ui-accent-focus bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100'
               ]"
               @click="onTabChange(i)"
             >
@@ -449,7 +449,7 @@ function onOpenDiagram() {
           <button
             v-if="isDataObject"
             type="button"
-            class="inline-flex items-center rounded-md bg-white dark:bg-gray-800 px-2.5 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 shadow-sm dark:shadow-gray-900/30 border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
+            class="ui-accent-action inline-flex items-center rounded-md bg-white dark:bg-gray-800 px-2.5 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 shadow-sm dark:shadow-gray-900/30 border border-gray-200 dark:border-gray-600 transition-colors"
             title="Open in SQL Console"
             @click="onOpenSqlConsole"
           >
@@ -469,7 +469,7 @@ function onOpenDiagram() {
           <button
             v-if="objectType === 'file' && !isManifestFileObject"
             type="button"
-            class="inline-flex items-center rounded-md bg-white dark:bg-gray-800 px-2.5 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 shadow-sm dark:shadow-gray-900/30 border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
+            class="ui-accent-action inline-flex items-center rounded-md bg-white dark:bg-gray-800 px-2.5 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 shadow-sm dark:shadow-gray-900/30 border border-gray-200 dark:border-gray-600 transition-colors"
             title="Open in DuckDB Console"
             @click="onOpenFileConsole"
           >

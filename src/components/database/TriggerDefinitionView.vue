@@ -57,12 +57,14 @@ const eventDisplay = computed(() => (eventValue.value ? eventValue.value.toUpper
           :class="[
             'inline-flex items-center gap-2 rounded-md border px-2 py-1 text-xs font-medium',
             hasTiming
-              ? 'border-teal-200 dark:border-teal-500/40 bg-teal-50/60 dark:bg-teal-900/20 text-teal-700 dark:text-teal-300'
+              ? 'ui-chip-muted'
               : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400'
           ]"
         >
           <span class="text-[10px] uppercase tracking-wide">Timing</span>
-          <span :class="[hasTiming ? 'font-mono' : 'italic']">{{ timingDisplay }}</span>
+          <span :class="[hasTiming ? 'ui-accent-text font-mono' : 'italic']">
+            {{ timingDisplay }}
+          </span>
         </div>
         <div
           :class="[

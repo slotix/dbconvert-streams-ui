@@ -8,7 +8,7 @@
         class="border-r border-gray-300/80 px-4 py-1.5 text-sm font-semibold transition-colors dark:border-gray-600/80"
         :class="
           sourceMode === 'selection'
-            ? 'bg-teal-950/80 text-gray-50 shadow-[inset_0_0_0_1px_rgba(20,184,166,0.55)]'
+            ? 'ui-accent-selection-checked ui-accent-text'
             : 'bg-transparent text-gray-600 hover:bg-gray-50/70 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-gray-100'
         "
         data-test="s3-source-mode-selection"
@@ -21,7 +21,7 @@
         class="px-4 py-1.5 text-sm font-semibold transition-colors"
         :class="
           sourceMode === 'manifest'
-            ? 'bg-teal-950/80 text-gray-50 shadow-[inset_0_0_0_1px_rgba(20,184,166,0.55)]'
+            ? 'ui-accent-selection-checked ui-accent-text'
             : 'bg-transparent text-gray-600 hover:bg-gray-50/70 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-gray-100'
         "
         data-test="s3-source-mode-manifest"

@@ -838,7 +838,7 @@ export default {
           <template v-if="hasUnsavedChanges">
             <button
               type="button"
-              class="text-xs rounded-md px-2.5 py-1 border border-teal-600 bg-teal-600 text-white hover:bg-teal-700 hover:border-teal-700 disabled:opacity-50 disabled:cursor-not-allowed dark:border-teal-500 dark:bg-teal-600 dark:hover:bg-teal-700 shrink-0 whitespace-nowrap"
+              class="ui-accent-primary text-xs rounded-md px-2.5 py-1 border disabled:opacity-50 disabled:cursor-not-allowed shrink-0 whitespace-nowrap"
               title="Save pending changes"
               :disabled="isSaving"
               @click="saveChanges"
@@ -851,7 +851,7 @@ export default {
             </button>
             <button
               type="button"
-              class="text-xs rounded-md p-1.5 border border-teal-500 text-teal-700 bg-transparent hover:bg-teal-50 dark:border-teal-500/60 dark:text-teal-300 dark:hover:bg-teal-900/20 inline-flex shrink-0 items-center justify-center transition-colors"
+              class="ui-accent-action-active text-xs rounded-md p-1.5 border inline-flex shrink-0 items-center justify-center transition-colors"
               title="Review pending changes"
               aria-label="Review pending changes"
               @click="openFirstEditedRowPanel"
@@ -1081,8 +1081,8 @@ export default {
 
 /* Pending edit: highlight edited cells and show old/new values */
 :deep(.ag-cell.cell-pending-edit) {
-  background-color: rgba(20, 184, 166, 0.1); /* teal-500 tint */
-  box-shadow: inset 0 0 0 1px rgba(94, 234, 212, 0.95);
+  background-color: var(--ui-accent-soft-bg);
+  box-shadow: inset 0 0 0 1px var(--ui-accent-soft-border-strong);
 }
 
 /* Selected row: separate from edit state with a cooler blue/slate tint */

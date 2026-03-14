@@ -59,7 +59,7 @@
           v-if="getConnection(fedConn.connectionId)?.id"
           v-tooltip="'View connection in Explorer'"
           type="button"
-          class="shrink-0 inline-flex items-center px-2 py-1 text-xs font-medium text-teal-600 dark:text-teal-300 bg-white dark:bg-gray-900 border border-teal-200 dark:border-teal-700 rounded-md hover:bg-teal-50 dark:hover:bg-gray-800 transition-colors"
+          class="ui-accent-action-active shrink-0 inline-flex items-center rounded-md border bg-white dark:bg-gray-900 px-2 py-1 text-xs font-medium transition-colors"
           @click="emit('navigate', fedConn.connectionId)"
         >
           <ExternalLink class="w-3 h-3 mr-1" />

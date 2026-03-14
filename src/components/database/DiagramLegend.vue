@@ -175,7 +175,7 @@ onBeforeUnmount(() => {
         <span class="font-medium italic text-slate-700 dark:text-slate-200">View</span>
       </div>
       <div class="flex items-center gap-2 px-1 py-0.5">
-        <div class="w-4 h-0.5 bg-teal-500 rounded-full"></div>
+        <div class="ui-tab-indicator w-4 h-0.5 rounded-full"></div>
         <span class="font-medium text-slate-700 dark:text-slate-200">Foreign Key</span>
       </div>
       <div class="flex items-center gap-2 px-1 py-0.5">

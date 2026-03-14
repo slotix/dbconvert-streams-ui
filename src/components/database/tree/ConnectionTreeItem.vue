@@ -562,7 +562,7 @@ const connectionPort = computed(() => getConnectionPort(props.connection))
           class="flex items-center gap-2 px-3 py-2 text-xs text-slate-500 dark:text-gray-400"
         >
           <svg
-            class="animate-spin h-4 w-4 text-teal-600 dark:text-teal-400"
+            class="ui-accent-icon animate-spin h-4 w-4"
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
@@ -619,7 +619,7 @@ const connectionPort = computed(() => getConnectionPort(props.connection))
           class="flex items-center gap-2 px-3 py-2 text-xs text-slate-500 dark:text-gray-400"
         >
           <svg
-            class="animate-spin h-3.5 w-3.5 text-teal-600 dark:text-teal-400"
+            class="ui-accent-icon animate-spin h-3.5 w-3.5"
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"

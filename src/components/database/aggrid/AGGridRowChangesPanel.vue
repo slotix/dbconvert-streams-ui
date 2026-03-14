@@ -62,7 +62,7 @@ function getRowKind(row: RowChangeRow): RowChangeRowKind {
 function kindBadgeClass(kind: RowChangeRowKind): string {
   if (kind === 'insert') return 'bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-300'
   if (kind === 'delete') return 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
-  return 'bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300'
+  return 'ui-chip-muted'
 }
 
 function kindLabel(kind: RowChangeRowKind): string {
@@ -220,7 +220,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeyDown))
             class="text-xs px-2 py-1.5 border-b-2 -mb-px transition-colors"
             :class="
               selectedKind === kind
-                ? 'border-teal-500 text-teal-700 dark:text-teal-300'
+                ? 'ui-accent-text [border-color:var(--ui-accent-indicator)]'
                 : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
             "
             @click="selectedKind = kind"
@@ -311,7 +311,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeyDown))
                       v-for="field in visibleInsertColumns"
                       :key="`insert-cell-${row.rowId}-${field}`"
                       v-tooltip="getInsertFieldValue(row, field)"
-                      class="px-3 py-2 font-mono text-teal-600 dark:text-teal-400 whitespace-nowrap"
+                      class="ui-accent-text px-3 py-2 font-mono whitespace-nowrap"
                     >
                       {{ truncateValue(getInsertFieldValue(row, field)) }}
                     </td>
@@ -344,11 +344,9 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeyDown))
                           <span class="text-gray-500 dark:text-gray-400 min-w-[110px]"
                             >{{ item.field }}:</span
                           >
-                          <span
-                            v-tooltip="item.newValue"
-                            class="font-mono text-teal-600 dark:text-teal-400"
-                            >{{ truncateValue(item.newValue) }}</span
-                          >
+                          <span v-tooltip="item.newValue" class="ui-accent-text font-mono">
+                            {{ truncateValue(item.newValue) }}
+                          </span>
                         </li>
                       </ul>
                     </td>
@@ -423,11 +421,9 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeyDown))
                         >{{ truncateValue(item.oldValue) }}</span
                       >
                       <span class="text-gray-400 dark:text-gray-500">→</span>
-                      <span
-                        v-tooltip="item.newValue"
-                        class="font-mono text-teal-600 dark:text-teal-400"
-                        >{{ truncateValue(item.newValue) }}</span
-                      >
+                      <span v-tooltip="item.newValue" class="ui-accent-text font-mono">
+                        {{ truncateValue(item.newValue) }}
+                      </span>
                     </template>
                   </li>
                 </ul>
@@ -500,7 +496,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeyDown))
           <button
             v-tooltip="'Apply changes (Ctrl+Enter)'"
             type="button"
-            class="text-xs rounded-md px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            class="ui-accent-primary text-xs rounded-md px-3 py-1.5 border font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             :disabled="saving"
             @click="!saving && emit('apply')"
           >

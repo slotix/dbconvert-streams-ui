@@ -78,8 +78,8 @@ const CLOUD_PROVIDERS: Record<string, CloudProviderInfo> = {
     name: 'aiven',
     displayName: 'Aiven',
     logo: '/images/db-logos/mysql.svg', // Fallback to MySQL logo
-    badgeColor: 'bg-teal-100 dark:bg-teal-900/30',
-    textColor: 'text-teal-700 dark:text-teal-200'
+    badgeColor: 'ui-chip-muted',
+    textColor: 'ui-accent-text'
   },
   tidb: {
     name: 'tidb',

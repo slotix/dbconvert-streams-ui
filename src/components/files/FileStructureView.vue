@@ -460,9 +460,7 @@ defineExpose({
       >
         <div class="text-sm font-semibold text-gray-900 dark:text-gray-100">
           {{ entry.name }}
-          <span v-if="fileFormat" class="text-teal-600 dark:text-teal-400"
-            >[{{ fileFormat.toUpperCase() }}]</span
-          >
+          <span v-if="fileFormat" class="ui-accent-text">[{{ fileFormat.toUpperCase() }}]</span>
         </div>
         <div v-if="summaryLine" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
           {{ summaryLine }}
@@ -480,7 +478,7 @@ defineExpose({
         <div class="mt-2 flex items-start justify-between gap-2">
           <button
             type="button"
-            class="min-w-0 text-left text-sm font-mono text-gray-900 dark:text-gray-100 hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
+            class="ui-accent-action min-w-0 text-left text-sm font-mono text-gray-900 dark:text-gray-100 transition-colors"
             :title="
               isPathCollapsible
                 ? isPathExpanded
@@ -491,10 +489,7 @@ defineExpose({
             @click="isPathExpanded = !isPathExpanded"
           >
             {{ displayPath }}
-            <span
-              v-if="isPathCollapsible"
-              class="ml-2 text-[10px] font-medium text-teal-600 dark:text-teal-400"
-            >
+            <span v-if="isPathCollapsible" class="ui-accent-text ml-2 text-[10px] font-medium">
               {{ isPathExpanded ? 'Collapse' : 'Expand' }}
             </span>
           </button>
@@ -552,7 +547,7 @@ defineExpose({
               v-model="columnFilterQuery"
               type="text"
               placeholder="Filter columns..."
-              class="h-7 w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 pl-8 pr-2 text-xs text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-teal-500/40 dark:focus:ring-teal-500/30"
+              class="ui-accent-focus h-7 w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 pl-8 pr-2 text-xs text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none"
             />
           </div>
         </div>
@@ -696,7 +691,7 @@ defineExpose({
             </button>
             <button
               type="button"
-              class="inline-flex items-center rounded-md bg-teal-50 dark:bg-teal-900/20 px-2 py-1 text-xs font-medium text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-700/60 hover:bg-teal-100 dark:hover:bg-teal-900/30 transition-colors"
+              class="ui-accent-action-active inline-flex items-center rounded-md border px-2 py-1 text-xs font-medium transition-colors"
               title="Open SQL in DuckDB Console"
               @click="openPreviewSQLInConsole"
             >

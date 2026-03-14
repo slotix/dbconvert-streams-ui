@@ -7,14 +7,14 @@
       <!-- Drop indicator before tab -->
       <div
         v-if="shouldShowDropIndicator(index, 'before')"
-        class="w-0.5 h-6 bg-teal-500 rounded-full shrink-0 animate-pulse mx-0.5"
+        class="ui-tab-indicator w-0.5 h-6 rounded-full shrink-0 animate-pulse mx-0.5"
       />
       <div
         :draggable="renamingTabId !== tab.id"
         class="group flex items-center gap-1 px-3 py-2 border-r border-gray-200 dark:border-gray-700 cursor-pointer text-xs transition-colors min-w-0 shrink-0"
         :class="[
           tab.id === activeTabId
-            ? 'bg-white dark:bg-gray-900 text-teal-600 dark:text-teal-400'
+            ? 'ui-tab-active text-gray-900 dark:text-gray-100'
             : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800',
           dragState.isDragging && dragState.draggedIndex === index && 'opacity-50'
         ]"
@@ -33,7 +33,7 @@
           ref="renameInputRef"
           v-model="renameValue"
           type="text"
-          class="w-24 px-1 py-0 text-xs bg-white dark:bg-gray-800 border border-teal-500 rounded focus:outline-none"
+          class="ui-accent-focus w-24 px-1 py-0 text-xs bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded focus:outline-none"
           @blur="finishRename"
           @keydown.enter="finishRename"
           @keydown.escape="cancelRename"
@@ -51,12 +51,12 @@
       <!-- Drop indicator after tab -->
       <div
         v-if="shouldShowDropIndicator(index, 'after')"
-        class="w-0.5 h-6 bg-teal-500 rounded-full shrink-0 animate-pulse mx-0.5"
+        class="ui-tab-indicator w-0.5 h-6 rounded-full shrink-0 animate-pulse mx-0.5"
       />
     </template>
     <!-- Add Tab Button - positioned right after the last tab -->
     <button
-      class="shrink-0 px-2 py-2 text-gray-500 dark:text-gray-400 hover:text-teal-500 dark:hover:text-teal-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+      class="ui-accent-action shrink-0 px-2 py-2 text-gray-500 dark:text-gray-400 transition-colors"
       title="New Query Tab"
       @click="$emit('add')"
     >

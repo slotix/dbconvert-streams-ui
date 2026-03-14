@@ -49,7 +49,7 @@
             <!-- Version -->
             <div class="mt-2">
               <span
-                class="inline-flex items-center rounded-full bg-teal-50 dark:bg-teal-900/30 px-3 py-1 text-sm font-medium text-teal-700 dark:text-teal-300"
+                class="ui-chip-muted inline-flex items-center rounded-full px-3 py-1 text-sm font-medium"
               >
                 v{{ version }}
               </span>
@@ -70,7 +70,7 @@
             <div class="mt-6 flex justify-center space-x-4">
               <button
                 type="button"
-                class="text-sm text-teal-600 hover:text-teal-700 dark:text-teal-400 dark:hover:text-teal-300 transition-colors hover:underline"
+                class="ui-accent-text text-sm transition-colors hover:underline hover:opacity-80"
                 @click="openUrl('https://streams.dbconvert.com')"
               >
                 Website
@@ -78,7 +78,7 @@
               <span class="text-gray-300 dark:text-gray-600">|</span>
               <button
                 type="button"
-                class="text-sm text-teal-600 hover:text-teal-700 dark:text-teal-400 dark:hover:text-teal-300 transition-colors hover:underline"
+                class="ui-accent-text text-sm transition-colors hover:underline hover:opacity-80"
                 @click="openUrl('https://docs.dbconvert.com')"
               >
                 Documentation
@@ -86,7 +86,7 @@
               <span class="text-gray-300 dark:text-gray-600">|</span>
               <button
                 type="button"
-                class="text-sm text-teal-600 hover:text-teal-700 dark:text-teal-400 dark:hover:text-teal-300 transition-colors hover:underline"
+                class="ui-accent-text text-sm transition-colors hover:underline hover:opacity-80"
                 @click="openUrl('https://github.com/slotix/dbconvert-streams-public/discussions')"
               >
                 GitHub

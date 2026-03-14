@@ -90,7 +90,7 @@
               />
               <button
                 type="button"
-                class="inline-flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 dark:bg-teal-700 dark:hover:bg-teal-600 rounded-md transition-colors shadow-sm"
+                class="ui-accent-primary inline-flex items-center gap-1.5 rounded-md border px-4 py-1.5 text-sm font-medium transition-colors shadow-sm"
                 title="Preview query results"
                 :disabled="isRunning === activeQueryIndex || !activeQuery.query?.trim()"
                 @click="runPreview(activeQuery, activeQueryIndex)"
@@ -124,7 +124,7 @@
 
           <!-- Resizable Divider -->
           <div
-            class="w-1 bg-gray-200 dark:bg-gray-700 hover:bg-teal-500 dark:hover:bg-teal-500 cursor-col-resize transition-colors"
+            class="w-1 cursor-col-resize bg-gray-200 transition-colors hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-500"
             @mousedown="startResize"
           ></div>
 
@@ -135,7 +135,7 @@
               class="flex items-center justify-between px-3 py-1.5 border-b border-gray-200 dark:border-gray-700"
             >
               <div class="flex items-center gap-2">
-                <Sheet class="w-4 h-4 text-teal-500" />
+                <Sheet class="ui-accent-icon w-4 h-4" />
                 <span class="text-xs font-medium text-gray-600 dark:text-gray-300">
                   Results
                   <span v-if="previewData[activeQueryIndex]" class="text-gray-400">

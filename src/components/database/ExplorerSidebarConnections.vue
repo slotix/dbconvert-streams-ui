@@ -1393,11 +1393,7 @@ defineExpose({ focus: () => internalSearchInputRef.value?.focus() })
         v-if="isLoadingConnections"
         class="flex flex-col items-center justify-center py-16 text-gray-500 dark:text-gray-400"
       >
-        <div
-          class="relative w-16 h-16 mb-4 animate-spin rounded-full bg-linear-to-tr from-blue-500 to-teal-500 p-1"
-        >
-          <div class="bg-white dark:bg-gray-850 rounded-full w-full h-full"></div>
-        </div>
+        <Loader2 class="ui-accent-icon mb-4 h-10 w-10 animate-spin" />
         <p class="text-sm font-medium text-slate-700 dark:text-slate-300">Loading connections...</p>
         <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Please wait</p>
       </div>

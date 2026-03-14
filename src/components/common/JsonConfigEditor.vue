@@ -6,9 +6,7 @@
           :is="isCollapsed ? ChevronRight : ChevronDown"
           class="h-4 w-4 text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors"
         />
-        <span
-          class="inline-flex items-center gap-1.5 text-sm font-medium text-teal-600 dark:text-teal-400"
-        >
+        <span class="ui-accent-text inline-flex items-center gap-1.5 text-sm font-medium">
           <SquarePen class="h-4 w-4" />
           {{ title }}
           <span v-if="isDirty" class="text-amber-500">*</span>
@@ -50,7 +48,7 @@
         </button>
         <button
           v-tooltip="validationErrors.length > 0 ? 'Fix errors before saving' : 'Save changes'"
-          class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 dark:bg-teal-500 dark:hover:bg-teal-600 rounded-md transition-colors"
+          class="ui-accent-primary inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm font-medium transition-colors"
           :disabled="!isDirty || validationErrors.length > 0 || isSaving"
           :class="{
             'opacity-50 cursor-not-allowed': !isDirty || validationErrors.length > 0 || isSaving

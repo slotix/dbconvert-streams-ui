@@ -26,7 +26,7 @@
             <input
               v-model="connection.name"
               type="text"
-              class="w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2.5 px-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 dark:focus:ring-teal-400 focus:border-teal-500 dark:focus:border-teal-400 transition-colors"
+              class="ui-accent-focus w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm transition-colors"
               placeholder="Connection Name"
             />
           </div>
@@ -47,7 +47,7 @@
           />
           <svg
             v-else
-            class="h-6 w-6 mr-2.5 text-teal-600 dark:text-teal-400"
+            class="ui-accent-icon h-6 w-6 mr-2.5"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -70,7 +70,7 @@
               <input
                 v-model="connection.spec.database!.host"
                 type="text"
-                class="w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2 px-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-gray-600 dark:focus:ring-teal-400 focus:border-transparent"
+                class="ui-accent-focus w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2 text-base text-gray-700 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm focus:outline-none"
                 placeholder="localhost"
               />
             </div>
@@ -83,7 +83,7 @@
               <input
                 v-model.number.lazy="connection.spec.database!.port"
                 type="number"
-                class="w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2 px-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-gray-600 dark:focus:ring-teal-400 focus:border-transparent"
+                class="ui-accent-focus w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2 text-base text-gray-700 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm focus:outline-none"
                 :placeholder="defaultPort.toString()"
               />
             </div>
@@ -96,7 +96,7 @@
               <input
                 v-model="connection.spec.database!.username"
                 type="text"
-                class="w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2 px-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-gray-600 dark:focus:ring-teal-400 focus:border-transparent"
+                class="ui-accent-focus w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2 text-base text-gray-700 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm focus:outline-none"
                 :placeholder="getConnectionDefaults().username"
               />
             </div>
@@ -110,7 +110,7 @@
                 <input
                   v-model="connection.spec.database!.password"
                   :type="passwordFieldType"
-                  class="w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2 px-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-gray-600 dark:focus:ring-teal-400 focus:border-transparent pr-10"
+                  class="ui-accent-focus w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2 pr-10 text-base text-gray-700 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm focus:outline-none"
                   placeholder="Enter password"
                 />
                 <button
@@ -141,7 +141,7 @@
               <input
                 v-model="connection.spec.database!.database"
                 type="text"
-                class="w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2 px-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-gray-600 dark:focus:ring-teal-400 focus:border-transparent"
+                class="ui-accent-focus w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2 text-base text-gray-700 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm focus:outline-none"
                 :placeholder="getDatabasePlaceholder()"
               />
               <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">

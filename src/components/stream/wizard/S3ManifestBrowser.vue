@@ -26,7 +26,7 @@
         :connection-name="props.connectionName"
         :selection-label="props.bucket"
         :icon="FileJson"
-        icon-class="text-teal-500/80 dark:text-teal-400/80"
+        icon-class="ui-accent-icon"
         class="rounded-none border-x-0 border-t-0 border-b border-b-gray-200/70 dark:border-b-gray-700/70"
       />
 
@@ -89,7 +89,7 @@
                   :id="`manifest-${row.entry.path}`"
                   :checked="isChecked(row.entry)"
                   type="checkbox"
-                  class="mr-3 h-4 w-4 rounded border-gray-300 bg-white text-teal-600 focus:ring-teal-500 dark:border-gray-600 dark:bg-gray-800 dark:text-teal-500 dark:focus:ring-teal-400"
+                  class="ui-accent-icon mr-3 h-4 w-4 rounded border-gray-300 bg-white focus:ring-0 dark:border-gray-600 dark:bg-gray-800"
                   @click.stop
                   @change="onCheckboxChange(row.entry, ($event.target as HTMLInputElement).checked)"
                 />

@@ -16,7 +16,7 @@
         </div>
         <div v-if="templateContextBadge" class="mt-2">
           <span
-            class="inline-flex items-center rounded-full border border-teal-500/40 bg-teal-500/10 px-2 py-0.5 text-[10px] font-medium text-teal-600 dark:text-teal-300"
+            class="ui-chip-muted inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium"
           >
             {{ templateContextBadge }}
           </span>
@@ -28,7 +28,7 @@
             v-model="templateSearch"
             type="text"
             placeholder="Search templates..."
-            class="w-full pl-8 pr-2 py-1.5 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-850 text-xs text-gray-900 dark:text-gray-100 focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
+            class="ui-accent-focus w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-850 py-1.5 pl-8 pr-2 text-xs text-gray-900 dark:text-gray-100"
           />
         </div>
       </div>
@@ -51,7 +51,7 @@
                 class="group relative w-full text-left px-3 py-2.5 rounded-lg transition-colors"
                 :class="
                   isTemplateActive(template)
-                    ? 'bg-teal-50 dark:bg-teal-900/25'
+                    ? 'ui-accent-selection-checked'
                     : 'hover:bg-gray-100/80 dark:hover:bg-gray-700/60'
                 "
                 :title="`${template.name}\n\n${template.description || ''}`"
@@ -63,8 +63,8 @@
                   class="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-full transition-opacity"
                   :class="
                     isTemplateActive(template)
-                      ? 'opacity-100 bg-teal-500'
-                      : 'opacity-0 group-hover:opacity-70 bg-teal-500'
+                      ? 'ui-tab-indicator opacity-100'
+                      : 'ui-tab-indicator opacity-0 group-hover:opacity-70'
                   "
                 />
                 <div class="flex items-start gap-2.5">
@@ -135,7 +135,7 @@
                     class="group relative w-full text-left px-3 py-2.5 rounded-lg transition-colors"
                     :class="
                       isTemplateActive(template)
-                        ? 'bg-teal-50 dark:bg-teal-900/25'
+                        ? 'ui-accent-selection-checked'
                         : 'hover:bg-gray-100/80 dark:hover:bg-gray-700/60'
                     "
                     :title="`${template.name}\n\n${template.description || ''}`"
@@ -147,8 +147,8 @@
                       class="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-full transition-opacity"
                       :class="
                         isTemplateActive(template)
-                          ? 'opacity-100 bg-teal-500'
-                          : 'opacity-0 group-hover:opacity-70 bg-teal-500'
+                          ? 'ui-tab-indicator opacity-100'
+                          : 'ui-tab-indicator opacity-0 group-hover:opacity-70'
                       "
                     />
                     <div class="flex items-start gap-2.5">

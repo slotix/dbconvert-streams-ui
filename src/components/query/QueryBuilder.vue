@@ -4,15 +4,15 @@
       class="flex items-center justify-between gap-2 px-1 pb-2 border-b border-gray-200 dark:border-gray-700"
     >
       <div class="flex items-center gap-1.5 min-w-0">
-        <Filter class="w-4 h-4 text-teal-600 dark:text-teal-400" />
+        <Filter class="ui-accent-icon w-4 h-4" />
         <span class="text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide"
           >Data Filter</span
         >
         <div class="flex items-center gap-1 ml-2">
           <button
             type="button"
-            class="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-white dark:hover:bg-gray-800 rounded transition-colors"
-            :class="showColumnSelector ? 'bg-teal-500/20 text-teal-600 dark:text-teal-400' : ''"
+            class="ui-accent-action inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 rounded border border-transparent transition-colors"
+            :class="showColumnSelector ? 'ui-accent-action-active' : ''"
             title="Select columns to transfer"
             @click="toggleColumnSelector"
           >
@@ -20,14 +20,14 @@
             <span>Columns</span>
             <span
               v-if="selectedColumns.length > 0 && selectedColumns.length < columns.length"
-              class="px-1 py-0.5 text-[10px] bg-teal-500/30 rounded"
+              class="ui-chip-muted px-1 py-0.5 text-[10px] rounded"
             >
               {{ selectedColumns.length }}
             </span>
           </button>
           <button
             type="button"
-            class="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-white dark:hover:bg-gray-800 rounded transition-colors"
+            class="ui-accent-action inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 rounded transition-colors"
             title="Add WHERE condition"
             @click="addFilter"
           >
@@ -37,7 +37,7 @@
           <button
             v-tooltip="canAddSort ? 'Add ORDER BY' : 'All columns are already used in sorting'"
             type="button"
-            class="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-white dark:hover:bg-gray-800 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-gray-600 dark:disabled:hover:text-gray-400"
+            class="ui-accent-action inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-gray-600 dark:disabled:hover:text-gray-400"
             :disabled="!canAddSort"
             @click="addSort"
           >
@@ -50,7 +50,7 @@
       <button
         v-if="canPreview"
         type="button"
-        class="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-white dark:hover:bg-gray-800 rounded transition-colors"
+        class="ui-accent-action inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 rounded transition-colors"
         :class="isLoadingPreview ? 'animate-pulse' : ''"
         :disabled="isLoadingPreview"
         title="Preview sample data"
@@ -83,14 +83,14 @@
       <!-- Preview Results Panel -->
       <div v-if="showPreview" class="mt-4 pt-3 border-t border-gray-200/80 dark:border-gray-700/80">
         <div
-          class="bg-white dark:bg-gray-800/70 rounded-md border border-gray-200 dark:border-gray-700 shadow-xs ring-1 ring-teal-500/10 overflow-hidden"
+          class="bg-white dark:bg-gray-800/70 rounded-md border border-gray-200 dark:border-gray-700 shadow-xs overflow-hidden"
         >
           <!-- Preview Header -->
           <div
             class="flex items-center justify-between px-2.5 py-2 bg-gray-50/90 dark:bg-gray-800/90 border-b border-gray-200 dark:border-gray-700"
           >
             <div class="flex items-center gap-2">
-              <Sheet class="w-3.5 h-3.5 text-teal-500" />
+              <Sheet class="ui-accent-icon w-3.5 h-3.5" />
               <span
                 class="text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide"
               >

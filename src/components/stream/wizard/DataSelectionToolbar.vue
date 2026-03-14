@@ -6,10 +6,10 @@
     "
   >
     <div
-      class="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-600 text-sm font-medium"
+      class="ui-chip-muted inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded border text-sm font-medium"
       :title="counterTitle"
     >
-      <span class="text-teal-600 dark:text-teal-400">{{ selectedCount }}</span>
+      <span class="ui-accent-text">{{ selectedCount }}</span>
       <span v-if="selectedCountLabel" class="text-gray-500 dark:text-gray-400">
         {{ selectedCountLabel }}
       </span>
@@ -27,7 +27,7 @@
           :value="searchValue"
           type="text"
           :placeholder="searchPlaceholder"
-          class="w-full pl-8 pr-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
+          class="ui-accent-focus w-full rounded-md border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 py-2 pl-8 pr-3 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400"
           @input="onSearchInput"
         />
       </div>
@@ -59,7 +59,7 @@
 
     <button
       type="button"
-      class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+      class="ui-accent-action inline-flex items-center gap-1.5 rounded-md border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
       :title="refreshTitle"
       :disabled="refreshDisabled"
       @click="$emit('refresh')"

@@ -519,7 +519,7 @@ onBeforeUnmount(() => {
               @mousedown.prevent="startResize"
             >
               <div
-                class="absolute inset-x-0 top-1/2 -translate-y-1/2 h-px group-hover:h-[3px] bg-gray-200 dark:bg-gray-700 group-hover:bg-teal-400 dark:group-hover:bg-teal-500 transition-all duration-150"
+                class="absolute inset-x-0 top-1/2 -translate-y-1/2 h-px group-hover:h-[3px] bg-gray-200 dark:bg-gray-700 group-hover:bg-gray-400 dark:group-hover:bg-gray-500 transition-all duration-150"
               />
             </div>
 

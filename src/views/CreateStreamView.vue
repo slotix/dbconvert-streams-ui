@@ -62,7 +62,7 @@
                 </span>
               </div>
               <svg
-                class="w-5 h-5 shrink-0 text-teal-500 dark:text-teal-400"
+                class="ui-accent-icon w-5 h-5 shrink-0"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"

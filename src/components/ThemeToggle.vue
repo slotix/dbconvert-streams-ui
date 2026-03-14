@@ -27,7 +27,7 @@ const themes = [
   <Menu as="div" class="relative inline-block text-left">
     <MenuButton
       ref="menuButtonRef"
-      class="inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-gray-800 hover:text-white dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-500 dark:focus:ring-teal-400"
+      class="ui-accent-action inline-flex items-center justify-center rounded-md p-2 text-gray-400 focus:outline-none dark:hover:bg-gray-700"
       title="Toggle theme"
     >
       <Sun v-if="!themeStore.isDark" class="h-5 w-5" />
@@ -51,7 +51,7 @@ const themes = [
               :class="[
                 active ? 'bg-gray-100 dark:bg-gray-700' : '',
                 themeStore.mode === theme.value
-                  ? 'bg-teal-50 dark:bg-teal-900 text-teal-600 dark:text-teal-400'
+                  ? 'ui-accent-selection-checked'
                   : 'text-gray-700 dark:text-gray-300',
                 'group flex w-full items-center px-4 py-2 text-sm'
               ]"
@@ -62,7 +62,7 @@ const themes = [
                 class="mr-3 h-5 w-5"
                 :class="
                   themeStore.mode === theme.value
-                    ? 'text-teal-500 dark:text-teal-400'
+                    ? 'ui-accent-icon'
                     : 'text-gray-400 dark:text-gray-500'
                 "
               />

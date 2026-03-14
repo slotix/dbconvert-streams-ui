@@ -35,24 +35,22 @@
       class="bg-white dark:bg-gray-850 rounded-xl border border-gray-100 dark:border-gray-700 p-6 shadow-sm dark:shadow-gray-900/30"
     >
       <div class="flex items-center mb-4">
-        <Cloud class="h-5 w-5 mr-2 text-teal-600 dark:text-teal-400" />
+        <Cloud class="ui-accent-icon h-5 w-5 mr-2" />
         <h4 class="text-base font-medium text-gray-900 dark:text-gray-100">
           S3 Upload Configuration
         </h4>
       </div>
 
       <!-- Show selected bucket as read-only info (selected in Step 1) -->
-      <div
-        class="bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800 rounded-lg p-4 mb-6"
-      >
+      <div class="ui-accent-selection-checked mb-6 rounded-lg p-4">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-teal-800 dark:text-teal-200">Target Bucket</p>
-            <p class="text-lg font-semibold text-teal-900 dark:text-teal-100">
+            <p class="ui-accent-text text-sm font-medium">Target Bucket</p>
+            <p class="text-lg font-semibold text-gray-900 dark:text-gray-100">
               {{ s3Bucket || 'Not selected' }}
             </p>
           </div>
-          <div class="text-teal-600 dark:text-teal-400">
+          <div class="ui-accent-icon">
             <Cloud class="h-8 w-8" />
           </div>
         </div>
@@ -71,7 +69,7 @@
             id="s3-prefix"
             v-model="s3Prefix"
             type="text"
-            class="block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 bg-white dark:bg-gray-900 focus:border-teal-500 dark:focus:border-teal-400 focus:ring-1 focus:ring-teal-500 dark:focus:ring-teal-400 sm:text-sm"
+            class="ui-accent-focus block w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm sm:text-sm"
             placeholder="data/exports/"
           />
           <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -111,7 +109,7 @@
             id="s3-kms-key"
             v-model="s3KmsKeyId"
             type="text"
-            class="block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 bg-white dark:bg-gray-900 focus:border-teal-500 dark:focus:border-teal-400 focus:ring-1 focus:ring-teal-500 dark:focus:ring-teal-400 sm:text-sm"
+            class="ui-accent-focus block w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm sm:text-sm"
             placeholder="arn:aws:kms:us-east-1:123456789012:key/12345678..."
           />
           <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -155,7 +153,7 @@
                 min="10"
                 max="1000"
                 step="10"
-                class="block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 bg-white dark:bg-gray-900 focus:border-teal-500 dark:focus:border-teal-400 focus:ring-1 focus:ring-teal-500 dark:focus:ring-teal-400 sm:text-sm"
+                class="ui-accent-focus block w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm sm:text-sm"
                 placeholder="10-1000"
                 @focus="isEditingDataBundleSize = true"
                 @input="onDataBundleSizeInput"
@@ -184,7 +182,7 @@
                 v-model.number="reportingInterval"
                 type="number"
                 min="1"
-                class="block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900 focus:border-teal-500 dark:focus:border-teal-400 focus:ring-1 focus:ring-teal-500 dark:focus:ring-teal-400 sm:text-sm"
+                class="ui-accent-focus block w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-sm sm:text-sm"
               />
             </div>
           </div>
@@ -214,7 +212,7 @@
                   v-model.number="limitsNumberOfEvents"
                   type="number"
                   min="1"
-                  class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 bg-white dark:bg-gray-900 focus:border-teal-500 dark:focus:border-teal-400 focus:ring-1 focus:ring-teal-500 dark:focus:ring-teal-400 sm:text-sm"
+                  class="ui-accent-focus mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm sm:text-sm"
                   placeholder="0 (unlimited)"
                   @input="onRowsLimitInput"
                 />
@@ -242,7 +240,7 @@
                   v-model.number="limitsElapsedTime"
                   type="number"
                   min="1"
-                  class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 bg-white dark:bg-gray-900 focus:border-teal-500 dark:focus:border-teal-400 focus:ring-1 focus:ring-teal-500 dark:focus:ring-teal-400 sm:text-sm"
+                  class="ui-accent-focus mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm sm:text-sm"
                   placeholder="0 (unlimited)"
                   @input="onElapsedLimitInput"
                 />

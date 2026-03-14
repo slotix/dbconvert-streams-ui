@@ -35,7 +35,7 @@
           exportFeedback.tone === 'error'
             ? 'text-red-600 dark:text-red-300'
             : exportFeedback.tone === 'success'
-              ? 'text-teal-600 dark:text-teal-300'
+              ? 'ui-accent-text'
               : 'text-gray-500 dark:text-gray-400'
         "
         :title="exportFeedback.message"
@@ -81,7 +81,7 @@
             <button
               v-if="errorActionLabel"
               type="button"
-              class="mt-2 text-xs font-medium text-teal-700 dark:text-teal-300 hover:text-teal-800 dark:hover:text-teal-200 underline underline-offset-2"
+              class="ui-accent-text mt-2 text-xs font-medium underline underline-offset-2 hover:opacity-80"
               @click="$emit('error-action')"
             >
               {{ errorActionLabel }}

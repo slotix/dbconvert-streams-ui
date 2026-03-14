@@ -136,7 +136,7 @@ const inputId = props.id || `form-input-${Math.random().toString(36).substr(2, 9
         'transition-colors duration-150 focus:outline-none focus-visible:outline-none',
         error
           ? 'border-red-300 dark:border-red-600 focus:border-red-500 dark:focus:border-red-400 focus:bg-red-50/40 dark:focus:bg-red-950/20'
-          : 'border-gray-300 dark:border-gray-600 focus:border-teal-500 dark:focus:border-teal-400 focus:bg-teal-50/40 dark:focus:bg-teal-950/20',
+          : 'border-gray-300 dark:border-gray-600 ui-accent-focus',
         disabled ? 'bg-gray-100 dark:bg-gray-700 cursor-not-allowed' : 'bg-white dark:bg-gray-800'
       ]"
       @input="handleInput"

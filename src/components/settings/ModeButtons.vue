@@ -2,7 +2,7 @@
   <div class="space-y-3">
     <!-- Label with Icon -->
     <div class="flex items-center gap-2">
-      <ArrowLeftRight class="h-5 w-5 text-teal-600 dark:text-teal-400" />
+      <ArrowLeftRight class="ui-accent-icon h-5 w-5" />
       <label class="text-sm font-semibold text-gray-900 dark:text-gray-100">
         Data Transfer Mode
       </label>
@@ -24,9 +24,9 @@
               disabled
                 ? 'bg-gray-100 dark:bg-gray-800/60 border-gray-200 dark:border-gray-700 opacity-60 cursor-not-allowed'
                 : checked
-                  ? 'bg-teal-50 dark:bg-teal-900/20 border-teal-200 dark:border-teal-700'
+                  ? 'ui-accent-selection-checked'
                   : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer',
-              active && !disabled ? 'ring-2 ring-teal-500 ring-offset-2' : '',
+              active && !disabled && !checked ? 'ui-accent-selection-active' : '',
               'relative h-full min-h-[76px] flex items-start rounded-lg border p-3 transition-all duration-150 focus:outline-none'
             ]"
           >
@@ -34,7 +34,7 @@
               <input
                 :checked="checked"
                 type="radio"
-                class="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 dark:border-gray-500 bg-white dark:bg-gray-700"
+                class="ui-accent-icon h-4 w-4 border-gray-300 dark:border-gray-500 bg-white dark:bg-gray-700"
                 :disabled="disabled"
                 readonly
               />
@@ -45,9 +45,7 @@
                 :class="[
                   disabled
                     ? 'text-gray-500 dark:text-gray-400'
-                    : checked
-                      ? 'text-teal-900 dark:text-teal-100'
-                      : 'text-gray-900 dark:text-gray-100',
+                    : 'text-gray-900 dark:text-gray-100',
                   'text-sm font-medium'
                 ]"
               >

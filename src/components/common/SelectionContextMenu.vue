@@ -129,7 +129,7 @@ function revertCellAndClose() {
       <button
         v-if="canRevertCell"
         type="button"
-        class="w-full text-left px-3 py-2 text-sm text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-colors"
+        class="ui-accent-action ui-accent-text w-full px-3 py-2 text-left text-sm transition-colors"
         @click="revertCellAndClose"
       >
         Revert cell

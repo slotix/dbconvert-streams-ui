@@ -65,14 +65,14 @@ const iconColor = computed(() => {
     return 'text-sky-500 dark:text-sky-400'
   }
 
-  // Manifest files and manifests folders - teal to match manifest badge
+  // Manifest files and manifests folders use the shared accent.
   if (props.isManifest) {
-    return 'text-teal-500 dark:text-teal-400'
+    return 'ui-accent-icon'
   }
 
-  // Table folders get special color - teal to indicate queryable data
+  // Table folders use the shared accent to indicate queryable data.
   if (props.isTableFolder) {
-    return 'text-teal-500 dark:text-teal-400'
+    return 'ui-accent-icon'
   }
 
   // Regular folders - amber/yellow color

@@ -151,7 +151,7 @@ const optionsBehaviorClass = computed(() => {
           'focus:outline-none focus-visible:outline-none',
           error
             ? 'border border-red-300 dark:border-red-600 focus:border-red-500 dark:focus:border-red-400 focus:bg-red-50/40 dark:focus:bg-red-950/20'
-            : 'border border-gray-300 dark:border-gray-600 focus:border-teal-500 dark:focus:border-teal-400 focus:bg-teal-50/40 dark:focus:bg-teal-950/20',
+            : 'border border-gray-300 dark:border-gray-600 ui-accent-focus',
           disabled
             ? 'bg-gray-100 dark:bg-gray-700 cursor-not-allowed text-gray-500 dark:text-gray-400'
             : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 cursor-pointer',
@@ -208,9 +208,7 @@ const optionsBehaviorClass = computed(() => {
             >
               <li
                 :class="[
-                  active
-                    ? 'bg-teal-50 dark:bg-teal-900 text-teal-900 dark:text-teal-300'
-                    : 'text-gray-900 dark:text-gray-100',
+                  active ? 'ui-accent-option-active' : 'text-gray-900 dark:text-gray-100',
                   option.disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
                   option.indented ? 'pl-6' : 'pl-3',
                   'relative select-none',
@@ -223,12 +221,7 @@ const optionsBehaviorClass = computed(() => {
 
                 <span
                   v-if="selected"
-                  :class="[
-                    active
-                      ? 'text-teal-600 dark:text-teal-400'
-                      : 'text-teal-600 dark:text-teal-400',
-                    'absolute inset-y-0 right-0 flex items-center pr-3'
-                  ]"
+                  :class="['ui-accent-icon', 'absolute inset-y-0 right-0 flex items-center pr-3']"
                 >
                   <Check :class="selectedIconClass" aria-hidden="true" />
                 </span>

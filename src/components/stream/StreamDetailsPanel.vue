@@ -10,7 +10,7 @@
           :key="tab.id"
           :class="[
             activeTab === tab.id
-              ? 'border-teal-600 dark:border-teal-400 text-teal-600 dark:text-teal-400'
+              ? 'ui-accent-text [border-color:var(--ui-accent-indicator)]'
               : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700',
             'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors'
           ]"

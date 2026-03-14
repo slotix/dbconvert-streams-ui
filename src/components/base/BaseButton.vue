@@ -47,7 +47,7 @@ const baseClasses =
 
 const variantClasses: Record<Variant, string> = {
   primary:
-    'bg-teal-600 dark:bg-teal-900 text-white border border-transparent dark:border-teal-600 hover:bg-teal-700 dark:hover:bg-teal-800 hover:border-teal-700 dark:hover:border-teal-500 focus-visible:bg-teal-700 dark:focus-visible:bg-teal-800 focus-visible:border-teal-700 dark:focus-visible:border-teal-500 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:text-gray-500 dark:disabled:text-gray-400 dark:disabled:border-gray-600',
+    'ui-accent-primary border disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:text-gray-500 dark:disabled:text-gray-400 disabled:border-gray-600',
   secondary:
     'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 focus-visible:bg-gray-50 dark:focus-visible:bg-gray-700 focus-visible:border-gray-400 dark:focus-visible:border-gray-500 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-400',
   danger:

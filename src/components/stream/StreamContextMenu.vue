@@ -71,7 +71,7 @@ function click(action: string) {
         <!-- Start/Run Again -->
         <button
           v-if="canStart"
-          class="w-full text-left px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 text-teal-600 dark:text-teal-300 flex items-center gap-2"
+          class="ui-accent-action ui-accent-text flex w-full items-center gap-2 px-3 py-1.5 text-left"
           @click="click('start-stream')"
         >
           <component :is="target.isFinished ? RotateCcw : Play" class="w-4 h-4 shrink-0" />
@@ -91,7 +91,7 @@ function click(action: string) {
         <!-- Resume -->
         <button
           v-if="canResume"
-          class="w-full text-left px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 text-teal-600 dark:text-teal-300 flex items-center gap-2"
+          class="ui-accent-action ui-accent-text flex w-full items-center gap-2 px-3 py-1.5 text-left"
           @click="click('resume-stream')"
         >
           <Play class="w-4 h-4 shrink-0" />

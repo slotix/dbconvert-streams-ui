@@ -2,7 +2,7 @@
   <div
     :class="[
       'flex items-center border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-850 shrink-0 border-t-2 transition-colors duration-150',
-      isActive ? 'border-t-teal-500/40 dark:border-t-teal-400/40' : 'border-t-transparent'
+      isActive ? 'ui-tab-container-active' : 'border-t-transparent'
     ]"
     :data-pane-id="paneId"
   >
@@ -16,7 +16,7 @@
           <!-- Drop indicator before tab -->
           <div
             v-if="shouldShowDropIndicator(i, 'before')"
-            class="w-0.5 h-6 bg-teal-500 rounded-full shrink-0 animate-pulse"
+            class="ui-tab-indicator w-0.5 h-6 rounded-full shrink-0 animate-pulse"
           />
           <button
             :ref="(el) => setTabRef(el as HTMLElement | null, i)"
@@ -27,7 +27,7 @@
               'focus:outline-none',
               isPreviewTab(i) ? 'italic' : '',
               isActiveTab(i)
-                ? 'border-b-teal-500 dark:border-b-teal-400 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900'
+                ? 'ui-tab-active text-gray-900 dark:text-gray-100'
                 : 'border-b-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-white/60 dark:hover:bg-gray-800/60',
               dragState.isDragging && dragState.draggedIndex === i && 'opacity-50'
             ]"
@@ -74,7 +74,7 @@
           <!-- Drop indicator after tab -->
           <div
             v-if="shouldShowDropIndicator(i, 'after')"
-            class="w-0.5 h-6 bg-teal-500 rounded-full shrink-0 animate-pulse"
+            class="ui-tab-indicator w-0.5 h-6 rounded-full shrink-0 animate-pulse"
           />
         </template>
       </div>
@@ -494,12 +494,12 @@ function getIconColor(tab: PaneTab): string {
     return 'text-indigo-500 dark:text-indigo-400'
   }
   if (tab.tabType === 'database-overview') {
-    return 'text-teal-500 dark:text-teal-400'
+    return 'ui-accent-icon'
   }
   // Database tabs: tables, views, sequences, routines
   if (tab.tabType === 'database') {
     if (tab.type === 'view') {
-      return 'text-teal-500 dark:text-teal-400'
+      return 'ui-accent-icon'
     }
     if (tab.type === 'function') {
       return 'text-indigo-500 dark:text-indigo-400'

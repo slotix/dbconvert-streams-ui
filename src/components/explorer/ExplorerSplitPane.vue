@@ -8,11 +8,19 @@
     <div
       ref="leftPaneRef"
       :style="{ flexBasis: `${splitGrow}%`, flexGrow: 0, flexShrink: 0 }"
-      class="relative min-w-[300px] flex flex-col min-h-0"
+      :class="[
+        'relative min-w-[300px] flex flex-col min-h-0 border border-transparent transition-colors duration-150',
+        props.activePane === 'left' ? 'ui-pane-active' : ''
+      ]"
       @mousedown="$emit('set-active-pane', 'left')"
       @dragover="onPaneDragOver"
       @drop="onPaneDrop($event, 'left')"
     >
+      <div
+        v-if="props.activePane === 'left'"
+        class="ui-pane-indicator pointer-events-none absolute inset-x-0 top-0 z-30 h-0.5"
+      />
+
       <!-- Left pane tabs -->
       <slot name="left-tabs" />
 
@@ -33,18 +41,26 @@
       @dblclick="onDividerDoubleClick"
     >
       <div
-        class="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px group-hover:w-[3px] bg-gray-200 dark:bg-gray-700 group-hover:bg-teal-400 dark:group-hover:bg-teal-500 transition-all duration-150"
+        class="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px group-hover:w-[3px] bg-gray-200 dark:bg-gray-700 group-hover:bg-gray-400 dark:group-hover:bg-gray-500 transition-all duration-150"
       />
     </div>
 
     <!-- Right pane (conditional) -->
     <div
       :style="{ flexBasis: '0px' }"
-      class="relative grow min-w-[300px] flex flex-col min-h-0"
+      :class="[
+        'relative grow min-w-[300px] flex flex-col min-h-0 border border-transparent transition-colors duration-150',
+        props.activePane === 'right' ? 'ui-pane-active' : ''
+      ]"
       @mousedown="$emit('set-active-pane', 'right')"
       @dragover="onPaneDragOver"
       @drop="onPaneDrop($event, 'right')"
     >
+      <div
+        v-if="props.activePane === 'right'"
+        class="ui-pane-indicator pointer-events-none absolute inset-x-0 top-0 z-30 h-0.5"
+      />
+
       <!-- Right pane tabs -->
       <slot name="right-tabs" />
 
@@ -59,11 +75,13 @@
   <!-- Single pane view (left only) - reuse left-content slot -->
   <div v-else class="flex flex-col flex-1 min-h-0">
     <div
-      class="flex flex-col flex-1 min-h-0"
+      class="ui-pane-active flex flex-col flex-1 min-h-0 border border-transparent transition-colors duration-150"
       @mousedown="$emit('set-active-pane', 'left')"
       @dragover="onPaneDragOver"
       @drop="onPaneDrop($event, 'left')"
     >
+      <div class="ui-pane-indicator pointer-events-none absolute inset-x-0 top-0 z-30 h-0.5" />
+
       <!-- Left pane tabs -->
       <slot name="left-tabs" />
 

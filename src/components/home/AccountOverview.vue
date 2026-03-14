@@ -8,11 +8,8 @@
       >
         <div class="flex items-start gap-4">
           <div class="shrink-0">
-            <div class="rounded-lg bg-teal-50 dark:bg-teal-900/30 p-3">
-              <KeyRound
-                class="h-6 w-6 text-teal-600 dark:text-teal-400"
-                :stroke-width="iconStroke"
-              />
+            <div class="ui-accent-selection-checked rounded-lg p-3">
+              <KeyRound class="ui-accent-icon h-6 w-6" :stroke-width="iconStroke" />
             </div>
           </div>
           <div class="flex-1">
@@ -28,7 +25,7 @@
         <div class="flex flex-wrap items-center gap-3">
           <button
             type="button"
-            class="inline-flex items-center rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-teal-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600"
+            class="ui-accent-primary inline-flex items-center rounded-md border px-4 py-2 text-sm font-medium shadow-sm"
             @click="promptApiKey"
           >
             Enter API key
@@ -95,12 +92,12 @@
         class="flex items-start p-3 rounded-lg bg-slate-50 dark:bg-gray-800/50"
       >
         <div class="shrink-0">
-          <div class="bg-teal-50 dark:bg-teal-900/30 rounded-lg p-3">
+          <div class="ui-accent-selection-checked rounded-lg p-3">
             <CreditCard
               class="h-6 w-6"
               :stroke-width="iconStroke"
               :class="{
-                'text-teal-600 dark:text-teal-400': isPaid,
+                'ui-accent-icon': isPaid,
                 'text-gray-400 dark:text-gray-500': !isPaid
               }"
             />
@@ -224,11 +221,8 @@
         class="flex items-start p-3 rounded-lg bg-slate-50 dark:bg-gray-800/50"
       >
         <div class="shrink-0">
-          <div class="bg-teal-50 dark:bg-teal-900/30 rounded-lg p-3">
-            <CircleUser
-              class="h-6 w-6 text-teal-600 dark:text-teal-400"
-              :stroke-width="iconStroke"
-            />
+          <div class="ui-accent-selection-checked rounded-lg p-3">
+            <CircleUser class="ui-accent-icon h-6 w-6" :stroke-width="iconStroke" />
           </div>
         </div>
         <div class="ml-4 flex-1">
@@ -249,7 +243,7 @@
               </div>
               <div class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2.5 mt-2">
                 <div
-                  class="h-2.5 rounded-full bg-teal-500 transition-all duration-300"
+                  class="h-2.5 rounded-full transition-all duration-300 [background-color:var(--ui-accent-strong-bg)]"
                   :style="{ width: `${evalConvertPercent}%` }"
                 ></div>
               </div>
@@ -263,7 +257,7 @@
               </div>
               <div class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2.5 mt-2">
                 <div
-                  class="h-2.5 rounded-full bg-teal-500 transition-all duration-300"
+                  class="h-2.5 rounded-full transition-all duration-300 [background-color:var(--ui-accent-strong-bg)]"
                   :style="{ width: `${evalCdcPercent}%` }"
                 ></div>
               </div>

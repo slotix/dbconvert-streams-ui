@@ -26,7 +26,7 @@
             <input
               v-model="connection.name"
               type="text"
-              class="w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2.5 px-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 dark:focus:ring-teal-400 focus:border-teal-500 dark:focus:border-teal-400 transition-colors"
+              class="ui-accent-focus w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm transition-colors"
               placeholder="Connection Name"
             />
           </div>
@@ -39,7 +39,7 @@
         class="bg-white dark:bg-gray-850 rounded-xl border border-gray-100 dark:border-gray-700 p-6 mb-6 shadow-sm dark:shadow-gray-900/30"
       >
         <h3 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-6 flex items-center">
-          <Cloud class="h-5 w-5 mr-2 text-teal-600 dark:text-teal-400" />
+          <Cloud class="ui-accent-icon h-5 w-5 mr-2" />
           S3 Configuration
         </h3>
 
@@ -69,7 +69,7 @@
                     v-model="credentialSource"
                     type="radio"
                     value="aws"
-                    class="mr-2 text-teal-600 focus:ring-teal-500"
+                    class="ui-accent-icon mr-2 focus:ring-0"
                   />
                   <span class="text-sm text-gray-700 dark:text-gray-300">AWS Default Chain</span>
                 </label>
@@ -78,7 +78,7 @@
                     v-model="credentialSource"
                     type="radio"
                     value="static"
-                    class="mr-2 text-teal-600 focus:ring-teal-500"
+                    class="ui-accent-icon mr-2 focus:ring-0"
                   />
                   <span class="text-sm text-gray-700 dark:text-gray-300">Static Credentials</span>
                 </label>
@@ -97,7 +97,7 @@
                 <input
                   v-model="accessKeyId"
                   type="text"
-                  class="w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2.5 px-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 dark:focus:ring-teal-400 focus:border-teal-500 dark:focus:border-teal-400 transition-colors"
+                  class="ui-accent-focus w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm transition-colors"
                   placeholder="AKIAIOSFODNN7EXAMPLE"
                 />
               </div>
@@ -112,7 +112,7 @@
                 <input
                   v-model="secretAccessKey"
                   type="password"
-                  class="w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2.5 px-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 dark:focus:ring-teal-400 focus:border-teal-500 dark:focus:border-teal-400 transition-colors"
+                  class="ui-accent-focus w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm transition-colors"
                   placeholder="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
                 />
               </div>
@@ -127,7 +127,7 @@
                 <input
                   v-model="sessionToken"
                   type="password"
-                  class="w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2.5 px-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 dark:focus:ring-teal-400 focus:border-teal-500 dark:focus:border-teal-400 transition-colors"
+                  class="ui-accent-focus w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm transition-colors"
                   placeholder="Temporary session token"
                 />
               </div>
@@ -142,14 +142,14 @@
                 <input
                   v-model="region"
                   type="text"
-                  class="w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2.5 px-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 dark:focus:ring-teal-400 focus:border-teal-500 dark:focus:border-teal-400 transition-colors"
+                  class="ui-accent-focus w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm transition-colors"
                   :class="{ 'pr-24': regionAutoDetected }"
                   placeholder="us-east-1"
                   @input="regionAutoDetected = false"
                 />
                 <span
                   v-if="regionAutoDetected"
-                  class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-900/30 px-2 py-0.5 rounded"
+                  class="ui-chip-muted absolute right-3 top-1/2 -translate-y-1/2 rounded px-2 py-0.5 text-xs"
                 >
                   auto-detected
                 </span>
@@ -170,7 +170,7 @@
               <input
                 v-model="endpoint"
                 type="text"
-                class="w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2.5 px-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 dark:focus:ring-teal-400 focus:border-teal-500 dark:focus:border-teal-400 transition-colors"
+                class="ui-accent-focus w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm transition-colors"
                 placeholder="Leave empty for AWS S3"
               />
               <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -196,7 +196,7 @@
                 <input
                   v-model="bucket"
                   type="text"
-                  class="w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2.5 px-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 dark:focus:ring-teal-400 focus:border-teal-500 dark:focus:border-teal-400 transition-colors"
+                  class="ui-accent-focus w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm transition-colors"
                   placeholder="my-data-bucket (optional)"
                 />
                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -214,7 +214,7 @@
                 <input
                   v-model="prefix"
                   type="text"
-                  class="w-full rounded-lg border border-gray-300 dark:border-gray-600 py-2.5 px-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 dark:focus:ring-teal-400 focus:border-teal-500 dark:focus:border-teal-400 transition-colors"
+                  class="ui-accent-focus w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm transition-colors"
                   placeholder="data/exports/"
                 />
                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">

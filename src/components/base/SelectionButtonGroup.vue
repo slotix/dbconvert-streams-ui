@@ -105,11 +105,9 @@ const activeDescription = computed(() => {
         <div
           :class="[
             checked
-              ? 'bg-teal-50/80 dark:bg-teal-900/20 border-teal-500 dark:border-teal-400 shadow-sm dark:shadow-black/20'
+              ? 'ui-accent-selection-checked'
               : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700',
-            active && !checked
-              ? 'border-teal-400 dark:border-teal-500 bg-gray-50 dark:bg-gray-800'
-              : '',
+            active && !checked ? 'ui-accent-selection-active' : '',
             'relative flex items-start cursor-pointer rounded-lg border p-3 transition-all duration-150 focus:outline-none focus-visible:outline-none flex-1',
             (disabled || option.disabled) && 'opacity-60 cursor-not-allowed'
           ]"
@@ -118,23 +116,20 @@ const activeDescription = computed(() => {
             <input
               :checked="checked"
               type="radio"
-              class="h-4 w-4 border-gray-300 bg-white text-teal-600 dark:border-gray-500 dark:bg-gray-700 focus:outline-none"
+              class="ui-accent-icon h-4 w-4 border-gray-300 bg-white dark:border-gray-500 dark:bg-gray-700 focus:outline-none"
             />
           </div>
           <div class="ml-3 flex-1">
             <div class="flex items-center justify-between">
               <RadioGroupLabel
                 as="div"
-                :class="[
-                  checked ? 'text-teal-900 dark:text-teal-100' : 'text-gray-900 dark:text-gray-100',
-                  'text-sm font-medium cursor-pointer'
-                ]"
+                :class="['text-gray-900 dark:text-gray-100', 'text-sm font-medium cursor-pointer']"
               >
                 {{ option.label }}
               </RadioGroupLabel>
               <CheckCircle
                 v-if="showCheckIcon && checked"
-                class="h-5 w-5 text-teal-600 dark:text-teal-400"
+                class="ui-accent-icon h-5 w-5"
                 aria-hidden="true"
               />
             </div>
@@ -142,7 +137,7 @@ const activeDescription = computed(() => {
               v-if="option.description"
               as="p"
               :class="[
-                checked ? 'text-teal-700 dark:text-teal-300' : 'text-gray-500 dark:text-gray-400',
+                checked ? 'text-gray-600 dark:text-gray-300' : 'text-gray-500 dark:text-gray-400',
                 'text-xs mt-1'
               ]"
             >

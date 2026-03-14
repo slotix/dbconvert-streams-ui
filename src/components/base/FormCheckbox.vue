@@ -7,7 +7,7 @@
  *
  * Features:
  * - Full v-model support (boolean or array)
- * - Consistent gray borders with teal checked state
+ * - Consistent neutral borders with restrained accent focus
  * - Error state styling
  * - Label support (inline or custom via slot)
  * - Helper text support
@@ -115,7 +115,7 @@ const checkboxId = props.id || `form-checkbox-${Math.random().toString(36).subst
             'transition-colors duration-150',
             error
               ? 'border-red-300 dark:border-red-600 text-red-600 dark:text-red-300 focus:border-red-500 dark:focus:border-red-400'
-              : 'border-gray-300 dark:border-gray-600 text-teal-600 dark:text-teal-400 focus:border-teal-500 dark:focus:border-teal-400',
+              : 'ui-accent-icon ui-accent-focus border-gray-300 dark:border-gray-600',
             disabled
               ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed'
               : 'cursor-pointer bg-white dark:bg-gray-800 focus:outline-none focus-visible:outline-none'

@@ -15,7 +15,7 @@
     >
       <!-- Left side: Icon + Label -->
       <div class="flex items-center gap-2.5 shrink-0">
-        <Database class="h-4 w-4 text-teal-600 dark:text-teal-400" />
+        <Database class="ui-accent-icon h-4 w-4" />
         <span class="text-sm font-medium text-gray-900 dark:text-gray-100">Data Sources</span>
       </div>
 
@@ -28,11 +28,9 @@
             :key="item.connectionId"
             class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 max-w-[180px]"
           >
-            <span
-              v-if="item.showAlias"
-              class="font-mono font-medium text-teal-600 dark:text-teal-400"
-              >{{ item.alias }}</span
-            >
+            <span v-if="item.showAlias" class="ui-accent-text font-mono font-medium">
+              {{ item.alias }}
+            </span>
             <span v-if="item.showAlias" class="text-gray-300 dark:text-gray-600">·</span>
             <span class="truncate text-gray-500 dark:text-gray-400">{{ item.name }}</span>
           </span>
@@ -47,7 +45,7 @@
         <!-- Selection count badge -->
         <span
           v-if="selectedCount > 0"
-          class="shrink-0 px-2.5 py-1 text-xs font-semibold rounded-md bg-teal-500 dark:bg-teal-600 text-white"
+          class="ui-chip-muted shrink-0 px-2.5 py-1 text-xs font-semibold rounded-md"
         >
           {{ selectedCount }}
         </span>
@@ -55,11 +53,7 @@
         <!-- Add sources button -->
         <span
           class="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border transition-colors"
-          :class="[
-            selectedCount > 0
-              ? 'bg-transparent border-teal-500 dark:border-teal-600 text-teal-600 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/20'
-              : 'bg-teal-500 dark:bg-teal-600 border-teal-500 dark:border-teal-600 text-white'
-          ]"
+          :class="[selectedCount > 0 ? 'ui-accent-action-active' : 'ui-accent-primary']"
           :title="collapsedCtaTitle"
         >
           <Plus class="h-3.5 w-3.5" />
@@ -71,7 +65,7 @@
       <div v-else class="flex items-center gap-2">
         <span
           v-if="selectedCount > 0"
-          class="px-2 py-0.5 text-xs font-medium rounded-full bg-teal-100 dark:bg-teal-900/50 text-teal-700 dark:text-teal-300"
+          class="ui-chip-muted px-2 py-0.5 text-xs font-medium rounded-full"
         >
           {{ selectedCount }} selected
         </span>
@@ -174,7 +168,7 @@
               <RouterLink
                 v-if="group.showCreateLink"
                 :to="createConnectionTo"
-                class="text-xs font-medium text-teal-700 dark:text-teal-300 hover:text-teal-800 dark:hover:text-teal-200 transition-colors"
+                class="ui-accent-text text-xs font-medium transition-opacity hover:opacity-80"
                 @click.stop
               >
                 + Add
@@ -194,7 +188,7 @@
                         :id="`conn-${conn.id}`"
                         type="checkbox"
                         :checked="isSelected(conn.id)"
-                        class="h-3 w-3 rounded-[3px] border-gray-400/70 dark:border-gray-600/70 text-teal-500 focus:ring-0 focus:ring-offset-0 bg-transparent"
+                        class="ui-accent-icon h-3 w-3 rounded-[3px] border-gray-400/70 dark:border-gray-600/70 focus:ring-0 focus:ring-offset-0 bg-transparent"
                         @change="toggleConnection(conn)"
                       />
 
@@ -225,7 +219,7 @@
                     <button
                       v-if="isSelected(conn.id) && canAddDatabaseMapping(conn)"
                       type="button"
-                      class="shrink-0 text-[11px] font-medium text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 px-1"
+                      class="ui-accent-text shrink-0 px-1 text-[11px] font-medium transition-opacity hover:opacity-80"
                       @click="addDatabaseMapping(conn)"
                     >
                       + DB
@@ -247,7 +241,7 @@
                           type="text"
                           :value="mapping.alias || ''"
                           placeholder="alias"
-                          class="text-xs leading-none border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded px-2 h-7 w-[5rem] focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
+                          class="ui-accent-focus text-xs leading-none border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded px-2 h-7 w-[5rem]"
                           @input="
                             updateAliasForMapping(
                               mapping,
@@ -297,7 +291,7 @@
                         :id="`conn-${conn.id}`"
                         type="checkbox"
                         :checked="isSelected(conn.id)"
-                        class="h-3 w-3 rounded-[3px] border-gray-400/70 dark:border-gray-600/70 text-teal-500 focus:ring-0 focus:ring-offset-0 bg-transparent"
+                        class="ui-accent-icon h-3 w-3 rounded-[3px] border-gray-400/70 dark:border-gray-600/70 focus:ring-0 focus:ring-offset-0 bg-transparent"
                         @change="toggleConnection(conn)"
                       />
 
@@ -365,7 +359,7 @@
                         "
                         :title="`Alias for ${conn.name}`"
                         placeholder="alias"
-                        class="alias-inline-input text-xs font-mono leading-none bg-transparent border-0 border-b border-gray-400 dark:border-gray-500 rounded-none text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-0 focus:border-teal-500 dark:focus:border-teal-400 caret-teal-500 w-[4.25rem] py-0.5"
+                        class="alias-inline-input ui-accent-focus text-xs font-mono leading-none bg-transparent border-0 border-b border-gray-400 dark:border-gray-500 rounded-none text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-0 w-[4.25rem] py-0.5"
                         @input="
                           setAliasDraft(
                             getMappingTargetId(getPrimaryMapping(conn.id)!),

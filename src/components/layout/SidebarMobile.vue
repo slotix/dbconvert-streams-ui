@@ -51,7 +51,7 @@
               <nav class="flex flex-1 flex-col">
                 <ul role="list" class="-mx-2 flex-1 space-y-1">
                   <SidebarNavItems
-                    :active-class="'bg-white dark:bg-teal-900 text-gray-900 dark:text-white shadow-sm ring-1 ring-gray-200 dark:ring-0'"
+                    :active-class="'ui-nav-active shadow-sm'"
                     :inactive-class="'text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700'"
                     item-class="group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
                     :icon-class="mobileIconClass"
@@ -106,7 +106,7 @@
                       </span>
                       <span
                         v-if="logsStore.sqlLogsCount > 0"
-                        class="bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300 px-1.5 py-0.5 text-xs rounded-full"
+                        class="ui-chip-muted px-1.5 py-0.5 text-xs rounded-full"
                         title="SQL Logs"
                       >
                         {{ logsStore.sqlLogsCount > 99 ? '99+' : logsStore.sqlLogsCount }}

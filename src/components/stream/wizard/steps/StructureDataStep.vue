@@ -23,7 +23,7 @@
           class="px-4 py-2 text-sm font-medium transition-colors relative"
           :class="[
             activeDataTab === 'tables'
-              ? 'text-teal-600 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-400'
+              ? 'ui-accent-text border-b-2 [border-color:var(--ui-accent-indicator)]'
               : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
           ]"
           @click="activeDataTab = 'tables'"
@@ -33,7 +33,7 @@
             Tables
             <span
               v-if="selectedTablesCount > 0"
-              class="px-1.5 py-0.5 text-xs rounded-full bg-teal-100 dark:bg-teal-900/50 text-teal-700 dark:text-teal-300"
+              class="ui-chip-muted px-1.5 py-0.5 text-xs rounded-full"
             >
               {{ selectedTablesCount }}
             </span>
@@ -47,7 +47,7 @@
           class="px-4 py-2 text-sm font-medium transition-colors relative"
           :class="[
             activeDataTab === 'queries'
-              ? 'text-teal-600 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-400'
+              ? 'ui-accent-text border-b-2 [border-color:var(--ui-accent-indicator)]'
               : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
           ]"
           @click="activeDataTab = 'queries'"
@@ -57,7 +57,7 @@
             Queries
             <span
               v-if="customQueriesCount > 0"
-              class="px-1.5 py-0.5 text-xs rounded-full bg-teal-100 dark:bg-teal-900/50 text-teal-700 dark:text-teal-300"
+              class="ui-chip-muted px-1.5 py-0.5 text-xs rounded-full"
             >
               {{ customQueriesCount }}
             </span>
@@ -259,7 +259,7 @@
               id="create-structure"
               v-model="createStructure"
               type="checkbox"
-              class="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
+              class="ui-accent-icon h-4 w-4 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
               @change="handleStructureToggle"
             />
             <label
@@ -315,7 +315,7 @@
                     id="create-tables"
                     v-model="createTables"
                     type="checkbox"
-                    class="h-3.5 w-3.5 text-teal-600 focus:ring-teal-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
+                    class="ui-accent-icon h-3.5 w-3.5 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
                     :disabled="isFileSourceConnection"
                     @change="handleOptionsChange"
                   />
@@ -328,7 +328,7 @@
                     id="create-indexes"
                     v-model="createIndexes"
                     type="checkbox"
-                    class="h-3.5 w-3.5 text-teal-600 focus:ring-teal-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
+                    class="ui-accent-icon h-3.5 w-3.5 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
                     :disabled="isFileSourceConnection"
                     @change="handleOptionsChange"
                   />
@@ -341,7 +341,7 @@
                     id="create-foreign-keys"
                     v-model="createForeignKeys"
                     type="checkbox"
-                    class="h-3.5 w-3.5 text-teal-600 focus:ring-teal-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
+                    class="ui-accent-icon h-3.5 w-3.5 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
                     :disabled="isFileSourceConnection"
                     @change="handleOptionsChange"
                   />
@@ -354,7 +354,7 @@
                     id="create-check-constraints"
                     v-model="createCheckConstraints"
                     type="checkbox"
-                    class="h-3.5 w-3.5 text-teal-600 focus:ring-teal-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
+                    class="ui-accent-icon h-3.5 w-3.5 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
                     :disabled="isFileSourceConnection"
                     @change="handleOptionsChange"
                   />
@@ -402,7 +402,7 @@
               id="copy-data"
               v-model="copyData"
               type="checkbox"
-              class="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
+              class="ui-accent-icon h-4 w-4 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800"
               @change="handleOptionsChange"
             />
             <label

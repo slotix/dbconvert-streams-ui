@@ -131,7 +131,7 @@ onMounted(() => {
           <div class="flex flex-wrap items-start justify-between gap-3">
             <div class="min-w-0">
               <div class="flex items-center gap-2">
-                <FileJson class="h-4 w-4 text-teal-600 dark:text-teal-400" />
+                <FileJson class="ui-accent-icon h-4 w-4" />
                 <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">
                   Manifest preview
                 </p>
@@ -140,9 +140,7 @@ onMounted(() => {
                 {{ entry.path }}
               </p>
             </div>
-            <div
-              class="rounded-full bg-teal-50 px-3 py-1 text-xs font-medium text-teal-700 dark:bg-teal-900/30 dark:text-teal-200"
-            >
+            <div class="ui-chip-muted rounded-full px-3 py-1 text-xs font-medium">
               Version {{ stats.version }}
             </div>
           </div>

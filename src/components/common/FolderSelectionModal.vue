@@ -34,7 +34,7 @@
               >
                 <div class="flex items-center justify-between">
                   <div class="flex items-center">
-                    <FolderOpen class="h-6 w-6 text-teal-600 dark:text-teal-400 mr-2" />
+                    <FolderOpen class="ui-accent-icon h-6 w-6 mr-2" />
                     <span>Select Folder</span>
                   </div>
                   <button
@@ -116,10 +116,7 @@
                   >
                     <!-- Icon -->
                     <div class="shrink-0 mr-3">
-                      <Folder
-                        v-if="entry.type === 'dir'"
-                        class="h-5 w-5 text-teal-500 dark:text-teal-400"
-                      />
+                      <Folder v-if="entry.type === 'dir'" class="ui-accent-icon h-5 w-5" />
                       <File v-else class="h-5 w-5 text-gray-400 dark:text-gray-500" />
                     </div>
 

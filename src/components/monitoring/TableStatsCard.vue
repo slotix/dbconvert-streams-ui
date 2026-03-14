@@ -206,7 +206,7 @@ function formatDuration(seconds: number) {
                 <button
                   v-if="table.status === STATUS.FINISHED"
                   type="button"
-                  class="inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium bg-white dark:bg-gray-900 border border-teal-200 dark:border-teal-500/50 text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-gray-800 hover:border-teal-400 dark:hover:border-teal-400 transition-all"
+                  class="inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium bg-white dark:bg-gray-900 border ui-accent-action ui-accent-action-active transition-all"
                   @click="handleCompareTable(table.table)"
                 >
                   Compare

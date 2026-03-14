@@ -502,7 +502,7 @@ function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
                 v-model="columnFilterQuery"
                 type="text"
                 placeholder="Filter columns..."
-                class="h-8 w-full rounded-md border border-gray-200 bg-white pl-8 pr-2 text-xs text-gray-900 placeholder:text-gray-400 focus:border-teal-500 focus:bg-teal-50/40 focus:outline-none dark:border-gray-700 dark:bg-gray-850 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:border-teal-400 dark:focus:bg-teal-950/20"
+                class="ui-accent-focus h-8 w-full rounded-md border border-gray-200 bg-white pl-8 pr-2 text-xs text-gray-900 placeholder:text-gray-400 focus:outline-none dark:border-gray-700 dark:bg-gray-850 dark:text-gray-100 dark:placeholder:text-gray-500"
               />
             </div>
 

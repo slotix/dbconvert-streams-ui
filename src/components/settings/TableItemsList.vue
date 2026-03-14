@@ -12,7 +12,7 @@
             :id="`table-${table.name}`"
             v-model="table.selected"
             type="checkbox"
-            class="h-4 w-4 text-teal-600 dark:text-teal-500 focus:ring-teal-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 shrink-0"
+            class="ui-accent-icon h-4 w-4 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 shrink-0"
             @change="
               emit('checkbox-change', {
                 table,
@@ -42,7 +42,7 @@
             class="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-all"
             :class="
               isTableSettingsOpen(table.name)
-                ? 'bg-teal-500/20 text-teal-600 dark:text-teal-400'
+                ? 'ui-accent-action-active'
                 : hasTableFilter(table)
                   ? 'bg-sky-500/20 text-sky-600 dark:text-sky-400'
                   : 'text-gray-400 opacity-0 group-hover:opacity-100 hover:bg-gray-200 dark:hover:bg-gray-700'
@@ -76,7 +76,7 @@
           :id="`table-${table.name}`"
           v-model="table.selected"
           type="checkbox"
-          class="h-4 w-4 text-teal-600 dark:text-teal-500 focus:ring-teal-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 shrink-0"
+          class="ui-accent-icon h-4 w-4 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 shrink-0"
           @change="
             emit('checkbox-change', {
               table,
@@ -106,7 +106,7 @@
           class="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-all"
           :class="
             isTableSettingsOpen(table.name)
-              ? 'bg-teal-500/20 text-teal-600 dark:text-teal-400'
+              ? 'ui-accent-action-active'
               : hasTableFilter(table)
                 ? 'bg-sky-500/20 text-sky-600 dark:text-sky-400'
                 : 'text-gray-400 opacity-0 group-hover:opacity-100 hover:bg-gray-200 dark:hover:bg-gray-700'

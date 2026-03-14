@@ -79,7 +79,7 @@
                   :indeterminate="getCheckboxState(row.entry).indeterminate"
                   :disabled="!isSelectable(row.entry)"
                   type="checkbox"
-                  class="mr-3 h-4 w-4 rounded border-gray-300 bg-white text-teal-600 focus:ring-teal-500 dark:border-gray-600 dark:bg-gray-800 dark:text-teal-500 dark:focus:ring-teal-400"
+                  class="ui-accent-icon mr-3 h-4 w-4 rounded border-gray-300 bg-white focus:ring-0 dark:border-gray-600 dark:bg-gray-800"
                   @click.stop
                   @change="
                     onToggle(row.entry, ($event.target as HTMLInputElement)?.checked || false)
@@ -172,7 +172,7 @@
                       :indeterminate="getCheckboxState(row.entry).indeterminate"
                       :disabled="!isSelectable(row.entry)"
                       type="checkbox"
-                      class="mr-3 h-4 w-4 rounded border-gray-300 bg-white text-teal-600 focus:ring-teal-500 dark:border-gray-600 dark:bg-gray-800 dark:text-teal-500 dark:focus:ring-teal-400"
+                      class="ui-accent-icon mr-3 h-4 w-4 rounded border-gray-300 bg-white focus:ring-0 dark:border-gray-600 dark:bg-gray-800"
                       @click.stop
                       @change="
                         onToggle(row.entry, ($event.target as HTMLInputElement)?.checked || false)

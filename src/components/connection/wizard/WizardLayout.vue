@@ -23,7 +23,7 @@
             >
               <span class="flex items-center px-6 py-4 text-sm font-medium min-w-0">
                 <span
-                  class="flex size-10 shrink-0 items-center justify-center rounded-full bg-teal-600 shadow-sm"
+                  class="ui-accent-primary flex size-10 shrink-0 items-center justify-center rounded-full border shadow-sm"
                 >
                   <Check class="size-6 text-white" aria-hidden="true" />
                 </span>
@@ -38,7 +38,7 @@
                     <span
                       v-for="badge in stepContext[stepIdx]"
                       :key="`completed-${stepIdx}-${badge}`"
-                      class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium border border-teal-200 dark:border-teal-700 text-teal-700 dark:text-teal-300 bg-teal-50/80 dark:bg-teal-900/30"
+                      class="ui-chip-muted inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium"
                     >
                       {{ badge }}
                     </span>
@@ -54,14 +54,14 @@
               aria-current="step"
             >
               <span
-                class="flex size-10 shrink-0 items-center justify-center rounded-full border-2 border-teal-600 dark:border-teal-400 bg-teal-50 dark:bg-teal-900/40"
+                class="ui-accent-selection-checked flex size-10 shrink-0 items-center justify-center rounded-full border"
               >
-                <span class="text-teal-600 dark:text-teal-300 font-semibold">
+                <span class="ui-accent-text font-semibold">
                   {{ stepIdx + 1 }}
                 </span>
               </span>
               <span class="ml-4 min-w-0">
-                <span class="block text-sm font-semibold text-teal-600 dark:text-teal-300">
+                <span class="ui-accent-text block text-sm font-semibold">
                   {{ step.title }}
                 </span>
                 <span
@@ -71,7 +71,7 @@
                   <span
                     v-for="badge in stepContext[stepIdx]"
                     :key="`current-${stepIdx}-${badge}`"
-                    class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium border border-teal-300 dark:border-teal-600 text-teal-700 dark:text-teal-200 bg-teal-50 dark:bg-teal-900/40"
+                    class="ui-chip-muted inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium"
                   >
                     {{ badge }}
                   </span>

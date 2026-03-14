@@ -24,8 +24,7 @@ const props = withDefaults(defineProps<Props>(), {
   query: '',
   tag: 'span',
   highlightTag: 'mark',
-  highlightClass:
-    'bg-teal-500/18 text-teal-50 dark:bg-teal-400/20 dark:text-teal-50 ring-1 ring-inset ring-teal-300/25 dark:ring-teal-300/20 font-semibold rounded px-0.5'
+  highlightClass: 'ui-accent-highlight font-semibold rounded px-0.5'
 })
 
 const attrs = useAttrs()

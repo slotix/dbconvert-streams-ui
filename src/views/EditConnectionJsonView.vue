@@ -39,7 +39,7 @@
           @save="handleSaveConfig"
         />
         <div v-else class="flex items-center justify-center py-12">
-          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
+          <Loader2 class="ui-accent-icon h-8 w-8 animate-spin" />
         </div>
       </div>
     </main>
@@ -50,7 +50,7 @@
 import { ref, computed, inject, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useLucideIcons } from '@/composables/useLucideIcons'
-import { ArrowLeft, Menu } from 'lucide-vue-next'
+import { ArrowLeft, Loader2, Menu } from 'lucide-vue-next'
 import ConnectionConfigJsonEditor from '@/components/connection/ConnectionConfigJsonEditor.vue'
 import { useConnectionsStore } from '@/stores/connections'
 import { useCommonStore } from '@/stores/common'

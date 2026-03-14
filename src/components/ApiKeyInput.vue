@@ -37,7 +37,7 @@
                   Don't have an account yet?
                   <button
                     type="button"
-                    class="text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 font-medium"
+                    class="ui-accent-text font-medium transition-opacity hover:opacity-80"
                     @click="openAccountPage"
                   >
                     Create account

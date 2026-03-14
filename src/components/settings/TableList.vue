@@ -78,7 +78,7 @@
                       "
                       class="h-4 w-4 text-gray-400"
                     />
-                    <Grid2X2 class="w-4 h-4 text-teal-500 dark:text-teal-400 shrink-0" />
+                    <Grid2X2 class="ui-accent-icon w-4 h-4 shrink-0" />
                     <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">
                       {{ schemaGroup.schema }}
                     </span>
@@ -144,7 +144,7 @@
               </div>
               <div class="flex items-center gap-3">
                 <button
-                  class="text-xs text-teal-600 dark:text-teal-400 hover:underline"
+                  class="ui-accent-text text-xs hover:underline"
                   @click.stop="selectAllInSchema(schemaGroup.schema)"
                 >
                   Select
