@@ -627,9 +627,9 @@ function getConnectionHostValue(connection: Connection): string {
 // Use imported getConnectionTooltip from utils/connectionUtils.ts
 const connectionTooltip = getConnectionTooltip
 
-const flatSelectedRowClass = 'ui-accent-selection-checked ui-accent-text font-semibold'
+const flatSelectedRowClass = 'bg-slate-100/90 dark:bg-slate-800/85 font-semibold'
 
-const flatSelectedCardClass = 'ui-surface-muted ui-border-default border shadow-sm'
+const flatSelectedCardClass = 'bg-slate-100/90 dark:bg-slate-800/85 border shadow-sm'
 
 function connectionCardClass(connectionId: string): string {
   const base =

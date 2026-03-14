@@ -42,10 +42,12 @@ const props = withDefaults(
     approxRows?: number // Optional approximate row count from database overview
     objectKey: string // Unique key for this table/view tab (from paneTabs store)
     showToolbarActions?: boolean
+    showRowCountControls?: boolean
     readOnly?: boolean
   }>(),
   {
     showToolbarActions: true,
+    showRowCountControls: true,
     readOnly: false
   }
 )
@@ -1035,6 +1037,7 @@ export default {
     />
 
     <AGGridRowCountControls
+      v-if="props.showRowCountControls"
       :is-view="Boolean(isView)"
       :total-row-count="baseGrid.totalRowCount.value"
       :is-count-exact="isCountExact"

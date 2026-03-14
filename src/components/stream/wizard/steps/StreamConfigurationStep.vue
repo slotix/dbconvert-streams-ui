@@ -49,7 +49,7 @@
         <TabPanels class="p-4">
           <!-- Visual View -->
           <TabPanel>
-            <div class="divide-y [border-color:var(--ui-border-default)]">
+            <div>
               <section class="py-3 first:pt-0 last:pb-0">
                 <div class="flex items-start justify-between gap-3 mb-3">
                   <div>
@@ -75,35 +75,35 @@
                 </div>
 
                 <div
-                  class="ui-border-default relative overflow-hidden rounded-2xl border bg-[radial-gradient(circle_at_top_left,_rgba(30,64,175,0.12),_transparent_30%),radial-gradient(circle_at_top_right,_rgba(217,119,6,0.10),_transparent_30%)] px-4 py-5 dark:bg-[radial-gradient(circle_at_top_left,_rgba(30,64,175,0.18),_transparent_30%),radial-gradient(circle_at_top_right,_rgba(217,119,6,0.14),_transparent_30%)] sm:px-5"
+                  class="ui-border-default relative -mx-4 overflow-hidden border-y px-4 py-5 sm:px-5"
                 >
                   <div
                     class="pointer-events-none absolute left-12 right-12 top-[4.2rem] hidden xl:block"
                   >
                     <div
-                      class="h-px bg-gradient-to-r from-blue-700/45 via-gray-400/20 to-amber-500/40"
+                      class="h-px bg-gray-200 dark:bg-gray-700/60"
                     />
                   </div>
 
                   <div
                     class="relative grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1fr)_3rem_minmax(16rem,0.85fr)_3rem_minmax(0,1fr)] xl:items-start"
                   >
-                    <section class="min-w-0">
+                    <section class="min-w-0 border-t-2 border-t-blue-500 dark:border-t-blue-400 pt-4">
                       <div class="flex items-start gap-3">
                         <div
-                          class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-950/90 text-blue-200 shadow-[0_0_0_1px_rgba(30,64,175,0.18)] dark:bg-blue-950/80 dark:text-blue-100 dark:shadow-[0_0_0_1px_rgba(96,165,250,0.12)]"
+                          class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ui-surface-muted ui-border-default border text-gray-600 dark:text-gray-300"
                         >
                           <component :is="sourceKindIcon" class="w-5 h-5" />
                         </div>
                         <div class="min-w-0 flex-1">
                           <div class="flex flex-wrap items-center gap-2">
                             <p
-                              class="text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-300 dark:text-blue-200"
+                              class="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400"
                             >
                               Source
                             </p>
                             <span
-                              class="inline-flex items-center rounded-full bg-blue-950/80 px-2.5 py-1 text-[11px] font-semibold text-blue-200 dark:bg-blue-950/70 dark:text-blue-100"
+                              class="ui-chip-muted ui-border-default inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold"
                             >
                               {{ sourceTypeLabel }}
                             </span>
@@ -126,10 +126,10 @@
                         <div
                           v-for="fact in sourceSummaryFacts"
                           :key="fact.label"
-                          class="inline-flex items-center gap-2 rounded-full border border-blue-900/40 bg-blue-950/35 px-3 py-1.5 text-sm dark:border-blue-800/50 dark:bg-blue-950/30"
+                          class="ui-chip-muted ui-border-default inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm"
                         >
                           <span
-                            class="text-[11px] font-semibold uppercase tracking-wide text-blue-300 dark:text-blue-200"
+                            class="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
                           >
                             {{ fact.label }}
                           </span>
@@ -187,22 +187,22 @@
                       <ArrowRight class="hidden xl:block w-4 h-4" />
                     </div>
 
-                    <section class="min-w-0">
+                    <section class="min-w-0 border-t-2 border-t-red-500 dark:border-t-red-400 pt-4">
                       <div class="flex items-start gap-3">
                         <div
-                          class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-stone-100/90 text-amber-800 shadow-[0_0_0_1px_rgba(217,119,6,0.16)] dark:bg-stone-900/50 dark:text-amber-200 dark:shadow-[0_0_0_1px_rgba(252,211,77,0.12)]"
+                          class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ui-surface-muted ui-border-default border text-gray-600 dark:text-gray-300"
                         >
                           <component :is="targetKindIcon" class="w-5 h-5" />
                         </div>
                         <div class="min-w-0 flex-1">
                           <div class="flex flex-wrap items-center gap-2">
                             <p
-                              class="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-800 dark:text-amber-200"
+                              class="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400"
                             >
                               Target
                             </p>
                             <span
-                              class="inline-flex items-center rounded-full bg-stone-100/90 px-2.5 py-1 text-[11px] font-semibold text-amber-800 dark:bg-stone-900/50 dark:text-amber-200"
+                              class="ui-chip-muted ui-border-default inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold"
                             >
                               {{ targetTypeLabel }}
                             </span>
@@ -225,10 +225,10 @@
                         <div
                           v-for="fact in targetSummaryFacts"
                           :key="fact.label"
-                          class="inline-flex items-center gap-2 rounded-full border border-amber-200/80 bg-stone-100/80 px-3 py-1.5 text-sm dark:border-amber-700/40 dark:bg-stone-900/50"
+                          class="ui-chip-muted ui-border-default inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm"
                         >
                           <span
-                            class="text-[11px] font-semibold uppercase tracking-wide text-amber-800 dark:text-amber-200"
+                            class="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
                           >
                             {{ fact.label }}
                           </span>
@@ -245,7 +245,7 @@
                         <div class="flex items-start justify-between gap-4">
                           <dt class="text-gray-600 dark:text-gray-400">S3 Bucket</dt>
                           <dd
-                            class="max-w-[65%] text-right font-medium text-amber-800 dark:text-amber-200 break-all"
+                            class="max-w-[65%] text-right font-medium text-gray-900 dark:text-gray-100 break-all"
                           >
                             {{ currentStreamConfig.target.spec.s3.upload.bucket || 'Not set' }}
                           </dd>
@@ -320,22 +320,11 @@
               </section>
 
               <section v-if="riskWarningMessage" class="py-3">
-                <div
-                  class="rounded-md border border-amber-300/80 bg-amber-50/60 p-3.5 dark:border-amber-500/60 dark:bg-amber-950/20"
-                >
-                  <div class="flex items-start gap-2">
-                    <AlertTriangle
-                      class="w-5 h-5 text-amber-600 dark:text-amber-300 shrink-0 mt-0.5"
-                    />
-                    <div>
-                      <p class="text-sm font-semibold text-amber-700 dark:text-amber-300">
-                        Risk Warning
-                      </p>
-                      <p class="mt-1 text-sm text-gray-700 dark:text-gray-200">
-                        {{ riskWarningMessage }}
-                      </p>
-                    </div>
-                  </div>
+                <div class="flex items-start gap-2.5 rounded-lg border border-amber-300/50 px-3.5 py-3 dark:border-amber-600/30">
+                  <AlertTriangle class="h-4 w-4 shrink-0 text-amber-500 dark:text-amber-400/70 mt-px" />
+                  <p class="text-sm text-amber-800/80 dark:text-amber-200/70">
+                    {{ riskWarningMessage }}
+                  </p>
                 </div>
               </section>
 

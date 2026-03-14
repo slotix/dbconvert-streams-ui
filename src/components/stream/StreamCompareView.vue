@@ -85,6 +85,7 @@ const props = defineProps<{
   stream: StreamConfig
   source: Connection
   target: Connection
+  initialTable?: string
 }>()
 
 const router = useRouter()
@@ -124,7 +125,7 @@ function persistSelectedTable(streamId: string | undefined, tableValue: string) 
 }
 
 // Selected table/query from stream config
-const selectedTable = ref<string>(readPersistedSelectedTable(props.stream.id))
+const selectedTable = ref<string>(props.initialTable || readPersistedSelectedTable(props.stream.id))
 const sourceConnections = computed(() => props.stream.source?.connections || [])
 const isFederated = computed(() => sourceConnections.value.length > 1)
 const hasAnyTables = computed(() =>
@@ -643,6 +644,18 @@ watch(
     }
   },
   { immediate: true }
+)
+
+// When initialTable prop changes (e.g., clicking Compare on a different table row),
+// update the selection and reload data.
+watch(
+  () => props.initialTable,
+  async (newTable) => {
+    if (newTable && newTable !== selectedTable.value) {
+      selectedTable.value = newTable
+      await loadTableData()
+    }
+  }
 )
 
 onMounted(async () => {
@@ -1470,12 +1483,13 @@ async function selectTable(tableName: string) {
     />
 
     <!-- Split View -->
-    <div class="flex-1 flex overflow-hidden">
+    <div class="flex-1 flex overflow-hidden min-h-0">
       <!-- Source Pane (Left) - Blue Theme -->
-      <div class="ui-border-default flex-1 flex flex-col overflow-hidden border-r">
+      <div class="ui-border-default flex-1 flex flex-col overflow-hidden border-r min-h-0">
         <!-- Source Header -->
         <div
-          class="px-4 py-3 border-b border-blue-100 dark:border-blue-800/60 bg-linear-to-r from-blue-50 to-white dark:from-blue-900/20 dark:to-gray-900/20 shrink-0"
+          class="px-4 py-3 border-b-2 border-b-blue-500 dark:border-b-blue-400 ui-surface-muted shrink-0 overflow-hidden"
+          style="height: 42px"
         >
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
@@ -1526,7 +1540,7 @@ async function selectTable(tableName: string) {
         </div>
 
         <!-- Source Data View -->
-        <div class="flex-1 overflow-auto p-4">
+        <div class="flex-1 overflow-hidden min-h-0">
           <div v-if="selectedCompareItem?.kind === 'query'" class="h-full overflow-auto">
             <div
               v-if="isLoadingSourceQuery"
@@ -1620,6 +1634,7 @@ async function selectTable(tableName: string) {
               :approx-rows="sourceApproxRows"
               :object-key="`compare-source-${stream.id}-${selectedTable}`"
               :show-toolbar-actions="false"
+              :show-row-count-controls="false"
               read-only
             />
           </div>
@@ -1632,11 +1647,12 @@ async function selectTable(tableName: string) {
         </div>
       </div>
 
-      <!-- Target Pane (Right) - Emerald Theme -->
-      <div class="flex-1 flex flex-col overflow-hidden">
+      <!-- Target Pane (Right) -->
+      <div class="flex-1 flex flex-col overflow-hidden min-h-0">
         <!-- Target Header -->
         <div
-          class="px-4 py-3 border-b border-emerald-100 dark:border-emerald-800/60 bg-linear-to-r from-emerald-50 to-white dark:from-emerald-900/20 dark:to-gray-900/20 shrink-0"
+          class="px-4 py-3 border-b-2 border-b-red-500 dark:border-b-red-400 ui-surface-muted shrink-0 overflow-hidden"
+          style="height: 42px"
         >
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
@@ -1680,7 +1696,7 @@ async function selectTable(tableName: string) {
         </div>
 
         <!-- Target Data View -->
-        <div class="flex-1 overflow-auto p-4">
+        <div class="flex-1 overflow-hidden min-h-0">
           <!-- Database Target -->
           <div
             v-if="!isFileTarget && targetTableMeta && targetDatabase"
@@ -1697,6 +1713,7 @@ async function selectTable(tableName: string) {
               :approx-rows="targetApproxRows"
               :object-key="`compare-target-${stream.id}-${selectedTable}`"
               :show-toolbar-actions="false"
+              :show-row-count-controls="false"
               read-only
             />
           </div>

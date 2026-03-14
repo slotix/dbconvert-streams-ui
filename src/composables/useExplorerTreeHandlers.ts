@@ -41,8 +41,28 @@ export function useExplorerTreeHandlers({
   alwaysOpenNewTab
 }: UseExplorerTreeHandlersOptions) {
   // Tree selection prefers explicit navigation selection (set by context/compare actions),
-  // falling back to persisted view-state selection.
-  const treeSelection = computed(() => navigationStore.selection || viewState.treeSelection)
+  // then derives from the active pane's tab, falling back to persisted view-state selection.
+  const treeSelection = computed(() => {
+    if (navigationStore.selection) return navigationStore.selection
+
+    // When right pane is active, derive selection from its active tab
+    if (paneTabsStore.activePane === 'right') {
+      const tab = paneTabsStore.getActiveTab('right')
+      if (tab) {
+        return {
+          connectionId: tab.connectionId,
+          database: tab.database || undefined,
+          schema: tab.schema || undefined,
+          type: tab.type || undefined,
+          // Only use tab.name as object name for database object tabs (table/view/etc.)
+          name: tab.type ? tab.name || undefined : undefined,
+          filePath: tab.filePath || undefined
+        }
+      }
+    }
+
+    return viewState.treeSelection
+  })
   const { confirmLeavePaneIfDirty } = useUnsavedChangesGuard()
 
   function handleOpenFromTree(payload: {

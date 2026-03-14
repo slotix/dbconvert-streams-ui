@@ -325,6 +325,7 @@
           :stream="stream"
           :source="source"
           :target="target"
+          :initial-table="compareTableName"
         />
         <div v-else class="p-6">
           <div class="text-center text-gray-500 dark:text-gray-400 py-8">
@@ -609,12 +610,11 @@ async function handleSaveConfig(config: StreamConfig) {
   }
 }
 
+const compareTableName = ref<string>('')
+
 function handleCompareTable(tableName: string) {
-  // Switch to Compare tab and pass the table name
+  compareTableName.value = tableName
   activeTab.value = 'compare'
-  // Note: The StreamCompareView component will need to handle table selection
-  // This could be done via URL query params or by passing a prop
-  // For now, just switching to the Compare tab
 }
 
 async function cloneStream() {

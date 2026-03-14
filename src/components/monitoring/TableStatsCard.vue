@@ -112,7 +112,7 @@ function formatDuration(seconds: number) {
     <!-- Tables Grid -->
     <div v-if="isExpanded && hasAnyTables" class="p-0">
       <div class="overflow-x-auto">
-        <table class="min-w-full divide-y [border-color:var(--ui-border-default)]">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700/60">
           <thead class="ui-surface-muted">
             <tr>
               <th
@@ -160,7 +160,7 @@ function formatDuration(seconds: number) {
               </th>
             </tr>
           </thead>
-          <tbody class="ui-surface-raised divide-y [border-color:var(--ui-border-default)]">
+          <tbody class="ui-surface-raised divide-y divide-gray-200 dark:divide-gray-700/60">
             <tr
               v-for="table in allTables"
               :key="table.table"
@@ -202,7 +202,7 @@ function formatDuration(seconds: number) {
                 <button
                   v-if="table.status === STATUS.FINISHED"
                   type="button"
-                  class="ui-surface-raised ui-border-default ui-accent-action ui-accent-action-active inline-flex items-center justify-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition-all"
+                  class="inline-flex items-center gap-1 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
                   @click="handleCompareTable(table.table)"
                 >
                   Compare

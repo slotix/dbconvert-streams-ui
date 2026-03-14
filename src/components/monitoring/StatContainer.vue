@@ -13,17 +13,12 @@
 
   <!-- Source and Target Stats -->
   <div
-    class="ui-surface-raised ui-border-default grid grid-cols-1 divide-y overflow-hidden rounded-md border [border-color:var(--ui-border-default)] lg:grid-cols-2 lg:divide-x lg:divide-y-0"
+    class="ui-surface-raised grid grid-cols-1 divide-y divide-gray-200 overflow-hidden rounded-md border border-gray-200 dark:divide-gray-700/60 dark:border-gray-700/60 lg:grid-cols-2 lg:divide-x lg:divide-y-0"
   >
     <!-- Source Stats - Blue Theme -->
     <div class="flex flex-col">
       <div
-        :class="[
-          'px-3 py-2 border-b border-l-2',
-          isRunning
-            ? 'bg-blue-50/60 border-blue-300/70 dark:bg-blue-900/10 dark:border-blue-500/40'
-            : 'ui-surface-muted ui-border-default'
-        ]"
+        class="px-3 py-2 border-b-2 border-b-blue-500 dark:border-b-blue-400 ui-surface-muted"
       >
         <div class="flex items-center justify-between gap-3 sm:gap-4">
           <div class="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
@@ -37,12 +32,7 @@
             </div>
             <div class="min-w-0">
               <div
-                class="text-sm sm:text-base font-bold leading-tight"
-                :class="
-                  isRunning
-                    ? 'text-blue-700 dark:text-blue-300'
-                    : 'text-gray-900 dark:text-gray-100'
-                "
+                class="text-sm sm:text-base font-bold leading-tight text-gray-900 dark:text-gray-100"
               >
                 Source Reader
               </div>
@@ -97,12 +87,7 @@
     <!-- Target Stats - Emerald Theme -->
     <div class="flex flex-col">
       <div
-        :class="[
-          'px-3 py-2 border-b border-l-2',
-          isRunning
-            ? 'bg-emerald-50/60 border-emerald-300/70 dark:bg-emerald-900/10 dark:border-emerald-500/40'
-            : 'ui-surface-muted ui-border-default'
-        ]"
+        class="px-3 py-2 border-b-2 border-b-red-500 dark:border-b-red-400 ui-surface-muted"
       >
         <div class="flex items-center justify-between gap-3 sm:gap-4">
           <div class="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
@@ -116,12 +101,7 @@
             </div>
             <div class="flex-1 min-w-0">
               <div
-                class="text-sm sm:text-base font-bold leading-tight flex items-center justify-between gap-2"
-                :class="
-                  isRunning
-                    ? 'text-emerald-700 dark:text-emerald-300'
-                    : 'text-gray-900 dark:text-gray-100'
-                "
+                class="text-sm sm:text-base font-bold leading-tight flex items-center justify-between gap-2 text-gray-900 dark:text-gray-100"
               >
                 <span>
                   Target Writer{{

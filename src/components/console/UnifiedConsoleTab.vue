@@ -84,7 +84,7 @@
 
       <!-- Resizable Divider -->
       <div
-        class="ui-border-default w-1 shrink-0 cursor-col-resize bg-[var(--ui-border-default)] transition-colors hover:bg-[var(--ui-accent-soft-border)]"
+        class="ui-border-default shrink-0 cursor-col-resize border-l border-r-0 bg-transparent transition-colors hover:border-[var(--ui-accent-soft-border)] px-[3px]"
         @mousedown="startResize"
       ></div>
 

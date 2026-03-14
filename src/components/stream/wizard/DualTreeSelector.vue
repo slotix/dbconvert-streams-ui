@@ -4,10 +4,10 @@
     <div class="grid flex-1 min-h-0 grid-cols-1 gap-4 lg:grid-cols-2">
       <!-- Source Tree (Left) - Slate Blue Theme -->
       <div
-        class="relative rounded-xl bg-linear-to-br from-slate-50 via-indigo-50/40 to-white dark:from-gray-900 dark:via-slate-950/40 dark:to-gray-850 overflow-hidden flex flex-col border border-slate-200 dark:border-slate-800 shadow-sm dark:shadow-gray-900/30 h-full"
+        class="relative rounded-xl ui-surface-raised overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700/60 h-full"
       >
         <div
-          class="px-4 py-3 border-b border-slate-200 dark:border-slate-700/60 bg-gradient-to-br from-slate-100 via-indigo-50 to-slate-50 dark:from-slate-900/40 dark:via-indigo-950/20 dark:to-slate-950/20 relative overflow-hidden"
+          class="px-4 py-3 border-b-2 border-b-blue-500 dark:border-b-blue-400 ui-surface-muted relative overflow-hidden"
         >
           <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div class="flex items-center gap-3 min-w-0">
@@ -20,11 +20,11 @@
               </div>
               <div class="min-w-0">
                 <h3
-                  class="text-base font-semibold text-slate-700 dark:text-slate-100 leading-tight"
+                  class="text-base font-semibold text-gray-900 dark:text-gray-100 leading-tight"
                 >
                   Source Connections
                 </h3>
-                <p class="text-xs text-slate-600 dark:text-slate-300 font-medium truncate">
+                <p class="text-xs text-gray-600 dark:text-gray-400 font-medium truncate">
                   Select one or more sources to read from
                 </p>
               </div>
@@ -71,10 +71,10 @@
 
       <!-- Target Tree (Right) - Sand Gold Theme -->
       <div
-        class="relative rounded-xl bg-linear-to-br from-stone-50 via-amber-50/50 to-white dark:from-gray-900 dark:via-amber-950/10 dark:to-gray-850 overflow-hidden flex flex-col border border-stone-200 dark:border-stone-800 shadow-sm dark:shadow-gray-900/30 h-full"
+        class="relative rounded-xl ui-surface-raised overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700/60 h-full"
       >
         <div
-          class="px-4 py-3 border-b border-amber-200 dark:border-amber-800/60 bg-gradient-to-br from-stone-100 via-amber-50 to-stone-50 dark:from-stone-900/30 dark:via-amber-950/20 dark:to-stone-950/20 relative overflow-hidden"
+          class="px-4 py-3 border-b-2 border-b-red-500 dark:border-b-red-400 ui-surface-muted relative overflow-hidden"
         >
           <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div class="flex items-center gap-3 min-w-0">
@@ -87,11 +87,11 @@
               </div>
               <div class="min-w-0">
                 <h3
-                  class="text-base font-semibold text-amber-800 dark:text-amber-200 leading-tight"
+                  class="text-base font-semibold text-gray-900 dark:text-gray-100 leading-tight"
                 >
                   Target Connection
                 </h3>
-                <p class="text-xs text-amber-800/80 dark:text-amber-100/80 font-medium truncate">
+                <p class="text-xs text-gray-600 dark:text-gray-400 font-medium truncate">
                   Select where to write data to
                 </p>
               </div>
