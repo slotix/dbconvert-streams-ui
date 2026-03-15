@@ -6,6 +6,7 @@ import { type FileSystemEntry } from '@/api/fileSystem'
 import { type FileMetadata } from '@/types/files'
 import type { SQLColumnMeta } from '@/types/metadata'
 import { getFileFormat } from '@/utils/fileFormat'
+import { getFileEditBlockedToastMessage } from '@/utils/fileEditingMessages'
 import filesApi from '@/api/files'
 import ColumnContextMenu from '../database/ColumnContextMenu.vue'
 import DataFilterPanel from '../database/DataFilterPanel.vue'
@@ -56,6 +57,7 @@ const { copy: copyToClipboard } = useCopyToClipboard()
 const isInitialLoading = ref(true)
 const isRefreshing = ref(false)
 const warnings = ref<string[]>([])
+const lastBlockedEditToastAt = ref(0)
 // Columns derived from data response when metadata is not yet available
 const derivedColumns = ref<Array<{ name: string; type: string }>>([])
 // Flag to force S3 cache invalidation on next fetch (set by refresh button)
@@ -427,6 +429,32 @@ function onCellClicked(event: { column?: { getColId: () => string }; node?: { id
   if (!rowId) return
   if (!pendingEdits.value[rowId] && !pendingDeletes.value[rowId]) return
   openRowChangesPanel()
+}
+
+function onCellDoubleClicked(event: {
+  column?: { getColId: () => string }
+  node?: { rowPinned?: string | null }
+}) {
+  if (isTableEditable.value) {
+    return
+  }
+
+  if (event.column?.getColId?.() === '__changes__' || event.node?.rowPinned) {
+    return
+  }
+
+  const message = getFileEditBlockedToastMessage(props.entry)
+  if (!message) {
+    return
+  }
+
+  const now = Date.now()
+  if (now - lastBlockedEditToastAt.value < 1500) {
+    return
+  }
+
+  lastBlockedEditToastAt.value = now
+  toast.info(message)
 }
 
 function openInsertRowPanelForNew() {
@@ -932,6 +960,7 @@ export default {
         @row-clicked="onRowClicked"
         @cell-context-menu="openSelectionMenu"
         @cell-clicked="onCellClicked"
+        @cell-double-clicked="onCellDoubleClicked"
         @cell-value-changed="onCellValueChanged"
         @column-pinned="saveColumnState"
         @column-moved="saveColumnState"
@@ -1054,12 +1083,6 @@ export default {
   box-shadow: inset 0 0 0 1px rgba(94, 234, 212, 0.95);
 }
 
-/* Selected row: keep it distinct from edit and delete state */
-:deep(.ag-row.ag-row-selected:not(.row-pending-delete):not(.row-pending-insert)),
-:deep(.ag-row.ag-row-selected:not(.row-pending-delete):not(.row-pending-insert) .ag-cell) {
-  background-color: rgba(59, 130, 246, 0.12);
-}
-
 /* Row change gutter indicator */
 :deep(.ag-cell.row-change-gutter) {
   display: flex;
@@ -1122,11 +1145,6 @@ export default {
   :deep(.ag-cell.cell-pending-edit) {
     background-color: rgba(45, 212, 191, 0.14);
     box-shadow: inset 0 0 0 1px rgba(94, 234, 212, 0.95);
-  }
-
-  :deep(.ag-row.ag-row-selected:not(.row-pending-delete):not(.row-pending-insert)),
-  :deep(.ag-row.ag-row-selected:not(.row-pending-delete):not(.row-pending-insert) .ag-cell) {
-    background-color: rgba(59, 130, 246, 0.14);
   }
 
   :deep(.ag-cell.row-change-gutter .row-action-edit) {

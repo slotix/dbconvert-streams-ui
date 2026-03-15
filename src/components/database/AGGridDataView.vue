@@ -1088,12 +1088,6 @@ export default {
   box-shadow: inset 0 0 0 1px var(--ui-accent-soft-border-strong);
 }
 
-/* Selected row: separate from edit state with a cooler blue/slate tint */
-:deep(.ag-row.ag-row-selected:not(.row-pending-delete):not(.row-pending-insert)),
-:deep(.ag-row.ag-row-selected:not(.row-pending-delete):not(.row-pending-insert) .ag-cell) {
-  background-color: rgba(59, 130, 246, 0.12);
-}
-
 /* Row change gutter - clickable indicator */
 :deep(.ag-cell.row-change-gutter) {
   display: flex;
@@ -1156,11 +1150,6 @@ export default {
   :deep(.ag-cell.cell-pending-edit) {
     background-color: rgba(45, 212, 191, 0.14);
     box-shadow: inset 0 0 0 1px rgba(94, 234, 212, 0.95);
-  }
-
-  :deep(.ag-row.ag-row-selected:not(.row-pending-delete):not(.row-pending-insert)),
-  :deep(.ag-row.ag-row-selected:not(.row-pending-delete):not(.row-pending-insert) .ag-cell) {
-    background-color: rgba(59, 130, 246, 0.14);
   }
 
   :deep(.ag-cell.row-change-gutter .row-action-edit) {

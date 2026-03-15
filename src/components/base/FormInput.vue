@@ -105,11 +105,7 @@ const inputId = props.id || `form-input-${Math.random().toString(36).substr(2, 9
 <template>
   <div class="w-full">
     <!-- Label -->
-    <label
-      v-if="label"
-      :for="inputId"
-      class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-    >
+    <label v-if="label" :for="inputId" class="ui-text-default block text-sm font-medium mb-1">
       {{ label }}
       <span v-if="required" class="text-red-500 ml-0.5">*</span>
     </label>
@@ -131,13 +127,13 @@ const inputId = props.id || `form-input-${Math.random().toString(36).substr(2, 9
       :pattern="pattern"
       :maxlength="maxlength"
       :class="[
-        'block w-full rounded-md shadow-sm sm:text-sm',
-        'text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder:text-gray-500',
+        'ui-focus-ring block w-full rounded-md shadow-sm sm:text-sm',
+        'ui-text-strong placeholder:[color:var(--ui-text-subtle)]',
         'transition-colors duration-150 focus:outline-none focus-visible:outline-none',
         error
-          ? 'border-red-300 dark:border-red-600 focus:border-red-500 dark:focus:border-red-400 focus:bg-red-50/40 dark:focus:bg-red-950/20'
+          ? '[border-color:var(--ui-danger-soft-border-strong)] focus:[border-color:var(--ui-danger-soft-border-strong)] focus:[background-color:var(--ui-danger-soft-bg)]'
           : 'ui-border-default ui-accent-focus',
-        disabled ? 'ui-surface-muted cursor-not-allowed' : 'ui-surface-raised'
+        disabled ? 'ui-surface-muted ui-text-subtle cursor-not-allowed' : 'ui-surface-raised'
       ]"
       @input="handleInput"
       @change="handleChange"
@@ -151,10 +147,7 @@ const inputId = props.id || `form-input-${Math.random().toString(36).substr(2, 9
     <!-- Helper Text or Error -->
     <p
       v-if="error || helperText"
-      :class="[
-        'mt-1 text-xs',
-        error ? 'text-red-600 dark:text-red-300' : 'text-gray-500 dark:text-gray-400'
-      ]"
+      :class="['mt-1 text-xs', error ? 'ui-status-danger-text' : 'ui-text-muted']"
     >
       {{ error || helperText }}
     </p>

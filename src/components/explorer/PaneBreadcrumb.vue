@@ -40,6 +40,11 @@ import type { DatabaseMetadata } from '@/types/metadata'
 import type { FileSystemEntry } from '@/api/fileSystem'
 import { getConnectionKindFromSpec, isFileBasedKind } from '@/types/specs'
 import { getFileFormat } from '@/utils/fileFormat'
+import {
+  FILE_EDITABLE_TOOLTIP,
+  FILE_NON_FILE_READ_ONLY_TOOLTIP,
+  FILE_TABLE_FOLDER_READ_ONLY_TOOLTIP
+} from '@/utils/fileEditingMessages'
 import { parsePathToSegments, getParentPath, type PathSegment } from '@/utils/pathUtils'
 import {
   buildSqlConsoleBreadcrumbData,
@@ -190,14 +195,14 @@ const breadcrumbData = computed(() => {
         : false
 
     let fileStatusLabel: 'Editable' | 'Read-only' = 'Editable'
-    let fileStatusTooltip = 'Double-click a cell to edit. Changes require Save.'
+    let fileStatusTooltip = FILE_EDITABLE_TOOLTIP
 
     if (isTableFolder) {
       fileStatusLabel = 'Read-only'
-      fileStatusTooltip = 'Table folders are read-only. Open a specific file to edit.'
+      fileStatusTooltip = FILE_TABLE_FOLDER_READ_ONLY_TOOLTIP
     } else if (fileEntry?.type !== 'file') {
       fileStatusLabel = 'Read-only'
-      fileStatusTooltip = 'Only files are editable.'
+      fileStatusTooltip = FILE_NON_FILE_READ_ONLY_TOOLTIP
     } else if (!isSupportedFile) {
       fileStatusLabel = 'Read-only'
       fileStatusTooltip = 'Unsupported file type'

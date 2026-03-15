@@ -133,10 +133,7 @@ const optionsBehaviorClass = computed(() => {
     @update:model-value="handleChange"
   >
     <!-- Label -->
-    <ListboxLabel
-      v-if="label"
-      class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-    >
+    <ListboxLabel v-if="label" class="ui-text-default block text-sm font-medium mb-1">
       {{ label }}
       <span v-if="required" class="text-red-500 ml-0.5">*</span>
     </ListboxLabel>
@@ -145,30 +142,27 @@ const optionsBehaviorClass = computed(() => {
       <!-- Button -->
       <ListboxButton
         :class="[
-          'relative w-full rounded-md shadow-sm text-left',
+          'ui-focus-ring relative w-full rounded-md shadow-sm text-left',
           buttonSizeClass,
           'transition-colors duration-150',
           'focus:outline-none focus-visible:outline-none',
           error
-            ? 'border border-red-300 dark:border-red-600 focus:border-red-500 dark:focus:border-red-400 focus:bg-red-50/40 dark:focus:bg-red-950/20'
+            ? 'border [border-color:var(--ui-danger-soft-border-strong)] focus:[border-color:var(--ui-danger-soft-border-strong)] focus:[background-color:var(--ui-danger-soft-bg)]'
             : 'ui-border-default ui-accent-focus border',
           disabled
-            ? 'ui-surface-muted cursor-not-allowed text-gray-500 dark:text-gray-400'
-            : 'ui-surface-raised text-gray-900 dark:text-gray-100 cursor-pointer',
+            ? 'ui-surface-muted ui-text-subtle cursor-not-allowed'
+            : 'ui-surface-raised ui-text-strong cursor-pointer',
           buttonClass
         ]"
       >
         <span v-if="selectedOption" class="block truncate">
           {{ selectedOption.selectedLabel || selectedOption.label }}
         </span>
-        <span v-else class="block truncate text-gray-400 dark:text-gray-500">
+        <span v-else class="ui-text-subtle block truncate">
           {{ placeholder }}
         </span>
         <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
-          <ChevronDown
-            :class="[chevronSizeClass, 'text-gray-400 dark:text-gray-500']"
-            aria-hidden="true"
-          />
+          <ChevronDown :class="[chevronSizeClass, 'ui-icon-muted']" aria-hidden="true" />
         </span>
       </ListboxButton>
 
@@ -190,14 +184,14 @@ const optionsBehaviorClass = computed(() => {
             <li
               v-if="isHeaderOption(option)"
               aria-hidden="true"
-              class="px-3 pt-2 pb-1 text-[10px] font-semibold tracking-[0.08em] uppercase text-gray-500 dark:text-gray-400"
+              class="ui-text-muted px-3 pt-2 pb-1 text-[10px] font-semibold tracking-[0.08em] uppercase"
             >
               {{ option.label }}
             </li>
             <li
               v-else-if="isDividerOption(option)"
               aria-hidden="true"
-              class="mx-2 my-1 h-px bg-gray-200 dark:bg-gray-700/70"
+              class="ui-border-muted mx-2 my-1 h-px border-t"
             />
             <ListboxOption
               v-else
@@ -208,7 +202,7 @@ const optionsBehaviorClass = computed(() => {
             >
               <li
                 :class="[
-                  active ? 'ui-accent-option-active' : 'text-gray-900 dark:text-gray-100',
+                  active ? 'ui-accent-option-active' : 'ui-text-strong',
                   option.disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
                   option.indented ? 'pl-6' : 'pl-3',
                   'relative select-none',
@@ -231,7 +225,7 @@ const optionsBehaviorClass = computed(() => {
           <li
             v-if="dropdownFooter"
             aria-hidden="true"
-            class="ui-border-default mt-1 border-t px-3 py-1.5 text-[11px] text-gray-500 dark:text-gray-400"
+            class="ui-border-default ui-text-muted mt-1 border-t px-3 py-1.5 text-[11px]"
           >
             {{ dropdownFooter }}
           </li>
@@ -242,10 +236,7 @@ const optionsBehaviorClass = computed(() => {
     <!-- Helper Text or Error -->
     <p
       v-if="error || helperText"
-      :class="[
-        'mt-1 text-xs',
-        error ? 'text-red-600 dark:text-red-300' : 'text-gray-500 dark:text-gray-400'
-      ]"
+      :class="['mt-1 text-xs', error ? 'ui-status-danger-text' : 'ui-text-muted']"
     >
       {{ error || helperText }}
     </p>

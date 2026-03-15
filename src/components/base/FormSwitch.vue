@@ -60,7 +60,7 @@ const handleChange = (value: boolean) => {
       :model-value="modelValue"
       :disabled="disabled"
       :class="[
-        'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out',
+        'ui-focus-ring relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out',
         'focus:outline-none focus-visible:outline-none',
         modelValue
           ? 'ui-accent-switch-on'
@@ -86,7 +86,7 @@ const handleChange = (value: boolean) => {
         as="span"
         :class="[
           'text-sm font-medium',
-          error ? 'text-red-700 dark:text-red-300' : 'text-gray-900 dark:text-gray-300',
+          error ? 'ui-status-danger-text' : 'ui-text-strong',
           disabled ? 'opacity-60' : 'cursor-pointer'
         ]"
       >
@@ -94,21 +94,14 @@ const handleChange = (value: boolean) => {
         <span v-if="required" class="text-red-500 ml-0.5">*</span>
       </SwitchLabel>
 
-      <SwitchDescription
-        v-if="description"
-        as="p"
-        class="text-xs text-gray-500 dark:text-gray-400 mt-0.5"
-      >
+      <SwitchDescription v-if="description" as="p" class="ui-text-muted mt-0.5 text-xs">
         {{ description }}
       </SwitchDescription>
 
       <!-- Helper Text or Error -->
       <p
         v-if="error || helperText"
-        :class="[
-          'mt-1 text-xs',
-          error ? 'text-red-600 dark:text-red-300' : 'text-gray-500 dark:text-gray-400'
-        ]"
+        :class="['mt-1 text-xs', error ? 'ui-status-danger-text' : 'ui-text-muted']"
       >
         {{ error || helperText }}
       </p>
@@ -120,7 +113,7 @@ const handleChange = (value: boolean) => {
       :model-value="modelValue"
       :disabled="disabled"
       :class="[
-        'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out',
+        'ui-focus-ring relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out',
         'focus:outline-none focus-visible:outline-none',
         modelValue
           ? 'ui-accent-switch-on'

@@ -43,17 +43,17 @@ const emit = defineEmits<{
 }>()
 
 const baseClasses =
-  'inline-flex items-center justify-center gap-2 font-medium rounded-md transition-all duration-150 focus:outline-none focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60'
+  'ui-focus-ring inline-flex items-center justify-center gap-2 font-medium rounded-md transition-all duration-150 focus:outline-none focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60'
 
 const variantClasses: Record<Variant, string> = {
   primary:
-    'ui-accent-primary border disabled:[background-color:var(--ui-surface-inset)] disabled:[border-color:var(--ui-border-default)] disabled:text-gray-500 dark:disabled:text-gray-400',
+    'ui-accent-primary border disabled:[background-color:var(--ui-surface-inset)] disabled:[border-color:var(--ui-border-default)] disabled:[color:var(--ui-text-subtle)]',
   secondary:
-    'ui-surface-raised ui-border-default border text-gray-700 dark:text-gray-300 hover:[background-color:var(--ui-surface-muted)] focus-visible:[background-color:var(--ui-surface-muted)] disabled:[background-color:var(--ui-surface-inset)] disabled:[border-color:var(--ui-border-default)] disabled:text-gray-400',
+    'ui-surface-raised ui-border-default ui-text-default border hover:[background-color:var(--ui-surface-muted)] focus-visible:[background-color:var(--ui-surface-muted)] disabled:[background-color:var(--ui-surface-inset)] disabled:[border-color:var(--ui-border-default)] disabled:[color:var(--ui-text-subtle)]',
   danger:
-    'ui-surface-raised text-red-600 dark:text-red-300 border border-red-300 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 hover:border-red-400 dark:hover:border-red-600 focus-visible:bg-red-50 dark:focus-visible:bg-red-900/30 focus-visible:border-red-400 dark:focus-visible:border-red-600 disabled:[background-color:var(--ui-surface-inset)] disabled:[border-color:var(--ui-border-default)] disabled:text-gray-400',
+    'ui-surface-raised border [color:var(--ui-danger-text)] [border-color:var(--ui-danger-soft-border-strong)] hover:[background-color:var(--ui-danger-soft-bg)] focus-visible:[background-color:var(--ui-danger-soft-bg)] focus-visible:[border-color:var(--ui-danger-soft-border-strong)] disabled:[background-color:var(--ui-surface-inset)] disabled:[border-color:var(--ui-border-default)] disabled:[color:var(--ui-text-subtle)]',
   ghost:
-    'border border-transparent bg-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 hover:[background-color:var(--ui-surface-muted)] dark:hover:text-gray-200 focus-visible:text-gray-900 focus-visible:[background-color:var(--ui-surface-muted)] dark:focus-visible:text-gray-200 disabled:text-gray-400 disabled:hover:bg-transparent dark:disabled:hover:bg-transparent'
+    'border border-transparent bg-transparent ui-text-muted hover:[color:var(--ui-text-strong)] hover:[background-color:var(--ui-surface-muted)] focus-visible:[color:var(--ui-text-strong)] focus-visible:[background-color:var(--ui-surface-muted)] disabled:[color:var(--ui-text-subtle)] disabled:hover:bg-transparent'
 }
 
 const sizeClasses: Record<Size, string> = {

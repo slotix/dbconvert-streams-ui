@@ -111,10 +111,10 @@ const checkboxId = props.id || `form-checkbox-${Math.random().toString(36).subst
           :name="name"
           :indeterminate="indeterminate"
           :class="[
-            'h-4 w-4 rounded',
+            'ui-focus-ring h-4 w-4 rounded',
             'transition-colors duration-150',
             error
-              ? 'border-red-300 dark:border-red-600 text-red-600 dark:text-red-300 focus:border-red-500 dark:focus:border-red-400'
+              ? '[border-color:var(--ui-danger-soft-border-strong)] [color:var(--ui-danger-text)] focus:[border-color:var(--ui-danger-soft-border-strong)]'
               : 'ui-accent-icon ui-accent-focus ui-border-default',
             disabled
               ? 'ui-surface-muted cursor-not-allowed'
@@ -131,7 +131,7 @@ const checkboxId = props.id || `form-checkbox-${Math.random().toString(36).subst
           :for="checkboxId"
           :class="[
             'font-medium',
-            error ? 'text-red-700 dark:text-red-300' : 'text-gray-700 dark:text-gray-300',
+            error ? 'ui-status-danger-text' : 'ui-text-default',
             disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
           ]"
         >
@@ -146,10 +146,7 @@ const checkboxId = props.id || `form-checkbox-${Math.random().toString(36).subst
         <!-- Helper Text or Error -->
         <p
           v-if="error || helperText"
-          :class="[
-            'mt-0.5 text-xs',
-            error ? 'text-red-600 dark:text-red-300' : 'text-gray-500 dark:text-gray-400'
-          ]"
+          :class="['mt-0.5 text-xs', error ? 'ui-status-danger-text' : 'ui-text-muted']"
         >
           {{ error || helperText }}
         </p>

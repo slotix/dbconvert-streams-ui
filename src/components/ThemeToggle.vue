@@ -27,7 +27,7 @@ const themes = [
   <Menu as="div" class="relative inline-block text-left">
     <MenuButton
       ref="menuButtonRef"
-      class="ui-accent-action inline-flex items-center justify-center rounded-md p-2 text-gray-400 focus:outline-none dark:hover:bg-gray-700"
+      class="ui-focus-ring ui-accent-action ui-icon-muted inline-flex items-center justify-center rounded-md p-2 focus:outline-none"
       title="Toggle theme"
     >
       <Sun v-if="!themeStore.isDark" class="h-5 w-5" />
@@ -50,21 +50,15 @@ const themes = [
             <button
               :class="[
                 active ? 'ui-surface-muted' : '',
-                themeStore.mode === theme.value
-                  ? 'ui-accent-selection-checked'
-                  : 'text-gray-700 dark:text-gray-300',
-                'group flex w-full items-center px-4 py-2 text-sm'
+                themeStore.mode === theme.value ? 'ui-accent-selection-checked' : 'ui-text-default',
+                'ui-focus-ring group flex w-full items-center px-4 py-2 text-sm'
               ]"
               @click="themeStore.setTheme(theme.value)"
             >
               <component
                 :is="theme.icon"
                 class="mr-3 h-5 w-5"
-                :class="
-                  themeStore.mode === theme.value
-                    ? 'ui-accent-icon'
-                    : 'text-gray-400 dark:text-gray-500'
-                "
+                :class="themeStore.mode === theme.value ? 'ui-accent-icon' : 'ui-icon-muted'"
               />
               {{ theme.label }}
             </button>

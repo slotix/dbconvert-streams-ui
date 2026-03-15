@@ -84,10 +84,7 @@ const activeDescription = computed(() => {
 <template>
   <RadioGroup :model-value="modelValue" :disabled="disabled" @update:model-value="handleChange">
     <!-- Label -->
-    <RadioGroupLabel
-      v-if="label"
-      class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-    >
+    <RadioGroupLabel v-if="label" class="ui-text-default mb-2 block text-sm font-medium">
       {{ label }}
       <span v-if="required" class="text-red-500 ml-0.5">*</span>
     </RadioGroupLabel>
@@ -108,7 +105,7 @@ const activeDescription = computed(() => {
               ? 'ui-accent-selection-checked'
               : 'ui-surface-raised ui-border-default hover:[background-color:var(--ui-surface-muted)]',
             active && !checked ? 'ui-accent-selection-active' : '',
-            'relative flex items-start cursor-pointer rounded-lg border p-3 transition-all duration-150 focus:outline-none focus-visible:outline-none flex-1',
+            'ui-focus-ring relative flex items-start cursor-pointer rounded-lg border p-3 transition-all duration-150 focus:outline-none focus-visible:outline-none flex-1',
             (disabled || option.disabled) && 'opacity-60 cursor-not-allowed'
           ]"
         >
@@ -123,7 +120,7 @@ const activeDescription = computed(() => {
             <div class="flex items-center justify-between">
               <RadioGroupLabel
                 as="div"
-                :class="['text-gray-900 dark:text-gray-100', 'text-sm font-medium cursor-pointer']"
+                :class="['ui-text-strong', 'text-sm font-medium cursor-pointer']"
               >
                 {{ option.label }}
               </RadioGroupLabel>
@@ -136,10 +133,7 @@ const activeDescription = computed(() => {
             <RadioGroupDescription
               v-if="option.description"
               as="p"
-              :class="[
-                checked ? 'text-gray-600 dark:text-gray-300' : 'text-gray-500 dark:text-gray-400',
-                'text-xs mt-1'
-              ]"
+              :class="[checked ? 'ui-text-default' : 'ui-text-muted', 'text-xs mt-1']"
             >
               {{ option.description }}
             </RadioGroupDescription>
@@ -152,13 +146,13 @@ const activeDescription = computed(() => {
     <RadioGroupDescription
       v-if="helperText || activeDescription"
       as="p"
-      class="mt-2 text-sm text-gray-500 dark:text-gray-400"
+      class="ui-text-muted mt-2 text-sm"
     >
       {{ helperText || activeDescription }}
     </RadioGroupDescription>
 
     <!-- Error Message -->
-    <p v-if="error" class="mt-2 text-sm text-red-600 dark:text-red-300">
+    <p v-if="error" class="ui-status-danger-text mt-2 text-sm">
       {{ error }}
     </p>
   </RadioGroup>

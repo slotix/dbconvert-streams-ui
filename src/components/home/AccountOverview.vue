@@ -1,6 +1,6 @@
 <template>
   <div class="p-6">
-    <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Account Overview</h2>
+    <h2 class="ui-text-strong mb-6 text-xl font-semibold">Account Overview</h2>
     <div class="space-y-6">
       <div
         v-if="showConnectCta"
@@ -13,10 +13,8 @@
             </div>
           </div>
           <div class="flex-1">
-            <p class="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              Connect your account
-            </p>
-            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+            <p class="ui-text-strong text-lg font-semibold">Connect your account</p>
+            <p class="ui-text-default mt-1 text-sm">
               Add an API key to unlock stream runs, usage stats, and history. Your local data stays
               on this machine.
             </p>
@@ -25,14 +23,14 @@
         <div class="flex flex-wrap items-center gap-3">
           <button
             type="button"
-            class="ui-accent-primary inline-flex items-center rounded-md border px-4 py-2 text-sm font-medium shadow-sm"
+            class="ui-focus-ring ui-accent-primary inline-flex items-center rounded-md border px-4 py-2 text-sm font-medium shadow-sm"
             @click="promptApiKey"
           >
             Enter API key
           </button>
           <button
             type="button"
-            class="ui-surface-raised ui-border-default inline-flex items-center rounded-md border px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:[background-color:var(--ui-surface-muted)]"
+            class="ui-focus-ring ui-surface-raised ui-border-default ui-text-default inline-flex items-center rounded-md border px-4 py-2 text-sm font-medium hover:[background-color:var(--ui-surface-muted)]"
             @click="openAccountPage"
           >
             Create account
@@ -43,16 +41,16 @@
       <!-- User Info -->
       <div v-else class="ui-surface-muted flex items-start rounded-lg p-3">
         <div class="shrink-0">
-          <div class="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-3">
-            <User class="h-6 w-6 text-blue-600 dark:text-blue-400" :stroke-width="iconStroke" />
+          <div class="ui-status-info-surface rounded-lg border p-3">
+            <User class="ui-status-info-text h-6 w-6" :stroke-width="iconStroke" />
           </div>
         </div>
         <div class="ml-4 flex-1">
-          <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Account</p>
-          <p class="text-xl font-semibold text-gray-900 dark:text-gray-100 mt-1">
+          <p class="ui-text-muted text-sm font-medium">Account</p>
+          <p class="ui-text-strong mt-1 text-xl font-semibold">
             {{ userData?.name || 'N/A' }}
           </p>
-          <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+          <p class="ui-text-muted mt-0.5 text-sm">
             {{ userData?.email || 'N/A' }}
           </p>
         </div>
@@ -60,24 +58,19 @@
 
       <div
         v-if="!showConnectCta && isCurrentInstallDeactivated"
-        class="flex items-start rounded-lg border border-amber-300/80 bg-amber-50/60 p-3 dark:border-amber-500/60 dark:bg-amber-950/20"
+        class="ui-status-warning-surface flex items-start rounded-lg border p-3"
       >
         <div class="shrink-0 mt-0.5">
-          <AlertTriangle
-            class="h-5 w-5 text-amber-600 dark:text-amber-300"
-            :stroke-width="iconStroke"
-          />
+          <AlertTriangle class="ui-status-warning-text h-5 w-5" :stroke-width="iconStroke" />
         </div>
         <div class="ml-3 flex-1">
-          <p class="text-sm font-medium text-amber-700 dark:text-amber-300">
-            This device is deactivated
-          </p>
-          <p class="mt-1 text-sm text-gray-700 dark:text-gray-200">
+          <p class="ui-status-warning-text text-sm font-medium">This device is deactivated</p>
+          <p class="ui-text-default mt-1 text-sm">
             This device was deactivated. Reactivate it from https://streams.dbconvert.com/account
           </p>
           <button
             type="button"
-            class="mt-2 inline-flex items-center text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300"
+            class="ui-focus-ring ui-link mt-2 inline-flex items-center text-sm font-medium"
             @click="openAccountPage"
           >
             Open account page
@@ -95,17 +88,17 @@
               :stroke-width="iconStroke"
               :class="{
                 'ui-accent-icon': isPaid,
-                'text-gray-400 dark:text-gray-500': !isPaid
+                'ui-icon-muted': !isPaid
               }"
             />
           </div>
         </div>
         <div class="ml-4 flex-1">
           <div class="flex items-center justify-between">
-            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Subscription</p>
+            <p class="ui-text-muted text-sm font-medium">Subscription</p>
             <span
               v-if="subscriptionStatus === 'paused'"
-              class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+              class="ui-chip-muted inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium"
             >
               <svg class="w-1 h-1 fill-current" viewBox="0 0 4 4">
                 <circle cx="2" cy="2" r="2" />
@@ -114,7 +107,7 @@
             </span>
             <span
               v-if="subscriptionStatus === 'canceled'"
-              class="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-medium bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-300 rounded-full"
+              class="ui-status-danger-badge inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium"
             >
               <svg class="w-1 h-1 fill-current" viewBox="0 0 4 4">
                 <circle cx="2" cy="2" r="2" />
@@ -133,18 +126,14 @@
             </span>
           </div>
           <div class="mt-1">
-            <p class="text-xl font-semibold text-gray-900 dark:text-gray-100">
+            <p class="ui-text-strong text-xl font-semibold">
               {{ planLabel }}
             </p>
-            <p v-if="isPaid" class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              Billing: {{ billingLabel }}
-            </p>
-            <p v-else class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              Evaluation limits apply
-            </p>
+            <p v-if="isPaid" class="ui-text-muted mt-1 text-sm">Billing: {{ billingLabel }}</p>
+            <p v-else class="ui-text-muted mt-1 text-sm">Evaluation limits apply</p>
             <button
               type="button"
-              class="mt-2 inline-flex items-center text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300"
+              class="ui-focus-ring ui-link mt-2 inline-flex items-center text-sm font-medium"
               @click="openPricingPage"
             >
               Manage Subscription
@@ -154,7 +143,7 @@
           <div v-if="subscriptionStatus === 'paused'" class="mt-2 flex items-start space-x-2">
             <div class="shrink-0 mt-0.5">
               <svg
-                class="h-4 w-4 text-orange-500 dark:text-orange-400"
+                class="ui-status-warning-text h-4 w-4"
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
                 fill="currentColor"
@@ -167,12 +156,10 @@
               </svg>
             </div>
             <div class="flex-1">
-              <p class="text-sm text-orange-800 dark:text-orange-300 font-medium">
-                Subscription paused
-              </p>
+              <p class="ui-status-warning-text text-sm font-medium">Subscription paused</p>
               <button
                 type="button"
-                class="mt-1 inline-flex items-center text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300"
+                class="ui-focus-ring ui-link mt-1 inline-flex items-center text-sm font-medium"
                 @click="openAccountPage"
               >
                 Update subscription
@@ -183,7 +170,7 @@
           <div v-if="subscriptionStatus === 'canceled'" class="mt-2 flex items-start space-x-2">
             <div class="shrink-0 mt-0.5">
               <svg
-                class="h-4 w-4 text-red-500 dark:text-red-300"
+                class="ui-status-danger-text h-4 w-4"
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
                 fill="currentColor"
@@ -196,12 +183,12 @@
               </svg>
             </div>
             <div class="flex-1">
-              <p class="text-sm text-red-800 dark:text-red-300 font-medium">
+              <p class="ui-status-danger-text text-sm font-medium">
                 Your subscription has been canceled
               </p>
               <button
                 type="button"
-                class="mt-1 inline-flex items-center text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300"
+                class="ui-focus-ring ui-link mt-1 inline-flex items-center text-sm font-medium"
                 @click="openAccountPage"
               >
                 Reactivate subscription
@@ -224,16 +211,14 @@
         </div>
         <div class="ml-4 flex-1">
           <div class="flex items-center justify-between">
-            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Evaluation Usage</p>
-            <span v-if="evaluationEnded" class="text-sm text-amber-600 dark:text-amber-400"
-              >Completed</span
-            >
+            <p class="ui-text-muted text-sm font-medium">Evaluation Usage</p>
+            <span v-if="evaluationEnded" class="ui-status-warning-text text-sm">Completed</span>
           </div>
           <div class="mt-3 space-y-4">
             <div>
               <div class="flex items-baseline justify-between">
-                <span class="text-sm text-gray-600 dark:text-gray-400">Convert data</span>
-                <span class="text-xs text-gray-500 dark:text-gray-500"
+                <span class="ui-text-default text-sm">Convert data</span>
+                <span class="ui-text-subtle text-xs"
                   >{{ formatDataSize(evalConvertBytes) }} /
                   {{ formatDataSize(evalConvertLimit) }}</span
                 >
@@ -247,8 +232,8 @@
             </div>
             <div>
               <div class="flex items-baseline justify-between">
-                <span class="text-sm text-gray-600 dark:text-gray-400">CDC runtime</span>
-                <span class="text-xs text-gray-500 dark:text-gray-500"
+                <span class="ui-text-default text-sm">CDC runtime</span>
+                <span class="ui-text-subtle text-xs"
                   >{{ formatDuration(evalCdcSeconds) }} / {{ formatDuration(evalCdcLimit) }}</span
                 >
               </div>
@@ -259,7 +244,7 @@
                 ></div>
               </div>
             </div>
-            <p v-if="evaluationEnded" class="text-xs text-amber-600 dark:text-amber-400">
+            <p v-if="evaluationEnded" class="ui-status-warning-text text-xs">
               Evaluation completed. Upgrade to continue running streams.
             </p>
           </div>
@@ -269,57 +254,57 @@
       <!-- API Key Management -->
       <div v-if="!showConnectCta" class="ui-surface-muted flex items-start rounded-lg p-3">
         <div class="shrink-0">
-          <div class="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-3">
-            <Key class="h-6 w-6 text-blue-600 dark:text-blue-400" :stroke-width="iconStroke" />
+          <div class="ui-status-info-surface rounded-lg border p-3">
+            <Key class="ui-status-info-text h-6 w-6" :stroke-width="iconStroke" />
           </div>
         </div>
         <div class="ml-4 flex-1">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm font-medium text-gray-500 dark:text-gray-400">API Credentials</p>
-              <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              <p class="ui-text-muted text-sm font-medium">API Credentials</p>
+              <p class="ui-text-muted mt-0.5 text-xs">
                 Use API Key and Install ID to authenticate your API requests
               </p>
             </div>
           </div>
           <div class="mt-3 space-y-3">
             <div>
-              <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1.5">API Key</p>
+              <p class="ui-text-muted mb-1.5 text-sm font-medium">API Key</p>
               <div class="relative">
                 <input
                   type="text"
                   readonly
                   :value="maskedApiKey"
-                  class="ui-surface-inset ui-border-default w-full rounded-lg border px-3 py-2 pr-10 text-sm font-mono text-gray-900 dark:text-gray-100 focus:outline-none transition-colors"
+                  class="ui-surface-inset ui-border-default ui-text-strong ui-focus-ring w-full rounded-lg border px-3 py-2 pr-10 text-sm font-mono transition-colors focus:outline-none"
                 />
                 <button
-                  class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md hover:[background-color:var(--ui-surface-muted)] transition-colors group"
+                  class="ui-focus-ring absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 transition-colors group hover:[background-color:var(--ui-surface-muted)]"
                   title="Copy API Key"
                   @click="copyApiKey"
                 >
                   <Copy
-                    class="h-4 w-4 text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300"
+                    class="ui-icon-default h-4 w-4 group-hover:[color:var(--ui-text-default)]"
                     :stroke-width="iconStroke"
                   />
                 </button>
               </div>
             </div>
             <div>
-              <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1.5">Install ID</p>
+              <p class="ui-text-muted mb-1.5 text-sm font-medium">Install ID</p>
               <div class="relative">
                 <input
                   type="text"
                   readonly
                   :value="maskedInstallId"
-                  class="ui-surface-inset ui-border-default w-full rounded-lg border px-3 py-2 pr-10 text-sm font-mono text-gray-900 dark:text-gray-100 focus:outline-none transition-colors"
+                  class="ui-surface-inset ui-border-default ui-text-strong ui-focus-ring w-full rounded-lg border px-3 py-2 pr-10 text-sm font-mono transition-colors focus:outline-none"
                 />
                 <button
-                  class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md hover:[background-color:var(--ui-surface-muted)] transition-colors group"
+                  class="ui-focus-ring absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 transition-colors group hover:[background-color:var(--ui-surface-muted)]"
                   title="Copy Install ID"
                   @click="copyInstallId"
                 >
                   <Copy
-                    class="h-4 w-4 text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300"
+                    class="ui-icon-default h-4 w-4 group-hover:[color:var(--ui-text-default)]"
                     :stroke-width="iconStroke"
                   />
                 </button>
@@ -328,7 +313,7 @@
             <div class="flex items-center justify-end gap-3">
               <button
                 type="button"
-                class="inline-flex items-center text-sm font-medium text-red-600 dark:text-red-300 hover:text-red-500 dark:hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-50"
+                class="ui-focus-ring ui-link-danger inline-flex items-center text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
                 :disabled="!hasApiKey || isClearingApiKey"
                 @click="confirmClearApiKey"
               >
@@ -336,7 +321,7 @@
               </button>
               <button
                 type="button"
-                class="inline-flex items-center text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300"
+                class="ui-focus-ring ui-link inline-flex items-center text-sm font-medium"
                 @click="openAccountPage"
               >
                 Manage API Key
@@ -412,10 +397,8 @@ const evaluationBadgeText = computed(() => {
 
 const evaluationBadgeClass = computed(() => {
   if (!commonStore.userData?.evaluation) return 'ui-chip-muted'
-  if (evaluationStatus.value === 'ended')
-    return 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
-  if (evaluationStatus.value === 'active')
-    return 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-200'
+  if (evaluationStatus.value === 'ended') return 'ui-chip-muted border'
+  if (evaluationStatus.value === 'active') return 'ui-status-success-badge border'
   return 'ui-chip-muted'
 })
 

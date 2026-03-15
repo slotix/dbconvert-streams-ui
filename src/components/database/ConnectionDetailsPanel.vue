@@ -551,12 +551,12 @@ const isLoadingDatabases = computed(() => {
     class="ui-surface-raised ui-border-default shadow-lg dark:shadow-gray-900/40 rounded-2xl overflow-hidden border hover:shadow-xl dark:hover:shadow-gray-900/70 transition-all duration-300"
   >
     <div
-      class="px-6 py-4 border-b border-slate-200 dark:border-gray-800 flex items-center justify-between bg-linear-to-r from-slate-50 to-white dark:from-gray-850 dark:to-gray-900"
+      class="ui-header-gradient ui-border-default flex items-center justify-between border-b px-6 py-4"
     >
       <div class="flex items-center gap-3 min-w-0">
         <h3
           v-tooltip="connection.name"
-          class="text-lg font-bold text-slate-900 dark:text-gray-100 truncate bg-clip-text"
+          class="ui-text-strong truncate bg-clip-text text-lg font-bold"
         >
           {{ connection.name || hostWithPort || 'Connection' }}
         </h3>
@@ -597,9 +597,7 @@ const isLoadingDatabases = computed(() => {
                 class="ui-surface-floating absolute right-0 z-10 mt-1 w-72 origin-top-right p-3"
               >
                 <div class="space-y-2">
-                  <label class="block text-xs font-medium text-gray-600 dark:text-gray-400"
-                    >Bucket name</label
-                  >
+                  <label class="ui-text-default block text-xs font-medium">Bucket name</label>
                   <FormInput
                     v-model="newBucketName"
                     placeholder="analytics-exports"
@@ -611,9 +609,7 @@ const isLoadingDatabases = computed(() => {
                       }
                     "
                   />
-                  <label class="block text-xs font-medium text-gray-600 dark:text-gray-400"
-                    >Region</label
-                  >
+                  <label class="ui-text-default block text-xs font-medium">Region</label>
                   <FormInput
                     v-model="newBucketRegion"
                     :placeholder="storageRegion || 'us-east-1'"
@@ -625,7 +621,7 @@ const isLoadingDatabases = computed(() => {
                       }
                     "
                   />
-                  <p v-if="bucketValidationMessage" class="text-xs text-red-500">
+                  <p v-if="bucketValidationMessage" class="ui-status-danger-text text-xs">
                     {{ bucketValidationMessage }}
                   </p>
                   <BaseButton
@@ -678,7 +674,7 @@ const isLoadingDatabases = computed(() => {
               <PopoverPanel
                 class="ui-surface-floating absolute right-0 z-10 mt-1 w-64 origin-top-right p-3"
               >
-                <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5"
+                <label class="ui-text-default mb-1.5 block text-xs font-medium"
                   >Database name</label
                 >
                 <div class="flex gap-2">
@@ -737,15 +733,11 @@ const isLoadingDatabases = computed(() => {
               <PopoverPanel
                 class="ui-surface-floating absolute right-0 z-10 mt-1 w-64 origin-top-right p-3"
               >
-                <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                <p class="ui-text-muted mb-2 text-xs">
                   In database:
-                  <span class="font-medium text-gray-700 dark:text-gray-300">{{
-                    defaultDatabase
-                  }}</span>
+                  <span class="ui-text-default font-medium">{{ defaultDatabase }}</span>
                 </p>
-                <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5"
-                  >Schema name</label
-                >
+                <label class="ui-text-default mb-1.5 block text-xs font-medium">Schema name</label>
                 <div class="flex gap-2">
                   <FormInput
                     v-model="newSchemaName"
@@ -793,29 +785,25 @@ const isLoadingDatabases = computed(() => {
                 :db-type="connectionTypeLabel"
                 :logo-src="connectionLogoSrc"
               />
-              <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"
-                >Storage Info</span
-              >
+              <span class="ui-text-default text-sm font-semibold">Storage Info</span>
             </div>
             <div class="space-y-4">
               <div>
-                <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
-                  >Storage URI</label
-                >
+                <label class="ui-text-muted text-xs font-medium uppercase">Storage URI</label>
                 <div
-                  class="mt-1 flex items-start gap-2 rounded-lg bg-linear-to-r from-slate-50 to-gray-50 dark:from-gray-800 dark:to-gray-850 p-3 font-mono text-sm border border-gray-100 dark:border-gray-700"
+                  class="ui-code-surface mt-1 flex items-start gap-2 rounded-lg border p-3 font-mono text-sm"
                 >
-                  <span class="flex-1 break-all text-gray-800 dark:text-gray-200 overflow-x-auto">
+                  <span class="ui-text-default flex-1 break-all overflow-x-auto">
                     {{ displayS3URI }}
                   </span>
                   <button
                     v-if="displayS3URI && displayS3URI !== 's3://'"
                     v-tooltip="isPathCopied ? 'Copied!' : 'Copy storage URI to clipboard'"
-                    class="shrink-0 transition-colors"
+                    class="ui-focus-ring shrink-0 rounded transition-colors"
                     :class="
                       isPathCopied
-                        ? 'text-green-400'
-                        : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
+                        ? 'ui-status-success-text'
+                        : 'ui-icon-muted hover:[color:var(--ui-text-default)]'
                     "
                     @click.stop="copyFolderPath"
                   >
@@ -826,54 +814,42 @@ const isLoadingDatabases = computed(() => {
               </div>
               <div class="grid grid-cols-2 gap-4">
                 <div v-if="storageRegion">
-                  <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
-                    >Region</label
-                  >
-                  <p class="mt-1 font-medium text-gray-900 dark:text-gray-100 truncate text-sm">
+                  <label class="ui-text-muted text-xs font-medium uppercase">Region</label>
+                  <p class="ui-text-strong mt-1 truncate text-sm font-medium">
                     {{ storageRegion }}
                   </p>
                 </div>
                 <div v-if="storageEndpoint">
-                  <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
-                    >Endpoint</label
-                  >
-                  <p class="mt-1 font-medium text-gray-900 dark:text-gray-100 truncate text-sm">
+                  <label class="ui-text-muted text-xs font-medium uppercase">Endpoint</label>
+                  <p class="ui-text-strong mt-1 truncate text-sm font-medium">
                     {{ storageEndpoint }}
                   </p>
                 </div>
               </div>
               <div>
-                <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
-                  >Credentials</label
-                >
-                <p class="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">
+                <label class="ui-text-muted text-xs font-medium uppercase">Credentials</label>
+                <p class="ui-text-strong mt-1 text-sm font-medium">
                   {{ credentialSummary }}
                 </p>
               </div>
               <div>
-                <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
-                  >Access scope</label
-                >
-                <p class="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">
+                <label class="ui-text-muted text-xs font-medium uppercase">Access scope</label>
+                <p class="ui-text-strong mt-1 text-sm font-medium">
                   {{ s3AccessScopeLabel }}
                 </p>
-                <p class="text-xs text-gray-600 dark:text-gray-400">
+                <p class="ui-text-default text-xs">
                   {{ s3AccessScopeDescription }}
                 </p>
               </div>
               <div v-if="s3Bucket">
-                <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
-                  >Bucket</label
-                >
-                <p class="mt-1 font-medium text-gray-900 dark:text-gray-100 truncate text-sm">
+                <label class="ui-text-muted text-xs font-medium uppercase">Bucket</label>
+                <p class="ui-text-strong mt-1 truncate text-sm font-medium">
                   {{ s3Bucket }}
                 </p>
               </div>
               <div v-if="s3Prefix">
-                <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
-                  >Prefix</label
-                >
-                <p class="mt-1 font-medium text-gray-900 dark:text-gray-100 truncate text-sm">
+                <label class="ui-text-muted text-xs font-medium uppercase">Prefix</label>
+                <p class="ui-text-strong mt-1 truncate text-sm font-medium">
                   {{ s3Prefix }}
                 </p>
               </div>
@@ -889,26 +865,24 @@ const isLoadingDatabases = computed(() => {
                 :db-type="connectionTypeLabel"
                 :logo-src="connectionLogoSrc"
               />
-              <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Local Path</span>
+              <span class="ui-text-default text-sm font-semibold">Local Path</span>
             </div>
             <div>
-              <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
-                >Folder Path</label
-              >
+              <label class="ui-text-muted text-xs font-medium uppercase">Folder Path</label>
               <div
-                class="mt-1 flex items-start gap-2 rounded-lg bg-linear-to-r from-slate-50 to-gray-50 dark:from-gray-800 dark:to-gray-850 p-3 font-mono text-sm border border-gray-100 dark:border-gray-700"
+                class="ui-code-surface mt-1 flex items-start gap-2 rounded-lg border p-3 font-mono text-sm"
               >
-                <span class="flex-1 break-all text-gray-800 dark:text-gray-200 overflow-x-auto">
+                <span class="ui-text-default flex-1 break-all overflow-x-auto">
                   {{ basePath || 'No path configured' }}
                 </span>
                 <button
                   v-if="basePath"
                   v-tooltip="isPathCopied ? 'Copied!' : 'Copy folder path to clipboard'"
-                  class="shrink-0 transition-colors"
+                  class="ui-focus-ring shrink-0 rounded transition-colors"
                   :class="
                     isPathCopied
-                      ? 'text-green-400'
-                      : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
+                      ? 'ui-status-success-text'
+                      : 'ui-icon-muted hover:[color:var(--ui-text-default)]'
                   "
                   @click.stop="copyFolderPath"
                 >
@@ -918,20 +892,13 @@ const isLoadingDatabases = computed(() => {
               </div>
             </div>
             <div>
-              <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
-                >Files</label
-              >
-              <p class="mt-1 text-sm text-gray-700 dark:text-gray-300">
-                <span
-                  v-if="totalFileCount > 0"
-                  class="font-medium text-gray-900 dark:text-gray-100"
-                >
+              <label class="ui-text-muted text-xs font-medium uppercase">Files</label>
+              <p class="ui-text-default mt-1 text-sm">
+                <span v-if="totalFileCount > 0" class="ui-text-strong font-medium">
                   {{ fileSummary }}
                 </span>
-                <span v-else-if="hasPath" class="text-gray-500 dark:text-gray-400">
-                  No supported files found
-                </span>
-                <span v-else class="text-gray-500 dark:text-gray-400">No path configured</span>
+                <span v-else-if="hasPath" class="ui-text-muted"> No supported files found </span>
+                <span v-else class="ui-text-muted">No path configured</span>
               </p>
             </div>
           </div>
@@ -950,40 +917,32 @@ const isLoadingDatabases = computed(() => {
               :db-type="connectionTypeLabel"
               :logo-src="connectionLogoSrc"
             />
-            <span class="text-sm font-semibold text-gray-700 dark:text-gray-300"
-              >Connection Info</span
-            >
+            <span class="ui-text-default text-sm font-semibold">Connection Info</span>
           </div>
 
           <div class="space-y-3">
             <div>
-              <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
-                >Host</label
-              >
+              <label class="ui-text-muted text-xs font-medium uppercase">Host</label>
               <p
                 v-tooltip="hostWithPort"
-                class="mt-0.5 font-medium text-gray-900 dark:text-gray-100 truncate text-sm"
+                class="ui-text-strong mt-0.5 truncate text-sm font-medium"
               >
                 {{ hostWithPort }}
               </p>
             </div>
             <div v-if="defaultDatabase">
-              <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
-                >Default Database</label
-              >
-              <p class="mt-0.5 font-medium text-gray-900 dark:text-gray-100 truncate text-sm">
+              <label class="ui-text-muted text-xs font-medium uppercase">Default Database</label>
+              <p class="ui-text-strong mt-0.5 truncate text-sm font-medium">
                 {{ defaultDatabase }}
               </p>
             </div>
             <div>
-              <label class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
-                >Connection String</label
-              >
+              <label class="ui-text-muted text-xs font-medium uppercase">Connection String</label>
               <div
-                class="ui-surface-raised ui-border-default mt-1 flex items-start gap-2 rounded-lg p-2 font-mono text-xs border"
+                class="ui-code-surface mt-1 flex items-start gap-2 rounded-lg border p-2 font-mono text-xs"
               >
                 <span
-                  class="flex-1 break-all text-gray-800 dark:text-gray-100 overflow-x-auto max-h-16 overflow-y-auto"
+                  class="ui-text-default flex-1 max-h-16 break-all overflow-x-auto overflow-y-auto"
                 >
                   {{
                     showPassword
@@ -996,7 +955,7 @@ const isLoadingDatabases = computed(() => {
                     v-tooltip="
                       showPassword ? 'Hide password and truncate' : 'Show password and full details'
                     "
-                    class="shrink-0 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                    class="ui-focus-ring ui-icon-muted shrink-0 rounded hover:[color:var(--ui-text-default)]"
                     @click="showPassword = !showPassword"
                   >
                     <Eye v-if="!showPassword" class="h-3.5 w-3.5" />
@@ -1004,11 +963,11 @@ const isLoadingDatabases = computed(() => {
                   </button>
                   <button
                     v-tooltip="isCopied ? 'Copied!' : 'Copy connection string to clipboard'"
-                    class="shrink-0 transition-colors"
+                    class="ui-focus-ring shrink-0 rounded transition-colors"
                     :class="
                       isCopied
-                        ? 'text-green-400'
-                        : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
+                        ? 'ui-status-success-text'
+                        : 'ui-icon-muted hover:[color:var(--ui-text-default)]'
                     "
                     @click="copyConnectionString"
                   >
@@ -1025,12 +984,12 @@ const isLoadingDatabases = computed(() => {
         <div class="ui-surface-panel p-4">
           <div class="flex items-center gap-2 mb-3">
             <PanelHeaderIcon :icon="BarChart3" tone="purple" />
-            <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Server Stats</span>
+            <span class="ui-text-default text-sm font-semibold">Server Stats</span>
           </div>
 
           <div
             v-if="isLoadingDatabases || isLoadingOverviews"
-            class="flex items-center gap-2 text-sm text-gray-500"
+            class="ui-text-muted flex items-center gap-2 text-sm"
           >
             <svg
               class="animate-spin h-4 w-4"
@@ -1059,75 +1018,52 @@ const isLoadingDatabases = computed(() => {
             <!-- Engine/Version Badge -->
             <div v-if="serverStats.engine" class="flex items-center gap-2">
               <span
-                class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize"
-                :class="
-                  serverStats.engine === 'postgres'
-                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
-                    : 'bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-300'
-                "
+                class="ui-status-info-badge inline-flex items-center rounded border px-2 py-0.5 text-xs font-medium capitalize"
               >
                 {{ serverStats.engine === 'postgres' ? 'PostgreSQL' : 'MySQL' }}
               </span>
-              <span class="text-xs text-gray-500 dark:text-gray-400">{{
-                serverStats.version
-              }}</span>
+              <span class="ui-text-muted text-xs">{{ serverStats.version }}</span>
             </div>
 
             <!-- Stats Grid -->
             <div class="grid grid-cols-[repeat(auto-fit,minmax(80px,1fr))] gap-x-4 gap-y-2">
               <div class="min-w-0">
-                <label
-                  class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400 whitespace-nowrap"
+                <label class="ui-text-muted text-xs font-medium uppercase whitespace-nowrap"
                   >Databases</label
                 >
-                <p class="mt-0.5 font-semibold text-gray-900 dark:text-gray-100 text-base">
+                <p class="ui-text-strong mt-0.5 text-base font-semibold">
                   {{ serverStats.databases }}
                 </p>
               </div>
               <div class="min-w-0">
-                <label
-                  class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400 whitespace-nowrap"
+                <label class="ui-text-muted text-xs font-medium uppercase whitespace-nowrap"
                   >Total Size</label
                 >
                 <p
                   class="mt-0.5 font-semibold text-base whitespace-nowrap"
-                  :class="
-                    serverStats.hasData
-                      ? 'text-gray-900 dark:text-gray-100'
-                      : 'text-gray-400 dark:text-gray-500'
-                  "
+                  :class="serverStats.hasData ? 'ui-text-strong' : 'ui-text-subtle'"
                 >
                   {{ serverSizeDisplay }}
                 </p>
               </div>
               <div class="min-w-0">
-                <label
-                  class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400 whitespace-nowrap"
+                <label class="ui-text-muted text-xs font-medium uppercase whitespace-nowrap"
                   >Tables</label
                 >
                 <p
                   class="mt-0.5 font-semibold text-base"
-                  :class="
-                    serverStats.hasData
-                      ? 'text-gray-900 dark:text-gray-100'
-                      : 'text-gray-400 dark:text-gray-500'
-                  "
+                  :class="serverStats.hasData ? 'ui-text-strong' : 'ui-text-subtle'"
                 >
                   {{ serverStats.hasData ? serverStats.tables : '—' }}
                 </p>
               </div>
               <div class="min-w-0">
-                <label
-                  class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400 whitespace-nowrap"
+                <label class="ui-text-muted text-xs font-medium uppercase whitespace-nowrap"
                   >Views</label
                 >
                 <p
                   class="mt-0.5 font-semibold text-base"
-                  :class="
-                    serverStats.hasData
-                      ? 'text-gray-900 dark:text-gray-100'
-                      : 'text-gray-400 dark:text-gray-500'
-                  "
+                  :class="serverStats.hasData ? 'ui-text-strong' : 'ui-text-subtle'"
                 >
                   {{ serverStats.hasData ? serverStats.views : '—' }}
                 </p>
@@ -1144,25 +1080,21 @@ const isLoadingDatabases = computed(() => {
             >
               <div class="grid grid-cols-[repeat(auto-fit,minmax(100px,1fr))] gap-x-4 gap-y-2">
                 <div v-if="serverStats.maxConnections > 0" class="min-w-0">
-                  <label
-                    class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400 whitespace-nowrap"
+                  <label class="ui-text-muted text-xs font-medium uppercase whitespace-nowrap"
                     >Connections</label
                   >
-                  <p
-                    class="mt-0.5 font-semibold text-base text-gray-900 dark:text-gray-100 whitespace-nowrap"
-                  >
+                  <p class="ui-text-strong mt-0.5 whitespace-nowrap text-base font-semibold">
                     {{ serverStats.usedConnections }}
-                    <span class="text-xs font-normal text-gray-500 dark:text-gray-400"
+                    <span class="ui-text-muted text-xs font-normal"
                       >/ {{ serverStats.maxConnections }}</span
                     >
                   </p>
                 </div>
                 <div v-if="serverStats.activeSessions > 0" class="min-w-0">
-                  <label
-                    class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400 whitespace-nowrap"
+                  <label class="ui-text-muted text-xs font-medium uppercase whitespace-nowrap"
                     >Active Sessions</label
                   >
-                  <p class="mt-0.5 font-semibold text-base text-gray-900 dark:text-gray-100">
+                  <p class="ui-text-strong mt-0.5 text-base font-semibold">
                     {{ serverStats.activeSessions }}
                   </p>
                 </div>
@@ -1172,14 +1104,12 @@ const isLoadingDatabases = computed(() => {
         </div>
       </div>
 
-      <div class="flex items-center gap-2 pt-2 border-t border-gray-100 dark:border-gray-800">
-        <Calendar class="h-4 w-4 text-gray-500 dark:text-gray-400" />
-        <span class="text-sm text-gray-500 dark:text-gray-400 truncate"
-          >Created: {{ createdDisplay }}</span
-        >
+      <div class="ui-border-muted flex items-center gap-2 border-t pt-2">
+        <Calendar class="ui-icon-default h-4 w-4" />
+        <span class="ui-text-muted truncate text-sm">Created: {{ createdDisplay }}</span>
       </div>
 
-      <div class="pt-6 border-t border-gray-100 dark:border-gray-800">
+      <div class="ui-border-muted border-t pt-6">
         <ConnectionConfigJsonEditor
           ref="jsonEditorRef"
           :config="connection"

@@ -131,6 +131,14 @@
   background-color: var(--tw-gray-100) !important;
 }
 
+/* Shared selected-row treatment for data grids.
+   Pending delete/insert rows keep their own status colors. */
+.ag-theme-alpine :deep(.ag-row.ag-row-selected:not(.row-pending-delete):not(.row-pending-insert)),
+.ag-theme-alpine
+  :deep(.ag-row.ag-row-selected:not(.row-pending-delete):not(.row-pending-insert) .ag-cell) {
+  background-color: rgba(14, 165, 233, 0.1);
+}
+
 /* ===========================
    Dark Mode Theme
    =========================== */
@@ -270,6 +278,15 @@
 
 .dark .ag-theme-alpine :deep(.ag-row-even:hover) {
   background-color: rgba(55, 65, 81, 0.8) !important;
+}
+
+.dark
+  .ag-theme-alpine
+  :deep(.ag-row.ag-row-selected:not(.row-pending-delete):not(.row-pending-insert)),
+.dark
+  .ag-theme-alpine
+  :deep(.ag-row.ag-row-selected:not(.row-pending-delete):not(.row-pending-insert) .ag-cell) {
+  background-color: rgba(59, 130, 246, 0.14);
 }
 
 /* Dark mode filter menu/dialog */

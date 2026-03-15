@@ -5,19 +5,19 @@
       <div class="px-4 py-2 flex items-center gap-3">
         <button
           type="button"
-          class="lg:hidden flex items-center justify-center rounded-md p-1.5 text-gray-600 transition-colors hover:text-gray-900 hover:[background-color:var(--ui-surface-raised)] dark:text-gray-400 dark:hover:text-white"
+          class="ui-focus-ring ui-text-default lg:hidden flex items-center justify-center rounded-md p-1.5 transition-colors hover:[color:var(--ui-text-strong)] hover:[background-color:var(--ui-surface-raised)]"
           @click="sidebarMenuToggle?.openSidebar()"
         >
           <Menu class="h-5 w-5" :stroke-width="iconStroke" aria-hidden="true" />
           <span class="sr-only">Open sidebar</span>
         </button>
-        <h1 class="text-base font-semibold text-gray-900 dark:text-gray-100">
+        <h1 class="ui-text-strong text-base font-semibold">
           {{ isEditMode ? 'Edit Stream Configuration' : 'New Stream Configuration' }}
         </h1>
         <div class="flex-1"></div>
         <button
           type="button"
-          class="rounded-md px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:text-gray-900 hover:[background-color:var(--ui-surface-raised)] dark:text-gray-400 dark:hover:text-white"
+          class="ui-focus-ring ui-text-default rounded-md px-3 py-1.5 text-sm font-medium transition-colors hover:[color:var(--ui-text-strong)] hover:[background-color:var(--ui-surface-raised)]"
           @click="goBack"
         >
           Cancel
@@ -51,11 +51,11 @@
           <template #footer-left>
             <div v-if="showStepOneSelectionFooter" class="flex min-w-0 flex-1 items-center gap-2">
               <div
-                class="min-w-0 max-w-xl truncate bg-slate-100/80 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-600/60 rounded-lg px-3 py-1.5 text-sm shadow-sm shadow-slate-900/10 dark:shadow-slate-950/40"
+                class="ui-status-info-surface min-w-0 max-w-xl truncate rounded-lg border px-3 py-1.5 text-sm shadow-sm shadow-slate-900/10 dark:shadow-slate-950/40"
                 :title="sourceFooterLabel"
               >
-                <span class="font-semibold text-indigo-700 dark:text-indigo-200">Source:</span>
-                <span class="text-slate-900 dark:text-slate-100 ml-1 font-medium">
+                <span class="font-semibold">Source:</span>
+                <span class="ui-text-strong ml-1 font-medium">
                   {{ sourceFooterLabel }}
                 </span>
               </div>
@@ -73,18 +73,18 @@
                 />
               </svg>
               <div
-                class="min-w-0 max-w-xl truncate bg-stone-100/80 dark:bg-stone-900/50 border border-amber-200 dark:border-amber-700/60 rounded-lg px-3 py-1.5 text-sm shadow-sm shadow-stone-900/10 dark:shadow-stone-950/40"
+                class="ui-status-warning-surface min-w-0 max-w-xl truncate rounded-lg border px-3 py-1.5 text-sm shadow-sm shadow-stone-900/10 dark:shadow-stone-950/40"
                 :title="targetFooterLabel"
               >
-                <span class="font-semibold text-amber-800 dark:text-amber-200">Target:</span>
-                <span class="text-stone-900 dark:text-stone-100 ml-1 font-medium">
+                <span class="font-semibold">Target:</span>
+                <span class="ui-text-strong ml-1 font-medium">
                   {{ targetFooterLabel }}
                 </span>
               </div>
               <button
                 v-if="hasAnySelection"
                 type="button"
-                class="ml-2 inline-flex items-center rounded-md border border-red-300 dark:border-red-700 px-2.5 py-1.5 text-sm font-medium text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 whitespace-nowrap transition-colors duration-200"
+                class="ui-focus-ring ml-2 inline-flex items-center rounded-md border px-2.5 py-1.5 text-sm font-medium whitespace-nowrap transition-colors duration-200 [border-color:var(--ui-danger-soft-border-strong)] [color:var(--ui-danger-text)] hover:[background-color:var(--ui-danger-soft-bg)]"
                 @click="handleClearAll"
               >
                 Clear Connections
