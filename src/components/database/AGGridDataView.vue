@@ -701,6 +701,7 @@ const allColumnNames = computed(() => {
 
 const selectionActions = useAgGridSelectionActions({
   gridApi: baseGrid.gridApi,
+  gridContainerRef: baseGrid.gridContainerRef,
   selectedRows: baseGrid.selectedRows,
   selectedRowCount: baseGrid.selectedRowCount,
   allColumnNames,
@@ -712,6 +713,10 @@ const selectionActions = useAgGridSelectionActions({
   pendingEdits: pendingEdits as unknown as typeof pendingEdits,
   revertRowField,
   stageDeleteRow,
+
+  onAddRow: openInsertRowPanelForNew,
+  onSave: saveChanges,
+  hasUnsavedChanges,
 
   objectName: computed(() => getObjectName(props.tableMeta)),
 
@@ -737,8 +742,23 @@ const {
   canRevertContextCell,
   revertContextCell,
   handleExport,
-  isStreamExporting
+  isStreamExporting,
+  pushUndo
 } = selectionActions
+
+function onCellValueChangedWithUndo(event: {
+  data: Record<string, unknown>
+  colDef: { field?: string }
+  oldValue: unknown
+  newValue: unknown
+}) {
+  const field = event.colDef.field
+  if (field && !editKeyColumns.value.includes(field)) {
+    pushUndo(makeRowId(event.data), field)
+  }
+  onCellValueChanged(event)
+}
+
 function openCreateStreamPanel() {
   createStreamPanelOpen.value = true
 }
@@ -976,7 +996,7 @@ export default {
         @row-clicked="onRowClicked"
         @cell-context-menu="openSelectionMenu"
         @cell-clicked="onCellClicked"
-        @cell-value-changed="onCellValueChanged"
+        @cell-value-changed="onCellValueChangedWithUndo"
         @column-pinned="saveColumnState"
         @column-moved="saveColumnState"
         @column-resized="saveColumnState"

@@ -499,6 +499,7 @@ function onRowClicked(event: { data?: Record<string, unknown> }) {
 
 const selectionActions = useAgGridSelectionActions({
   gridApi: baseGrid.gridApi,
+  gridContainerRef: baseGrid.gridContainerRef,
   selectedRows: baseGrid.selectedRows,
   selectedRowCount: baseGrid.selectedRowCount,
   allColumnNames,
@@ -510,6 +511,10 @@ const selectionActions = useAgGridSelectionActions({
   pendingEdits: pendingEdits as unknown as typeof pendingEdits,
   revertRowField,
   stageDeleteRow,
+
+  onAddRow: openInsertRowPanelForNew,
+  onSave: saveChanges,
+  hasUnsavedChanges,
 
   objectName: computed(() => props.entry.name),
   connectionId: computed(() => props.connectionId),
@@ -532,8 +537,22 @@ const {
   editContextCell,
   deleteSelectedRows,
   canRevertContextCell,
-  revertContextCell
+  revertContextCell,
+  pushUndo
 } = selectionActions
+
+function onCellValueChangedWithUndo(event: {
+  data: Record<string, unknown>
+  colDef: { field?: string }
+  oldValue: unknown
+  newValue: unknown
+}) {
+  const field = event.colDef.field
+  if (field && !editKeyColumns.value.includes(field)) {
+    pushUndo(makeRowId(event.data), field)
+  }
+  onCellValueChanged(event)
+}
 
 watch(
   () => baseGrid.gridApi.value,
@@ -961,7 +980,7 @@ export default {
         @cell-context-menu="openSelectionMenu"
         @cell-clicked="onCellClicked"
         @cell-double-clicked="onCellDoubleClicked"
-        @cell-value-changed="onCellValueChanged"
+        @cell-value-changed="onCellValueChangedWithUndo"
         @column-pinned="saveColumnState"
         @column-moved="saveColumnState"
         @column-resized="saveColumnState"

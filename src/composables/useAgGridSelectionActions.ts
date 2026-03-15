@@ -32,6 +32,7 @@ type ContextCellGridApi = {
 
 type UseAgGridSelectionActionsOptions = {
   gridApi: Ref<GridApi | null>
+  gridContainerRef: Ref<HTMLElement | null>
   selectedRows: Ref<Record<string, unknown>[]>
   selectedRowCount: ComputedRef<number>
   allColumnNames: ComputedRef<string[]>
@@ -49,6 +50,13 @@ type UseAgGridSelectionActionsOptions = {
 
   // Export
   objectName: ComputedRef<string>
+
+  // Callbacks
+  onAddRow?: () => void
+  onSave?: () => void
+
+  // Undo support
+  hasUnsavedChanges: ComputedRef<boolean>
 
   // Stream export
   connectionId: ComputedRef<string>
@@ -241,10 +249,23 @@ export function useAgGridSelectionActions(options: UseAgGridSelectionActionsOpti
     )
   }
 
+  function isEventInOwnPane(event: KeyboardEvent): boolean {
+    const container = options.gridContainerRef.value
+    if (!container) return false
+
+    // Find the pane wrapper that contains this grid
+    const pane = container.closest('.ui-pane-active')
+    if (!pane) return false
+
+    // Check that the event target is within the same pane
+    return pane.contains(event.target as Node)
+  }
+
   function handleDeleteShortcut(event: KeyboardEvent) {
     if (event.key !== 'Delete') return
     if (event.defaultPrevented) return
     if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return
+    if (!isEventInOwnPane(event)) return
     if (!options.isTableEditable.value) return
     if (options.selectedRowCount.value === 0) return
     if (isEditableTarget(event.target)) return
@@ -253,12 +274,113 @@ export function useAgGridSelectionActions(options: UseAgGridSelectionActionsOpti
     deleteSelectedRows()
   }
 
+  function handleSelectAllShortcut(event: KeyboardEvent) {
+    if (event.key !== 'a' && event.key !== 'A') return
+    if (!(event.ctrlKey || event.metaKey)) return
+    if (event.defaultPrevented) return
+    if (!isEventInOwnPane(event)) return
+    if (!options.gridApi.value) return
+    if (isEditableTarget(event.target)) return
+
+    event.preventDefault()
+    selectAllOnCurrentPage()
+  }
+
+  function handleDeselectAllShortcut(event: KeyboardEvent) {
+    if (event.key !== 'Escape') return
+    if (event.defaultPrevented) return
+    if (!isEventInOwnPane(event)) return
+    if (!options.gridApi.value) return
+    if (options.selectedRowCount.value === 0) return
+    if (isEditableTarget(event.target)) return
+
+    event.preventDefault()
+    deselectAll()
+  }
+
+  function handleCopyShortcut(event: KeyboardEvent) {
+    if (event.key !== 'c' && event.key !== 'C') return
+    if (!(event.ctrlKey || event.metaKey)) return
+    if (event.shiftKey || event.altKey) return
+    if (event.defaultPrevented) return
+    if (!isEventInOwnPane(event)) return
+    if (options.selectedRowCount.value === 0) return
+    if (isEditableTarget(event.target)) return
+
+    event.preventDefault()
+    copySelectedRows('tsv')
+  }
+
+  function handleAddRowShortcut(event: KeyboardEvent) {
+    if (event.key !== 'i' && event.key !== 'I') return
+    if (!(event.ctrlKey || event.metaKey)) return
+    if (event.defaultPrevented) return
+    if (!isEventInOwnPane(event)) return
+    if (!options.isTableEditable.value) return
+    if (!options.onAddRow) return
+    if (isEditableTarget(event.target)) return
+
+    event.preventDefault()
+    options.onAddRow()
+  }
+
+  function handleSaveShortcut(event: KeyboardEvent) {
+    if (event.key !== 's' && event.key !== 'S') return
+    if (!(event.ctrlKey || event.metaKey)) return
+    if (event.defaultPrevented) return
+    if (!isEventInOwnPane(event)) return
+    if (!options.isTableEditable.value) return
+    if (!options.onSave) return
+    if (!options.hasUnsavedChanges.value) return
+
+    event.preventDefault()
+    options.onSave()
+  }
+
+  // Undo stack: tracks cell edits in order for Ctrl+Z
+  const undoStack = ref<Array<{ rowId: string; field: string }>>([])
+  const MAX_UNDO = 100
+
+  function pushUndo(rowId: string, field: string) {
+    undoStack.value.push({ rowId, field })
+    if (undoStack.value.length > MAX_UNDO) {
+      undoStack.value = undoStack.value.slice(-MAX_UNDO)
+    }
+  }
+
+  function handleUndoShortcut(event: KeyboardEvent) {
+    if (event.key !== 'z' && event.key !== 'Z') return
+    if (!(event.ctrlKey || event.metaKey)) return
+    if (event.shiftKey) return
+    if (event.defaultPrevented) return
+    if (!isEventInOwnPane(event)) return
+    if (!options.isTableEditable.value) return
+    if (isEditableTarget(event.target)) return
+    if (undoStack.value.length === 0) return
+
+    event.preventDefault()
+    const entry = undoStack.value.pop()!
+    options.revertRowField(entry.rowId, entry.field)
+  }
+
   onMounted(() => {
     document.addEventListener('keydown', handleDeleteShortcut)
+    document.addEventListener('keydown', handleSelectAllShortcut)
+    document.addEventListener('keydown', handleDeselectAllShortcut)
+    document.addEventListener('keydown', handleCopyShortcut)
+    document.addEventListener('keydown', handleAddRowShortcut)
+    document.addEventListener('keydown', handleSaveShortcut)
+    document.addEventListener('keydown', handleUndoShortcut)
   })
 
   onBeforeUnmount(() => {
     document.removeEventListener('keydown', handleDeleteShortcut)
+    document.removeEventListener('keydown', handleSelectAllShortcut)
+    document.removeEventListener('keydown', handleDeselectAllShortcut)
+    document.removeEventListener('keydown', handleCopyShortcut)
+    document.removeEventListener('keydown', handleAddRowShortcut)
+    document.removeEventListener('keydown', handleSaveShortcut)
+    document.removeEventListener('keydown', handleUndoShortcut)
   })
 
   function getVisibleData(): { columns: string[]; rows: Record<string, unknown>[] } {
@@ -335,6 +457,7 @@ export function useAgGridSelectionActions(options: UseAgGridSelectionActionsOpti
     handleStreamExport,
     isStreamExporting,
 
-    deleteSelectedRows
+    deleteSelectedRows,
+    pushUndo
   }
 }

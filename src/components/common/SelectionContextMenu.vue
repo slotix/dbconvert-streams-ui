@@ -32,6 +32,9 @@ const emit = defineEmits<{
   (e: 'revert-cell'): void
 }>()
 
+const isMac = navigator.platform.toUpperCase().includes('MAC')
+const metaKey = isMac ? '\u2318' : 'Ctrl+'
+
 const menuEl = ref<HTMLElement | null>(null)
 const menuLeft = ref(0)
 const menuTop = ref(0)
@@ -127,37 +130,41 @@ function revertCellAndClose() {
     >
       <button
         type="button"
-        class="w-full px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+        class="w-full px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300 flex items-center justify-between"
         @click="selectAllAndClose"
       >
-        Select all (page)
+        <span>Select all (page)</span>
+        <span class="ml-4 text-xs text-gray-400 dark:text-gray-500">{{ metaKey }}A</span>
       </button>
       <button
         type="button"
-        class="w-full px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+        class="w-full px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300 flex items-center justify-between"
         @click="deselectAllAndClose"
       >
-        Deselect all
+        <span>Deselect all</span>
+        <span class="ml-4 text-xs text-gray-400 dark:text-gray-500">Esc</span>
       </button>
 
       <button
         v-if="canRevertCell"
         type="button"
-        class="ui-accent-action ui-accent-text w-full px-3 py-2 text-left text-sm transition-colors"
+        class="ui-accent-action ui-accent-text w-full px-3 py-2 text-left text-sm transition-colors flex items-center justify-between"
         @click="revertCellAndClose"
       >
-        Revert cell
+        <span>Revert cell</span>
+        <span class="ml-4 text-xs opacity-60">{{ metaKey }}Z</span>
       </button>
 
       <div class="ui-border-default my-1 border-t"></div>
 
       <button
         type="button"
-        class="w-full px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-300"
+        class="w-full px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-300 flex items-center justify-between"
         :disabled="!hasSelection"
         @click="copyAndClose('tsv')"
       >
-        Copy (TSV)
+        <span>Copy (TSV)</span>
+        <span class="ml-4 text-xs text-gray-400 dark:text-gray-500">{{ metaKey }}C</span>
       </button>
       <button
         type="button"
@@ -188,26 +195,29 @@ function revertCellAndClose() {
         </button>
         <button
           type="button"
-          class="w-full text-left px-3 py-2 text-sm text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          class="w-full text-left px-3 py-2 text-sm text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between"
           :disabled="!canEditCell"
           @click="editCellAndClose"
         >
-          Edit cell
+          <span>Edit cell</span>
+          <span class="ml-4 text-xs opacity-60">Enter</span>
         </button>
         <button
           type="button"
-          class="w-full text-left px-3 py-2 text-sm text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-colors"
+          class="w-full text-left px-3 py-2 text-sm text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-colors flex items-center justify-between"
           @click="addRowAndClose"
         >
-          Add row
+          <span>Add row</span>
+          <span class="ml-4 text-xs opacity-60">{{ metaKey }}I</span>
         </button>
         <button
           type="button"
-          class="w-full text-left px-3 py-2 text-sm text-red-600 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          class="w-full text-left px-3 py-2 text-sm text-red-600 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between"
           :disabled="!hasSelection"
           @click="deleteAndClose"
         >
-          Delete selected rows
+          <span>Delete selected rows</span>
+          <span class="ml-4 text-xs opacity-60">Del</span>
         </button>
       </template>
     </div>

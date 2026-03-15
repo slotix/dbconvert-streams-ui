@@ -308,7 +308,7 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
     rowModelType: 'infinite',
     rowHeight: GRID_ROW_HEIGHT,
     headerHeight: GRID_HEADER_HEIGHT,
-    suppressCellFocus: true,
+    suppressCellFocus: false,
     getRowId,
     rowSelection: {
       mode: 'multiRow',
