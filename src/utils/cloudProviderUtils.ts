@@ -3,8 +3,6 @@ interface CloudProviderInfo {
   name: string
   displayName: string
   logo: string
-  badgeColor: string
-  textColor: string
 }
 
 const CLOUD_PROVIDERS: Record<string, CloudProviderInfo> = {
@@ -12,88 +10,64 @@ const CLOUD_PROVIDERS: Record<string, CloudProviderInfo> = {
   neon: {
     name: 'neon',
     displayName: 'Neon',
-    logo: '/images/db-logos/neon.svg',
-    badgeColor: 'bg-green-100 dark:bg-green-900/30',
-    textColor: 'text-green-700 dark:text-green-200'
+    logo: '/images/db-logos/neon.svg'
   },
   'aws-rds': {
     name: 'aws-rds',
     displayName: 'AWS RDS',
-    logo: '/images/db-logos/amazon.svg',
-    badgeColor: 'bg-sky-100 dark:bg-sky-900/30',
-    textColor: 'text-sky-700 dark:text-sky-200'
+    logo: '/images/db-logos/amazon.svg'
   },
   azure: {
     name: 'azure',
     displayName: 'Azure',
-    logo: '/images/db-logos/azure.svg',
-    badgeColor: 'bg-blue-100 dark:bg-blue-900/30',
-    textColor: 'text-blue-700 dark:text-blue-200'
+    logo: '/images/db-logos/azure.svg'
   },
   digitalocean: {
     name: 'digitalocean',
     displayName: 'DigitalOcean',
-    logo: '/images/db-logos/digitalocean.svg',
-    badgeColor: 'bg-blue-100 dark:bg-blue-900/30',
-    textColor: 'text-blue-700 dark:text-blue-200'
+    logo: '/images/db-logos/digitalocean.svg'
   },
   supabase: {
     name: 'supabase',
     displayName: 'Supabase',
-    logo: '/images/db-logos/supabase.svg',
-    badgeColor: 'bg-green-100 dark:bg-green-900/30',
-    textColor: 'text-green-700 dark:text-green-200'
+    logo: '/images/db-logos/supabase.svg'
   },
   heroku: {
     name: 'heroku',
     displayName: 'Heroku',
-    logo: '/images/db-logos/heroku.svg',
-    badgeColor: 'bg-purple-100 dark:bg-purple-900/30',
-    textColor: 'text-purple-700 dark:text-purple-200'
+    logo: '/images/db-logos/heroku.svg'
   },
   cockroachdb: {
     name: 'cockroachdb',
     displayName: 'CockroachDB',
-    logo: '/images/db-logos/cockroachdb.svg',
-    badgeColor: 'bg-indigo-100 dark:bg-indigo-900/30',
-    textColor: 'text-indigo-700 dark:text-indigo-200'
+    logo: '/images/db-logos/cockroachdb.svg'
   },
   'google-cloud': {
     name: 'google-cloud',
     displayName: 'Google Cloud',
-    logo: '/images/db-logos/google-cloud.svg',
-    badgeColor: 'bg-red-100 dark:bg-red-900/30',
-    textColor: 'text-red-700 dark:text-red-200'
+    logo: '/images/db-logos/google-cloud.svg'
   },
 
   // MySQL Cloud Providers
   planetscale: {
     name: 'planetscale',
     displayName: 'PlanetScale',
-    logo: '/images/db-logos/vitess.svg', // Using Vitess logo as PlanetScale is based on Vitess
-    badgeColor: 'bg-black',
-    textColor: 'text-white'
+    logo: '/images/db-logos/vitess.svg' // Using Vitess logo as PlanetScale is based on Vitess
   },
   aiven: {
     name: 'aiven',
     displayName: 'Aiven',
-    logo: '/images/db-logos/mysql.svg', // Fallback to MySQL logo
-    badgeColor: 'ui-chip-muted',
-    textColor: 'ui-accent-text'
+    logo: '/images/db-logos/mysql.svg' // Fallback to MySQL logo
   },
   tidb: {
     name: 'tidb',
     displayName: 'TiDB Cloud',
-    logo: '/images/db-logos/tidb.svg',
-    badgeColor: 'bg-pink-100 dark:bg-pink-900/30',
-    textColor: 'text-pink-700 dark:text-pink-200'
+    logo: '/images/db-logos/tidb.svg'
   },
   skysql: {
     name: 'skysql',
     displayName: 'SkySQL',
-    logo: '/images/db-logos/skysql.svg',
-    badgeColor: 'bg-blue-100 dark:bg-blue-900/30',
-    textColor: 'text-blue-700 dark:text-blue-200'
+    logo: '/images/db-logos/skysql.svg'
   }
 }
 
@@ -131,13 +105,12 @@ export function getCloudProviderLogo(providerName: string): string | null {
 /**
  * Get badge styling for cloud provider
  */
-export function getCloudProviderBadgeStyle(providerName: string): {
+export function getCloudProviderBadgeStyle(_providerName: string): {
   bgColor: string
   textColor: string
 } {
-  const info = getCloudProviderInfo(providerName)
   return {
-    bgColor: info?.badgeColor || 'bg-gray-100',
-    textColor: info?.textColor || 'text-gray-700'
+    bgColor: 'ui-chip-muted',
+    textColor: 'ui-text-default'
   }
 }

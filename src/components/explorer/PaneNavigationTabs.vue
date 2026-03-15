@@ -524,7 +524,7 @@ function getIconColor(tab: PaneTab): string {
     return 'text-orange-500 dark:text-orange-400'
   }
   // Default fallback
-  return 'text-slate-500 dark:text-slate-400'
+  return 'ui-icon-muted'
 }
 
 function showContextMenu(event: MouseEvent, index: number) {

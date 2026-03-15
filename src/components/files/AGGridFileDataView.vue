@@ -819,8 +819,8 @@ export default {
           class="inline-flex shrink-0 whitespace-nowrap items-center gap-1 px-2.5 py-1 text-xs font-medium rounded transition-colors"
           :class="
             hasAnyFilterActivity
-              ? 'bg-transparent text-amber-600 dark:text-amber-400 border border-amber-500/80 dark:border-amber-500 hover:bg-amber-50/30 dark:hover:bg-amber-500/10'
-              : 'text-gray-600 dark:text-gray-400 hover:[background-color:var(--ui-surface-muted)] border border-transparent'
+              ? 'ui-status-warning-badge border'
+              : 'ui-text-muted hover:[background-color:var(--ui-surface-muted)] border border-transparent'
           "
           @click="openFilterPanel"
         >
@@ -833,7 +833,7 @@ export default {
         <button
           v-if="isTableEditable"
           type="button"
-          class="text-xs rounded-md px-2.5 py-1 border border-sky-400 bg-sky-50 text-sky-900 hover:bg-sky-100 disabled:opacity-50 disabled:cursor-not-allowed dark:border-sky-400/50 dark:bg-sky-900/20 dark:text-sky-100 dark:hover:bg-sky-900/30 inline-flex shrink-0 whitespace-nowrap items-center gap-1"
+          class="ui-accent-primary inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-md border px-2.5 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
           title="Stage a new row for insert"
           @click="openInsertRowPanelForNew"
         >
@@ -844,7 +844,7 @@ export default {
         <button
           v-if="isTableEditable"
           type="button"
-          class="text-xs rounded-md px-2.5 py-1 border border-red-300 bg-transparent text-red-700 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-red-500/40 dark:bg-transparent dark:text-red-200 dark:hover:bg-red-900/20 inline-flex shrink-0 whitespace-nowrap items-center gap-1"
+          class="ui-status-danger-badge inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-md border px-2.5 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
           :disabled="baseGrid.selectedRowCount.value === 0"
           title="Stage selected rows for delete (Delete)"
           @click="deleteSelectedRows"
@@ -887,7 +887,7 @@ export default {
           </button>
           <button
             type="button"
-            class="ui-surface-raised ui-border-default text-xs rounded-md px-2.5 py-1 border text-gray-700 dark:text-gray-200 hover:[background-color:var(--ui-surface-muted)] disabled:opacity-50 disabled:cursor-not-allowed shrink-0 whitespace-nowrap"
+            class="ui-surface-raised ui-border-default ui-text-default text-xs rounded-md px-2.5 py-1 border hover:[background-color:var(--ui-surface-muted)] disabled:opacity-50 disabled:cursor-not-allowed shrink-0 whitespace-nowrap"
             title="Discard pending changes"
             :disabled="isSaving"
             @click="cancelChanges"
@@ -901,7 +901,7 @@ export default {
     <!-- Warnings (only show when there's no error) -->
     <div
       v-if="!isUnsupportedFile && !baseGrid.error.value && warnings.length > 0"
-      class="mb-3 p-3 bg-yellow-50 dark:bg-amber-900 border border-yellow-200 dark:border-amber-700 rounded-md text-sm text-yellow-700 dark:text-amber-300"
+      class="ui-status-warning-surface mb-3 rounded-md border p-3 text-sm"
     >
       <div class="font-medium mb-1">Warnings:</div>
       <ul class="list-disc list-inside">
@@ -912,11 +912,11 @@ export default {
     <!-- Error State Placeholder -->
     <div
       v-if="!isUnsupportedFile && baseGrid.error.value"
-      class="ui-surface-muted flex items-center justify-center py-12 rounded-md border"
+      class="ui-surface-muted ui-border-default flex items-center justify-center rounded-md border py-12"
     >
       <div class="text-center p-8 max-w-md">
         <svg
-          class="mx-auto h-12 w-12 text-red-400 dark:text-red-500 mb-4"
+          class="ui-status-danger-text mx-auto mb-4 h-12 w-12"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -928,13 +928,11 @@ export default {
             d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
           />
         </svg>
-        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-          Failed to Load File
-        </h3>
-        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+        <h3 class="ui-text-strong mb-2 text-lg font-medium">Failed to Load File</h3>
+        <p class="ui-text-muted mb-4 text-sm">
           {{ baseGrid.error.value }}
         </p>
-        <div class="ui-surface-raised text-xs text-gray-500 dark:text-gray-500 rounded p-3 border">
+        <div class="ui-surface-raised ui-border-default ui-text-muted rounded border p-3 text-xs">
           <p class="font-semibold mb-1">Common causes:</p>
           <ul class="list-disc list-inside text-left space-y-1">
             <li>File was deleted or moved after being listed</li>
@@ -995,7 +993,7 @@ export default {
               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
             ></path>
           </svg>
-          <span class="text-sm text-gray-600 dark:text-gray-300">
+          <span class="ui-text-muted text-sm">
             {{
               isRefreshing
                 ? 'Refreshing data...'
@@ -1066,117 +1064,6 @@ export default {
 </template>
 
 <style scoped>
-/* Pending delete: subtle red tint + strike-through */
-:deep(.ag-row.row-pending-delete),
-:deep(.ag-row.row-pending-delete .ag-cell) {
-  background-color: rgba(239, 68, 68, 0.1);
-}
-
-/* Pending insert: sky tint */
-:deep(.ag-row.row-pending-insert),
-:deep(.ag-row.row-pending-insert .ag-cell) {
-  background-color: rgba(14, 165, 233, 0.1);
-}
-
-:deep(.ag-row.row-pending-delete .ag-cell),
-:deep(.ag-row.row-pending-delete .ag-cell-value) {
-  text-decoration: line-through;
-}
-
-/* Pending edit: highlight edited cells */
-:deep(.ag-cell.cell-pending-edit) {
-  background-color: rgba(20, 184, 166, 0.1);
-  box-shadow: inset 0 0 0 1px rgba(94, 234, 212, 0.95);
-}
-
-/* Row change gutter indicator */
-:deep(.ag-cell.row-change-gutter) {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-}
-
-:deep(.ag-cell.row-change-gutter .row-action-indicator) {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.15s ease;
-}
-
-:deep(.ag-cell.row-change-gutter .row-action-indicator .indicator-icon) {
-  width: 12px;
-  height: 12px;
-}
-
-:deep(.ag-cell.row-change-gutter .row-action-edit) {
-  background-color: rgba(13, 148, 136, 0.15);
-  color: rgb(13 148 136);
-}
-
-:deep(.ag-cell.row-change-gutter .row-action-edit:hover) {
-  background-color: rgba(13, 148, 136, 0.25);
-}
-
-:deep(.ag-cell.row-change-gutter .row-action-insert) {
-  background-color: rgba(14, 165, 233, 0.15);
-  color: rgb(14 165 233);
-}
-
-:deep(.ag-cell.row-change-gutter .row-action-insert:hover) {
-  background-color: rgba(14, 165, 233, 0.25);
-}
-
-/* Selected row + edited cell */
-:deep(.ag-row.ag-row-selected .ag-cell.cell-pending-edit) {
-  background-color: rgba(20, 184, 166, 0.12);
-  box-shadow: inset 0 0 0 2px rgba(94, 234, 212, 1);
-}
-
-@media (prefers-color-scheme: dark) {
-  :deep(.ag-row.row-pending-delete),
-  :deep(.ag-row.row-pending-delete .ag-cell) {
-    background-color: rgba(239, 68, 68, 0.18);
-  }
-
-  :deep(.ag-row.row-pending-insert),
-  :deep(.ag-row.row-pending-insert .ag-cell) {
-    background-color: rgba(56, 189, 248, 0.14);
-  }
-
-  :deep(.ag-cell.cell-pending-edit) {
-    background-color: rgba(45, 212, 191, 0.14);
-    box-shadow: inset 0 0 0 1px rgba(94, 234, 212, 0.95);
-  }
-
-  :deep(.ag-cell.row-change-gutter .row-action-edit) {
-    background-color: rgba(45, 212, 191, 0.2);
-    color: rgb(45 212 191);
-  }
-
-  :deep(.ag-cell.row-change-gutter .row-action-edit:hover) {
-    background-color: rgba(45, 212, 191, 0.3);
-  }
-
-  :deep(.ag-cell.row-change-gutter .row-action-insert) {
-    background-color: rgba(56, 189, 248, 0.2);
-    color: rgb(56 189 248);
-  }
-
-  :deep(.ag-cell.row-change-gutter .row-action-insert:hover) {
-    background-color: rgba(56, 189, 248, 0.3);
-  }
-
-  :deep(.ag-row.ag-row-selected .ag-cell.cell-pending-edit) {
-    background-color: rgba(45, 212, 191, 0.16);
-    box-shadow: inset 0 0 0 2px rgba(94, 234, 212, 1);
-  }
-}
-
 /* Container query for toolbar responsiveness */
 .toolbar-container {
   container-type: inline-size;

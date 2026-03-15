@@ -134,8 +134,8 @@ function getTableSize(tableName: string): string | null {
       v-for="item in filteredItems"
       :key="item"
       :class="[
-        'flex items-center justify-between px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 rounded-md hover:[background-color:var(--ui-surface-muted)] cursor-pointer select-none group',
-        isItemSelected(item) ? 'bg-slate-100/90 dark:bg-slate-800/80' : ''
+        'group flex items-center justify-between rounded-md px-2 py-1.5 text-sm ui-text-default hover:[background-color:var(--ui-surface-muted)] cursor-pointer select-none',
+        isItemSelected(item) ? 'ui-tree-active' : ''
       ]"
       :data-explorer-obj="`${explorerObjPrefix}:${objectType}:${item}`"
       data-tree-node="true"
@@ -161,7 +161,7 @@ function getTableSize(tableName: string): string | null {
       </div>
       <span
         v-if="showTableSizesInTree && getTableSize(item)"
-        class="ml-2 shrink-0 text-xs text-gray-400 group-hover:text-gray-500 dark:text-gray-500 dark:group-hover:text-gray-400"
+        class="ui-tree-size-meta ml-2 shrink-0 text-xs"
         >{{ getTableSize(item) }}</span
       >
     </div>
@@ -180,8 +180,8 @@ function getTableSize(tableName: string): string | null {
         :key="item"
         :style="{ height: `${ITEM_HEIGHT}px` }"
         :class="[
-          'flex items-center justify-between px-2 text-sm text-gray-700 dark:text-gray-300 rounded-md hover:[background-color:var(--ui-surface-muted)] cursor-pointer select-none group',
-          isItemSelected(item) ? 'bg-slate-100/90 dark:bg-slate-800/80' : ''
+          'group flex items-center justify-between rounded-md px-2 text-sm ui-text-default hover:[background-color:var(--ui-surface-muted)] cursor-pointer select-none',
+          isItemSelected(item) ? 'ui-tree-active' : ''
         ]"
         :data-explorer-obj="`${explorerObjPrefix}:${objectType}:${item}`"
         data-tree-node="true"
@@ -208,7 +208,7 @@ function getTableSize(tableName: string): string | null {
         </div>
         <span
           v-if="showTableSizesInTree && getTableSize(item)"
-          class="ml-2 shrink-0 text-xs text-gray-400 group-hover:text-gray-500 dark:text-gray-500 dark:group-hover:text-gray-400"
+          class="ui-tree-size-meta ml-2 shrink-0 text-xs"
           >{{ getTableSize(item) }}</span
         >
       </div>

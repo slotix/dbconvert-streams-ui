@@ -795,8 +795,8 @@ export default {
             class="inline-flex shrink-0 whitespace-nowrap items-center gap-1 px-2.5 py-1 text-xs font-medium rounded transition-colors"
             :class="
               hasAnyFilterActivity
-                ? 'bg-transparent text-amber-600 dark:text-amber-400 border border-amber-500/80 dark:border-amber-500 hover:bg-amber-50/30 dark:hover:bg-amber-500/10'
-                : 'text-gray-600 dark:text-gray-400 hover:[background-color:var(--ui-surface-muted)] border border-transparent'
+                ? 'ui-status-warning-badge border'
+                : 'ui-text-muted hover:[background-color:var(--ui-surface-muted)] border border-transparent'
             "
             @click="openFilterPanel"
           >
@@ -810,7 +810,7 @@ export default {
           <button
             v-if="!isView && isTableEditable"
             type="button"
-            class="text-xs rounded-md px-2.5 py-1 border border-sky-400 bg-sky-50 text-sky-900 hover:bg-sky-100 disabled:opacity-50 disabled:cursor-not-allowed dark:border-sky-400/50 dark:bg-sky-900/20 dark:text-sky-100 dark:hover:bg-sky-900/30 inline-flex shrink-0 whitespace-nowrap items-center gap-1"
+            class="ui-accent-primary inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-md border px-2.5 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
             title="Stage a new row for insert"
             @click="openInsertRowPanelForNew"
           >
@@ -821,7 +821,7 @@ export default {
           <button
             v-if="!isView && isTableEditable"
             type="button"
-            class="text-xs rounded-md px-2.5 py-1 border border-red-300 bg-transparent text-red-700 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-red-500/40 dark:bg-transparent dark:text-red-200 dark:hover:bg-red-900/20 inline-flex shrink-0 whitespace-nowrap items-center gap-1"
+            class="ui-status-danger-badge inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-md border px-2.5 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
             :disabled="baseGrid.selectedRowCount.value === 0"
             title="Stage selected rows for delete (Delete)"
             @click="deleteSelectedRows"
@@ -864,7 +864,7 @@ export default {
             </button>
             <button
               type="button"
-              class="ui-surface-raised ui-border-default ui-accent-action inline-flex shrink-0 whitespace-nowrap rounded-md border px-2.5 py-1 text-xs text-gray-700 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-200"
+              class="ui-surface-raised ui-border-default ui-accent-action ui-text-default inline-flex shrink-0 whitespace-nowrap rounded-md border px-2.5 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
               title="Discard pending changes"
               :disabled="isSaving"
               @click="cancelChanges"
@@ -876,7 +876,7 @@ export default {
           <!-- Export dropdown -->
           <Menu v-if="hasDataForExport" as="div" class="relative">
             <MenuButton
-              class="ui-surface-raised ui-border-default ui-accent-action inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-md border px-2.5 py-1 text-xs text-gray-700 dark:text-gray-200"
+              class="ui-surface-raised ui-border-default ui-accent-action ui-text-default inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-md border px-2.5 py-1 text-xs"
               :disabled="isStreamExporting"
             >
               <Download class="h-3.5 w-3.5" :stroke-width="iconStroke" />
@@ -899,7 +899,7 @@ export default {
                     <button
                       :class="[
                         active ? 'ui-surface-muted' : '',
-                        'w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-200'
+                        'ui-text-default w-full px-3 py-1.5 text-left text-xs'
                       ]"
                       @click="handleExport('csv')"
                     >
@@ -910,7 +910,7 @@ export default {
                     <button
                       :class="[
                         active ? 'ui-surface-muted' : '',
-                        'w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-200'
+                        'ui-text-default w-full px-3 py-1.5 text-left text-xs'
                       ]"
                       @click="handleExport('json')"
                     >
@@ -921,7 +921,7 @@ export default {
                     <button
                       :class="[
                         active ? 'ui-surface-muted' : '',
-                        'w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-200'
+                        'ui-text-default w-full px-3 py-1.5 text-left text-xs'
                       ]"
                       @click="handleExport('excel')"
                     >
@@ -933,7 +933,7 @@ export default {
                     <button
                       :class="[
                         active ? 'ui-surface-muted' : '',
-                        'w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-200',
+                        'ui-text-default w-full px-3 py-1.5 text-left text-xs',
                         isStreamExporting ? 'opacity-50 cursor-not-allowed' : ''
                       ]"
                       :disabled="isStreamExporting"
@@ -953,7 +953,7 @@ export default {
     <!-- Error message -->
     <div
       v-if="baseGrid.error.value"
-      class="mb-3 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700/70 rounded-md text-sm text-red-700 dark:text-red-100/95"
+      class="ui-status-danger-surface mb-3 rounded-md border p-3 text-sm"
     >
       {{ baseGrid.error.value }}
     </div>
@@ -1069,117 +1069,6 @@ export default {
   white-space: normal;
   line-height: 1.5;
   padding: 8px;
-}
-
-/* Pending delete: just a subtle red tint + strike-through (no gutter/dots) */
-:deep(.ag-row.row-pending-delete),
-:deep(.ag-row.row-pending-delete .ag-cell) {
-  background-color: rgba(239, 68, 68, 0.1);
-}
-
-/* Pending insert: sky tint (no left border for consistency with other row types) */
-:deep(.ag-row.row-pending-insert),
-:deep(.ag-row.row-pending-insert .ag-cell) {
-  background-color: rgba(14, 165, 233, 0.1); /* sky-500/10 */
-}
-
-:deep(.ag-row.row-pending-delete .ag-cell),
-:deep(.ag-row.row-pending-delete .ag-cell-value) {
-  text-decoration: line-through;
-}
-
-/* Pending edit: highlight edited cells and show old/new values */
-:deep(.ag-cell.cell-pending-edit) {
-  background-color: var(--ui-accent-soft-bg);
-  box-shadow: inset 0 0 0 1px var(--ui-accent-soft-border-strong);
-}
-
-/* Row change gutter - clickable indicator */
-:deep(.ag-cell.row-change-gutter) {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-}
-
-:deep(.ag-cell.row-change-gutter .row-action-indicator) {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.15s ease;
-}
-
-:deep(.ag-cell.row-change-gutter .row-action-indicator .indicator-icon) {
-  width: 12px;
-  height: 12px;
-}
-
-:deep(.ag-cell.row-change-gutter .row-action-edit) {
-  background-color: rgba(13, 148, 136, 0.15);
-  color: rgb(13 148 136);
-}
-
-:deep(.ag-cell.row-change-gutter .row-action-edit:hover) {
-  background-color: rgba(13, 148, 136, 0.25);
-}
-
-:deep(.ag-cell.row-change-gutter .row-action-insert) {
-  background-color: rgba(14, 165, 233, 0.15);
-  color: rgb(14 165 233);
-}
-
-:deep(.ag-cell.row-change-gutter .row-action-insert:hover) {
-  background-color: rgba(14, 165, 233, 0.25);
-}
-
-/* When the row is selected, keep selection background and only show the edited outline */
-:deep(.ag-row.ag-row-selected .ag-cell.cell-pending-edit) {
-  background-color: rgba(20, 184, 166, 0.12);
-  box-shadow: inset 0 0 0 2px rgba(94, 234, 212, 1);
-}
-
-@media (prefers-color-scheme: dark) {
-  :deep(.ag-row.row-pending-delete),
-  :deep(.ag-row.row-pending-delete .ag-cell) {
-    background-color: rgba(239, 68, 68, 0.18);
-  }
-
-  :deep(.ag-row.row-pending-insert),
-  :deep(.ag-row.row-pending-insert .ag-cell) {
-    background-color: rgba(56, 189, 248, 0.14);
-  }
-
-  :deep(.ag-cell.cell-pending-edit) {
-    background-color: rgba(45, 212, 191, 0.14);
-    box-shadow: inset 0 0 0 1px rgba(94, 234, 212, 0.95);
-  }
-
-  :deep(.ag-cell.row-change-gutter .row-action-edit) {
-    background-color: rgba(45, 212, 191, 0.2);
-    color: rgb(45 212 191);
-  }
-
-  :deep(.ag-cell.row-change-gutter .row-action-edit:hover) {
-    background-color: rgba(45, 212, 191, 0.3);
-  }
-
-  :deep(.ag-cell.row-change-gutter .row-action-insert) {
-    background-color: rgba(56, 189, 248, 0.2);
-    color: rgb(56 189 248);
-  }
-
-  :deep(.ag-cell.row-change-gutter .row-action-insert:hover) {
-    background-color: rgba(56, 189, 248, 0.3);
-  }
-
-  :deep(.ag-row.ag-row-selected .ag-cell.cell-pending-edit) {
-    background-color: rgba(45, 212, 191, 0.16);
-    box-shadow: inset 0 0 0 2px rgba(94, 234, 212, 1);
-  }
 }
 
 /* Container query for toolbar responsiveness */

@@ -498,13 +498,13 @@ const connectionPort = computed(() => getConnectionPort(props.connection))
       :aria-selected="isSelected ? 'true' : 'false'"
       tabindex="-1"
       :class="[
-        'group relative flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 rounded-lg cursor-pointer select-none',
+        'group relative flex items-center gap-2 rounded-lg px-3 py-2 text-sm ui-text-default cursor-pointer select-none',
         'transition-all duration-200 ease-out',
-        'hover:bg-linear-to-r hover:from-gray-100 hover:to-gray-200 dark:hover:from-gray-850 dark:hover:to-gray-800',
+        'hover:[background-color:var(--ui-surface-muted)]',
         'hover:shadow-sm hover:scale-[1.02] hover:-translate-y-0.5',
         'active:scale-[0.98]',
         // Highlight when connection is selected (but no database/table selected)
-        isSelected ? 'bg-slate-100/90 dark:bg-slate-800/85 shadow-sm' : ''
+        isSelected ? 'ui-tree-active' : ''
       ]"
       :title="connectionTooltip"
       @click="handleConnectionClick"
@@ -515,7 +515,7 @@ const connectionPort = computed(() => getConnectionPort(props.connection))
         :is="isExpanded ? ChevronDown : ChevronRight"
         :class="[
           caretClass,
-          'transition-transform duration-200 group-hover:text-slate-600 dark:group-hover:text-slate-300'
+          'transition-transform duration-200 group-hover:[color:var(--ui-text-muted)]'
         ]"
       />
       <DatabaseIcon
@@ -527,7 +527,7 @@ const connectionPort = computed(() => getConnectionPort(props.connection))
       <div class="flex-1 min-w-0 flex flex-col gap-0.5">
         <div class="flex items-center gap-1.5">
           <HighlightedText
-            class="font-semibold truncate text-slate-800 dark:text-gray-100 group-hover:text-slate-900 dark:group-hover:text-white"
+            class="font-semibold truncate ui-text-strong group-hover:[color:var(--ui-text-strong)]"
             :text="connection.name || connectionHost || 'Connection'"
             :query="searchQuery"
           />
@@ -541,7 +541,7 @@ const connectionPort = computed(() => getConnectionPort(props.connection))
         </div>
         <div
           v-if="connectionHost && connectionPort"
-          class="text-xs text-slate-500 dark:text-gray-400 truncate leading-tight group-hover:text-slate-700 dark:group-hover:text-gray-300"
+          class="truncate text-xs leading-tight ui-text-muted group-hover:[color:var(--ui-text-default)]"
         >
           {{ connectionHost }}:{{ connectionPort }}
         </div>
@@ -550,16 +550,12 @@ const connectionPort = computed(() => getConnectionPort(props.connection))
     </div>
 
     <!-- Databases or Files under connection -->
-    <div
-      v-if="isExpanded"
-      role="group"
-      class="ml-5 border-l-2 border-slate-200 dark:border-gray-800 pl-3 space-y-1 mt-1"
-    >
+    <div v-if="isExpanded" role="group" class="ui-border-muted ml-5 mt-1 space-y-1 border-l-2 pl-3">
       <div v-if="isFileConnection">
         <!-- Loading state for files -->
         <div
           v-if="fileExplorerStore.isLoading(connection.id)"
-          class="flex items-center gap-2 px-3 py-2 text-xs text-slate-500 dark:text-gray-400"
+          class="flex items-center gap-2 px-3 py-2 text-xs ui-text-muted"
         >
           <svg
             class="ui-accent-icon animate-spin h-4 w-4"
@@ -586,10 +582,7 @@ const connectionPort = computed(() => getConnectionPort(props.connection))
         <!-- Error state for file connections -->
         <ConnectionErrorState v-if="fileConnectionError" :error="fileConnectionError" />
         <!-- Empty state -->
-        <div
-          v-else-if="!visibleFileEntries.length"
-          class="text-xs text-slate-500 dark:text-gray-400 px-3 py-1.5"
-        >
+        <div v-else-if="!visibleFileEntries.length" class="px-3 py-1.5 text-xs ui-text-muted">
           No files
         </div>
         <!-- File list -->
@@ -606,7 +599,7 @@ const connectionPort = computed(() => getConnectionPort(props.connection))
         <button
           v-if="hasMoreFileEntries"
           type="button"
-          class="ml-7 mt-1 text-xs font-medium text-sky-600 hover:text-sky-700 dark:text-sky-300 dark:hover:text-sky-200"
+          class="ui-link ml-7 mt-1 text-xs font-medium"
           @click="handleLoadMoreFiles"
         >
           Load more
@@ -616,7 +609,7 @@ const connectionPort = computed(() => getConnectionPort(props.connection))
         <!-- Loading state for databases -->
         <div
           v-if="navigationStore.isDatabasesLoading(connection.id)"
-          class="flex items-center gap-2 px-3 py-2 text-xs text-slate-500 dark:text-gray-400"
+          class="flex items-center gap-2 px-3 py-2 text-xs ui-text-muted"
         >
           <svg
             class="ui-accent-icon animate-spin h-3.5 w-3.5"
@@ -643,10 +636,7 @@ const connectionPort = computed(() => getConnectionPort(props.connection))
         <!-- Error state when connection failed -->
         <ConnectionErrorState v-if="databaseError" :error="databaseError" />
         <!-- Empty state when loaded but no databases -->
-        <div
-          v-else-if="!visibleDatabases.length"
-          class="text-xs text-slate-500 dark:text-gray-400 px-3 py-1.5"
-        >
+        <div v-else-if="!visibleDatabases.length" class="px-3 py-1.5 text-xs ui-text-muted">
           No databases
         </div>
         <!-- Database list -->

@@ -22,11 +22,11 @@
   --ag-odd-row-background-color: var(--tw-white);
   --ag-even-row-background-color: var(--tw-gray-50);
 
-  /* Override accent color from blue (#2196f3) to gray */
-  --ag-alpine-active-color: #4b5563; /* gray-600 */
+  /* Align AG Grid interaction accents with the app theme. */
+  --ag-alpine-active-color: rgb(15 118 110);
 
-  /* Override selection colors from blue to gray */
-  --ag-selected-row-background-color: rgba(107, 114, 128, 0.3); /* gray-600 with transparency */
+  /* Override selection colors from AG Grid blue to app semantics. */
+  --ag-selected-row-background-color: rgba(14, 165, 233, 0.1);
   --ag-row-hover-color: rgba(107, 114, 128, 0.1); /* gray-600 with transparency */
   --ag-column-hover-color: rgba(107, 114, 128, 0.1); /* gray-600 with transparency */
   --ag-input-focus-border-color: rgba(107, 114, 128, 0.4); /* gray-600 with transparency */
@@ -49,6 +49,18 @@
     128,
     0.59
   ); /* gray-600 with transparency */
+  --app-grid-pending-delete-bg: rgba(244, 63, 94, 0.11);
+  --app-grid-pending-insert-bg: rgba(14, 165, 233, 0.1);
+  --app-grid-pending-edit-bg: rgba(20, 184, 166, 0.08);
+  --app-grid-pending-edit-outline: rgba(13, 148, 136, 0.32);
+  --app-grid-pending-edit-selected-bg: rgba(14, 165, 233, 0.16);
+  --app-grid-pending-edit-selected-outline: rgba(13, 148, 136, 0.9);
+  --app-grid-row-action-edit-bg: rgba(13, 148, 136, 0.12);
+  --app-grid-row-action-edit-bg-hover: rgba(13, 148, 136, 0.2);
+  --app-grid-row-action-edit-color: rgb(13 148 136);
+  --app-grid-row-action-insert-bg: rgba(14, 165, 233, 0.14);
+  --app-grid-row-action-insert-bg-hover: rgba(14, 165, 233, 0.22);
+  --app-grid-row-action-insert-color: rgb(14 165 233);
 }
 
 /* Tooltips: preserve newlines (used for edited-cell Old/New hints). */
@@ -133,10 +145,78 @@
 
 /* Shared selected-row treatment for data grids.
    Pending delete/insert rows keep their own status colors. */
-.ag-theme-alpine :deep(.ag-row.ag-row-selected:not(.row-pending-delete):not(.row-pending-insert)),
+.ag-theme-alpine .ag-row.ag-row-selected:not(.row-pending-delete):not(.row-pending-insert),
 .ag-theme-alpine
-  :deep(.ag-row.ag-row-selected:not(.row-pending-delete):not(.row-pending-insert) .ag-cell) {
+  .ag-row.ag-row-selected:not(.row-pending-delete):not(.row-pending-insert)
+  .ag-cell {
   background-color: rgba(14, 165, 233, 0.1);
+}
+
+/* Shared row-state treatment for editable grids. */
+.ag-theme-alpine .ag-row.row-pending-delete,
+.ag-theme-alpine .ag-row.row-pending-delete .ag-cell {
+  background-color: var(--app-grid-pending-delete-bg);
+}
+
+.ag-theme-alpine .ag-row.row-pending-insert,
+.ag-theme-alpine .ag-row.row-pending-insert .ag-cell {
+  background-color: var(--app-grid-pending-insert-bg);
+}
+
+.ag-theme-alpine .ag-row.row-pending-delete .ag-cell,
+.ag-theme-alpine .ag-row.row-pending-delete .ag-cell-value {
+  text-decoration: line-through;
+}
+
+.ag-theme-alpine .ag-cell.cell-pending-edit {
+  background-color: var(--app-grid-pending-edit-bg);
+  box-shadow: inset 0 0 0 1px var(--app-grid-pending-edit-outline);
+}
+
+.ag-theme-alpine .ag-cell.row-change-gutter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.ag-theme-alpine .ag-cell.row-change-gutter .row-action-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.ag-theme-alpine .ag-cell.row-change-gutter .row-action-indicator .indicator-icon {
+  width: 12px;
+  height: 12px;
+}
+
+.ag-theme-alpine .ag-cell.row-change-gutter .row-action-edit {
+  background-color: var(--app-grid-row-action-edit-bg);
+  color: var(--app-grid-row-action-edit-color);
+}
+
+.ag-theme-alpine .ag-cell.row-change-gutter .row-action-edit:hover {
+  background-color: var(--app-grid-row-action-edit-bg-hover);
+}
+
+.ag-theme-alpine .ag-cell.row-change-gutter .row-action-insert {
+  background-color: var(--app-grid-row-action-insert-bg);
+  color: var(--app-grid-row-action-insert-color);
+}
+
+.ag-theme-alpine .ag-cell.row-change-gutter .row-action-insert:hover {
+  background-color: var(--app-grid-row-action-insert-bg-hover);
+}
+
+.ag-theme-alpine .ag-row.ag-row-selected .ag-cell.cell-pending-edit {
+  background-color: var(--app-grid-pending-edit-selected-bg);
+  box-shadow: inset 0 0 0 2px var(--app-grid-pending-edit-selected-outline);
 }
 
 /* ===========================
@@ -199,6 +279,18 @@
   --ag-range-selection-background-color-2: rgba(20, 184, 166, 0.25);
   --ag-range-selection-background-color-3: rgba(20, 184, 166, 0.35);
   --ag-range-selection-background-color-4: rgba(20, 184, 166, 0.45);
+  --app-grid-pending-delete-bg: rgba(244, 63, 94, 0.18);
+  --app-grid-pending-insert-bg: rgba(56, 189, 248, 0.14);
+  --app-grid-pending-edit-bg: rgba(45, 212, 191, 0.14);
+  --app-grid-pending-edit-outline: rgba(94, 234, 212, 0.95);
+  --app-grid-pending-edit-selected-bg: rgba(59, 130, 246, 0.2);
+  --app-grid-pending-edit-selected-outline: rgba(94, 234, 212, 1);
+  --app-grid-row-action-edit-bg: rgba(45, 212, 191, 0.2);
+  --app-grid-row-action-edit-bg-hover: rgba(45, 212, 191, 0.3);
+  --app-grid-row-action-edit-color: rgb(45 212 191);
+  --app-grid-row-action-insert-bg: rgba(56, 189, 248, 0.2);
+  --app-grid-row-action-insert-bg-hover: rgba(56, 189, 248, 0.3);
+  --app-grid-row-action-insert-color: rgb(56 189 248);
 }
 
 /* Scrollbars — thin IDE style */
@@ -280,12 +372,11 @@
   background-color: rgba(55, 65, 81, 0.8) !important;
 }
 
+.dark .ag-theme-alpine .ag-row.ag-row-selected:not(.row-pending-delete):not(.row-pending-insert),
 .dark
   .ag-theme-alpine
-  :deep(.ag-row.ag-row-selected:not(.row-pending-delete):not(.row-pending-insert)),
-.dark
-  .ag-theme-alpine
-  :deep(.ag-row.ag-row-selected:not(.row-pending-delete):not(.row-pending-insert) .ag-cell) {
+  .ag-row.ag-row-selected:not(.row-pending-delete):not(.row-pending-insert)
+  .ag-cell {
   background-color: rgba(59, 130, 246, 0.14);
 }
 

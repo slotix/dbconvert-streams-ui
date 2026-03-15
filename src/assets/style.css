@@ -509,6 +509,38 @@
     opacity: 0.72;
   }
 
+  .ui-tree-active {
+    background-color: var(--ui-accent-soft-bg);
+    color: var(--ui-text-strong);
+    box-shadow:
+      inset 0 0 0 1px var(--ui-accent-soft-border),
+      0 1px 2px rgb(15 23 42 / 0.04);
+  }
+
+  .ui-tree-section-button {
+    color: var(--ui-text-subtle);
+    transition:
+      color 0.15s ease,
+      background-color 0.15s ease;
+  }
+
+  .ui-tree-section-button:hover,
+  .ui-tree-section-button:focus-visible {
+    color: var(--ui-text-muted);
+  }
+
+  .ui-tree-section-button-active {
+    color: var(--ui-accent-soft-text);
+  }
+
+  .ui-tree-size-meta {
+    color: var(--ui-text-subtle);
+  }
+
+  .group:hover .ui-tree-size-meta {
+    color: var(--ui-text-muted);
+  }
+
   .ui-chip-muted {
     background-color: var(--ui-surface-muted);
     border: 1px solid var(--ui-border-default);

@@ -454,8 +454,8 @@ function toggleSection(section: ExplorerObjectSection) {
   <div>
     <div
       :class="[
-        'group flex items-center gap-2 px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 rounded-md hover:[background-color:var(--ui-surface-muted)] cursor-pointer select-none',
-        isSelected ? 'bg-slate-100/90 dark:bg-slate-800/85' : ''
+        'group flex items-center gap-2 rounded-md px-2 py-1.5 text-sm ui-text-default hover:[background-color:var(--ui-surface-muted)] cursor-pointer select-none',
+        isSelected ? 'ui-tree-active' : ''
       ]"
       :data-explorer-db="`${connectionId}:${database.name}`"
       data-tree-node="true"
@@ -503,9 +503,9 @@ function toggleSection(section: ExplorerObjectSection) {
           <button
             v-if="showTablesSection"
             type="button"
-            class="w-full text-left text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-1 flex items-center justify-between hover:text-gray-500 dark:hover:text-gray-400"
+            class="ui-tree-section-button mt-1 flex w-full items-center justify-between px-2 text-left text-xs uppercase tracking-wide"
             :class="{
-              'animate-pulse text-slate-600 dark:text-slate-300': highlightedSection === 'tables'
+              'animate-pulse ui-tree-section-button-active': highlightedSection === 'tables'
             }"
             :aria-expanded="tablesSectionExpanded"
             @click.stop="toggleSection('tables')"
@@ -513,11 +513,11 @@ function toggleSection(section: ExplorerObjectSection) {
             <span class="flex items-center gap-1">
               <component
                 :is="tablesSectionExpanded ? ChevronDown : ChevronRight"
-                class="h-3 w-3 text-gray-400 dark:text-gray-500"
+                class="ui-icon-muted h-3 w-3"
               />
               <span>Tables</span>
             </span>
-            <span class="text-[11px] font-medium text-gray-500 dark:text-gray-400 normal-case">
+            <span class="ui-text-subtle text-[11px] font-medium normal-case">
               {{ tablesCount }}
             </span>
           </button>
@@ -538,9 +538,9 @@ function toggleSection(section: ExplorerObjectSection) {
           <button
             v-if="showViewsSection"
             type="button"
-            class="w-full text-left text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-2 flex items-center justify-between hover:text-gray-500 dark:hover:text-gray-400"
+            class="ui-tree-section-button mt-2 flex w-full items-center justify-between px-2 text-left text-xs uppercase tracking-wide"
             :class="{
-              'animate-pulse text-slate-600 dark:text-slate-300': highlightedSection === 'views'
+              'animate-pulse ui-tree-section-button-active': highlightedSection === 'views'
             }"
             :aria-expanded="viewsSectionExpanded"
             @click.stop="toggleSection('views')"
@@ -548,11 +548,11 @@ function toggleSection(section: ExplorerObjectSection) {
             <span class="flex items-center gap-1">
               <component
                 :is="viewsSectionExpanded ? ChevronDown : ChevronRight"
-                class="h-3 w-3 text-gray-400 dark:text-gray-500"
+                class="ui-icon-muted h-3 w-3"
               />
               <span>Views</span>
             </span>
-            <span class="text-[11px] font-medium text-gray-500 dark:text-gray-400 normal-case">
+            <span class="ui-text-subtle text-[11px] font-medium normal-case">
               {{ viewsCount }}
             </span>
           </button>
@@ -572,9 +572,9 @@ function toggleSection(section: ExplorerObjectSection) {
           <button
             v-if="showFunctionsSection"
             type="button"
-            class="w-full text-left text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-2 flex items-center justify-between hover:text-gray-500 dark:hover:text-gray-400"
+            class="ui-tree-section-button mt-2 flex w-full items-center justify-between px-2 text-left text-xs uppercase tracking-wide"
             :class="{
-              'animate-pulse text-slate-600 dark:text-slate-300': highlightedSection === 'functions'
+              'animate-pulse ui-tree-section-button-active': highlightedSection === 'functions'
             }"
             :aria-expanded="functionsSectionExpanded"
             @click.stop="functionsOpen = !functionsOpen"
@@ -582,11 +582,11 @@ function toggleSection(section: ExplorerObjectSection) {
             <span class="flex items-center gap-1">
               <component
                 :is="functionsSectionExpanded ? ChevronDown : ChevronRight"
-                class="h-3 w-3 text-gray-400 dark:text-gray-500"
+                class="ui-icon-muted h-3 w-3"
               />
               <span>Functions</span>
             </span>
-            <span class="text-[11px] font-medium text-gray-500 dark:text-gray-400 normal-case">
+            <span class="ui-text-subtle text-[11px] font-medium normal-case">
               {{ functionsCount }}
             </span>
           </button>
@@ -606,10 +606,9 @@ function toggleSection(section: ExplorerObjectSection) {
           <button
             v-if="showProceduresSection"
             type="button"
-            class="w-full text-left text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500 px-2 mt-2 flex items-center justify-between hover:text-gray-500 dark:hover:text-gray-400"
+            class="ui-tree-section-button mt-2 flex w-full items-center justify-between px-2 text-left text-xs uppercase tracking-wide"
             :class="{
-              'animate-pulse text-slate-600 dark:text-slate-300':
-                highlightedSection === 'procedures'
+              'animate-pulse ui-tree-section-button-active': highlightedSection === 'procedures'
             }"
             :aria-expanded="proceduresSectionExpanded"
             @click.stop="proceduresOpen = !proceduresOpen"
@@ -617,11 +616,11 @@ function toggleSection(section: ExplorerObjectSection) {
             <span class="flex items-center gap-1">
               <component
                 :is="proceduresSectionExpanded ? ChevronDown : ChevronRight"
-                class="h-3 w-3 text-gray-400 dark:text-gray-500"
+                class="ui-icon-muted h-3 w-3"
               />
               <span>Procedures</span>
             </span>
-            <span class="text-[11px] font-medium text-gray-500 dark:text-gray-400 normal-case">
+            <span class="ui-text-subtle text-[11px] font-medium normal-case">
               {{ proceduresCount }}
             </span>
           </button>
@@ -640,10 +639,7 @@ function toggleSection(section: ExplorerObjectSection) {
           />
         </div>
       </div>
-      <div
-        v-else
-        class="flex items-center gap-2 px-2 py-2 text-xs text-gray-500 dark:text-gray-400"
-      >
+      <div v-else class="flex items-center gap-2 px-2 py-2 text-xs ui-text-muted">
         <svg
           class="ui-accent-icon animate-spin h-3.5 w-3.5"
           xmlns="http://www.w3.org/2000/svg"
