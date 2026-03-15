@@ -11,6 +11,25 @@ type ToastLike = {
   info: (message: string) => void
 }
 
+type ContextRowNode = {
+  rowPinned?: string | null
+  rowIndex?: number | null
+  data?: Record<string, unknown>
+}
+
+type ContextColumnDef = {
+  editable?: boolean | ((params: { data: Record<string, unknown>; node?: ContextRowNode }) => boolean)
+}
+
+type ContextColumn = {
+  getColDef: () => ContextColumnDef
+}
+
+type ContextCellGridApi = {
+  getRowNode: (id: string) => ContextRowNode | null | undefined
+  getColumn: (key: string) => ContextColumn | null | undefined
+}
+
 type UseAgGridSelectionActionsOptions = {
   gridApi: Ref<GridApi | null>
   selectedRows: Ref<Record<string, unknown>[]>
@@ -37,6 +56,30 @@ type UseAgGridSelectionActionsOptions = {
   objectSchema: ComputedRef<string | null>
   objectKey: ComputedRef<string>
   dialect: ComputedRef<SqlDialect>
+}
+
+export function canEditGridContextCell(options: {
+  gridApi: ContextCellGridApi | null
+  rowId: string | null
+  field: string | null
+  isTableEditable: boolean
+}): boolean {
+  if (!options.isTableEditable) return false
+  if (!options.gridApi) return false
+  if (!options.rowId || !options.field || options.field === '__changes__') return false
+
+  const rowNode = options.gridApi.getRowNode(options.rowId)
+  if (!rowNode || rowNode.rowPinned) return false
+
+  const column = options.gridApi.getColumn(options.field)
+  const colDef = column?.getColDef()
+  if (!colDef) return false
+
+  if (typeof colDef.editable === 'function') {
+    return Boolean(colDef.editable({ data: rowNode.data || {}, node: rowNode }))
+  }
+
+  return Boolean(colDef.editable)
 }
 
 export function useAgGridSelectionActions(options: UseAgGridSelectionActionsOptions) {
@@ -123,6 +166,15 @@ export function useAgGridSelectionActions(options: UseAgGridSelectionActionsOpti
     return Boolean(edit?.changes && Object.prototype.hasOwnProperty.call(edit.changes, field))
   })
 
+  const canEditContextCell = computed(() =>
+    canEditGridContextCell({
+      gridApi: options.gridApi.value as unknown as ContextCellGridApi | null,
+      rowId: contextRowId.value,
+      field: contextField.value,
+      isTableEditable: options.isTableEditable.value
+    })
+  )
+
   function revertContextCell() {
     if (!options.isTableEditable.value) return
     const rowId = contextRowId.value
@@ -130,6 +182,22 @@ export function useAgGridSelectionActions(options: UseAgGridSelectionActionsOpti
     if (!rowId || !field) return
 
     options.revertRowField(rowId, field)
+  }
+
+  function editContextCell() {
+    const api = options.gridApi.value
+    const rowId = contextRowId.value
+    const field = contextField.value
+    if (!api || !rowId || !field || !canEditContextCell.value) return
+
+    const rowNode = api.getRowNode(rowId)
+    const rowIndex = rowNode?.rowIndex
+    if (typeof rowIndex !== 'number' || rowIndex < 0) return
+
+    api.ensureIndexVisible(rowIndex)
+    api.ensureColumnVisible(field)
+    api.setFocusedCell(rowIndex, field)
+    api.startEditingCell({ rowIndex, colKey: field })
   }
 
   function deleteSelectedRows() {
@@ -256,6 +324,9 @@ export function useAgGridSelectionActions(options: UseAgGridSelectionActionsOpti
     selectAllOnCurrentPage,
     deselectAll,
     copySelectedRows,
+
+    canEditContextCell,
+    editContextCell,
 
     canRevertContextCell,
     revertContextCell,

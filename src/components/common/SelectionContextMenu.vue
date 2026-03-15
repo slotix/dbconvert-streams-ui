@@ -15,6 +15,8 @@ const props = defineProps<{
   y: number
   hasSelection: boolean
   isEditable?: boolean
+  canEditCell?: boolean
+  canOpenChangesPanel?: boolean
   canRevertCell?: boolean
 }>()
 
@@ -23,6 +25,8 @@ const emit = defineEmits<{
   (e: 'select-all'): void
   (e: 'deselect-all'): void
   (e: 'copy', format: CopyFormat): void
+  (e: 'edit-cell'): void
+  (e: 'open-changes-panel'): void
   (e: 'add-row'): void
   (e: 'delete'): void
   (e: 'revert-cell'): void
@@ -84,6 +88,16 @@ function deselectAllAndClose() {
 
 function copyAndClose(format: CopyFormat) {
   emit('copy', format)
+  emit('close')
+}
+
+function editCellAndClose() {
+  emit('edit-cell')
+  emit('close')
+}
+
+function openChangesPanelAndClose() {
+  emit('open-changes-panel')
   emit('close')
 }
 
@@ -164,6 +178,22 @@ function revertCellAndClose() {
 
       <template v-if="isEditable">
         <div class="ui-border-default my-1 border-t"></div>
+        <button
+          type="button"
+          class="w-full text-left px-3 py-2 text-sm text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-300"
+          :disabled="!canOpenChangesPanel"
+          @click="openChangesPanelAndClose"
+        >
+          Open changes sidebar
+        </button>
+        <button
+          type="button"
+          class="w-full text-left px-3 py-2 text-sm text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          :disabled="!canEditCell"
+          @click="editCellAndClose"
+        >
+          Edit cell
+        </button>
         <button
           type="button"
           class="w-full text-left px-3 py-2 text-sm text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-colors"

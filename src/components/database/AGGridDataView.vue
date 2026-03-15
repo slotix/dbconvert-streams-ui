@@ -731,6 +731,8 @@ const {
   selectAllOnCurrentPage,
   deselectAll,
   copySelectedRows,
+  canEditContextCell,
+  editContextCell,
   deleteSelectedRows,
   canRevertContextCell,
   revertContextCell,
@@ -987,11 +989,15 @@ export default {
       :y="selectionMenuY"
       :has-selection="canCopySelection"
       :is-editable="isTableEditable"
+      :can-edit-cell="canEditContextCell"
+      :can-open-changes-panel="hasUnsavedChanges"
       :can-revert-cell="canRevertContextCell"
       @close="selectionMenuOpen = false"
       @select-all="selectAllOnCurrentPage"
       @deselect-all="deselectAll"
       @copy="copySelectedRows"
+      @edit-cell="editContextCell"
+      @open-changes-panel="openFirstEditedRowPanel"
       @add-row="openInsertRowPanelForNew"
       @delete="deleteSelectedRows"
       @revert-cell="revertContextCell"
