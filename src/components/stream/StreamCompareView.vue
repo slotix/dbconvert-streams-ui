@@ -516,6 +516,37 @@ const targetSchema = computed(() => {
   if (spec?.snowflake?.schema) return spec.snowflake.schema
   return undefined
 })
+const sourceHeaderPath = computed(() => {
+  if (isFileSource.value) {
+    return selectedCompareItem.value?.label || selectedTable.value
+  }
+
+  const parts = [sourceDatabase.value]
+  if (sourceSchema.value && sourceSchema.value !== 'public') {
+    parts.push(sourceSchema.value)
+  }
+
+  parts.push(
+    selectedCompareItem.value?.kind === 'table'
+      ? selectedSourceTableName.value
+      : selectedCompareItem.value?.label || selectedTable.value
+  )
+
+  return parts.filter(Boolean).join(' / ')
+})
+const targetHeaderPath = computed(() => {
+  if (isFileTarget.value) {
+    return targetFileDisplayName.value || `${selectedTargetObjectName.value}.${props.target.type}`
+  }
+
+  const parts = [targetDatabase.value]
+  if (targetSchema.value && targetSchema.value !== 'public') {
+    parts.push(targetSchema.value)
+  }
+  parts.push(selectedTargetObjectName.value)
+
+  return parts.filter(Boolean).join(' / ')
+})
 
 const canOpenSourceInExplorer = computed(() => {
   if (isFileSource.value) {
@@ -1434,7 +1465,7 @@ async function selectTable(tableName: string) {
           <span class="text-sm font-medium text-gray-700 dark:text-gray-200">Compare Table:</span>
           <Menu as="div" class="relative z-1200">
             <MenuButton
-              class="ui-surface-raised ui-border-default inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium text-gray-900 transition-colors hover:[background-color:var(--ui-surface-muted)] dark:text-gray-100"
+              class="ui-surface-raised ui-border-default inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium text-gray-900 transition-colors hover:bg-(--ui-surface-muted) dark:text-gray-100"
             >
               {{ selectedCompareItem?.label || 'Select a table' }}
               <ChevronDown class="h-4 w-4 text-gray-500 dark:text-gray-400" />
@@ -1488,42 +1519,33 @@ async function selectTable(tableName: string) {
       <div class="ui-border-default flex-1 flex flex-col overflow-hidden border-r min-h-0">
         <!-- Source Header -->
         <div
-          class="px-4 py-3 border-b-2 border-b-blue-500 dark:border-b-blue-400 ui-surface-muted shrink-0 overflow-hidden"
-          style="height: 42px"
+          class="ui-surface-muted shrink-0 border-b-2 border-b-blue-500 px-4 py-3 dark:border-b-blue-400"
         >
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
+          <div class="flex min-w-0 items-center justify-between gap-3">
+            <div class="flex min-w-0 items-center gap-2">
               <img src="/images/steps/source-step.svg" alt="Source" class="w-6 h-6" />
               <span
-                class="text-sm font-semibold bg-linear-to-r from-blue-600 to-blue-500 dark:from-blue-400 dark:to-blue-300 bg-clip-text text-transparent"
+                class="shrink-0 bg-linear-to-r from-blue-600 to-blue-500 bg-clip-text text-sm font-semibold text-transparent dark:from-blue-400 dark:to-blue-300"
               >
                 Source
               </span>
-              <span class="text-xs text-gray-600 dark:text-gray-400">{{
-                selectedSourceConnection.name
-              }}</span>
+              <span
+                class="min-w-0 truncate text-xs text-gray-600 dark:text-gray-400"
+                :title="selectedSourceConnection.name"
+              >
+                {{ selectedSourceConnection.name }}
+              </span>
             </div>
-            <div class="flex items-center gap-2">
-              <div class="text-xs text-gray-600 dark:text-gray-400">
-                <template v-if="isFileSource">
-                  {{ selectedCompareItem?.label || selectedTable }}
-                </template>
-                <template v-else>
-                  {{ sourceDatabase }}
-                  <span v-if="sourceSchema && sourceSchema !== 'public'">
-                    / {{ sourceSchema }}
-                  </span>
-                  /
-                  {{
-                    selectedCompareItem?.kind === 'table'
-                      ? selectedSourceTableName
-                      : selectedCompareItem?.label
-                  }}
-                </template>
+            <div class="flex min-w-0 items-center justify-end gap-2">
+              <div
+                class="min-w-0 truncate text-right text-xs text-gray-600 dark:text-gray-400"
+                :title="sourceHeaderPath"
+              >
+                {{ sourceHeaderPath }}
               </div>
               <button
                 type="button"
-                class="inline-flex items-center gap-1 rounded-md border border-blue-300/70 dark:border-blue-700/60 px-2 py-1 text-[11px] font-medium text-blue-700 dark:text-blue-300 hover:bg-blue-100/70 dark:hover:bg-blue-900/35 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                class="inline-flex shrink-0 items-center gap-1 rounded-md border border-blue-300/70 px-2 py-1 text-[11px] font-medium text-blue-700 transition-colors hover:bg-blue-100/70 disabled:cursor-not-allowed disabled:opacity-50 dark:border-blue-700/60 dark:text-blue-300 dark:hover:bg-blue-900/35"
                 :disabled="!canOpenSourceInExplorer"
                 :title="
                   isFileSource
@@ -1570,11 +1592,11 @@ async function selectTable(tableName: string) {
                     </th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-[var(--ui-border-default)]">
+                <tbody class="divide-y divide-(--ui-border-default)">
                   <tr
                     v-for="(row, idx) in sourceQueryPreview.rows"
                     :key="idx"
-                    class="hover:[background-color:var(--ui-surface-muted)]"
+                    class="hover:bg-(--ui-surface-muted)"
                   >
                     <td
                       v-for="col in sourceQueryPreview.columns"
@@ -1651,35 +1673,33 @@ async function selectTable(tableName: string) {
       <div class="flex-1 flex flex-col overflow-hidden min-h-0">
         <!-- Target Header -->
         <div
-          class="px-4 py-3 border-b-2 border-b-red-500 dark:border-b-red-400 ui-surface-muted shrink-0 overflow-hidden"
-          style="height: 42px"
+          class="ui-surface-muted shrink-0 border-b-2 border-b-red-500 px-4 py-3 dark:border-b-red-400"
         >
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
+          <div class="flex min-w-0 items-center justify-between gap-3">
+            <div class="flex min-w-0 items-center gap-2">
               <img src="/images/steps/target-step.svg" alt="Target" class="w-6 h-6" />
               <span
-                class="text-sm font-semibold bg-linear-to-r from-emerald-600 to-emerald-500 dark:from-emerald-400 dark:to-emerald-300 bg-clip-text text-transparent"
+                class="shrink-0 bg-linear-to-r from-emerald-600 to-emerald-500 bg-clip-text text-sm font-semibold text-transparent dark:from-emerald-400 dark:to-emerald-300"
               >
                 Target
               </span>
-              <span class="text-xs text-gray-600 dark:text-gray-400">{{ target.name }}</span>
+              <span
+                class="min-w-0 truncate text-xs text-gray-600 dark:text-gray-400"
+                :title="target.name"
+              >
+                {{ target.name }}
+              </span>
             </div>
-            <div class="flex items-center gap-2">
-              <div class="text-xs text-gray-600 dark:text-gray-400">
-                <template v-if="isFileTarget">
-                  {{ targetFileDisplayName || `${selectedTargetObjectName}.${target.type}` }}
-                </template>
-                <template v-else>
-                  {{ targetDatabase }}
-                  <span v-if="targetSchema && targetSchema !== 'public'">
-                    / {{ targetSchema }}
-                  </span>
-                  / {{ selectedTargetObjectName }}
-                </template>
+            <div class="flex min-w-0 items-center justify-end gap-2">
+              <div
+                class="min-w-0 truncate text-right text-xs text-gray-600 dark:text-gray-400"
+                :title="targetHeaderPath"
+              >
+                {{ targetHeaderPath }}
               </div>
               <button
                 type="button"
-                class="inline-flex items-center gap-1 rounded-md border border-emerald-300/70 dark:border-emerald-700/60 px-2 py-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100/70 dark:hover:bg-emerald-900/35 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                class="inline-flex shrink-0 items-center gap-1 rounded-md border border-emerald-300/70 px-2 py-1 text-[11px] font-medium text-emerald-700 transition-colors hover:bg-emerald-100/70 disabled:cursor-not-allowed disabled:opacity-50 dark:border-emerald-700/60 dark:text-emerald-300 dark:hover:bg-emerald-900/35"
                 :disabled="!canOpenTargetInExplorer"
                 :title="
                   isFileTarget

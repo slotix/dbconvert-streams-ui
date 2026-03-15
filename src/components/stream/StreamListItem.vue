@@ -1,7 +1,7 @@
 <template>
   <div
     :class="[
-      'px-3 py-2.5 cursor-pointer transition-colors duration-150 ease-out group relative',
+      'group relative cursor-pointer py-2.5 pl-2 pr-3 transition-colors duration-150 ease-out',
       isSelected
         ? 'bg-slate-100/55 dark:bg-gray-800/45'
         : 'hover:bg-slate-100/45 dark:hover:bg-gray-850/65'

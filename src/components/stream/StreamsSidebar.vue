@@ -1,7 +1,7 @@
 <template>
   <div class="overflow-hidden h-full flex flex-col">
     <!-- Toolbar row 1: count + New Stream Config -->
-    <div class="px-3 pt-2.5 pb-1 flex items-center gap-2">
+    <div class="flex items-center gap-2 pl-2 pr-3 pt-2.5 pb-1">
       <button
         type="button"
         class="lg:hidden flex items-center justify-center p-1.5 rounded-md text-gray-600 hover:text-gray-900 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-400 dark:hover:text-white"
@@ -20,7 +20,7 @@
     </div>
 
     <!-- Toolbar row 2: search -->
-    <div class="px-2 pb-2 border-b border-slate-200/70 dark:border-gray-700/80">
+    <div class="border-b border-slate-200/70 pb-2 pl-1.5 pr-2 dark:border-gray-700/80">
       <SearchInput
         v-model="searchQuery"
         placeholder="Filter..."
@@ -33,7 +33,7 @@
     <!-- Streams List -->
     <div
       ref="listContainerRef"
-      class="flex-1 overflow-y-auto p-2 scrollbar-thin"
+      class="scrollbar-thin flex-1 overflow-y-auto py-2 pl-1.5 pr-2"
       @scroll="handleListScroll"
     >
       <!-- Enhanced loading state with gradient spinner -->

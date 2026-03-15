@@ -29,7 +29,7 @@
       </div>
 
       <!-- Streams with resizable sidebar -->
-      <div v-else class="flex-1 flex flex-col min-h-0 px-4 sm:px-6 lg:px-8">
+      <div v-else class="flex-1 flex flex-col min-h-0 pl-1 pr-4 sm:pl-2 sm:pr-6 lg:pl-3 lg:pr-8">
         <div
           :ref="(el) => (sidebar.sidebarContainerRef.value = el as HTMLElement)"
           class="flex-1 flex flex-row items-stretch min-w-0 overflow-x-hidden min-h-0"
