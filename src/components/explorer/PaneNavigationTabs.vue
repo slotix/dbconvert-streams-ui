@@ -28,7 +28,7 @@
               isPreviewTab(i) ? 'italic' : '',
               isActiveTab(i)
                 ? 'ui-tab-active ui-text-strong'
-                : 'border-b-transparent ui-text-muted hover:[color:var(--ui-text-default)] hover:[background-color:var(--ui-surface-muted)]',
+                : 'border-b-transparent ui-text-muted hover:text-(--ui-text-default) hover:bg-(--ui-surface-muted)',
               dragState.isDragging && dragState.draggedIndex === i && 'opacity-50'
             ]"
             @click="$emit('activate-tab', i)"
@@ -56,14 +56,14 @@
             <span
               role="button"
               tabindex="0"
-              class="flex h-4 w-4 shrink-0 items-center justify-center rounded transition hover:[background-color:var(--ui-surface-muted)]"
+              class="flex h-4 w-4 shrink-0 items-center justify-center rounded transition hover:bg-(--ui-surface-muted)"
               :aria-label="`Close tab ${tab.name}`"
               @click.stop="$emit('close-tab', i)"
               @keydown.enter.stop.prevent="$emit('close-tab', i)"
               @keydown.space.stop.prevent="$emit('close-tab', i)"
             >
               <X
-                class="ui-icon-default h-3.5 w-3.5 group-hover:[color:var(--ui-text-default)]"
+                class="ui-icon-default h-3.5 w-3.5 group-hover:text-(--ui-text-default)"
                 aria-hidden="true"
               />
             </span>
@@ -80,7 +80,7 @@
       v-if="hasAnyTabs"
       ref="overflowButtonRef"
       type="button"
-      class="ui-focus-ring ui-text-muted shrink-0 border-b-2 border-transparent px-2 py-2 hover:[color:var(--ui-text-default)] hover:[background-color:var(--ui-surface-muted)]"
+      class="ui-focus-ring ui-text-muted shrink-0 border-b-2 border-transparent px-2 py-2 hover:text-(--ui-text-default) hover:bg-(--ui-surface-muted)"
       aria-label="Show all tabs"
       @click="toggleOverflowMenu"
     >
@@ -98,7 +98,7 @@
         <button
           v-for="(tab, i) in tabs"
           :key="`overflow-${tab.id}`"
-          class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:[background-color:var(--ui-surface-muted)]"
+          class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-(--ui-surface-muted)"
           :class="isActiveTab(i) ? 'ui-text-strong' : 'ui-text-default'"
           @click="activateTabFromMenu(i)"
         >
@@ -117,7 +117,7 @@
         :style="{ left: `${adjustedMenuX}px`, top: `${adjustedMenuY}px` }"
       >
         <button
-          class="ui-focus-ring ui-text-default flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:[background-color:var(--ui-surface-muted)]"
+          class="ui-focus-ring ui-text-default flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-(--ui-surface-muted)"
           @click="handleMoveToOtherPane"
         >
           <ArrowRightLeft class="ui-icon-default h-4 w-4" />
@@ -125,19 +125,19 @@
         </button>
         <div class="ui-border-muted my-1 border-t" />
         <button
-          class="ui-focus-ring ui-text-default w-full px-3 py-2 text-left text-sm hover:[background-color:var(--ui-surface-muted)]"
+          class="ui-focus-ring ui-text-default w-full px-3 py-2 text-left text-sm hover:bg-(--ui-surface-muted)"
           @click="handleContextMenuAction('close')"
         >
           <span>Close</span>
         </button>
         <button
-          class="ui-focus-ring ui-text-default w-full px-3 py-2 text-left text-sm hover:[background-color:var(--ui-surface-muted)]"
+          class="ui-focus-ring ui-text-default w-full px-3 py-2 text-left text-sm hover:bg-(--ui-surface-muted)"
           @click="handleContextMenuAction('close-others')"
         >
           <span>Close Others</span>
         </button>
         <button
-          class="ui-focus-ring ui-text-default w-full px-3 py-2 text-left text-sm hover:[background-color:var(--ui-surface-muted)]"
+          class="ui-focus-ring ui-text-default w-full px-3 py-2 text-left text-sm hover:bg-(--ui-surface-muted)"
           @click="handleContextMenuAction('close-all')"
         >
           <span>Close All</span>
@@ -148,7 +148,7 @@
           :class="[
             'ui-focus-ring w-full text-left px-3 py-2 text-sm flex items-center justify-between',
             canReopenTab
-              ? 'ui-text-default hover:[background-color:var(--ui-surface-muted)]'
+              ? 'ui-text-default hover:bg-(--ui-surface-muted)'
               : 'ui-text-subtle cursor-not-allowed'
           ]"
           @click="handleReopenClosedTab"

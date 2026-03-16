@@ -178,7 +178,7 @@ function click(action: string, openInRightSplit?: boolean) {
           <!-- Connection menu -->
           <button
             v-if="!props.isFileConnection"
-            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-300"
             @click="click('sql-console')"
           >
             <Terminal class="w-4 h-4 shrink-0" />
@@ -186,7 +186,7 @@ function click(action: string, openInRightSplit?: boolean) {
           </button>
           <button
             v-if="props.isFileConnection"
-            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-300"
             @click="click('file-console')"
           >
             <Terminal class="w-4 h-4 shrink-0" />
@@ -195,14 +195,14 @@ function click(action: string, openInRightSplit?: boolean) {
           <div v-if="!props.isFileConnection" class="ui-border-default my-1 border-t"></div>
           <div v-if="props.isFileConnection" class="ui-border-default my-1 border-t"></div>
           <button
-            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-300"
             @click="click('test-connection')"
           >
             <Beaker class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
             <span>Test connection</span>
           </button>
           <button
-            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-300"
             @click="click('refresh-databases')"
           >
             <RefreshCw class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
@@ -210,7 +210,7 @@ function click(action: string, openInRightSplit?: boolean) {
           </button>
           <button
             v-if="canCollapseSubtree"
-            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-300"
             @click="click('expand-subtree')"
           >
             <ChevronsDown class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
@@ -218,7 +218,7 @@ function click(action: string, openInRightSplit?: boolean) {
           </button>
           <button
             v-if="canCollapseSubtree"
-            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-300"
             @click="click('collapse-subtree')"
           >
             <ChevronsUp class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
@@ -226,7 +226,7 @@ function click(action: string, openInRightSplit?: boolean) {
           </button>
           <button
             v-if="!props.isFileConnection"
-            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-300"
             @click="click('toggle-system-databases')"
           >
             <component
@@ -237,7 +237,7 @@ function click(action: string, openInRightSplit?: boolean) {
           </button>
           <button
             v-if="canCreateDatabase"
-            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-300"
             @click="click('create-database')"
           >
             <Plus class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
@@ -247,7 +247,7 @@ function click(action: string, openInRightSplit?: boolean) {
           <template v-if="props.isLocalFileConnection">
             <div class="ui-border-default my-1 border-t"></div>
             <button
-              class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+              class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-300"
               @click="click('copy-base-path')"
             >
               <Copy class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
@@ -255,7 +255,7 @@ function click(action: string, openInRightSplit?: boolean) {
             </button>
             <button
               v-if="isDesktop"
-              class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+              class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-300"
               @click="click('open-base-folder')"
             >
               <FolderOpen class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
@@ -264,21 +264,21 @@ function click(action: string, openInRightSplit?: boolean) {
           </template>
           <div class="ui-border-default my-1 border-t"></div>
           <button
-            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-300"
             @click="click('edit-connection')"
           >
             <Pencil class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
             <span>Edit</span>
           </button>
           <button
-            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-300"
             @click="click('clone-connection')"
           >
             <Copy class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
             <span>Clone</span>
           </button>
           <button
-            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-red-600 hover:[background-color:var(--ui-surface-muted)] dark:text-red-300"
+            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-red-600 hover:bg-(--ui-surface-muted) dark:text-red-300"
             @click="click('delete-connection')"
           >
             <Trash2 class="w-4 h-4 shrink-0" />
@@ -289,7 +289,7 @@ function click(action: string, openInRightSplit?: boolean) {
         <template v-else-if="target.kind === 'database'">
           <!-- Database menu -->
           <button
-            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-300"
             @click="click('sql-console')"
           >
             <Terminal class="w-4 h-4 shrink-0" />
@@ -297,7 +297,7 @@ function click(action: string, openInRightSplit?: boolean) {
           </button>
           <div class="ui-border-default my-1 border-t"></div>
           <button
-            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-300"
             @click="click('refresh-metadata')"
           >
             <RefreshCw class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
@@ -305,7 +305,7 @@ function click(action: string, openInRightSplit?: boolean) {
           </button>
           <button
             v-if="canCollapseSubtree"
-            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-300"
             @click="click('expand-subtree')"
           >
             <ChevronsDown class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
@@ -313,7 +313,7 @@ function click(action: string, openInRightSplit?: boolean) {
           </button>
           <button
             v-if="canCollapseSubtree"
-            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-300"
             @click="click('collapse-subtree')"
           >
             <ChevronsUp class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
@@ -321,7 +321,7 @@ function click(action: string, openInRightSplit?: boolean) {
           </button>
           <button
             v-if="canToggleSystemObjectsForDatabase"
-            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-300"
             @click="click('toggle-system-objects')"
           >
             <component
@@ -334,7 +334,7 @@ function click(action: string, openInRightSplit?: boolean) {
           </button>
           <button
             v-if="canCreateSchema"
-            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-300"
             @click="click('create-schema')"
           >
             <Plus class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
@@ -345,14 +345,14 @@ function click(action: string, openInRightSplit?: boolean) {
             class="ui-border-default my-1 border-t"
           ></div>
           <button
-            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-300"
             @click="click('show-diagram')"
           >
             <Share2 class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
             <span>Show diagram</span>
           </button>
           <button
-            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-300"
             @click="click('copy-database-name')"
           >
             <Copy class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
@@ -363,7 +363,7 @@ function click(action: string, openInRightSplit?: boolean) {
         <template v-else-if="target.kind === 'schema'">
           <!-- Schema menu -->
           <button
-            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-300"
             @click="click('refresh-metadata')"
           >
             <RefreshCw class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
@@ -371,7 +371,7 @@ function click(action: string, openInRightSplit?: boolean) {
           </button>
           <button
             v-if="canCollapseSubtree"
-            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-300"
             @click="click('expand-subtree')"
           >
             <ChevronsDown class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
@@ -379,14 +379,14 @@ function click(action: string, openInRightSplit?: boolean) {
           </button>
           <button
             v-if="canCollapseSubtree"
-            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-300"
             @click="click('collapse-subtree')"
           >
             <ChevronsUp class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
             <span>Collapse subtree</span>
           </button>
           <button
-            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-300"
             @click="click('copy-schema-name')"
           >
             <Copy class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
@@ -397,14 +397,14 @@ function click(action: string, openInRightSplit?: boolean) {
         <template v-else-if="isOpenable">
           <!-- Table/View/File menu - shared actions -->
           <button
-            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-300"
             @click="click('open', false)"
           >
             <PanelLeftOpen class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
             <span>Open in Left Pane</span>
           </button>
           <button
-            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-300"
             @click="click('open', true)"
           >
             <PanelRightOpen class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
@@ -416,14 +416,14 @@ function click(action: string, openInRightSplit?: boolean) {
           <template v-if="isDatabaseObject">
             <template v-if="isTableOrView">
               <button
-                class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+                class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-300"
                 @click="click('open-in-sql-console')"
               >
                 <Terminal class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
                 <span>Open in SQL Console</span>
               </button>
               <button
-                class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+                class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-300"
                 @click="click('show-diagram')"
               >
                 <Share2 class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
@@ -432,14 +432,14 @@ function click(action: string, openInRightSplit?: boolean) {
               <div class="ui-border-default my-1 border-t"></div>
             </template>
             <button
-              class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+              class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-300"
               @click="click('copy-object-name')"
             >
               <Copy class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
               <span>Copy name</span>
             </button>
             <button
-              class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:[background-color:var(--ui-surface-muted)] disabled:opacity-50 dark:text-gray-300"
+              class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:bg-(--ui-surface-muted) disabled:opacity-50 dark:text-gray-300"
               :disabled="!canCopyDDL"
               @click="click('copy-ddl')"
             >
@@ -452,7 +452,7 @@ function click(action: string, openInRightSplit?: boolean) {
           <template v-else-if="isFileOrTableFolder">
             <button
               v-if="target.kind === 'file' && target.isDir"
-              class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+              class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-300"
               @click="click('expand-subtree')"
             >
               <ChevronsDown class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
@@ -460,7 +460,7 @@ function click(action: string, openInRightSplit?: boolean) {
             </button>
             <button
               v-if="target.kind === 'file' && target.isDir"
-              class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+              class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-300"
               @click="click('collapse-subtree')"
             >
               <ChevronsUp class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
@@ -472,7 +472,7 @@ function click(action: string, openInRightSplit?: boolean) {
             ></div>
             <button
               v-if="props.isS3Connection"
-              class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+              class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-300"
               @click="click('refresh-databases')"
             >
               <RefreshCw class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
@@ -480,7 +480,7 @@ function click(action: string, openInRightSplit?: boolean) {
             </button>
             <div v-if="props.isS3Connection" class="ui-border-default my-1 border-t"></div>
             <button
-              class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+              class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-300"
               @click="click('insert-into-console')"
             >
               <Terminal class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
@@ -489,7 +489,7 @@ function click(action: string, openInRightSplit?: boolean) {
             <div class="ui-border-default my-1 border-t"></div>
             <!-- Copy Path: full system path for local files, relative path for S3 -->
             <button
-              class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+              class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-300"
               @click="click(isLocalFile ? 'copy-system-path' : 'copy-file-path')"
             >
               <Copy class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
@@ -497,7 +497,7 @@ function click(action: string, openInRightSplit?: boolean) {
             </button>
             <button
               v-if="isLocalFile && isDesktop"
-              class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+              class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-300"
               @click="click('open-in-explorer')"
             >
               <FolderOpen class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
@@ -509,14 +509,14 @@ function click(action: string, openInRightSplit?: boolean) {
         <!-- Navigation folder menu -->
         <template v-else-if="isLocalNavigationFolder || isS3NavigationFolder">
           <button
-            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-300"
             @click="click('expand-subtree')"
           >
             <ChevronsDown class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
             <span>Expand subtree</span>
           </button>
           <button
-            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-300"
             @click="click('collapse-subtree')"
           >
             <ChevronsUp class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
@@ -525,7 +525,7 @@ function click(action: string, openInRightSplit?: boolean) {
           <div class="ui-border-default my-1 border-t"></div>
           <button
             v-if="isS3NavigationFolder"
-            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-300"
             @click="click('refresh-databases')"
           >
             <RefreshCw class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
@@ -533,7 +533,7 @@ function click(action: string, openInRightSplit?: boolean) {
           </button>
           <div v-if="isS3NavigationFolder" class="ui-border-default my-1 border-t"></div>
           <button
-            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-300"
             @click="click(isS3NavigationFolder ? 'copy-file-path' : 'copy-system-path')"
           >
             <Copy class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
@@ -541,7 +541,7 @@ function click(action: string, openInRightSplit?: boolean) {
           </button>
           <button
             v-if="isDesktop && isLocalNavigationFolder"
-            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-300"
             @click="click('open-in-explorer')"
           >
             <FolderOpen class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />

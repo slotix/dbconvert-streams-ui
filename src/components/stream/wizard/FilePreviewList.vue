@@ -44,7 +44,7 @@
             class="h-10 rounded-md px-3 py-2 text-sm"
             :class="
               row.kind === 'entry'
-                ? 'flex items-center justify-between hover:[background-color:var(--ui-surface-muted)]'
+                ? 'flex items-center justify-between hover:bg-(--ui-surface-muted)'
                 : 'flex items-center'
             "
             :style="{ paddingLeft: `${row.depth * 12 + 12}px` }"
@@ -54,7 +54,7 @@
                 <button
                   v-if="row.entry.type === 'dir'"
                   type="button"
-                  class="mr-2 shrink-0 rounded p-0.5 hover:[background-color:var(--ui-surface-muted)]"
+                  class="mr-2 shrink-0 rounded p-0.5 hover:bg-(--ui-surface-muted)"
                   :class="{ 'rotate-90': isExpanded(row.entry.path) }"
                   @click="toggleFolder(row.entry)"
                 >
@@ -137,7 +137,7 @@
                 class="h-10 rounded-md px-3 py-2 text-sm"
                 :class="
                   row.kind === 'entry'
-                    ? 'flex items-center justify-between hover:[background-color:var(--ui-surface-muted)]'
+                    ? 'flex items-center justify-between hover:bg-(--ui-surface-muted)'
                     : 'flex items-center'
                 "
                 :style="{ paddingLeft: `${row.depth * 12 + 12}px` }"
@@ -147,7 +147,7 @@
                     <button
                       v-if="row.entry.type === 'dir'"
                       type="button"
-                      class="mr-2 shrink-0 rounded p-0.5 hover:[background-color:var(--ui-surface-muted)]"
+                      class="mr-2 shrink-0 rounded p-0.5 hover:bg-(--ui-surface-muted)"
                       :class="{ 'rotate-90': isExpanded(row.entry.path) }"
                       @click="toggleFolder(row.entry)"
                     >
@@ -261,8 +261,8 @@ const embedded = computed(() => props.embedded)
 const searchQuery = ref(props.externalSearchQuery || '')
 const fileListContainerClass = computed(() =>
   props.embedded
-    ? 'flex-1 min-h-0 divide-y divide-[var(--ui-border-default)]'
-    : 'ui-surface-raised ui-border-default flex-1 min-h-0 rounded-lg border shadow-sm divide-y divide-[var(--ui-border-default)]'
+    ? 'flex-1 min-h-0 divide-y divide-(--ui-border-default)'
+    : 'ui-surface-raised ui-border-default flex-1 min-h-0 rounded-lg border shadow-sm divide-y divide-(--ui-border-default)'
 )
 
 const isS3Connection = computed(() => {

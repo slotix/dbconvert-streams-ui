@@ -256,7 +256,7 @@ function toggleSection(section: ExplorerObjectSection) {
   <div>
     <div
       :class="[
-        'flex items-center rounded-md px-2 py-1 text-sm ui-text-default hover:[background-color:var(--ui-surface-muted)] cursor-pointer select-none',
+        'flex items-center rounded-md px-2 py-1 text-sm ui-text-default hover:bg-(--ui-surface-muted) cursor-pointer select-none',
         isSelected ? 'ui-tree-active' : ''
       ]"
       :data-explorer-schema="`${connectionId}:${database}:${schema.name}`"

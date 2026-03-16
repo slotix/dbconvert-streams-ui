@@ -1032,7 +1032,7 @@ async function handleCreateSchema() {
               <tr
                 v-for="t in topTables"
                 :key="t.name"
-                class="hover:[background-color:var(--ui-surface-muted)] transition-colors"
+                class="hover:bg-(--ui-surface-muted) transition-colors"
               >
                 <td class="py-1.5 pr-4">
                   <button

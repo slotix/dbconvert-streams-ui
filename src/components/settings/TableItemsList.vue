@@ -3,7 +3,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-2">
       <template v-for="(table, idx) in tables" :key="table.name">
         <div
-          class="ui-border-muted group flex items-center gap-3 border-b px-4 py-2.5 transition-colors hover:[background-color:var(--ui-surface-muted)]"
+          class="ui-border-muted group flex items-center gap-2 border-b px-4 py-2.5 transition-colors hover:bg-(--ui-surface-muted)"
           :class="[idx % 2 === 0 ? 'lg:border-r lg:border-r-[var(--ui-border-muted)]' : '']"
         >
           <input
@@ -18,7 +18,32 @@
               })
             "
           />
-          <TableIcon class="h-4 w-4 text-gray-400 dark:text-gray-500 shrink-0" />
+
+          <!-- Icon slot: filter button when selected, filter indicator when filtered, table icon otherwise -->
+          <button
+            v-if="table.selected && !isCdcMode"
+            v-tooltip="hasTableFilter(table) ? 'Edit filter' : 'Add filter'"
+            :aria-label="hasTableFilter(table) ? 'Edit filter' : 'Add filter'"
+            :aria-pressed="isTableSettingsOpen(table.name)"
+            class="w-4 h-4 shrink-0 flex items-center justify-center rounded transition-all"
+            :class="
+              isTableSettingsOpen(table.name)
+                ? 'text-sky-500'
+                : hasTableFilter(table)
+                  ? 'text-sky-500'
+                  : 'text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400'
+            "
+            @click="emit('toggle-filter', table.name)"
+          >
+            <Filter class="w-3.5 h-3.5" />
+          </button>
+          <Filter
+            v-else-if="hasTableFilter(table)"
+            v-tooltip="'Has active filter'"
+            class="w-4 h-4 text-sky-500 shrink-0"
+          />
+          <TableIcon v-else class="h-4 w-4 text-gray-400 dark:text-gray-500 shrink-0" />
+
           <label
             :for="`table-${table.name}`"
             class="flex-1 min-w-0 cursor-pointer text-sm text-gray-900 dark:text-gray-100 truncate"
@@ -27,30 +52,21 @@
           </label>
 
           <span
-            v-if="showRowCount && getTableRowCount(table.name) !== undefined"
+            v-if="showTableSize"
+            class="w-16 text-right text-xs shrink-0 text-gray-500 dark:text-gray-400"
+            :class="{ 'opacity-0': getTableSize(table.name) === undefined }"
+            v-tooltip="'Table size'"
+          >
+            {{ formatTableSize(getTableSize(table.name)) }}
+          </span>
+          <span
+            v-if="showRowCount"
+            class="w-20 text-right text-xs shrink-0 text-gray-500 dark:text-gray-400"
+            :class="{ 'opacity-0': getTableRowCount(table.name) === undefined }"
             v-tooltip="'Approximate row count'"
-            class="ui-chip-muted text-xs px-1.5 py-0.5 rounded shrink-0 text-gray-500 dark:text-gray-400"
           >
             {{ formatRowCount(getTableRowCount(table.name)) }}
           </span>
-
-          <button
-            v-if="table.selected && !isCdcMode"
-            v-tooltip="hasTableFilter(table) ? 'Edit filter' : 'Add filter'"
-            class="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-all"
-            :class="
-              isTableSettingsOpen(table.name)
-                ? 'ui-accent-action-active'
-                : hasTableFilter(table)
-                  ? 'bg-sky-500/20 text-sky-600 dark:text-sky-400'
-                  : 'text-gray-400 opacity-0 group-hover:opacity-100 hover:[background-color:var(--ui-surface-muted)]'
-            "
-            @click="emit('toggle-filter', table.name)"
-          >
-            <Filter class="w-3.5 h-3.5" />
-            <span v-if="hasTableFilter(table)" class="hidden sm:inline">filtered</span>
-            <ChevronUp v-if="isTableSettingsOpen(table.name)" class="w-3 h-3" />
-          </button>
         </div>
       </template>
     </div>
@@ -68,7 +84,7 @@
         :key="table.name"
         :data-virtual-index="index"
         :style="{ height: `${ITEM_HEIGHT}px` }"
-        class="ui-border-muted group flex items-center gap-3 border-b px-4 transition-colors hover:[background-color:var(--ui-surface-muted)]"
+        class="ui-border-muted group flex items-center gap-2 border-b px-4 transition-colors hover:bg-(--ui-surface-muted)"
       >
         <input
           :id="`table-${table.name}`"
@@ -82,7 +98,32 @@
             })
           "
         />
-        <TableIcon class="h-4 w-4 text-gray-400 dark:text-gray-500 shrink-0" />
+
+        <!-- Icon slot: filter button when selected, filter indicator when filtered, table icon otherwise -->
+        <button
+          v-if="table.selected && !isCdcMode"
+          v-tooltip="hasTableFilter(table) ? 'Edit filter' : 'Add filter'"
+          :aria-label="hasTableFilter(table) ? 'Edit filter' : 'Add filter'"
+          :aria-pressed="isTableSettingsOpen(table.name)"
+          class="w-4 h-4 shrink-0 flex items-center justify-center rounded transition-all"
+          :class="
+            isTableSettingsOpen(table.name)
+              ? 'text-sky-500'
+              : hasTableFilter(table)
+                ? 'text-sky-500'
+                : 'text-gray-300 dark:text-gray-600 opacity-0 group-hover:opacity-100 hover:text-gray-500 dark:hover:text-gray-400'
+          "
+          @click="emit('toggle-filter', table.name)"
+        >
+          <Filter class="w-3.5 h-3.5" />
+        </button>
+        <Filter
+          v-else-if="hasTableFilter(table)"
+          v-tooltip="'Has active filter'"
+          class="w-4 h-4 text-sky-500 shrink-0"
+        />
+        <TableIcon v-else class="h-4 w-4 text-gray-400 dark:text-gray-500 shrink-0" />
+
         <label
           :for="`table-${table.name}`"
           class="flex-1 min-w-0 cursor-pointer text-sm text-gray-900 dark:text-gray-100 truncate"
@@ -91,30 +132,21 @@
         </label>
 
         <span
-          v-if="showRowCount && getTableRowCount(table.name) !== undefined"
+          v-if="showTableSize"
+          class="w-16 text-right text-xs shrink-0 text-gray-500 dark:text-gray-400"
+          :class="{ 'opacity-0': getTableSize(table.name) === undefined }"
+          v-tooltip="'Table size'"
+        >
+          {{ formatTableSize(getTableSize(table.name)) }}
+        </span>
+        <span
+          v-if="showRowCount"
+          class="w-20 text-right text-xs shrink-0 text-gray-500 dark:text-gray-400"
+          :class="{ 'opacity-0': getTableRowCount(table.name) === undefined }"
           v-tooltip="'Approximate row count'"
-          class="ui-chip-muted text-xs px-1.5 py-0.5 rounded shrink-0 text-gray-500 dark:text-gray-400"
         >
           {{ formatRowCount(getTableRowCount(table.name)) }}
         </span>
-
-        <button
-          v-if="table.selected && !isCdcMode"
-          v-tooltip="hasTableFilter(table) ? 'Edit filter' : 'Add filter'"
-          class="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-all"
-          :class="
-            isTableSettingsOpen(table.name)
-              ? 'ui-accent-action-active'
-              : hasTableFilter(table)
-                ? 'bg-sky-500/20 text-sky-600 dark:text-sky-400'
-                : 'text-gray-400 opacity-0 group-hover:opacity-100 hover:[background-color:var(--ui-surface-muted)]'
-          "
-          @click="emit('toggle-filter', table.name)"
-        >
-          <Filter class="w-3.5 h-3.5" />
-          <span v-if="hasTableFilter(table)" class="hidden sm:inline">filtered</span>
-          <ChevronUp v-if="isTableSettingsOpen(table.name)" class="w-3 h-3" />
-        </button>
       </div>
     </div>
   </div>
@@ -125,7 +157,7 @@ import { computed } from 'vue'
 import { useVirtualList } from '@vueuse/core'
 import type { Table } from '@/types/streamConfig'
 import HighlightedText from '@/components/common/HighlightedText.vue'
-import { ChevronUp, Filter, Sheet as TableIcon } from 'lucide-vue-next'
+import { Filter, Sheet as TableIcon } from 'lucide-vue-next'
 
 const VIRTUAL_THRESHOLD = 200
 const ITEM_HEIGHT = 42
@@ -136,17 +168,23 @@ interface Props {
   searchQuery: string
   isCdcMode: boolean
   showRowCount?: boolean
+  showTableSize?: boolean
   getTableDisplayName: (tableName: string) => string
   hasTableFilter: (table: Table) => boolean
   isTableSettingsOpen: (tableName: string) => boolean
   getTableRowCount?: (tableName: string) => number | undefined
   formatRowCount?: (count: number | undefined) => string
+  getTableSize?: (tableName: string) => number | undefined
+  formatTableSize?: (bytes: number | undefined) => string
 }
 
 const props = withDefaults(defineProps<Props>(), {
   showRowCount: false,
+  showTableSize: false,
   getTableRowCount: () => undefined,
-  formatRowCount: () => ''
+  formatRowCount: () => '',
+  getTableSize: () => undefined,
+  formatTableSize: () => ''
 })
 
 const emit = defineEmits<{
@@ -162,20 +200,10 @@ const {
   wrapperProps
 } = useVirtualList(
   computed(() => props.tables),
-  {
-    itemHeight: ITEM_HEIGHT,
-    overscan: 6
-  }
+  { itemHeight: ITEM_HEIGHT }
 )
 
 const virtualContainerHeight = computed(() =>
   Math.min(props.tables.length * ITEM_HEIGHT, MAX_VIRTUAL_HEIGHT)
 )
-
-const getTableDisplayName = (tableName: string) => props.getTableDisplayName(tableName)
-const hasTableFilter = (table: Table) => props.hasTableFilter(table)
-const isTableSettingsOpen = (tableName: string) => props.isTableSettingsOpen(tableName)
-const getTableRowCount = (tableName: string) => props.getTableRowCount(tableName)
-const formatRowCount = (count: number | undefined) => props.formatRowCount(count)
-const isCdcMode = computed(() => props.isCdcMode)
 </script>

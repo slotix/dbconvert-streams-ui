@@ -97,7 +97,7 @@ const menuSections = computed<MenuItem[][]>(() => {
   return sections.filter((section) => section.length > 0)
 })
 const itemButtonClass =
-  'w-full text-left text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] disabled:cursor-not-allowed disabled:text-gray-400 dark:text-gray-200 dark:disabled:text-gray-500'
+  'w-full text-left text-gray-700 transition-colors hover:bg-(--ui-surface-muted) disabled:cursor-not-allowed disabled:text-gray-400 dark:text-gray-200 dark:disabled:text-gray-500'
 
 function closeMenu() {
   emit('close')

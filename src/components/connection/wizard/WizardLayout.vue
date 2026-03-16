@@ -5,7 +5,7 @@
       <nav aria-label="Progress">
         <ol
           role="list"
-          class="ui-surface-raised ui-border-default divide-y divide-[var(--ui-border-default)] rounded-md border shadow-sm md:flex md:divide-y-0"
+          class="ui-surface-raised ui-border-default divide-y divide-(--ui-border-default) rounded-md border shadow-sm md:flex md:divide-y-0"
         >
           <li v-for="(step, stepIdx) in steps" :key="step.name" class="relative md:flex md:flex-1">
             <!-- Completed Step -->
@@ -16,7 +16,7 @@
               :class="[
                 'group flex w-full items-center text-left',
                 canJumpToStep(stepIdx)
-                  ? 'cursor-pointer hover:[background-color:var(--ui-surface-muted)]'
+                  ? 'cursor-pointer hover:bg-(--ui-surface-muted)'
                   : 'cursor-default'
               ]"
               @click="handleStepClick(stepIdx)"
@@ -83,7 +83,7 @@
             <button
               v-else-if="canJumpToStep(stepIdx)"
               type="button"
-              class="group flex w-full cursor-pointer items-center text-left hover:[background-color:var(--ui-surface-muted)]"
+              class="group flex w-full cursor-pointer items-center text-left hover:bg-(--ui-surface-muted)"
               @click="handleStepClick(stepIdx)"
             >
               <span class="flex items-center px-6 py-4 text-sm font-medium min-w-0">

@@ -5,7 +5,7 @@
   >
     <!-- Collapsed State: Summary with Badges -->
     <button
-      class="ui-surface-toolbar ui-border-default flex w-full items-center justify-between border-b px-6 py-3 transition-colors hover:[background-color:var(--ui-surface-muted)]"
+      class="ui-surface-toolbar ui-border-default flex w-full items-center justify-between border-b px-6 py-3 transition-colors hover:bg-(--ui-surface-muted)"
       @click="expanded = !expanded"
     >
       <div class="flex items-center gap-3 flex-1">
@@ -60,7 +60,7 @@
           :class="
             viewMode === 'columns'
               ? 'ui-surface-raised ui-border-default text-gray-900 dark:text-gray-100 border'
-              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:[background-color:var(--ui-surface-muted)]'
+              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-(--ui-surface-muted)'
           "
           @click="selectViewMode('columns')"
         >
@@ -71,7 +71,7 @@
           :class="
             viewMode === 'ddl'
               ? 'ui-surface-raised ui-border-default text-gray-900 dark:text-gray-100 border'
-              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:[background-color:var(--ui-surface-muted)]'
+              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-(--ui-surface-muted)'
           "
           @click="selectViewMode('ddl')"
         >
@@ -116,7 +116,7 @@
             <div
               v-for="col in mergedColumns"
               :key="col.name"
-              class="grid grid-cols-[1fr_auto_1fr] gap-4 px-4 py-2.5 text-sm transition-colors hover:[background-color:var(--ui-surface-muted)]"
+              class="grid grid-cols-[1fr_auto_1fr] gap-4 px-4 py-2.5 text-sm transition-colors hover:bg-(--ui-surface-muted)"
               :class="getRowClass(col)"
             >
               <!-- Source Column -->

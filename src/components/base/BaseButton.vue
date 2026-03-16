@@ -47,13 +47,13 @@ const baseClasses =
 
 const variantClasses: Record<Variant, string> = {
   primary:
-    'ui-accent-primary border disabled:[background-color:var(--ui-surface-inset)] disabled:[border-color:var(--ui-border-default)] disabled:[color:var(--ui-text-subtle)]',
+    'ui-accent-primary border disabled:bg-(--ui-surface-inset) disabled:border-(--ui-border-default) disabled:text-(--ui-text-subtle)',
   secondary:
-    'ui-surface-raised ui-border-default ui-text-default border hover:[background-color:var(--ui-surface-muted)] focus-visible:[background-color:var(--ui-surface-muted)] disabled:[background-color:var(--ui-surface-inset)] disabled:[border-color:var(--ui-border-default)] disabled:[color:var(--ui-text-subtle)]',
+    'ui-surface-raised ui-border-default ui-text-default border hover:bg-(--ui-surface-muted) focus-visible:bg-(--ui-surface-muted) disabled:bg-(--ui-surface-inset) disabled:border-(--ui-border-default) disabled:text-(--ui-text-subtle)',
   danger:
-    'ui-surface-raised border [color:var(--ui-danger-text)] [border-color:var(--ui-danger-soft-border-strong)] hover:[background-color:var(--ui-danger-soft-bg)] focus-visible:[background-color:var(--ui-danger-soft-bg)] focus-visible:[border-color:var(--ui-danger-soft-border-strong)] disabled:[background-color:var(--ui-surface-inset)] disabled:[border-color:var(--ui-border-default)] disabled:[color:var(--ui-text-subtle)]',
+    'ui-surface-raised border text-(--ui-danger-text) border-(--ui-danger-soft-border-strong) hover:bg-(--ui-danger-soft-bg) focus-visible:bg-(--ui-danger-soft-bg) focus-visible:border-(--ui-danger-soft-border-strong) disabled:bg-(--ui-surface-inset) disabled:border-(--ui-border-default) disabled:text-(--ui-text-subtle)',
   ghost:
-    'border border-transparent bg-transparent ui-text-muted hover:[color:var(--ui-text-strong)] hover:[background-color:var(--ui-surface-muted)] focus-visible:[color:var(--ui-text-strong)] focus-visible:[background-color:var(--ui-surface-muted)] disabled:[color:var(--ui-text-subtle)] disabled:hover:bg-transparent'
+    'border border-transparent bg-transparent ui-text-muted hover:text-(--ui-text-strong) hover:bg-(--ui-surface-muted) focus-visible:text-(--ui-text-strong) focus-visible:bg-(--ui-surface-muted) disabled:text-(--ui-text-subtle) disabled:hover:bg-transparent'
 }
 
 const sizeClasses: Record<Size, string> = {

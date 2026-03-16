@@ -472,7 +472,7 @@ function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
               'focus:outline-none focus-visible:border-gray-400 dark:focus-visible:border-gray-500',
               selected
                 ? 'border-b-2 border-gray-400 dark:border-gray-500 text-gray-900 dark:text-gray-100 -mb-px'
-                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 [border-color:transparent] hover:[border-color:var(--ui-border-default)]'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 border-transparent hover:border-(--ui-border-default)'
             ]"
           >
             {{ tab.name }}
@@ -516,7 +516,7 @@ function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
                 :class="
                   showAdvancedColumns
                     ? 'ui-surface-muted ui-border-default text-gray-900 dark:text-gray-100'
-                    : 'ui-surface-raised ui-border-default text-gray-600 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300'
+                    : 'ui-surface-raised ui-border-default text-gray-600 hover:bg-(--ui-surface-muted) dark:text-gray-300'
                 "
                 :aria-pressed="showAdvancedColumns"
                 @click="showAdvancedColumns = !showAdvancedColumns"
@@ -594,11 +594,11 @@ function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
                       </th>
                     </tr>
                   </thead>
-                  <tbody class="ui-surface-raised divide-y divide-[var(--ui-border-default)]">
+                  <tbody class="ui-surface-raised divide-y divide-(--ui-border-default)">
                     <tr
                       v-for="column in filteredSortedColumns"
                       :key="column.name"
-                      class="hover:[background-color:var(--ui-surface-muted)]"
+                      class="hover:bg-(--ui-surface-muted)"
                     >
                       <td class="whitespace-nowrap px-3 py-2 text-sm">
                         <div class="flex items-center">
@@ -698,7 +698,7 @@ function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
               <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-4">
                 Primary Keys
               </h4>
-              <ul role="list" class="divide-y divide-[var(--ui-border-default)]">
+              <ul role="list" class="divide-y divide-(--ui-border-default)">
                 <li
                   v-for="key in primaryKeys"
                   :key="key"
@@ -721,7 +721,7 @@ function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
               <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-4">
                 Foreign Keys
               </h4>
-              <ul role="list" class="divide-y divide-[var(--ui-border-default)]">
+              <ul role="list" class="divide-y divide-(--ui-border-default)">
                 <li
                   v-for="key in foreignKeys"
                   :key="key.name"
@@ -774,11 +774,11 @@ function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
                       </th>
                     </tr>
                   </thead>
-                  <tbody class="ui-surface-raised divide-y divide-[var(--ui-border-default)]">
+                  <tbody class="ui-surface-raised divide-y divide-(--ui-border-default)">
                     <tr
                       v-for="index in indexes"
                       :key="index.name"
-                      class="hover:[background-color:var(--ui-surface-muted)]"
+                      class="hover:bg-(--ui-surface-muted)"
                     >
                       <td
                         class="whitespace-nowrap px-3 py-2 text-sm font-medium text-gray-900 dark:text-gray-100"
@@ -884,11 +884,11 @@ function getAdvancedColumnMetaSummary(column: SQLColumnMeta): string {
                       </th>
                     </tr>
                   </thead>
-                  <tbody class="ui-surface-raised divide-y divide-[var(--ui-border-default)]">
+                  <tbody class="ui-surface-raised divide-y divide-(--ui-border-default)">
                     <tr
                       v-for="partition in partitions"
                       :key="partition.name"
-                      class="hover:[background-color:var(--ui-surface-muted)]"
+                      class="hover:bg-(--ui-surface-muted)"
                     >
                       <td
                         class="whitespace-nowrap px-3 py-2 text-sm font-medium text-gray-900 dark:text-gray-100"

@@ -839,7 +839,7 @@ export default {
           :class="
             hasAnyFilterActivity
               ? 'ui-status-warning-badge border'
-              : 'ui-text-muted hover:[background-color:var(--ui-surface-muted)] border border-transparent'
+              : 'ui-text-muted hover:bg-(--ui-surface-muted) border border-transparent'
           "
           @click="openFilterPanel"
         >
@@ -906,7 +906,7 @@ export default {
           </button>
           <button
             type="button"
-            class="ui-surface-raised ui-border-default ui-text-default text-xs rounded-md px-2.5 py-1 border hover:[background-color:var(--ui-surface-muted)] disabled:opacity-50 disabled:cursor-not-allowed shrink-0 whitespace-nowrap"
+            class="ui-surface-raised ui-border-default ui-text-default text-xs rounded-md px-2.5 py-1 border hover:bg-(--ui-surface-muted) disabled:opacity-50 disabled:cursor-not-allowed shrink-0 whitespace-nowrap"
             title="Discard pending changes"
             :disabled="isSaving"
             @click="cancelChanges"

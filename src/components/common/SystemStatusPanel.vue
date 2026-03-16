@@ -95,7 +95,7 @@ onMounted(async () => {
     <button
       v-if="props.showOpenLogs && canOpenLogsFolder"
       type="button"
-      class="ui-surface-muted ui-border-default inline-flex items-center gap-2 rounded-md border px-2.5 py-1 text-[11px] font-semibold text-gray-700 hover:[background-color:var(--ui-surface-inset)] dark:text-gray-200"
+      class="ui-surface-muted ui-border-default inline-flex items-center gap-2 rounded-md border px-2.5 py-1 text-[11px] font-semibold text-gray-700 hover:bg-(--ui-surface-inset) dark:text-gray-200"
       @click="openLogsFolder"
     >
       <FileText class="h-3.5 w-3.5" />

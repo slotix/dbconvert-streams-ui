@@ -803,7 +803,7 @@ const isLoadingDatabases = computed(() => {
                     :class="
                       isPathCopied
                         ? 'ui-status-success-text'
-                        : 'ui-icon-muted hover:[color:var(--ui-text-default)]'
+                        : 'ui-icon-muted hover:text-(--ui-text-default)'
                     "
                     @click.stop="copyFolderPath"
                   >
@@ -882,7 +882,7 @@ const isLoadingDatabases = computed(() => {
                   :class="
                     isPathCopied
                       ? 'ui-status-success-text'
-                      : 'ui-icon-muted hover:[color:var(--ui-text-default)]'
+                      : 'ui-icon-muted hover:text-(--ui-text-default)'
                   "
                   @click.stop="copyFolderPath"
                 >
@@ -955,7 +955,7 @@ const isLoadingDatabases = computed(() => {
                     v-tooltip="
                       showPassword ? 'Hide password and truncate' : 'Show password and full details'
                     "
-                    class="ui-focus-ring ui-icon-muted shrink-0 rounded hover:[color:var(--ui-text-default)]"
+                    class="ui-focus-ring ui-icon-muted shrink-0 rounded hover:text-(--ui-text-default)"
                     @click="showPassword = !showPassword"
                   >
                     <Eye v-if="!showPassword" class="h-3.5 w-3.5" />
@@ -967,7 +967,7 @@ const isLoadingDatabases = computed(() => {
                     :class="
                       isCopied
                         ? 'ui-status-success-text'
-                        : 'ui-icon-muted hover:[color:var(--ui-text-default)]'
+                        : 'ui-icon-muted hover:text-(--ui-text-default)'
                     "
                     @click="copyConnectionString"
                   >

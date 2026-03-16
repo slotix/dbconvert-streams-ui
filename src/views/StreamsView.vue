@@ -43,7 +43,7 @@
               flexGrow: 0,
               flexShrink: 0
             }"
-            class="min-w-[80px] min-h-0"
+            class="min-w-20 min-h-0"
           >
             <StreamsSidebar
               :selected-stream-id="selectedStreamId"
@@ -57,13 +57,13 @@
             v-if="sidebar.sidebarVisible.value"
             role="separator"
             aria-orientation="vertical"
-            class="relative z-20 w-[8px] shrink-0 cursor-col-resize select-none group"
+            class="relative z-20 w-2 shrink-0 cursor-col-resize select-none group"
             title="Drag to resize • Double-click to collapse"
             @mousedown.prevent="sidebar.onSidebarDividerMouseDown"
             @dblclick="sidebar.toggleSidebar"
           >
             <div
-              class="ui-border-default absolute inset-y-0 left-1/2 -translate-x-1/2 w-px transition-all duration-150 group-hover:w-[3px] group-hover:bg-[var(--ui-accent-soft-border)]"
+              class="ui-border-default absolute inset-y-0 left-1/2 -translate-x-1/2 w-px transition-all duration-150 group-hover:w-[3px] group-hover:bg-(--ui-accent-soft-border)"
             />
           </div>
 
@@ -72,12 +72,12 @@
             v-if="!sidebar.sidebarVisible.value"
             role="separator"
             aria-orientation="vertical"
-            class="relative z-20 w-[8px] shrink-0 cursor-col-resize select-none group"
+            class="relative z-20 w-2 shrink-0 cursor-col-resize select-none group"
             title="Click to restore sidebar"
             @click="sidebar.toggleSidebar"
           >
             <div
-              class="ui-border-default absolute inset-y-0 left-0 w-px transition-all duration-150 group-hover:w-[3px] group-hover:bg-[var(--ui-accent-soft-border)]"
+              class="ui-border-default absolute inset-y-0 left-0 w-px transition-all duration-150 group-hover:w-[3px] group-hover:bg-(--ui-accent-soft-border)"
             />
           </div>
 

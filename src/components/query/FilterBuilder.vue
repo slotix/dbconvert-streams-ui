@@ -31,7 +31,7 @@
           :class="
             selectedColumns.includes(col.name)
               ? 'ui-accent-selection-checked ui-accent-text'
-              : 'ui-chip-muted border border-transparent hover:[border-color:var(--ui-border-default)]'
+              : 'ui-chip-muted border border-transparent hover:border-(--ui-border-default)'
           "
         >
           <input

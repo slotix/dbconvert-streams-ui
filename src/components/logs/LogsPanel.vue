@@ -533,7 +533,7 @@ onBeforeUnmount(() => {
                   :class="[
                     selectedView === 'system'
                       ? 'ui-surface-muted text-gray-900 dark:text-gray-100 shadow-sm'
-                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:[background-color:var(--ui-surface-muted)]'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-(--ui-surface-muted)'
                   ]"
                   @click="selectedView = 'system'"
                 >
@@ -549,7 +549,7 @@ onBeforeUnmount(() => {
                   :class="[
                     selectedView === 'sql'
                       ? 'ui-surface-muted text-gray-900 dark:text-gray-100 shadow-sm'
-                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:[background-color:var(--ui-surface-muted)]'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-(--ui-surface-muted)'
                   ]"
                   @click="selectedView = 'sql'"
                 >
@@ -580,7 +580,7 @@ onBeforeUnmount(() => {
               <div ref="messageTypeMenuRef" class="relative">
                 <button
                   v-tooltip="'Filter by message type'"
-                  class="ui-surface-raised ui-border-default flex items-center gap-1.5 rounded border px-3 py-1.5 text-left text-xs transition-colors hover:[background-color:var(--ui-surface-muted)]"
+                  class="ui-surface-raised ui-border-default flex items-center gap-1.5 rounded border px-3 py-1.5 text-left text-xs transition-colors hover:bg-(--ui-surface-muted)"
                   @click="showMessageTypeMenu = !showMessageTypeMenu"
                 >
                   <Filter class="w-4 h-4 text-gray-600 dark:text-gray-400" />
@@ -608,7 +608,7 @@ onBeforeUnmount(() => {
                   >
                     <!-- Select All / Clear All -->
                     <button
-                      class="ui-border-default group flex w-full items-center gap-2 border-b px-3 py-2 text-left text-xs transition-colors hover:[background-color:var(--ui-surface-muted)]"
+                      class="ui-border-default group flex w-full items-center gap-2 border-b px-3 py-2 text-left text-xs transition-colors hover:bg-(--ui-surface-muted)"
                       @click="
                         selectedMessageTypes.size === messageTypeOptions.length
                           ? selectedMessageTypes.clear()
@@ -645,7 +645,7 @@ onBeforeUnmount(() => {
                     <button
                       v-for="type in messageTypeOptions"
                       :key="type"
-                      class="group flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition-colors hover:[background-color:var(--ui-surface-muted)]"
+                      class="group flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition-colors hover:bg-(--ui-surface-muted)"
                       @click="
                         selectedMessageTypes.has(type)
                           ? selectedMessageTypes.delete(type)
@@ -683,7 +683,7 @@ onBeforeUnmount(() => {
                 v-tooltip="
                   `Sort: ${systemLogsSortOrder === 'newest' ? 'Newest on top' : 'Oldest on top'} (S)`
                 "
-                class="ui-surface-raised ui-border-default flex items-center gap-1.5 rounded border px-3 py-1.5 text-xs transition-colors hover:[background-color:var(--ui-surface-muted)]"
+                class="ui-surface-raised ui-border-default flex items-center gap-1.5 rounded border px-3 py-1.5 text-xs transition-colors hover:bg-(--ui-surface-muted)"
                 @click="toggleSystemLogsSortOrder"
               >
                 <component
@@ -716,7 +716,7 @@ onBeforeUnmount(() => {
                 v-if="canOpenLogsFolder"
                 v-tooltip="systemStatusMeta.join('\n')"
                 type="button"
-                class="ui-surface-raised ui-border-default inline-flex items-center gap-1.5 rounded border px-3 py-1.5 text-xs text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] dark:text-gray-200"
+                class="ui-surface-raised ui-border-default inline-flex items-center gap-1.5 rounded border px-3 py-1.5 text-xs text-gray-700 transition-colors hover:bg-(--ui-surface-muted) dark:text-gray-200"
                 @click="openLogsFolder()"
               >
                 <FolderOpen class="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
@@ -727,7 +727,7 @@ onBeforeUnmount(() => {
               <button
                 v-tooltip="`Copy ${logsWithContent.length} visible logs to clipboard (C)`"
                 type="button"
-                class="ui-surface-raised ui-border-default inline-flex items-center gap-1.5 rounded border px-3 py-1.5 text-xs text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] dark:text-gray-200"
+                class="ui-surface-raised ui-border-default inline-flex items-center gap-1.5 rounded border px-3 py-1.5 text-xs text-gray-700 transition-colors hover:bg-(--ui-surface-muted) dark:text-gray-200"
                 @click="copyAllLogs"
               >
                 <ClipboardCopy class="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
@@ -778,7 +778,7 @@ onBeforeUnmount(() => {
                       :class="[
                         selectedSystemLogTabId === tabId
                           ? 'ui-accent-selection-checked ui-accent-text border'
-                          : 'ui-surface-raised ui-border-default text-gray-600 dark:text-gray-300 border hover:[background-color:var(--ui-surface-muted)]'
+                          : 'ui-surface-raised ui-border-default text-gray-600 dark:text-gray-300 border hover:bg-(--ui-surface-muted)'
                       ]"
                       @click="selectedSystemLogTabId = tabId"
                     >
@@ -793,11 +793,11 @@ onBeforeUnmount(() => {
                       <button
                         v-if="tabId !== 'general'"
                         v-tooltip="'Close tab'"
-                        class="ml-1 flex h-4 w-4 items-center justify-center rounded transition-colors hover:[background-color:var(--ui-surface-muted)]"
+                        class="ml-1 flex h-4 w-4 items-center justify-center rounded transition-colors hover:bg-(--ui-surface-muted)"
                         :class="[
                           selectedSystemLogTabId === tabId
-                            ? 'hover:[background-color:var(--ui-accent-soft-bg-strong)]'
-                            : 'hover:[background-color:var(--ui-surface-muted)]'
+                            ? 'hover:bg-(--ui-accent-soft-bg-strong)'
+                            : 'hover:bg-(--ui-surface-muted)'
                         ]"
                         @click.stop="store.removeSystemLogTab(tabId)"
                       >

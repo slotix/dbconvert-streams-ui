@@ -8,8 +8,8 @@
           :key="tab.id"
           :class="[
             activeTab === tab.id
-              ? 'ui-accent-text [border-color:var(--ui-accent-indicator)]'
-              : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:[border-color:var(--ui-border-default)]',
+              ? 'ui-accent-text border-(--ui-accent-indicator)'
+              : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-(--ui-border-default)',
             'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors'
           ]"
           @click="activeTab = tab.id"

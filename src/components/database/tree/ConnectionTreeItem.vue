@@ -500,7 +500,7 @@ const connectionPort = computed(() => getConnectionPort(props.connection))
       :class="[
         'group relative flex items-center gap-2 rounded-lg px-3 py-2 text-sm ui-text-default cursor-pointer select-none',
         'transition-all duration-200 ease-out',
-        'hover:[background-color:var(--ui-surface-muted)]',
+        'hover:bg-(--ui-surface-muted)',
         'hover:shadow-sm hover:scale-[1.02] hover:-translate-y-0.5',
         'active:scale-[0.98]',
         // Highlight when connection is selected (but no database/table selected)
@@ -515,7 +515,7 @@ const connectionPort = computed(() => getConnectionPort(props.connection))
         :is="isExpanded ? ChevronDown : ChevronRight"
         :class="[
           caretClass,
-          'transition-transform duration-200 group-hover:[color:var(--ui-text-muted)]'
+          'transition-transform duration-200 group-hover:text-(--ui-text-muted)'
         ]"
       />
       <DatabaseIcon
@@ -527,7 +527,7 @@ const connectionPort = computed(() => getConnectionPort(props.connection))
       <div class="flex-1 min-w-0 flex flex-col gap-0.5">
         <div class="flex items-center gap-1.5">
           <HighlightedText
-            class="font-semibold truncate ui-text-strong group-hover:[color:var(--ui-text-strong)]"
+            class="font-semibold truncate ui-text-strong group-hover:text-(--ui-text-strong)"
             :text="connection.name || connectionHost || 'Connection'"
             :query="searchQuery"
           />
@@ -541,7 +541,7 @@ const connectionPort = computed(() => getConnectionPort(props.connection))
         </div>
         <div
           v-if="connectionHost && connectionPort"
-          class="truncate text-xs leading-tight ui-text-muted group-hover:[color:var(--ui-text-default)]"
+          class="truncate text-xs leading-tight ui-text-muted group-hover:text-(--ui-text-default)"
         >
           {{ connectionHost }}:{{ connectionPort }}
         </div>

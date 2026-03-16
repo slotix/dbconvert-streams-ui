@@ -64,7 +64,7 @@ const handleChange = (value: boolean) => {
         'focus:outline-none focus-visible:outline-none',
         modelValue
           ? 'ui-accent-switch-on'
-          : 'ui-surface-inset focus-visible:[border-color:var(--ui-border-default)]',
+          : 'ui-surface-inset focus-visible:border-(--ui-border-default)',
         disabled ? 'opacity-50 cursor-not-allowed' : ''
       ]"
       @update:model-value="handleChange"
@@ -117,7 +117,7 @@ const handleChange = (value: boolean) => {
         'focus:outline-none focus-visible:outline-none',
         modelValue
           ? 'ui-accent-switch-on'
-          : 'ui-surface-inset focus-visible:[border-color:var(--ui-border-default)]',
+          : 'ui-surface-inset focus-visible:border-(--ui-border-default)',
         disabled ? 'opacity-50 cursor-not-allowed' : ''
       ]"
       @update:model-value="handleChange"

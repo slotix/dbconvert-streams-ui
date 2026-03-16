@@ -234,7 +234,7 @@ onBeforeUnmount(() => {
           'flex items-center gap-1.5 px-3 py-1.5 text-xs border rounded transition-colors',
           visuallyGrouped
             ? 'ui-surface-muted ui-border-default text-gray-700 dark:text-gray-200 hover:bg-[var(--ui-surface-inset)]'
-            : 'ui-surface-raised ui-border-default text-gray-600 dark:text-gray-300 hover:[background-color:var(--ui-surface-muted)]'
+            : 'ui-surface-raised ui-border-default text-gray-600 dark:text-gray-300 hover:bg-(--ui-surface-muted)'
         ]"
         @click="toggleVisualGrouping"
       >
@@ -246,7 +246,7 @@ onBeforeUnmount(() => {
       <button
         v-if="visuallyGrouped && hasLocations"
         v-tooltip="`${expandCollapseLabel} all location groups (X)`"
-        class="ui-surface-raised ui-border-default flex items-center gap-1.5 rounded border px-3 py-1.5 text-xs text-gray-600 transition-colors shadow-sm hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+        class="ui-surface-raised ui-border-default flex items-center gap-1.5 rounded border px-3 py-1.5 text-xs text-gray-600 transition-colors shadow-sm hover:bg-(--ui-surface-muted) dark:text-gray-300"
         @click="toggleExpandCollapse"
       >
         <component :is="isAllExpanded ? Minimize2 : Maximize2" class="w-4 h-4" />
@@ -259,7 +259,7 @@ onBeforeUnmount(() => {
           v-tooltip="
             `Filter by query type (${selectedPurposes.size}/${queryPurposeOptions.length})`
           "
-          class="ui-accent-focus ui-surface-raised ui-border-default flex items-center gap-1.5 rounded border px-3 py-1.5 text-left text-xs transition-colors hover:[background-color:var(--ui-surface-muted)]"
+          class="ui-accent-focus ui-surface-raised ui-border-default flex items-center gap-1.5 rounded border px-3 py-1.5 text-left text-xs transition-colors hover:bg-(--ui-surface-muted)"
           @click="showQueryTypeMenu = !showQueryTypeMenu"
         >
           <Filter class="w-4 h-4 text-gray-600 dark:text-gray-400" />
@@ -279,7 +279,7 @@ onBeforeUnmount(() => {
           >
             <!-- Select All / Clear All -->
             <button
-              class="ui-border-default w-full border-b px-3 py-2 text-left text-xs font-semibold text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] dark:text-gray-200"
+              class="ui-border-default w-full border-b px-3 py-2 text-left text-xs font-semibold text-gray-700 transition-colors hover:bg-(--ui-surface-muted) dark:text-gray-200"
               @click="selectAllPurposes"
             >
               {{ allPurposesSelected ? '✓ All Selected' : 'Select All' }}
@@ -289,7 +289,7 @@ onBeforeUnmount(() => {
             <button
               v-for="option in queryPurposeOptions"
               :key="option.value"
-              class="group flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition-colors hover:[background-color:var(--ui-surface-muted)]"
+              class="group flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition-colors hover:bg-(--ui-surface-muted)"
               @click="toggleQueryPurpose(option.value)"
             >
               <div
@@ -323,7 +323,7 @@ onBeforeUnmount(() => {
       <!-- Sort Order Toggle -->
       <button
         v-tooltip="`Sort: ${sortOrder === 'newest' ? 'Newest on top' : 'Oldest on top'} (S)`"
-        class="ui-surface-raised ui-border-default flex items-center gap-1.5 rounded border px-3 py-1.5 text-xs transition-colors hover:[background-color:var(--ui-surface-muted)]"
+        class="ui-surface-raised ui-border-default flex items-center gap-1.5 rounded border px-3 py-1.5 text-xs transition-colors hover:bg-(--ui-surface-muted)"
         @click="toggleSortOrder"
       >
         <component
@@ -338,7 +338,7 @@ onBeforeUnmount(() => {
       <!-- Time Window - HIDDEN -->
       <!-- <Listbox v-model="timeWindow" as="div" class="relative">
         <ListboxButton
-          class="ui-accent-focus ui-surface-raised ui-border-default relative flex min-w-[88px] items-center gap-1.5 rounded border pl-2 pr-6 py-1 text-left text-xs transition-colors hover:[border-color:var(--ui-accent-soft-border)]"
+          class="ui-accent-focus ui-surface-raised ui-border-default relative flex min-w-[88px] items-center gap-1.5 rounded border pl-2 pr-6 py-1 text-left text-xs transition-colors hover:border-(--ui-accent-soft-border)"
           title="Time Window"
         >
           <ClockIcon class="w-4 h-4 text-gray-500" />
@@ -402,7 +402,7 @@ onBeforeUnmount(() => {
           v-model="searchText"
           type="text"
           placeholder="Search queries, tables, errors..."
-          class="ui-accent-focus ui-surface-raised ui-border-default w-full rounded border pl-9 pr-3 py-1.5 text-xs transition-colors hover:[border-color:var(--ui-accent-soft-border)] dark:text-gray-200 dark:placeholder-gray-500"
+          class="ui-accent-focus ui-surface-raised ui-border-default w-full rounded border pl-9 pr-3 py-1.5 text-xs transition-colors hover:border-(--ui-accent-soft-border) dark:text-gray-200 dark:placeholder-gray-500"
         />
       </div>
 
@@ -436,19 +436,19 @@ onBeforeUnmount(() => {
           class="ui-surface-floating ui-border-default absolute right-0 z-50 mt-2 w-36 rounded border"
         >
           <button
-            class="w-full px-3 py-2 text-left text-xs text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] dark:text-gray-200"
+            class="w-full px-3 py-2 text-left text-xs text-gray-700 transition-colors hover:bg-(--ui-surface-muted) dark:text-gray-200"
             @click="selectExportFormat('text')"
           >
             Export as Text
           </button>
           <button
-            class="w-full px-3 py-2 text-left text-xs text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] dark:text-gray-200"
+            class="w-full px-3 py-2 text-left text-xs text-gray-700 transition-colors hover:bg-(--ui-surface-muted) dark:text-gray-200"
             @click="selectExportFormat('csv')"
           >
             Export as CSV
           </button>
           <button
-            class="w-full px-3 py-2 text-left text-xs text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] dark:text-gray-200"
+            class="w-full px-3 py-2 text-left text-xs text-gray-700 transition-colors hover:bg-(--ui-surface-muted) dark:text-gray-200"
             @click="selectExportFormat('json')"
           >
             Export as JSON
@@ -469,7 +469,7 @@ onBeforeUnmount(() => {
       <!-- Keyboard Shortcuts Help -->
       <div class="relative">
         <button
-          class="rounded p-1.5 text-gray-500 transition-colors hover:text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-400 dark:hover:text-gray-300"
+          class="rounded p-1.5 text-gray-500 transition-colors hover:text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-400 dark:hover:text-gray-300"
           title="Keyboard shortcuts"
           @click="showShortcuts = !showShortcuts"
         >

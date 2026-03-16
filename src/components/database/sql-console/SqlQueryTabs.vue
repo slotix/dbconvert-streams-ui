@@ -1,6 +1,6 @@
 <template>
   <div
-    class="sql-query-tabs ui-surface-toolbar ui-border-default flex min-h-[44px] items-center overflow-x-auto border-b py-1 scrollbar-thin"
+    class="sql-query-tabs ui-surface-toolbar ui-border-default flex min-h-11 items-center overflow-x-auto border-b py-1 scrollbar-thin"
   >
     <!-- Query Tabs with drag support -->
     <template v-for="(tab, index) in tabs" :key="tab.id">
@@ -15,7 +15,7 @@
         :class="[
           tab.id === activeTabId
             ? 'ui-tab-active ui-text-strong'
-            : 'ui-text-muted hover:[background-color:var(--ui-surface-muted)]',
+            : 'ui-text-muted hover:bg-(--ui-surface-muted)',
           dragState.isDragging && dragState.draggedIndex === index && 'opacity-50'
         ]"
         @click="$emit('select', tab.id)"
@@ -41,7 +41,7 @@
         />
         <button
           v-if="tabs.length > 1 && renamingTabId !== tab.id"
-          class="rounded p-0.5 opacity-0 transition-opacity group-hover:opacity-100 hover:[background-color:var(--ui-surface-muted)]"
+          class="rounded p-0.5 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-(--ui-surface-muted)"
           title="Close tab"
           @click.stop="$emit('close', tab.id)"
         >
@@ -65,7 +65,7 @@
     <!-- Close All Tabs Button -->
     <button
       v-if="tabs.length > 1"
-      class="ui-icon-muted ml-auto shrink-0 px-2 py-2 transition-colors hover:[background-color:var(--ui-surface-muted)] hover:[color:var(--ui-danger-text)]"
+      class="ui-icon-muted ml-auto shrink-0 px-2 py-2 transition-colors hover:bg-(--ui-surface-muted) hover:text-(--ui-danger-text)"
       title="Close All Tabs"
       @click="$emit('closeAll')"
     >
@@ -81,21 +81,21 @@
         :style="{ left: `${contextMenu.x}px`, top: `${contextMenu.y}px` }"
       >
         <button
-          class="ui-text-default w-full px-3 py-2 text-left text-sm hover:[background-color:var(--ui-surface-muted)]"
+          class="ui-text-default w-full px-3 py-2 text-left text-sm hover:bg-(--ui-surface-muted)"
           @click="handleContextMenuAction('close')"
         >
           Close
         </button>
         <button
           v-if="tabs.length > 1"
-          class="ui-text-default w-full px-3 py-2 text-left text-sm hover:[background-color:var(--ui-surface-muted)]"
+          class="ui-text-default w-full px-3 py-2 text-left text-sm hover:bg-(--ui-surface-muted)"
           @click="handleContextMenuAction('close-others')"
         >
           Close Others
         </button>
         <button
           v-if="tabs.length > 1"
-          class="ui-text-default w-full px-3 py-2 text-left text-sm hover:[background-color:var(--ui-surface-muted)]"
+          class="ui-text-default w-full px-3 py-2 text-left text-sm hover:bg-(--ui-surface-muted)"
           @click="handleContextMenuAction('close-all')"
         >
           Close All
@@ -106,7 +106,7 @@
           :class="[
             'flex w-full items-center justify-between px-3 py-2 text-left text-sm',
             canReopenTab
-              ? 'ui-text-default hover:[background-color:var(--ui-surface-muted)]'
+              ? 'ui-text-default hover:bg-(--ui-surface-muted)'
               : 'ui-text-subtle cursor-not-allowed'
           ]"
           @click="handleReopenClosedTab"

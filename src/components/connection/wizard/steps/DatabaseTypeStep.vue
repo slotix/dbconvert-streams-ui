@@ -31,7 +31,7 @@
                   ? 'ui-surface-muted ui-border-default cursor-not-allowed opacity-70'
                   : isSelected(dbType)
                     ? 'ui-accent-selection-checked'
-                    : 'ui-surface-raised ui-border-default hover:[background-color:var(--ui-surface-muted)]'
+                    : 'ui-surface-raised ui-border-default hover:bg-(--ui-surface-muted)'
               ]"
               @click="selectType(dbType)"
             >

@@ -41,7 +41,7 @@ const rowBackgroundClass = computed(() => {
   if (props.isError) {
     return 'bg-red-50 dark:bg-red-900/30'
   }
-  return 'transition-colors hover:[background-color:var(--ui-surface-muted)]'
+  return 'transition-colors hover:bg-(--ui-surface-muted)'
 })
 
 async function copyToClipboard() {
@@ -75,7 +75,7 @@ function toggleExpand() {
       <!-- Expand/Collapse Icon (if expandable) -->
       <button
         v-if="expandable"
-        class="flex-shrink-0 rounded p-0.5 transition-colors hover:[background-color:var(--ui-surface-muted)]"
+        class="flex-shrink-0 rounded p-0.5 transition-colors hover:bg-(--ui-surface-muted)"
         @click.stop="toggleExpand"
       >
         <component

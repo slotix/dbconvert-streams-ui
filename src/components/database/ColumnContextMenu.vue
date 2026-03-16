@@ -123,21 +123,21 @@ const resetColumns = () => {
     <!-- Pin Section -->
     <div class="py-1">
       <button
-        class="flex w-full items-center gap-3 px-3 py-2 text-sm text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+        class="flex w-full items-center gap-3 px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-(--ui-surface-muted) dark:text-gray-300"
         @click="pinLeft"
       >
         <MapPin :class="[iconSizes.contextMenu, 'text-gray-500 dark:text-gray-400 -rotate-45']" />
         <span>Pin Left</span>
       </button>
       <button
-        class="flex w-full items-center gap-3 px-3 py-2 text-sm text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+        class="flex w-full items-center gap-3 px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-(--ui-surface-muted) dark:text-gray-300"
         @click="pinRight"
       >
         <MapPin :class="[iconSizes.contextMenu, 'text-gray-500 dark:text-gray-400 rotate-45']" />
         <span>Pin Right</span>
       </button>
       <button
-        class="flex w-full items-center gap-3 px-3 py-2 text-sm text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+        class="flex w-full items-center gap-3 px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-(--ui-surface-muted) dark:text-gray-300"
         @click="unpinColumn"
       >
         <Ban :class="[iconSizes.contextMenu, 'text-gray-500 dark:text-gray-400']" />
@@ -150,14 +150,14 @@ const resetColumns = () => {
     <!-- Resize Section -->
     <div class="py-1">
       <button
-        class="flex w-full items-center gap-3 px-3 py-2 text-sm text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+        class="flex w-full items-center gap-3 px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-(--ui-surface-muted) dark:text-gray-300"
         @click="autoSizeColumn"
       >
         <Maximize2 :class="[iconSizes.contextMenu, 'text-gray-500 dark:text-gray-400']" />
         <span>Autosize This Column</span>
       </button>
       <button
-        class="flex w-full items-center gap-3 px-3 py-2 text-sm text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+        class="flex w-full items-center gap-3 px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-(--ui-surface-muted) dark:text-gray-300"
         @click="autoSizeAllColumns"
       >
         <Maximize2 :class="[iconSizes.contextMenu, 'text-gray-500 dark:text-gray-400']" />
@@ -170,7 +170,7 @@ const resetColumns = () => {
     <!-- Reset Section -->
     <div class="py-1">
       <button
-        class="flex w-full items-center gap-3 px-3 py-2 text-sm text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+        class="flex w-full items-center gap-3 px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-(--ui-surface-muted) dark:text-gray-300"
         @click="resetColumns"
       >
         <RefreshCw :class="[iconSizes.contextMenu, 'text-gray-500 dark:text-gray-400']" />

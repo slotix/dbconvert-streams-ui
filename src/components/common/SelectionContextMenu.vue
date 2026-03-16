@@ -144,7 +144,7 @@ function cancelAndClose() {
       <!-- Selection -->
       <button
         type="button"
-        class="w-full px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300 flex items-center justify-between"
+        class="w-full px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-(--ui-surface-muted) dark:text-gray-300 flex items-center justify-between"
         @click="selectAllAndClose"
       >
         <span>Select all (page)</span>
@@ -152,7 +152,7 @@ function cancelAndClose() {
       </button>
       <button
         type="button"
-        class="w-full px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300 flex items-center justify-between"
+        class="w-full px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-(--ui-surface-muted) dark:text-gray-300 flex items-center justify-between"
         @click="deselectAllAndClose"
       >
         <span>Deselect all</span>
@@ -164,7 +164,7 @@ function cancelAndClose() {
       <!-- Clipboard -->
       <button
         type="button"
-        class="w-full px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-300 flex items-center justify-between"
+        class="w-full px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-(--ui-surface-muted) disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-300 flex items-center justify-between"
         :disabled="!hasSelection"
         @click="copyAndClose('tsv')"
       >
@@ -173,7 +173,7 @@ function cancelAndClose() {
       </button>
       <button
         type="button"
-        class="w-full px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-300"
+        class="w-full px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-(--ui-surface-muted) disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-300"
         :disabled="!hasSelection"
         @click="copyAndClose('csv')"
       >
@@ -181,7 +181,7 @@ function cancelAndClose() {
       </button>
       <button
         type="button"
-        class="w-full px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-300"
+        class="w-full px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-(--ui-surface-muted) disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-300"
         :disabled="!hasSelection"
         @click="copyAndClose('json')"
       >
@@ -241,14 +241,14 @@ function cancelAndClose() {
           </button>
           <button
             type="button"
-            class="w-full text-left px-3 py-2 text-sm text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+            class="w-full text-left px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-(--ui-surface-muted) dark:text-gray-300"
             @click="openChangesPanelAndClose"
           >
             Review changes
           </button>
           <button
             type="button"
-            class="w-full text-left px-3 py-2 text-sm text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+            class="w-full text-left px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-(--ui-surface-muted) dark:text-gray-300"
             @click="cancelAndClose"
           >
             Discard changes

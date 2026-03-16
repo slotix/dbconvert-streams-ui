@@ -5,7 +5,7 @@
       <div class="px-4 py-2 flex items-center gap-3">
         <button
           type="button"
-          class="ui-focus-ring ui-text-default lg:hidden flex items-center justify-center rounded-md p-1.5 transition-colors hover:[color:var(--ui-text-strong)] hover:[background-color:var(--ui-surface-raised)]"
+          class="ui-focus-ring ui-text-default lg:hidden flex items-center justify-center rounded-md p-1.5 transition-colors hover:text-(--ui-text-strong) hover:bg-(--ui-surface-raised)"
           @click="sidebarMenuToggle?.openSidebar()"
         >
           <Menu class="h-5 w-5" :stroke-width="iconStroke" aria-hidden="true" />
@@ -17,7 +17,7 @@
         <div class="flex-1"></div>
         <button
           type="button"
-          class="ui-focus-ring ui-text-default rounded-md px-3 py-1.5 text-sm font-medium transition-colors hover:[color:var(--ui-text-strong)] hover:[background-color:var(--ui-surface-raised)]"
+          class="ui-focus-ring ui-text-default rounded-md px-3 py-1.5 text-sm font-medium transition-colors hover:text-(--ui-text-strong) hover:bg-(--ui-surface-raised)"
           @click="goBack"
         >
           Cancel
@@ -51,7 +51,7 @@
           <template #footer-left>
             <div v-if="showStepOneSelectionFooter" class="flex min-w-0 flex-1 items-center gap-2">
               <div
-                class="ui-status-info-surface min-w-0 max-w-xl truncate rounded-lg border px-3 py-1.5 text-sm shadow-sm shadow-slate-900/10 dark:shadow-slate-950/40"
+                class="min-w-0 max-w-xl truncate rounded-lg border px-3 py-1.5 text-sm shadow-sm bg-blue-500/12 border-blue-500/24 text-blue-700 dark:bg-blue-400/16 dark:border-blue-400/26 dark:text-blue-200 shadow-slate-900/10 dark:shadow-slate-950/40"
                 :title="sourceFooterLabel"
               >
                 <span class="font-semibold">Source:</span>
@@ -73,7 +73,7 @@
                 />
               </svg>
               <div
-                class="ui-status-warning-surface min-w-0 max-w-xl truncate rounded-lg border px-3 py-1.5 text-sm shadow-sm shadow-stone-900/10 dark:shadow-stone-950/40"
+                class="ui-status-danger-surface min-w-0 max-w-xl truncate rounded-lg border px-3 py-1.5 text-sm shadow-sm shadow-stone-900/10 dark:shadow-stone-950/40"
                 :title="targetFooterLabel"
               >
                 <span class="font-semibold">Target:</span>
@@ -84,7 +84,7 @@
               <button
                 v-if="hasAnySelection"
                 type="button"
-                class="ui-focus-ring ml-2 inline-flex items-center rounded-md border px-2.5 py-1.5 text-sm font-medium whitespace-nowrap transition-colors duration-200 [border-color:var(--ui-danger-soft-border-strong)] [color:var(--ui-danger-text)] hover:[background-color:var(--ui-danger-soft-bg)]"
+                class="ui-focus-ring ml-2 inline-flex items-center rounded-md border px-2.5 py-1.5 text-sm font-medium whitespace-nowrap transition-colors duration-200 border-(--ui-danger-soft-border-strong) text-(--ui-danger-text) hover:bg-(--ui-danger-soft-bg)"
                 @click="handleClearAll"
               >
                 Clear Connections

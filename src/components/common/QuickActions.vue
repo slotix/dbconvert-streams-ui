@@ -30,7 +30,7 @@ const emit = defineEmits<{
 
 const variantClasses: Record<string, string> = {
   default:
-    'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:[background-color:var(--ui-surface-muted)]',
+    'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-(--ui-surface-muted)',
   primary: 'ui-accent-action ui-accent-text',
   danger:
     'hover:bg-red-100 dark:hover:bg-red-900/30 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400'

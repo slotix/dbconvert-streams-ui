@@ -567,7 +567,7 @@ function s3BucketRowClass(connectionId: string, bucket: string): string {
   const isSelected = isS3BucketSelected(connectionId, bucket)
 
   if (!isSelected) {
-    return 'text-gray-700 dark:text-gray-200 hover:[background-color:var(--ui-surface-muted)]'
+    return 'text-gray-700 dark:text-gray-200 hover:bg-(--ui-surface-muted)'
   }
 
   return `${flatSelectedRowClass} pl-2`
@@ -633,7 +633,7 @@ const flatSelectedCardClass = 'bg-slate-100/90 dark:bg-slate-800/85 border shado
 
 function connectionCardClass(connectionId: string): string {
   const base =
-    'border border-transparent hover:[border-color:var(--ui-border-default)] transition-all duration-200 bg-transparent'
+    'border border-transparent hover:border-(--ui-border-default) transition-all duration-200 bg-transparent'
   if (props.selectedConnectionId !== connectionId) {
     return base
   }
@@ -658,7 +658,7 @@ function connectionCardClass(connectionId: string): string {
 
 function connectionHeaderClass(connectionId: string): string {
   const defaultClass =
-    'text-gray-800 dark:text-gray-200 hover:[background-color:var(--ui-surface-muted)]'
+    'text-gray-800 dark:text-gray-200 hover:bg-(--ui-surface-muted)'
 
   if (props.selectedConnectionId !== connectionId) {
     return defaultClass
@@ -685,7 +685,7 @@ function filePathClass(connectionId: string): string {
   const isSelected = isFileConnectionSelected(connectionId)
 
   if (!isSelected) {
-    return 'bg-transparent text-gray-700 dark:text-gray-200 hover:[background-color:var(--ui-surface-muted)]'
+    return 'bg-transparent text-gray-700 dark:text-gray-200 hover:bg-(--ui-surface-muted)'
   }
 
   return `${flatSelectedRowClass} pl-2`
@@ -695,7 +695,7 @@ function databaseRowClass(connectionId: string, database: string): string {
   const isSelected = isDatabaseSelected(connectionId, database)
 
   if (!isSelected) {
-    return 'text-gray-700 dark:text-gray-200 hover:[background-color:var(--ui-surface-muted)]'
+    return 'text-gray-700 dark:text-gray-200 hover:bg-(--ui-surface-muted)'
   }
 
   return `${flatSelectedRowClass} pl-2`
@@ -708,7 +708,7 @@ function schemaRowClass(connectionId: string, database: string, schema: string):
     props.selectedSchema === schema
 
   if (!isSelected) {
-    return 'text-gray-700 dark:text-gray-200 hover:[background-color:var(--ui-surface-muted)]'
+    return 'text-gray-700 dark:text-gray-200 hover:bg-(--ui-surface-muted)'
   }
 
   return flatSelectedRowClass

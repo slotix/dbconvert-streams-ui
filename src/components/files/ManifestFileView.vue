@@ -209,7 +209,7 @@ onMounted(() => {
           </div>
 
           <div v-if="manifestFiles.length" class="max-h-[480px] overflow-auto">
-            <table class="min-w-full divide-y divide-[var(--ui-border-default)]">
+            <table class="min-w-full divide-y divide-(--ui-border-default)">
               <thead class="ui-surface-toolbar">
                 <tr>
                   <th
@@ -224,7 +224,7 @@ onMounted(() => {
                   </th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-[var(--ui-border-default)]">
+              <tbody class="divide-y divide-(--ui-border-default)">
                 <tr v-for="(filePath, index) in manifestFiles" :key="filePath">
                   <td class="whitespace-nowrap px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
                     {{ index + 1 }}
@@ -251,7 +251,7 @@ onMounted(() => {
             </div>
             <div
               v-if="structuredMetadataEntries.length"
-              class="divide-y divide-[var(--ui-border-default)]"
+              class="divide-y divide-(--ui-border-default)"
             >
               <div v-for="entry in structuredMetadataEntries" :key="entry.key" class="px-4 py-3">
                 <p class="text-xs uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">

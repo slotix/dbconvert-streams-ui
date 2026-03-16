@@ -102,15 +102,15 @@ function getTabClass(tab: string): string[] {
       'inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium transition-colors focus:outline-none',
       currentTab.value === tab
         ? 'ui-accent-selection-checked ui-accent-text'
-        : 'ui-surface-raised ui-border-default text-gray-600 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300'
+        : 'ui-surface-raised ui-border-default text-gray-600 hover:bg-(--ui-surface-muted) dark:text-gray-300'
     ]
   }
 
   return [
     'flex flex-1 items-center justify-center gap-2 px-6 py-4 focus:outline-none transition-all duration-200',
     currentTab.value === tab
-      ? 'ui-accent-text border-b-2 font-semibold [border-color:var(--ui-accent-indicator)]'
-      : 'border-b-2 border-transparent text-gray-500 hover:[border-color:var(--ui-border-default)] hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+      ? 'ui-accent-text border-b-2 font-semibold border-(--ui-accent-indicator)'
+      : 'border-b-2 border-transparent text-gray-500 hover:border-(--ui-border-default) hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
   ]
 }
 

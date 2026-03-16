@@ -103,7 +103,7 @@ const activeDescription = computed(() => {
           :class="[
             checked
               ? 'ui-accent-selection-checked'
-              : 'ui-surface-raised ui-border-default hover:[background-color:var(--ui-surface-muted)]',
+              : 'ui-surface-raised ui-border-default hover:bg-(--ui-surface-muted)',
             active && !checked ? 'ui-accent-selection-active' : '',
             'ui-focus-ring relative flex items-start cursor-pointer rounded-lg border p-3 transition-all duration-150 focus:outline-none focus-visible:outline-none flex-1',
             (disabled || option.disabled) && 'opacity-60 cursor-not-allowed'

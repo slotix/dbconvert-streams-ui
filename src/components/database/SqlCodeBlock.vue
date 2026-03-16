@@ -212,7 +212,7 @@ onBeforeUnmount(() => {
         v-if="showCopyButton"
         v-tooltip="copied ? 'Copied' : 'Copy SQL'"
         type="button"
-        class="sql-code-overlay-control sql-code-copy-control ui-surface-floating ui-border-default absolute top-2 right-2 z-10 inline-flex items-center rounded-md border px-2 py-1 text-[11px] font-medium text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] dark:text-gray-200"
+        class="sql-code-overlay-control sql-code-copy-control ui-surface-floating ui-border-default absolute top-2 right-2 z-10 inline-flex items-center rounded-md border px-2 py-1 text-[11px] font-medium text-gray-700 transition-colors hover:bg-(--ui-surface-muted) dark:text-gray-200"
         @click="copyCode"
       >
         {{ copied ? 'Copied' : 'Copy' }}

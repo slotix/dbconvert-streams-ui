@@ -151,7 +151,7 @@ onBeforeUnmount(() => {
       </h4>
       <div class="flex items-center gap-1">
         <button
-          class="rounded p-0.5 text-slate-400 transition-colors hover:text-slate-600 hover:[background-color:var(--ui-surface-muted)] dark:text-slate-500 dark:hover:text-slate-300"
+          class="rounded p-0.5 text-slate-400 transition-colors hover:text-slate-600 hover:bg-(--ui-surface-muted) dark:text-slate-500 dark:hover:text-slate-300"
           title="Toggle collapse"
           @pointerdown.stop
           @click="toggleCollapse"

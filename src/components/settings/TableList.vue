@@ -173,11 +173,14 @@
                 :search-query="searchQuery"
                 :is-cdc-mode="isCDCMode"
                 :show-row-count="true"
+                :show-table-size="true"
                 :get-table-display-name="getTableDisplayName"
                 :has-table-filter="hasTableFilter"
                 :is-table-settings-open="isTableSettingsOpen"
                 :get-table-row-count="getTableRowCount"
                 :format-row-count="formatRowCount"
+                :get-table-size="getTableSizeBytes"
+                :format-table-size="formatTableSize"
                 @checkbox-change="
                   ({ table, checked }) => {
                     handleCheckboxChange(table, checked)
@@ -546,6 +549,23 @@ function formatRowCount(count: number | undefined): string {
   if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M rows`
   if (count >= 1000) return `${(count / 1000).toFixed(1)}K rows`
   return `${count} rows`
+}
+
+// Get the size for a table from the overview store (cached data only)
+function getTableSizeBytes(tableName: string): number | undefined {
+  const connId = firstSourceConnectionId.value
+  const database = currentStreamConfig.value.sourceDatabase
+  if (!connId || !database) return undefined
+  return overviewStore.getTableSize(tableName, connId, database)
+}
+
+// Format table size for display
+function formatTableSize(bytes: number | undefined): string {
+  if (bytes === undefined) return ''
+  if (bytes === 0) return '0 B'
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
+  const i = Math.floor(Math.log(bytes) / Math.log(1024))
+  return `${(bytes / Math.pow(1024, i)).toFixed(bytes < 1024 ? 0 : 2)} ${sizes[i]}`
 }
 
 function isSchemaExpanded(schema: string): boolean {

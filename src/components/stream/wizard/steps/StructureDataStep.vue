@@ -23,7 +23,7 @@
           class="px-4 py-2 text-sm font-medium transition-colors relative"
           :class="[
             activeDataTab === 'tables'
-              ? 'ui-accent-text border-b-2 [border-color:var(--ui-accent-indicator)]'
+              ? 'ui-accent-text border-b-2 border-(--ui-accent-indicator)'
               : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
           ]"
           @click="activeDataTab = 'tables'"
@@ -47,7 +47,7 @@
           class="px-4 py-2 text-sm font-medium transition-colors relative"
           :class="[
             activeDataTab === 'queries'
-              ? 'ui-accent-text border-b-2 [border-color:var(--ui-accent-indicator)]'
+              ? 'ui-accent-text border-b-2 border-(--ui-accent-indicator)'
               : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
           ]"
           @click="activeDataTab = 'queries'"

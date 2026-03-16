@@ -179,11 +179,11 @@
                       </th>
                     </tr>
                   </thead>
-                  <tbody class="divide-y divide-[var(--ui-border-default)]">
+                  <tbody class="divide-y divide-(--ui-border-default)">
                     <tr
                       v-for="(row, idx) in previewData[activeQueryIndex].rows"
                       :key="idx"
-                      class="hover:[background-color:var(--ui-surface-muted)]"
+                      class="hover:bg-(--ui-surface-muted)"
                     >
                       <td
                         v-for="col in previewData[activeQueryIndex].columns"

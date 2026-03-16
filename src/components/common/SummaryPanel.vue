@@ -280,7 +280,7 @@ function getCardinalityLabel(indicator: string): string {
     <!-- Column Statistics Table -->
     <div class="ui-surface-raised ui-border-default overflow-hidden rounded-lg border">
       <div class="overflow-x-auto">
-        <table class="min-w-full divide-y [border-color:var(--ui-border-default)]">
+        <table class="min-w-full divide-y border-(--ui-border-default)">
           <thead class="ui-surface-toolbar">
             <tr>
               <th
@@ -327,7 +327,7 @@ function getCardinalityLabel(indicator: string): string {
               </th>
             </tr>
           </thead>
-          <tbody class="ui-surface-raised divide-y [border-color:var(--ui-border-default)]">
+          <tbody class="ui-surface-raised divide-y border-(--ui-border-default)">
             <tr
               v-for="col in summary.columns"
               :key="col.name"

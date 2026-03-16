@@ -151,7 +151,7 @@ function getUploadStatus(status: string) {
     <!-- Upload Table -->
     <div v-if="isExpanded && hasAnyUploads" class="p-0">
       <div class="overflow-x-auto">
-        <table class="min-w-full divide-y [border-color:var(--ui-border-default)]">
+        <table class="min-w-full divide-y border-(--ui-border-default)">
           <thead class="ui-surface-muted">
             <tr>
               <th
@@ -198,11 +198,11 @@ function getUploadStatus(status: string) {
               </th>
             </tr>
           </thead>
-          <tbody class="ui-surface-raised divide-y [border-color:var(--ui-border-default)]">
+          <tbody class="ui-surface-raised divide-y border-(--ui-border-default)">
             <tr
               v-for="upload in allUploads"
               :key="upload.table"
-              class="transition-colors hover:[background-color:var(--ui-surface-muted)]"
+              class="transition-colors hover:bg-(--ui-surface-muted)"
             >
               <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">
                 <span v-tooltip="upload.table" class="truncate block max-w-xs">{{

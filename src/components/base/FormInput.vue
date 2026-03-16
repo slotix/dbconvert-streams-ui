@@ -128,10 +128,10 @@ const inputId = props.id || `form-input-${Math.random().toString(36).substr(2, 9
       :maxlength="maxlength"
       :class="[
         'ui-focus-ring block w-full rounded-md shadow-sm sm:text-sm',
-        'ui-text-strong placeholder:[color:var(--ui-text-subtle)]',
+        'ui-text-strong placeholder:text-(--ui-text-subtle)',
         'transition-colors duration-150 focus:outline-none focus-visible:outline-none',
         error
-          ? '[border-color:var(--ui-danger-soft-border-strong)] focus:[border-color:var(--ui-danger-soft-border-strong)] focus:[background-color:var(--ui-danger-soft-bg)]'
+          ? 'border-(--ui-danger-soft-border-strong) focus:border-(--ui-danger-soft-border-strong) focus:bg-(--ui-danger-soft-bg)'
           : 'ui-border-default ui-accent-focus',
         disabled ? 'ui-surface-muted ui-text-subtle cursor-not-allowed' : 'ui-surface-raised'
       ]"

@@ -147,7 +147,7 @@ const optionsBehaviorClass = computed(() => {
           'transition-colors duration-150',
           'focus:outline-none focus-visible:outline-none',
           error
-            ? 'border [border-color:var(--ui-danger-soft-border-strong)] focus:[border-color:var(--ui-danger-soft-border-strong)] focus:[background-color:var(--ui-danger-soft-bg)]'
+            ? 'border border-(--ui-danger-soft-border-strong) focus:border-(--ui-danger-soft-border-strong) focus:bg-(--ui-danger-soft-bg)'
             : 'ui-border-default ui-accent-focus border',
           disabled
             ? 'ui-surface-muted ui-text-subtle cursor-not-allowed'

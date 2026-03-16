@@ -4,7 +4,7 @@
       <div class="px-4 py-2 flex items-center gap-3">
         <button
           type="button"
-          class="lg:hidden flex items-center justify-center rounded-md p-1.5 text-gray-600 transition-colors hover:text-gray-900 hover:[background-color:var(--ui-surface-raised)] dark:text-gray-400 dark:hover:text-white"
+          class="lg:hidden flex items-center justify-center rounded-md p-1.5 text-gray-600 transition-colors hover:text-gray-900 hover:bg-(--ui-surface-raised) dark:text-gray-400 dark:hover:text-white"
           @click="sidebarMenuToggle?.openSidebar()"
         >
           <Menu class="h-5 w-5" :stroke-width="iconStroke" aria-hidden="true" />
@@ -12,7 +12,7 @@
         </button>
         <button
           type="button"
-          class="flex items-center justify-center rounded-md p-1.5 text-gray-600 transition-colors hover:text-gray-900 hover:[background-color:var(--ui-surface-raised)] dark:text-gray-400 dark:hover:text-white"
+          class="flex items-center justify-center rounded-md p-1.5 text-gray-600 transition-colors hover:text-gray-900 hover:bg-(--ui-surface-raised) dark:text-gray-400 dark:hover:text-white"
           @click="goBack"
         >
           <ArrowLeft class="h-5 w-5" :stroke-width="iconStroke" aria-hidden="true" />

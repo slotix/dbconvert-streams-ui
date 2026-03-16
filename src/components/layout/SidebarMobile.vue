@@ -52,7 +52,7 @@
                 <ul role="list" class="-mx-2 flex-1 space-y-1">
                   <SidebarNavItems
                     :active-class="'ui-nav-active shadow-sm'"
-                    :inactive-class="'text-gray-600 hover:text-gray-900 hover:[background-color:var(--ui-surface-raised)] dark:text-gray-400 dark:hover:text-white'"
+                    :inactive-class="'text-gray-600 hover:text-gray-900 hover:bg-(--ui-surface-raised) dark:text-gray-400 dark:hover:text-white'"
                     item-class="group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
                     :icon-class="mobileIconClass"
                     :icon-stroke="iconStroke"
@@ -64,7 +64,7 @@
                 <div class="border-t pt-4 ui-border-default">
                   <RouterLink
                     to="/"
-                    class="group flex w-full gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-600 transition-colors hover:text-gray-900 hover:[background-color:var(--ui-surface-raised)] dark:text-gray-400 dark:hover:text-white"
+                    class="group flex w-full gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-600 transition-colors hover:text-gray-900 hover:bg-(--ui-surface-raised) dark:text-gray-400 dark:hover:text-white"
                     @click="closeSidebar"
                   >
                     <CircleUser
@@ -80,7 +80,7 @@
                 <div class="border-t pt-4 ui-border-default">
                   <button
                     type="button"
-                    class="group flex w-full gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-600 transition-colors hover:text-gray-900 hover:[background-color:var(--ui-surface-raised)] dark:text-gray-400 dark:hover:text-white"
+                    class="group flex w-full gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-600 transition-colors hover:text-gray-900 hover:bg-(--ui-surface-raised) dark:text-gray-400 dark:hover:text-white"
                     @click="handleLogsClick"
                   >
                     <AlertCircle
@@ -127,7 +127,7 @@
                 <div v-if="!isDesktop" class="border-t pt-4 ui-border-default">
                   <div class="-mx-2 space-y-1">
                     <SidebarExternalLinks
-                      :link-class="'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-600 transition-colors hover:text-gray-900 hover:[background-color:var(--ui-surface-raised)] dark:text-gray-400 dark:hover:text-white'"
+                      :link-class="'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-600 transition-colors hover:text-gray-900 hover:bg-(--ui-surface-raised) dark:text-gray-400 dark:hover:text-white'"
                       :icon-class="mobileIconClass"
                       :icon-stroke="iconStroke"
                       @navigate="closeSidebar"

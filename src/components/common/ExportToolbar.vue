@@ -42,7 +42,7 @@
           <button
             v-for="format in allFormats"
             :key="format.id"
-            class="w-full px-3 py-1.5 text-left text-xs text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+            class="w-full px-3 py-1.5 text-left text-xs text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-300"
             @click="handleExport(format.id)"
           >
             {{ format.label }}
@@ -58,7 +58,7 @@
             <button
               v-for="format in streamExportFormats"
               :key="`stream-${format.id}`"
-              class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+              class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-300"
               :disabled="isExporting"
               @click="handleStreamExport(format.id)"
             >

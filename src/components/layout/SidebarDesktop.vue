@@ -14,7 +14,7 @@
     >
       <button
         type="button"
-        class="flex items-center justify-center rounded-md p-1.5 text-gray-600 transition-colors hover:text-gray-900 hover:[background-color:var(--ui-surface-raised)] dark:text-gray-400 dark:hover:text-white"
+        class="flex items-center justify-center rounded-md p-1.5 text-gray-600 transition-colors hover:text-gray-900 hover:bg-(--ui-surface-raised) dark:text-gray-400 dark:hover:text-white"
         :title="isSidebarExpanded ? 'Collapse sidebar' : 'Expand sidebar'"
         @click="toggleSidebarWidth()"
       >
@@ -33,7 +33,7 @@
       >
         <SidebarNavItems
           :active-class="'ui-nav-active shadow-sm'"
-          :inactive-class="'text-gray-600 hover:text-gray-900 hover:[background-color:var(--ui-surface-raised)] dark:text-gray-400 dark:hover:text-white'"
+          :inactive-class="'text-gray-600 hover:text-gray-900 hover:bg-(--ui-surface-raised) dark:text-gray-400 dark:hover:text-white'"
           item-class="group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold relative overflow-visible"
           expanded-class="w-full justify-start px-3"
           collapsed-class="justify-center"
@@ -48,7 +48,7 @@
           <button
             type="button"
             :class="[
-              'group relative flex w-full items-center overflow-visible rounded-md p-2 text-gray-600 transition-colors hover:text-gray-900 hover:[background-color:var(--ui-surface-raised)] dark:text-gray-400 dark:hover:text-white',
+              'group relative flex w-full items-center overflow-visible rounded-md p-2 text-gray-600 transition-colors hover:text-gray-900 hover:bg-(--ui-surface-raised) dark:text-gray-400 dark:hover:text-white',
               isSidebarExpanded ? 'justify-start px-3 gap-3' : 'justify-center'
             ]"
             @click="logsStore.toggleLogsPanel"
@@ -127,7 +127,7 @@
         <RouterLink
           to="/"
           :class="[
-            'group relative flex items-center rounded-md p-2 text-gray-600 transition-colors hover:text-gray-900 hover:[background-color:var(--ui-surface-raised)] dark:text-gray-400 dark:hover:text-white',
+            'group relative flex items-center rounded-md p-2 text-gray-600 transition-colors hover:text-gray-900 hover:bg-(--ui-surface-raised) dark:text-gray-400 dark:hover:text-white',
             isSidebarExpanded ? 'justify-start gap-3 px-3 w-full' : 'justify-center'
           ]"
         >
@@ -151,7 +151,7 @@
           <button
             type="button"
             :class="[
-              'group relative flex items-center rounded-md p-2 text-gray-600 transition-colors hover:text-gray-900 hover:[background-color:var(--ui-surface-raised)] dark:text-gray-400 dark:hover:text-white',
+              'group relative flex items-center rounded-md p-2 text-gray-600 transition-colors hover:text-gray-900 hover:bg-(--ui-surface-raised) dark:text-gray-400 dark:hover:text-white',
               isSidebarExpanded ? 'justify-start gap-3 px-3 w-full' : 'justify-center'
             ]"
             @click="toggleSettings"
@@ -179,7 +179,7 @@
               <span class="text-sm font-medium text-gray-700 dark:text-gray-200">Theme</span>
               <button
                 type="button"
-                class="inline-flex items-center gap-2 rounded-md px-2 py-1 text-sm font-medium text-gray-600 transition-colors hover:text-gray-900 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300 dark:hover:text-white"
+                class="inline-flex items-center gap-2 rounded-md px-2 py-1 text-sm font-medium text-gray-600 transition-colors hover:text-gray-900 hover:bg-(--ui-surface-muted) dark:text-gray-300 dark:hover:text-white"
                 title="Toggle theme"
                 @click="themeStore.toggleTheme"
               >
@@ -229,7 +229,7 @@
                 </div>
                 <button
                   type="button"
-                  class="rounded-md px-2 py-1 text-xs font-medium transition-colors hover:[background-color:var(--ui-surface-muted)] disabled:cursor-not-allowed disabled:opacity-40"
+                  class="rounded-md px-2 py-1 text-xs font-medium transition-colors hover:bg-(--ui-surface-muted) disabled:cursor-not-allowed disabled:opacity-40"
                   title="Reset zoom"
                   :disabled="isZoomDefault"
                   @click="resetZoom"
@@ -327,7 +327,7 @@
                   <button
                     v-if="canOpenLogsFolder"
                     type="button"
-                    class="ui-surface-raised ui-border-default inline-flex items-center gap-2 rounded-md border px-2.5 py-1 text-[11px] font-medium text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] dark:text-gray-200"
+                    class="ui-surface-raised ui-border-default inline-flex items-center gap-2 rounded-md border px-2.5 py-1 text-[11px] font-medium text-gray-700 transition-colors hover:bg-(--ui-surface-muted) dark:text-gray-200"
                     @click="openLogsFolder"
                   >
                     Open Logs Folder
@@ -366,7 +366,7 @@
         <SidebarExternalLinks
           :link-class="
             [
-              'group relative flex items-center rounded-md p-2 text-gray-600 transition-colors hover:text-gray-900 hover:[background-color:var(--ui-surface-raised)] dark:text-gray-400 dark:hover:text-white',
+              'group relative flex items-center rounded-md p-2 text-gray-600 transition-colors hover:text-gray-900 hover:bg-(--ui-surface-raised) dark:text-gray-400 dark:hover:text-white',
               isSidebarExpanded ? 'justify-start gap-3 px-3 w-full' : 'justify-center'
             ].join(' ')
           "

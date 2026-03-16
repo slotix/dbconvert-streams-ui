@@ -89,7 +89,7 @@ function toggleExpanded() {
     <!-- Location Header (when visual grouping is enabled) -->
     <div
       v-if="showLocationHeader && location"
-      class="ui-surface-toolbar ui-border-default sticky top-0 z-10 flex cursor-pointer items-center gap-3 border-b px-4 py-2 transition-colors hover:[background-color:var(--ui-surface-muted)]"
+      class="ui-surface-toolbar ui-border-default sticky top-0 z-10 flex cursor-pointer items-center gap-3 border-b px-4 py-2 transition-colors hover:bg-(--ui-surface-muted)"
       @click="toggleLocation"
     >
       <!-- Expand/Collapse Icon -->
@@ -115,7 +115,7 @@ function toggleExpanded() {
     <!-- Query Row (hidden if location is collapsed) -->
     <div
       v-if="!isLocationCollapsed"
-      class="ui-border-default border-b transition-colors hover:[background-color:var(--ui-surface-muted)]"
+      class="ui-border-default border-b transition-colors hover:bg-(--ui-surface-muted)"
       :class="{ 'bg-red-50 dark:bg-red-900/30': log.error }"
     >
       <!-- Header row with all metadata -->
@@ -165,7 +165,7 @@ function toggleExpanded() {
           class="cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap"
         >
           <code
-            class="ui-surface-muted block overflow-hidden rounded px-2 py-1 text-xs font-mono text-gray-700 text-ellipsis whitespace-nowrap hover:[background-color:var(--ui-surface-inset)] dark:text-gray-300"
+            class="ui-surface-muted block overflow-hidden rounded px-2 py-1 text-xs font-mono text-gray-700 text-ellipsis whitespace-nowrap hover:bg-(--ui-surface-inset) dark:text-gray-300"
             >{{ oneLineQuery }}</code
           >
         </span>

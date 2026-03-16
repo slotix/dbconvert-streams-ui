@@ -114,7 +114,7 @@ const checkboxId = props.id || `form-checkbox-${Math.random().toString(36).subst
             'ui-focus-ring h-4 w-4 rounded',
             'transition-colors duration-150',
             error
-              ? '[border-color:var(--ui-danger-soft-border-strong)] [color:var(--ui-danger-text)] focus:[border-color:var(--ui-danger-soft-border-strong)]'
+              ? 'border-(--ui-danger-soft-border-strong) text-(--ui-danger-text) focus:border-(--ui-danger-soft-border-strong)'
               : 'ui-accent-icon ui-accent-focus ui-border-default',
             disabled
               ? 'ui-surface-muted cursor-not-allowed'

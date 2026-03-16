@@ -81,7 +81,7 @@ function click(action: string) {
         <!-- Pause -->
         <button
           v-if="canPause"
-          class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-yellow-600 hover:[background-color:var(--ui-surface-muted)] dark:text-yellow-300"
+          class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-yellow-600 hover:bg-(--ui-surface-muted) dark:text-yellow-300"
           @click="click('pause-stream')"
         >
           <Pause class="w-4 h-4 shrink-0" />
@@ -102,7 +102,7 @@ function click(action: string) {
 
         <!-- Edit -->
         <button
-          class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-200"
+          class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-200"
           @click="click('edit-stream')"
         >
           <Pencil class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
@@ -111,7 +111,7 @@ function click(action: string) {
 
         <!-- Clone -->
         <button
-          class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-200"
+          class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-200"
           @click="click('clone-stream')"
         >
           <Copy class="w-4 h-4 shrink-0 text-gray-500 dark:text-gray-400" />
@@ -122,7 +122,7 @@ function click(action: string) {
 
         <!-- Delete -->
         <button
-          class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-red-600 hover:[background-color:var(--ui-surface-muted)] dark:text-red-300"
+          class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-red-600 hover:bg-(--ui-surface-muted) dark:text-red-300"
           @click="click('delete-stream')"
         >
           <Trash2 class="w-4 h-4 shrink-0" />

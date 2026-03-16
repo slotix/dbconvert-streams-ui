@@ -25,7 +25,7 @@
                 ? 'ui-surface-muted ui-border-default opacity-60 cursor-not-allowed'
                 : checked
                   ? 'ui-accent-selection-checked'
-                  : 'ui-surface-raised ui-border-default hover:[background-color:var(--ui-surface-muted)] cursor-pointer',
+                  : 'ui-surface-raised ui-border-default hover:bg-(--ui-surface-muted) cursor-pointer',
               active && !disabled && !checked ? 'ui-accent-selection-active' : '',
               'relative h-full min-h-[76px] flex items-start rounded-lg border p-3 transition-all duration-150 focus:outline-none'
             ]"

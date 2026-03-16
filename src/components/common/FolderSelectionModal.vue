@@ -109,7 +109,7 @@
                   <div
                     v-for="entry in sortedEntries"
                     :key="entry.path"
-                    class="ui-border-default flex cursor-pointer items-center border-b px-4 py-3 hover:[background-color:var(--ui-surface-muted)] last:border-b-0"
+                    class="ui-border-default flex cursor-pointer items-center border-b px-4 py-3 hover:bg-(--ui-surface-muted) last:border-b-0"
                     :class="{ 'ui-accent-selection-checked': selectedPath === entry.path }"
                     @click="selectEntry(entry)"
                     @dblclick="entry.type === 'dir' ? navigateToPath(entry.path) : null"

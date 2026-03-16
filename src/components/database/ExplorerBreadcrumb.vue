@@ -255,7 +255,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
         <button
           v-for="o in filteredObjects"
           :key="`${o.schema || ''}:${o.type}:${o.name}`"
-          class="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:[background-color:var(--ui-surface-muted)]"
+          class="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:bg-(--ui-surface-muted)"
           :class="{ 'bg-blue-50 dark:bg-blue-900/20': o.name === props.name }"
           @click="onPickObject(o)"
         >
@@ -288,7 +288,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
         <button
           v-for="f in filteredFiles"
           :key="f.path"
-          class="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:[background-color:var(--ui-surface-muted)]"
+          class="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:bg-(--ui-surface-muted)"
           :class="{ 'bg-blue-50 dark:bg-blue-900/20': f.name === props.name }"
           @click="onPickFile(f)"
         >

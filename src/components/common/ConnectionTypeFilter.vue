@@ -4,7 +4,7 @@
     <button
       ref="buttonRef"
       v-tooltip="buttonTooltip"
-      class="ui-accent-focus ui-surface-raised ui-border-default inline-flex min-w-[100px] items-center gap-2 rounded border px-2 py-1.5 text-xs font-medium whitespace-nowrap text-gray-700 hover:[background-color:var(--ui-surface-muted)] focus:outline-none dark:text-gray-300"
+      class="ui-accent-focus ui-surface-raised ui-border-default inline-flex min-w-[100px] items-center gap-2 rounded border px-2 py-1.5 text-xs font-medium whitespace-nowrap text-gray-700 hover:bg-(--ui-surface-muted) focus:outline-none dark:text-gray-300"
       @click="isOpen = !isOpen"
     >
       <Layers v-if="selectedTypes.length === 0" class="h-5 w-5 text-gray-500 dark:text-gray-300" />
@@ -51,7 +51,7 @@
             <button
               v-for="option in availableTypes"
               :key="option.id"
-              class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-900 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-100"
+              class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-900 hover:bg-(--ui-surface-muted) dark:text-gray-100"
               @click.stop="toggleType(option.type)"
             >
               <!-- Checkbox -->

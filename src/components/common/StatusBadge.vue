@@ -49,14 +49,14 @@ const dotClass = computed(() => {
     case STATUS.FAILED:
       return 'bg-red-500'
     case STATUS.STOPPED:
-      return '[background-color:var(--ui-text-muted)]'
+      return 'bg-(--ui-text-muted)'
     case STATUS.PAUSED:
       return 'bg-cyan-500'
     case STATUS.TIME_LIMIT_REACHED:
     case STATUS.EVENT_LIMIT_REACHED:
       return 'bg-purple-500'
     default:
-      return '[background-color:var(--ui-text-muted)]'
+      return 'bg-(--ui-text-muted)'
   }
 })
 

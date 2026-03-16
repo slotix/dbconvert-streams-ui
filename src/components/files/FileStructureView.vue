@@ -493,7 +493,7 @@ defineExpose({
           <div class="shrink-0 flex items-center gap-1">
             <button
               type="button"
-              class="ui-surface-raised ui-border-default inline-flex items-center rounded-md px-2 py-1 text-xs font-medium border hover:[background-color:var(--ui-surface-muted)] transition-colors"
+              class="ui-surface-raised ui-border-default inline-flex items-center rounded-md px-2 py-1 text-xs font-medium border hover:bg-(--ui-surface-muted) transition-colors"
               :class="
                 isPathCopied
                   ? 'text-green-600 dark:text-green-400'
@@ -509,7 +509,7 @@ defineExpose({
             <button
               v-if="isLocalPath"
               type="button"
-              class="ui-surface-raised ui-border-default inline-flex items-center rounded-md px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-300 border hover:[background-color:var(--ui-surface-muted)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              class="ui-surface-raised ui-border-default inline-flex items-center rounded-md px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-300 border hover:bg-(--ui-surface-muted) transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               :disabled="!canRevealInFolder"
               :title="
                 canRevealInFolder
@@ -583,7 +583,7 @@ defineExpose({
                 </th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-[var(--ui-border-default)]">
+            <tbody class="divide-y divide-(--ui-border-default)">
               <tr v-for="col in filteredSortedColumns" :key="col.name">
                 <td class="py-1.5 pr-4 font-medium text-gray-900 dark:text-gray-100">
                   {{ col.name }}
@@ -625,7 +625,7 @@ defineExpose({
           <button
             v-if="isCSVFile"
             type="button"
-            class="ui-surface-raised ui-border-default inline-flex items-center rounded-md border px-2 py-1 text-xs font-medium text-gray-600 transition-colors hover:[background-color:var(--ui-surface-muted)] disabled:cursor-not-allowed disabled:opacity-60 dark:text-gray-300"
+            class="ui-surface-raised ui-border-default inline-flex items-center rounded-md border px-2 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-(--ui-surface-muted) disabled:cursor-not-allowed disabled:opacity-60 dark:text-gray-300"
             :disabled="csvSniffLoading"
             title="Re-run DuckDB sniff_csv"
             @click="loadCSVSniff"
@@ -669,7 +669,7 @@ defineExpose({
           <div class="flex items-center gap-1">
             <button
               type="button"
-              class="ui-surface-raised ui-border-default inline-flex items-center rounded-md border px-2 py-1 text-xs font-medium transition-colors hover:[background-color:var(--ui-surface-muted)]"
+              class="ui-surface-raised ui-border-default inline-flex items-center rounded-md border px-2 py-1 text-xs font-medium transition-colors hover:bg-(--ui-surface-muted)"
               :class="
                 isSQLCopied
                   ? 'text-green-600 dark:text-green-400'

@@ -93,7 +93,7 @@
       <!-- Multiple Result Sets / Command-only Results -->
       <div
         v-else-if="useResultSetsView"
-        class="ui-border-default divide-y border-t [border-color:var(--ui-border-default)]"
+        class="ui-border-default divide-y border-t border-(--ui-border-default)"
       >
         <div v-for="(set, setIndex) in displayResultSets" :key="setIndex" class="">
           <div
@@ -126,7 +126,7 @@
 
           <!-- Table or command-only result -->
           <div v-if="set.columns.length > 0 && set.rows.length > 0" class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-[var(--ui-border-default)]">
+            <table class="min-w-full divide-y divide-(--ui-border-default)">
               <thead class="ui-surface-muted sticky top-0">
                 <tr>
                   <th
@@ -138,11 +138,11 @@
                   </th>
                 </tr>
               </thead>
-              <tbody class="ui-surface-raised divide-y divide-[var(--ui-border-default)]">
+              <tbody class="ui-surface-raised divide-y divide-(--ui-border-default)">
                 <tr
                   v-for="(row, rowIndex) in paginatedRowsBySet[setIndex] || []"
                   :key="rowIndex"
-                  class="hover:[background-color:var(--ui-surface-muted)]"
+                  class="hover:bg-(--ui-surface-muted)"
                 >
                   <td
                     v-for="column in set.columns"
@@ -195,7 +195,7 @@
       <!-- Results Table (single) -->
       <div v-else-if="rows.length > 0" class="ui-border-default border-t">
         <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-[var(--ui-border-default)]">
+          <table class="min-w-full divide-y divide-(--ui-border-default)">
             <thead class="ui-surface-muted sticky top-0">
               <tr>
                 <th
@@ -207,11 +207,11 @@
                 </th>
               </tr>
             </thead>
-            <tbody class="ui-surface-raised divide-y divide-[var(--ui-border-default)]">
+            <tbody class="ui-surface-raised divide-y divide-(--ui-border-default)">
               <tr
                 v-for="(row, rowIndex) in paginatedRows"
                 :key="rowIndex"
-                class="hover:[background-color:var(--ui-surface-muted)]"
+                class="hover:bg-(--ui-surface-muted)"
               >
                 <td
                   v-for="column in columns"

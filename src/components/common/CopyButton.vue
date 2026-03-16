@@ -25,7 +25,7 @@ async function handleCopy() {
 <template>
   <button
     :class="[
-      'inline-flex items-center justify-center rounded-md hover:[background-color:var(--ui-surface-muted)] focus:outline-none transition-colors',
+      'inline-flex items-center justify-center rounded-md hover:bg-(--ui-surface-muted) focus:outline-none transition-colors',
       buttonClass ||
         'ui-surface-raised ui-border-default px-2.5 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 border'
     ]"

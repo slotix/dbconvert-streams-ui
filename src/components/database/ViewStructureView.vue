@@ -109,7 +109,7 @@ function getColumnType(column: SQLColumnMeta) {
               'focus:outline-none focus-visible:border-gray-400 dark:focus-visible:border-gray-500',
               selected
                 ? 'border-b-2 border-gray-400 dark:border-gray-500 text-gray-900 dark:text-gray-100 -mb-px'
-                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 [border-color:transparent] hover:[border-color:var(--ui-border-default)]'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 border-transparent hover:border-(--ui-border-default)'
             ]"
           >
             {{ tab.name }}
@@ -133,7 +133,7 @@ function getColumnType(column: SQLColumnMeta) {
           <div class="overflow-x-auto">
             <div class="min-w-[640px]">
               <div class="ui-border-default overflow-hidden rounded-lg border">
-                <table class="min-w-full divide-y [border-color:var(--ui-border-default)]">
+                <table class="min-w-full divide-y border-(--ui-border-default)">
                   <thead>
                     <tr class="ui-surface-muted">
                       <th
@@ -162,11 +162,11 @@ function getColumnType(column: SQLColumnMeta) {
                       </th>
                     </tr>
                   </thead>
-                  <tbody class="ui-surface-raised divide-y [border-color:var(--ui-border-default)]">
+                  <tbody class="ui-surface-raised divide-y border-(--ui-border-default)">
                     <tr
                       v-for="column in viewMeta.columns"
                       :key="column.name"
-                      class="hover:[background-color:var(--ui-surface-muted)]"
+                      class="hover:bg-(--ui-surface-muted)"
                     >
                       <td
                         class="whitespace-nowrap py-2 pl-6 pr-4 text-sm text-gray-900 dark:text-gray-100 sm:pl-6"

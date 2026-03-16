@@ -218,7 +218,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeyDown))
             class="text-xs px-2 py-1.5 border-b-2 -mb-px transition-colors"
             :class="
               selectedKind === kind
-                ? 'ui-accent-text [border-color:var(--ui-accent-indicator)]'
+                ? 'ui-accent-text border-(--ui-accent-indicator)'
                 : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
             "
             @click="selectedKind = kind"
@@ -252,7 +252,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeyDown))
             <button
               v-if="insertTableColumns.length > 6"
               type="button"
-              class="ui-surface-raised ui-border-default text-xs rounded-md px-2 py-1 border text-gray-600 dark:text-gray-300 hover:[background-color:var(--ui-surface-muted)] transition-colors"
+              class="ui-surface-raised ui-border-default text-xs rounded-md px-2 py-1 border text-gray-600 dark:text-gray-300 hover:bg-(--ui-surface-muted) transition-colors"
               @click="toggleInsertColumns"
             >
               {{ showAllInsertColumns ? 'Collapse' : 'Expand' }}
@@ -293,7 +293,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeyDown))
                     class="ui-border-default border-t"
                     :class="
                       canExpandInsertRow(row)
-                        ? 'cursor-pointer hover:[background-color:var(--ui-surface-muted)]'
+                        ? 'cursor-pointer hover:bg-(--ui-surface-muted)'
                         : ''
                     "
                     @click="canExpandInsertRow(row) ? toggleExpanded(row.rowId) : undefined"
@@ -357,7 +357,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeyDown))
           v-else-if="kind === 'delete' && sectionCount(kind) > 0"
           class="ui-border-default rounded-md border"
         >
-          <ul class="divide-y [border-color:var(--ui-border-default)]">
+          <ul class="divide-y border-(--ui-border-default)">
             <li
               v-for="row in deleteRows"
               :key="`delete-list-${row.rowId}`"
@@ -464,21 +464,21 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeyDown))
               >
                 <button
                   type="button"
-                  class="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-200 hover:[background-color:var(--ui-surface-muted)]"
+                  class="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-200 hover:bg-(--ui-surface-muted)"
                   @click="onDiscardKind('insert')"
                 >
                   Discard inserts
                 </button>
                 <button
                   type="button"
-                  class="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-200 hover:[background-color:var(--ui-surface-muted)]"
+                  class="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-200 hover:bg-(--ui-surface-muted)"
                   @click="onDiscardKind('edit')"
                 >
                   Discard updates
                 </button>
                 <button
                   type="button"
-                  class="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-200 hover:[background-color:var(--ui-surface-muted)]"
+                  class="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-200 hover:bg-(--ui-surface-muted)"
                   @click="onDiscardKind('delete')"
                 >
                   Discard deletes

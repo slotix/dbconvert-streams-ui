@@ -128,7 +128,7 @@ function getTableSize(tableName: string): string | null {
       v-for="item in filteredItems"
       :key="item"
       :class="[
-        'group flex items-center justify-between rounded-md px-2 py-1.5 text-sm ui-text-default hover:[background-color:var(--ui-surface-muted)] cursor-pointer select-none',
+        'group flex items-center justify-between rounded-md px-2 py-1.5 text-sm ui-text-default hover:bg-(--ui-surface-muted) cursor-pointer select-none',
         isItemSelected(item) ? 'ui-tree-active' : ''
       ]"
       :data-explorer-obj="`${explorerObjPrefix}:${objectType}:${item}`"
@@ -174,7 +174,7 @@ function getTableSize(tableName: string): string | null {
         :key="item"
         :style="{ height: `${ITEM_HEIGHT}px` }"
         :class="[
-          'group flex items-center justify-between rounded-md px-2 text-sm ui-text-default hover:[background-color:var(--ui-surface-muted)] cursor-pointer select-none',
+          'group flex items-center justify-between rounded-md px-2 text-sm ui-text-default hover:bg-(--ui-surface-muted) cursor-pointer select-none',
           isItemSelected(item) ? 'ui-tree-active' : ''
         ]"
         :data-explorer-obj="`${explorerObjPrefix}:${objectType}:${item}`"

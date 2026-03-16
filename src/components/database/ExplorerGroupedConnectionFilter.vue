@@ -41,7 +41,7 @@
         v-if="groupSelectedTypes(group.key).length > 0"
         type="button"
         :data-testid="`explorer-filter-clear-${group.key}`"
-        class="absolute right-1 top-1/2 inline-flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded text-slate-500 hover:[background-color:var(--ui-surface-muted)] hover:text-slate-700 dark:text-gray-300 dark:hover:text-white"
+        class="absolute right-1 top-1/2 inline-flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded text-slate-500 hover:bg-(--ui-surface-muted) hover:text-slate-700 dark:text-gray-300 dark:hover:text-white"
         :title="`Clear ${group.title.toLowerCase()} filters`"
         @click.stop="clearGroup(group.key)"
       >
@@ -80,7 +80,7 @@
           :key="option.type"
           class="px-3 py-2"
           :class="
-            isComingSoon(option) ? 'opacity-65' : 'hover:[background-color:var(--ui-surface-muted)]'
+            isComingSoon(option) ? 'opacity-65' : 'hover:bg-(--ui-surface-muted)'
           "
         >
           <div
@@ -170,7 +170,7 @@ const selectedTypes = computed(() => props.selectedTypes || [])
 const allChipClass = computed(() =>
   selectedTypes.value.length === 0
     ? 'bg-sky-600/15 border-sky-500/40 text-sky-300 dark:bg-sky-500/20 dark:border-sky-400/40 dark:text-sky-200'
-    : 'ui-surface-raised ui-border-default text-slate-600 dark:text-gray-400 hover:[background-color:var(--ui-surface-muted)]'
+    : 'ui-surface-raised ui-border-default text-slate-600 dark:text-gray-400 hover:bg-(--ui-surface-muted)'
 )
 
 function setChipRef(key: FilterGroupKey, element: Element | ComponentPublicInstance | null) {
@@ -233,7 +233,7 @@ function groupChipClass(group: FilterGroupKey): string {
   return [
     isActive
       ? 'bg-sky-600/15 border-sky-500/40 pr-7 text-sky-300 dark:bg-sky-500/20 dark:border-sky-400/40 dark:text-sky-200'
-      : 'ui-surface-raised ui-border-default pr-2 text-slate-600 dark:text-gray-400 hover:[background-color:var(--ui-surface-muted)]',
+      : 'ui-surface-raised ui-border-default pr-2 text-slate-600 dark:text-gray-400 hover:bg-(--ui-surface-muted)',
     openGroup.value === group ? 'ui-accent-selection-active' : ''
   ].join(' ')
 }

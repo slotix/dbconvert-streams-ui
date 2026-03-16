@@ -19,7 +19,7 @@
     />
 
     <div
-      class="ui-surface-raised ui-border-default flex min-h-0 flex-1 flex-col overflow-hidden divide-y divide-[var(--ui-border-default)] rounded-lg border"
+      class="ui-surface-raised ui-border-default flex min-h-0 flex-1 flex-col overflow-hidden divide-y divide-(--ui-border-default) rounded-lg border"
     >
       <SourceSectionHeader
         :alias="props.alias"
@@ -58,7 +58,7 @@
             v-for="row in filteredRows"
             :key="row.entry.path"
             type="button"
-            class="flex h-10 w-full items-center rounded-md px-3 py-2 text-left text-sm transition-colors hover:[background-color:var(--ui-surface-muted)]"
+            class="flex h-10 w-full items-center rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-(--ui-surface-muted)"
             :style="{ paddingLeft: `${row.depth * 12 + 12}px` }"
             @click="handleRowClick(row.entry)"
             @dblclick="row.entry.type === 'file' && confirmSelection()"

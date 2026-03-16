@@ -52,7 +52,7 @@
                 :class="
                   isTemplateActive(template)
                     ? 'ui-accent-selection-checked'
-                    : 'hover:[background-color:var(--ui-surface-muted)]'
+                    : 'hover:bg-(--ui-surface-muted)'
                 "
                 :title="`${template.name}\n\n${template.description || ''}`"
                 @mouseenter="setActiveTemplate(template)"
@@ -101,7 +101,7 @@
               >
                 <button
                   type="button"
-                  class="inline-flex w-full items-center justify-between rounded-md px-2 py-1.5 text-[12px] font-medium text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+                  class="inline-flex w-full items-center justify-between rounded-md px-2 py-1.5 text-[12px] font-medium text-gray-700 transition-colors hover:bg-(--ui-surface-muted) dark:text-gray-300"
                   @click="toggleAliasGroup(aliasGroup.key)"
                 >
                   <span class="inline-flex items-center gap-1.5">
@@ -136,7 +136,7 @@
                     :class="
                       isTemplateActive(template)
                         ? 'ui-accent-selection-checked'
-                        : 'hover:[background-color:var(--ui-surface-muted)]'
+                        : 'hover:bg-(--ui-surface-muted)'
                     "
                     :title="`${template.name}\n\n${template.description || ''}`"
                     @mouseenter="setActiveTemplate(template)"

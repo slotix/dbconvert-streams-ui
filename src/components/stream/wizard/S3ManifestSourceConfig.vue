@@ -7,7 +7,7 @@
         :class="
           sourceMode === 'selection'
             ? 'ui-accent-selection-checked ui-accent-text'
-            : 'bg-transparent text-gray-600 hover:[background-color:var(--ui-surface-muted)] hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100'
+            : 'bg-transparent text-gray-600 hover:bg-(--ui-surface-muted) hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100'
         "
         data-test="s3-source-mode-selection"
         @click="setSourceMode('selection')"
@@ -20,7 +20,7 @@
         :class="
           sourceMode === 'manifest'
             ? 'ui-accent-selection-checked ui-accent-text'
-            : 'bg-transparent text-gray-600 hover:[background-color:var(--ui-surface-muted)] hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100'
+            : 'bg-transparent text-gray-600 hover:bg-(--ui-surface-muted) hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100'
         "
         data-test="s3-source-mode-manifest"
         @click="setSourceMode('manifest')"

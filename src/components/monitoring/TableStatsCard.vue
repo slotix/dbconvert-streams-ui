@@ -164,7 +164,7 @@ function formatDuration(seconds: number) {
             <tr
               v-for="table in allTables"
               :key="table.table"
-              class="transition-colors hover:[background-color:var(--ui-surface-muted)]"
+              class="transition-colors hover:bg-(--ui-surface-muted)"
             >
               <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">
                 <span v-tooltip="table.table" class="truncate block max-w-xs">{{

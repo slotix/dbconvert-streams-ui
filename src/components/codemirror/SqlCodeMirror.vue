@@ -6,7 +6,7 @@
       isDarkTheme ? 'sql-cm-dark' : 'sql-cm-light',
       props.readOnly
         ? 'ui-border-default'
-        : 'ui-border-default focus-within:ring-2 focus-within:[border-color:var(--ui-accent-focus-border)] focus-within:ring-[var(--ui-accent-focus-border)]/35'
+        : 'ui-border-default focus-within:ring-2 focus-within:border-(--ui-accent-focus-border) focus-within:ring-(--ui-accent-focus-border)/35'
     ]"
     :style="containerStyle"
   >

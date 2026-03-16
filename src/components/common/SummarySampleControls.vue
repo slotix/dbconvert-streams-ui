@@ -51,7 +51,7 @@ const presetOptions = computed(() => [
       min="1"
       max="100"
       step="1"
-      class="ui-accent-focus ui-surface-raised ui-border-default inline-flex w-20 items-center rounded border px-2 py-1 text-xs text-gray-600 hover:[background-color:var(--ui-surface-muted)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-400"
+      class="ui-accent-focus ui-surface-raised ui-border-default inline-flex w-20 items-center rounded border px-2 py-1 text-xs text-gray-600 hover:bg-(--ui-surface-muted) focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-400"
       :disabled="loading"
       aria-label="Custom sample percent"
     />

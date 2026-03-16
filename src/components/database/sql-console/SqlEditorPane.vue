@@ -17,7 +17,7 @@
       <div ref="formatDropdownRef" class="relative inline-flex">
         <button
           :disabled="isFormatClickDebounced"
-          class="ui-surface-raised ui-border-default ui-accent-focus inline-flex items-center rounded-l border border-r-0 px-2 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:[background-color:var(--ui-surface-muted)] focus:outline-none dark:text-gray-300"
+          class="ui-surface-raised ui-border-default ui-accent-focus inline-flex items-center rounded-l border border-r-0 px-2 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-(--ui-surface-muted) focus:outline-none dark:text-gray-300"
           :title="formatButtonTitle"
           @click="handleFormatClick"
         >
@@ -27,7 +27,7 @@
 
         <button
           :disabled="isFormatClickDebounced"
-          class="ui-surface-raised ui-border-default ui-accent-focus inline-flex items-center justify-center rounded-r border px-2 py-1.5 text-gray-600 shadow-sm hover:[background-color:var(--ui-surface-muted)] focus:outline-none dark:text-gray-300"
+          class="ui-surface-raised ui-border-default ui-accent-focus inline-flex items-center justify-center rounded-r border px-2 py-1.5 text-gray-600 shadow-sm hover:bg-(--ui-surface-muted) focus:outline-none dark:text-gray-300"
           :class="formatState === 'compacted' ? 'ui-accent-text' : ''"
           :title="'More formatting options'"
           @click.stop="toggleFormatMenu"
@@ -42,7 +42,7 @@
         >
           <button
             type="button"
-            class="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-gray-700 hover:[background-color:var(--ui-surface-muted)] dark:text-gray-200"
+            class="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-200"
             :title="compactButtonTitle"
             @click="handleCompactClick"
           >
@@ -54,7 +54,7 @@
 
       <button
         :disabled="!hasQueryToCopy"
-        class="ui-surface-raised ui-border-default ui-accent-focus inline-flex items-center rounded border px-2 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:[background-color:var(--ui-surface-muted)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-300"
+        class="ui-surface-raised ui-border-default ui-accent-focus inline-flex items-center rounded border px-2 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-(--ui-surface-muted) focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-300"
         :title="isCopyFeedbackVisible ? 'Copied' : 'Copy SQL'"
         @click="copyCurrentQuery"
       >
@@ -68,7 +68,7 @@
       <!-- Templates Dropdown -->
       <div v-if="templates.length > 0" ref="templatesDropdownRef" class="relative">
         <button
-          class="ui-surface-raised ui-border-default ui-accent-focus inline-flex items-center rounded border px-2 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:[background-color:var(--ui-surface-muted)] focus:outline-none dark:text-gray-300"
+          class="ui-surface-raised ui-border-default ui-accent-focus inline-flex items-center rounded border px-2 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-(--ui-surface-muted) focus:outline-none dark:text-gray-300"
           :title="`Open template picker (${shortcutHint})`"
           @click="toggleTemplates"
         >
@@ -88,7 +88,7 @@
       <!-- History Dropdown -->
       <div ref="historyDropdownRef" class="relative">
         <button
-          class="ui-surface-raised ui-border-default ui-accent-focus inline-flex items-center rounded border px-2 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:[background-color:var(--ui-surface-muted)] focus:outline-none dark:text-gray-300"
+          class="ui-surface-raised ui-border-default ui-accent-focus inline-flex items-center rounded border px-2 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-(--ui-surface-muted) focus:outline-none dark:text-gray-300"
           :disabled="history.length === 0"
           :class="{ 'opacity-50 cursor-not-allowed': history.length === 0 }"
           :title="historyButtonTitle"
@@ -138,7 +138,7 @@
             <div
               v-for="(item, index) in filteredHistory"
               :key="historyKey(item, index)"
-              class="group relative mb-1 flex items-center gap-2 rounded-md border border-transparent px-2 py-1.5 transition-colors hover:[background-color:var(--ui-surface-muted)] hover:[border-color:var(--ui-border-default)]"
+              class="group relative mb-1 flex items-center gap-2 rounded-md border border-transparent px-2 py-1.5 transition-colors hover:bg-(--ui-surface-muted) hover:border-(--ui-border-default)"
               :class="{
                 'ui-accent-selection-checked':
                   mostRecentHistoryId && item.id === mostRecentHistoryId,

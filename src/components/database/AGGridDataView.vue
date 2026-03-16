@@ -816,7 +816,7 @@ export default {
             :class="
               hasAnyFilterActivity
                 ? 'ui-status-warning-badge border'
-                : 'ui-text-muted hover:[background-color:var(--ui-surface-muted)] border border-transparent'
+                : 'ui-text-muted hover:bg-(--ui-surface-muted) border border-transparent'
             "
             @click="openFilterPanel"
           >

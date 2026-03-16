@@ -10,7 +10,7 @@
     <!-- Header -->
     <button
       v-if="props.showHeader"
-      class="w-full flex items-center justify-between px-4 py-2.5 transition-colors hover:[background-color:var(--ui-surface-muted)]"
+      class="w-full flex items-center justify-between px-4 py-2.5 transition-colors hover:bg-(--ui-surface-muted)"
       @click="toggleCollapse"
     >
       <!-- Left side: Icon + Label -->
@@ -174,11 +174,11 @@
               </RouterLink>
             </div>
 
-            <div class="divide-y divide-[var(--ui-border-default)]">
+            <div class="divide-y divide-(--ui-border-default)">
               <div
                 v-for="conn in group.items"
                 :key="conn.id"
-                class="rounded-sm py-2 hover:[background-color:var(--ui-surface-muted)]"
+                class="rounded-sm py-2 hover:bg-(--ui-surface-muted)"
               >
                 <template v-if="isDatabaseConnection(conn)">
                   <div class="flex items-center justify-between gap-2 px-1">
@@ -229,7 +229,7 @@
                     v-if="isSelected(conn.id)"
                     class="ui-surface-muted ml-7 mr-1 mt-1 rounded-md px-2 py-1.5"
                   >
-                    <div class="divide-y divide-[var(--ui-border-default)]">
+                    <div class="divide-y divide-(--ui-border-default)">
                       <div
                         v-for="mapping in getMappingsByConnection(conn.id)"
                         :key="getMappingTargetId(mapping)"

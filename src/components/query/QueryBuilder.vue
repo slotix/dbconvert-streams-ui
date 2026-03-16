@@ -42,6 +42,16 @@
             <ArrowUpDown class="w-3 h-3" />
             <span>Sort</span>
           </button>
+          <button
+            v-if="hasAnyFilter"
+            type="button"
+            class="inline-flex items-center gap-1 px-2 py-1 text-xs text-red-500 dark:text-red-400 rounded transition-colors hover:bg-red-50 dark:hover:bg-red-950/30"
+            title="Clear all filters"
+            @click="clearAll"
+          >
+            <X class="w-3 h-3" />
+            <span>Clear</span>
+          </button>
         </div>
       </div>
 
@@ -139,11 +149,11 @@
                   </th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-[var(--ui-border-default)]">
+              <tbody class="divide-y divide-(--ui-border-default)">
                 <tr
                   v-for="(row, idx) in previewData.rows"
                   :key="idx"
-                  class="hover:[background-color:var(--ui-surface-muted)]"
+                  class="hover:bg-(--ui-surface-muted)"
                 >
                   <td
                     v-for="col in previewData.columns"
@@ -254,6 +264,16 @@ const canAddSort = computed(() => {
   return props.columns.some((col) => !usedColumns.has(col.name))
 })
 
+// Check if any filter/sort/limit/column selection is active
+const hasAnyFilter = computed(() => {
+  const hasColumnFilter =
+    selectedColumns.value.length > 0 && selectedColumns.value.length < props.columns.length
+  const hasFilters = filters.value.length > 0
+  const hasSorts = orderBy.value.length > 0
+  const hasLimit = limit.value !== null && limit.value !== undefined
+  return hasColumnFilter || hasFilters || hasSorts || hasLimit
+})
+
 // Handle updates from FilterBuilder
 function onBuilderUpdate(payload: {
   selectedColumns: string[]
@@ -285,6 +305,31 @@ function addSort() {
 
 function toggleColumnSelector() {
   showColumnSelector.value = !showColumnSelector.value
+}
+
+function clearAll() {
+  const builder = filterBuilderRef.value
+  if (builder) {
+    builder.selectAllColumns()
+    // Remove all filters
+    while (builder.filters.length > 0) {
+      const firstFilterId = builder.filters[0]?.id
+      if (!firstFilterId) break
+      builder.removeFilter(firstFilterId)
+    }
+    // Remove all sorts
+    while (builder.sorts.length > 0) {
+      builder.removeSort(0)
+    }
+    builder.clearLimit()
+  }
+  selectedColumns.value = props.columns.map((c) => c.name)
+  filters.value = []
+  orderBy.value = []
+  limit.value = null
+  showColumnSelector.value = false
+  showPreview.value = false
+  emitUpdate()
 }
 
 // Emit structured filter state whenever local state changes

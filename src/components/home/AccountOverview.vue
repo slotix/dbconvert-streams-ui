@@ -30,7 +30,7 @@
           </button>
           <button
             type="button"
-            class="ui-focus-ring ui-surface-raised ui-border-default ui-text-default inline-flex items-center rounded-md border px-4 py-2 text-sm font-medium hover:[background-color:var(--ui-surface-muted)]"
+            class="ui-focus-ring ui-surface-raised ui-border-default ui-text-default inline-flex items-center rounded-md border px-4 py-2 text-sm font-medium hover:bg-(--ui-surface-muted)"
             @click="openAccountPage"
           >
             Create account
@@ -225,7 +225,7 @@
               </div>
               <div class="ui-surface-inset w-full rounded-full h-2.5 mt-2">
                 <div
-                  class="h-2.5 rounded-full transition-all duration-300 [background-color:var(--ui-accent-strong-bg)]"
+                  class="h-2.5 rounded-full transition-all duration-300 bg-(--ui-accent-strong-bg)"
                   :style="{ width: `${evalConvertPercent}%` }"
                 ></div>
               </div>
@@ -239,7 +239,7 @@
               </div>
               <div class="ui-surface-inset w-full rounded-full h-2.5 mt-2">
                 <div
-                  class="h-2.5 rounded-full transition-all duration-300 [background-color:var(--ui-accent-strong-bg)]"
+                  class="h-2.5 rounded-full transition-all duration-300 bg-(--ui-accent-strong-bg)"
                   :style="{ width: `${evalCdcPercent}%` }"
                 ></div>
               </div>
@@ -278,12 +278,12 @@
                   class="ui-surface-inset ui-border-default ui-text-strong ui-focus-ring w-full rounded-lg border px-3 py-2 pr-10 text-sm font-mono transition-colors focus:outline-none"
                 />
                 <button
-                  class="ui-focus-ring absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 transition-colors group hover:[background-color:var(--ui-surface-muted)]"
+                  class="ui-focus-ring absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 transition-colors group hover:bg-(--ui-surface-muted)"
                   title="Copy API Key"
                   @click="copyApiKey"
                 >
                   <Copy
-                    class="ui-icon-default h-4 w-4 group-hover:[color:var(--ui-text-default)]"
+                    class="ui-icon-default h-4 w-4 group-hover:text-(--ui-text-default)"
                     :stroke-width="iconStroke"
                   />
                 </button>
@@ -299,12 +299,12 @@
                   class="ui-surface-inset ui-border-default ui-text-strong ui-focus-ring w-full rounded-lg border px-3 py-2 pr-10 text-sm font-mono transition-colors focus:outline-none"
                 />
                 <button
-                  class="ui-focus-ring absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 transition-colors group hover:[background-color:var(--ui-surface-muted)]"
+                  class="ui-focus-ring absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 transition-colors group hover:bg-(--ui-surface-muted)"
                   title="Copy Install ID"
                   @click="copyInstallId"
                 >
                   <Copy
-                    class="ui-icon-default h-4 w-4 group-hover:[color:var(--ui-text-default)]"
+                    class="ui-icon-default h-4 w-4 group-hover:text-(--ui-text-default)"
                     :stroke-width="iconStroke"
                   />
                 </button>
