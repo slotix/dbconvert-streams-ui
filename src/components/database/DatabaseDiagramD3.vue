@@ -263,6 +263,19 @@ function createNodes(
       updateHighlighting()
       emit('selection-change', highlightingComposable.selectedTable.value)
     })
+    .on('dblclick', (event: MouseEvent, d: TableNode) => {
+      event.stopPropagation()
+      event.preventDefault()
+      if (d.fx == null && d.fy == null) return
+      d.fx = undefined
+      d.fy = undefined
+      if (staticLayout.value) {
+        forcesComposable.restartSimulation(0.15)
+        settleSimulation(40)
+      } else {
+        forcesComposable.restartSimulation(0.15)
+      }
+    })
 
   // Table background
   node
@@ -989,9 +1002,97 @@ function computeDiagramBounds(params: {
   return { minX, minY, maxX, maxY }
 }
 
+/**
+ * Place nodes by connected component so the force simulation starts
+ * from a clean topology instead of tangled cached positions.
+ */
+function clusterByConnectedComponents() {
+  if (!currentNodes.length) return
+
+  // Build node lookup + adjacency
+  const nodeById = new Map<string, TableNode>()
+  for (const n of currentNodes) nodeById.set(n.id, n)
+
+  const adj = new Map<string, Set<string>>()
+  for (const n of currentNodes) adj.set(n.id, new Set())
+  for (const link of links) {
+    const src = typeof link.source === 'string' ? link.source : link.source.id
+    const tgt = typeof link.target === 'string' ? link.target : link.target.id
+    adj.get(src)?.add(tgt)
+    adj.get(tgt)?.add(src)
+  }
+
+  // BFS to find connected components
+  const visited = new Set<string>()
+  const components: TableNode[][] = []
+  for (const n of currentNodes) {
+    if (visited.has(n.id)) continue
+    const component: TableNode[] = []
+    const queue = [n]
+    visited.add(n.id)
+    while (queue.length) {
+      const cur = queue.shift()!
+      component.push(cur)
+      for (const neighborId of adj.get(cur.id) || []) {
+        if (!visited.has(neighborId)) {
+          visited.add(neighborId)
+          const neighbor = nodeById.get(neighborId)
+          if (neighbor) queue.push(neighbor)
+        }
+      }
+    }
+    components.push(component)
+  }
+
+  // Sort components largest first
+  components.sort((a, b) => b.length - a.length)
+
+  // Place component centers in a grid, nodes in circles within each
+  const { width, height } = getRawViewportSize(1200)
+  const cx = width / 2
+  const cy = height / 2
+  const cols = Math.max(1, Math.ceil(Math.sqrt(components.length)))
+  const rows = Math.ceil(components.length / cols)
+  const spacing = 500
+
+  components.forEach((comp, ci) => {
+    const col = ci % cols
+    const row = Math.floor(ci / cols)
+    const compCx = cx + (col - (cols - 1) / 2) * spacing
+    const compCy = cy + (row - (rows - 1) / 2) * spacing
+
+    const radius = Math.max(60, comp.length * 25)
+    comp.forEach((n, ni) => {
+      const angle = (2 * Math.PI * ni) / comp.length
+      n.x = compCx + radius * Math.cos(angle)
+      n.y = compCy + radius * Math.sin(angle)
+      n.vx = 0
+      n.vy = 0
+    })
+  })
+}
+
 function autoLayout() {
+  // 1. Unpin all nodes so the simulation can rearrange freely
+  for (const n of currentNodes) {
+    n.fx = undefined
+    n.fy = undefined
+  }
+
+  // 2. Cluster nodes by connected component for a clean starting topology
+  clusterByConnectedComponents()
+
+  // 3. Retune forces based on current graph
   autoTuneForces()
 
+  // 4. Re-raise alpha and run extra ticks so the layout fully stabilises
+  const simulation = forcesComposable.getSimulation()
+  if (simulation) {
+    simulation.alpha(0.8)
+    settleSimulation(200)
+  }
+
+  // 5. Fit camera to the settled layout
   if (!svgContainer.value) return
   const bounds = computeDiagramBounds({ nodes: currentNodes, nodeHeightById })
   if (!bounds) return
@@ -1056,6 +1157,9 @@ function createVisualization(reason: 'init' | 'resize' | 'data' | 'theme' = 'dat
     }
     return true
   })
+
+  // Disable default dblclick-to-zoom (nodes use dblclick for unpin)
+  svg.on('dblclick.zoom', null)
 
   zoomBehavior.on('zoom.persist', (event: D3ZoomEvent<SVGSVGElement, unknown>) => {
     schedulePersistZoom(event.transform)
@@ -1195,6 +1299,21 @@ function createVisualization(reason: 'init' | 'resize' | 'data' | 'theme' = 'dat
   simulation.on('tick', applyPositions)
   if (!staticLayout.value) {
     simulation.alpha(reason === 'data' ? 0.08 : 0.12).restart()
+
+    // Two-stage zoom: fit once now, then again after simulation settles
+    const earlyBounds = computeDiagramBounds({ nodes, nodeHeightById })
+    if (earlyBounds) {
+      const { width: vw, height: vh } = getRawViewportSize(1200)
+      zoomComposable.fitToBounds(earlyBounds, vw, vh, 40, 400)
+    }
+    simulation.on('end.fit', () => {
+      const finalBounds = computeDiagramBounds({ nodes: currentNodes, nodeHeightById })
+      if (finalBounds && svgContainer.value) {
+        const { width: vw2, height: vh2 } = getRawViewportSize(1200)
+        zoomComposable.fitToBounds(finalBounds, vw2, vh2, 40, 550)
+      }
+      simulation.on('end.fit', null)
+    })
   }
 
   // Clear selection on background click
