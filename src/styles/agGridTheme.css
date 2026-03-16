@@ -251,34 +251,34 @@
   --ag-border-color: rgb(64 64 64); /* Pure gray-700 */
   --ag-row-border-color: rgb(64 64 64);
 
-  /* Selection and hover colors with teal accent */
-  --ag-selected-row-background-color: rgba(20, 184, 166, 0.15);
+  /* Selection and hover colors with sky accent */
+  --ag-selected-row-background-color: rgba(14, 165, 233, 0.15);
   --ag-row-hover-color: rgb(64 64 64); /* Pure gray-700 */
 
   /* Input styling */
   --ag-input-border-color: rgb(64 64 64);
   --ag-input-disabled-background-color: rgb(38 38 38);
 
-  /* Accent colors - teal for dark mode */
-  --ag-checkbox-checked-color: rgb(20 184 166);
-  --ag-range-selection-background-color: rgba(20, 184, 166, 0.15);
+  /* Accent colors - sky for dark mode */
+  --ag-checkbox-checked-color: rgb(14 165 233);
+  --ag-range-selection-background-color: rgba(14, 165, 233, 0.15);
 
   /* Header interactions */
   --ag-header-cell-hover-background-color: rgb(38 38 38); /* Pure gray-800 */
   --ag-header-cell-moving-background-color: rgb(64 64 64);
 
-  /* Active/focus colors - teal accent */
-  --ag-alpine-active-color: rgb(20 184 166);
-  --ag-input-focus-border-color: rgb(45 212 191);
+  /* Active/focus colors - sky accent */
+  --ag-alpine-active-color: rgb(14 165 233);
+  --ag-input-focus-border-color: rgb(56 189 248);
 
   /* Tooltip styling (default Alpine tooltip background is light; override for dark mode) */
   --ag-tooltip-background-color: rgb(23 23 23);
   --ag-tooltip-text-color: rgb(245 245 245);
 
-  /* Range selection colors with teal */
-  --ag-range-selection-background-color-2: rgba(20, 184, 166, 0.25);
-  --ag-range-selection-background-color-3: rgba(20, 184, 166, 0.35);
-  --ag-range-selection-background-color-4: rgba(20, 184, 166, 0.45);
+  /* Range selection colors with sky */
+  --ag-range-selection-background-color-2: rgba(14, 165, 233, 0.25);
+  --ag-range-selection-background-color-3: rgba(14, 165, 233, 0.35);
+  --ag-range-selection-background-color-4: rgba(14, 165, 233, 0.45);
   --app-grid-pending-delete-bg: rgba(244, 63, 94, 0.18);
   --app-grid-pending-insert-bg: rgba(56, 189, 248, 0.14);
   --app-grid-pending-edit-bg: rgba(45, 212, 191, 0.14);

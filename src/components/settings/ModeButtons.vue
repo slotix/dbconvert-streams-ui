@@ -35,11 +35,11 @@
                 :class="[
                   'flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors',
                   checked
-                    ? 'border-teal-600 dark:border-teal-400'
+                    ? 'border-sky-600 dark:border-sky-400'
                     : 'border-gray-400 dark:border-gray-500'
                 ]"
               >
-                <span v-if="checked" class="h-2 w-2 rounded-full bg-teal-600 dark:bg-teal-400" />
+                <span v-if="checked" class="h-2 w-2 rounded-full bg-sky-600 dark:bg-sky-400" />
               </span>
             </div>
             <div class="ml-3 flex-1">
