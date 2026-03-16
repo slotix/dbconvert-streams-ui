@@ -28,9 +28,9 @@
             class="w-4 h-4 shrink-0 flex items-center justify-center rounded transition-all"
             :class="
               isTableSettingsOpen(table.name)
-                ? 'text-sky-500'
+                ? 'ui-accent-icon'
                 : hasTableFilter(table)
-                  ? 'text-sky-500'
+                  ? 'ui-accent-icon'
                   : 'text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400'
             "
             @click="emit('toggle-filter', table.name)"
@@ -40,7 +40,7 @@
           <Filter
             v-else-if="hasTableFilter(table)"
             v-tooltip="'Has active filter'"
-            class="w-4 h-4 text-sky-500 shrink-0"
+            class="w-4 h-4 ui-accent-icon shrink-0"
           />
           <TableIcon v-else class="h-4 w-4 text-gray-400 dark:text-gray-500 shrink-0" />
 
@@ -108,9 +108,9 @@
           class="w-4 h-4 shrink-0 flex items-center justify-center rounded transition-all"
           :class="
             isTableSettingsOpen(table.name)
-              ? 'text-sky-500'
+              ? 'ui-accent-icon'
               : hasTableFilter(table)
-                ? 'text-sky-500'
+                ? 'ui-accent-icon'
                 : 'text-gray-300 dark:text-gray-600 opacity-0 group-hover:opacity-100 hover:text-gray-500 dark:hover:text-gray-400'
           "
           @click="emit('toggle-filter', table.name)"
@@ -120,7 +120,7 @@
         <Filter
           v-else-if="hasTableFilter(table)"
           v-tooltip="'Has active filter'"
-          class="w-4 h-4 text-sky-500 shrink-0"
+          class="w-4 h-4 ui-accent-icon shrink-0"
         />
         <TableIcon v-else class="h-4 w-4 text-gray-400 dark:text-gray-500 shrink-0" />
 

@@ -53,7 +53,7 @@ const props = withDefaults(defineProps<Props>(), {
   alias: '',
   selectionLabel: '',
   countLabel: '',
-  iconClass: 'text-sky-600 dark:text-sky-400',
+  iconClass: 'ui-accent-icon',
   collapsible: false,
   expanded: true,
   sticky: false

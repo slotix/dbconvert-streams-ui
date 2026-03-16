@@ -238,7 +238,7 @@ async function handleLoadMore() {
       <button
         v-if="hasMoreChildren"
         type="button"
-        class="ml-7 mt-1 text-xs font-medium text-sky-600 hover:text-sky-700 dark:text-sky-300 dark:hover:text-sky-200"
+        class="ml-7 mt-1 text-xs font-medium ui-link"
         @click="handleLoadMore"
       >
         Load more

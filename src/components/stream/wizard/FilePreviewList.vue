@@ -114,7 +114,7 @@
             <button
               v-else
               type="button"
-              class="text-xs font-medium text-sky-600 hover:text-sky-700 dark:text-sky-300 dark:hover:text-sky-200"
+              class="text-xs font-medium ui-link"
               :disabled="isBusy"
               @click="loadMore(row.parentPath)"
             >
@@ -207,7 +207,7 @@
                 <button
                   v-else
                   type="button"
-                  class="text-xs font-medium text-sky-600 hover:text-sky-700 dark:text-sky-300 dark:hover:text-sky-200"
+                  class="text-xs font-medium ui-link"
                   :disabled="isBusy"
                   @click="loadMore(row.parentPath)"
                 >

@@ -148,7 +148,7 @@
                       :connection-name="getConnectionName(fileConn.connectionId)"
                       :selection-label="getSourceSelectionLabel(fileConn)"
                       :icon="Cloud"
-                      icon-class="text-sky-500/80 dark:text-sky-400/80"
+                      icon-class="ui-accent-icon opacity-80"
                       sticky
                       class="ui-border-default rounded-none border-x-0 border-t-0 border-b"
                     >
@@ -177,7 +177,7 @@
                     :connection-name="getConnectionName(fileConn.connectionId)"
                     :selection-label="getSourceSelectionLabel(fileConn)"
                     :icon="FolderOpen"
-                    icon-class="text-sky-500/80 dark:text-sky-400/80"
+                    icon-class="ui-accent-icon opacity-80"
                     sticky
                     class="ui-border-default rounded-none border-x-0 border-t-0 border-b"
                   >

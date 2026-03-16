@@ -60,7 +60,7 @@ function getRowKind(row: RowChangeRow): RowChangeRowKind {
 }
 
 function kindBadgeClass(kind: RowChangeRowKind): string {
-  if (kind === 'insert') return 'bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-300'
+  if (kind === 'insert') return 'ui-badge-accent'
   if (kind === 'delete') return 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
   return 'ui-chip-muted'
 }

@@ -67,30 +67,30 @@
     --ui-text-subtle: rgb(117 128 142);
     --ui-icon-default: rgb(90 100 114);
     --ui-icon-muted: rgb(123 133 147);
-    --ui-accent-strong-bg: rgb(2 132 199);
-    --ui-accent-strong-bg-hover: rgb(3 105 161);
-    --ui-accent-strong-border: rgb(2 132 199);
-    --ui-accent-strong-border-hover: rgb(3 105 161);
+    --ui-accent-strong-bg: rgb(37 99 235);
+    --ui-accent-strong-bg-hover: rgb(29 78 216);
+    --ui-accent-strong-border: rgb(37 99 235);
+    --ui-accent-strong-border-hover: rgb(29 78 216);
     --ui-accent-strong-text: rgb(255 255 255);
-    --ui-accent-soft-bg: rgb(14 165 233 / 0.1);
-    --ui-accent-soft-bg-hover: rgb(14 165 233 / 0.14);
-    --ui-accent-soft-bg-strong: rgb(14 165 233 / 0.18);
-    --ui-accent-soft-border: rgb(2 132 199 / 0.22);
-    --ui-accent-soft-border-strong: rgb(2 132 199 / 0.34);
-    --ui-accent-soft-text: rgb(3 105 161);
-    --ui-accent-soft-icon: rgb(7 89 133);
-    --ui-accent-indicator: rgb(3 105 161);
-    --ui-accent-focus-bg: rgb(14 165 233 / 0.07);
-    --ui-accent-focus-border: rgb(2 132 199 / 0.55);
-    --ui-link-text: rgb(3 105 161);
-    --ui-link-hover-text: rgb(7 89 133);
-    --ui-focus-outline: rgb(2 132 199 / 0.38);
+    --ui-accent-soft-bg: rgb(59 130 246 / 0.1);
+    --ui-accent-soft-bg-hover: rgb(59 130 246 / 0.14);
+    --ui-accent-soft-bg-strong: rgb(59 130 246 / 0.18);
+    --ui-accent-soft-border: rgb(37 99 235 / 0.22);
+    --ui-accent-soft-border-strong: rgb(37 99 235 / 0.34);
+    --ui-accent-soft-text: rgb(29 78 216);
+    --ui-accent-soft-icon: rgb(30 64 175);
+    --ui-accent-indicator: rgb(29 78 216);
+    --ui-accent-focus-bg: rgb(59 130 246 / 0.07);
+    --ui-accent-focus-border: rgb(37 99 235 / 0.55);
+    --ui-link-text: rgb(29 78 216);
+    --ui-link-hover-text: rgb(30 64 175);
+    --ui-focus-outline: rgb(37 99 235 / 0.38);
     --ui-success-soft-bg: rgb(16 185 129 / 0.12);
     --ui-success-soft-border: rgb(5 150 105 / 0.28);
     --ui-success-text: rgb(6 95 70);
-    --ui-info-soft-bg: rgb(14 165 233 / 0.12);
-    --ui-info-soft-border: rgb(2 132 199 / 0.24);
-    --ui-info-text: rgb(7 89 133);
+    --ui-info-soft-bg: rgb(59 130 246 / 0.12);
+    --ui-info-soft-border: rgb(37 99 235 / 0.24);
+    --ui-info-text: rgb(30 64 175);
     --ui-warning-soft-bg: rgb(245 158 11 / 0.13);
     --ui-warning-soft-border: rgb(217 119 6 / 0.28);
     --ui-warning-text: rgb(146 64 14);
@@ -116,30 +116,30 @@
     --ui-text-subtle: rgb(132 141 151);
     --ui-icon-default: rgb(181 188 196);
     --ui-icon-muted: rgb(135 143 152);
-    --ui-accent-strong-bg: rgb(3 105 161);
-    --ui-accent-strong-bg-hover: rgb(7 89 133);
-    --ui-accent-strong-border: rgb(125 211 252 / 0.45);
-    --ui-accent-strong-border-hover: rgb(186 230 253 / 0.52);
-    --ui-accent-strong-text: rgb(240 249 255);
-    --ui-accent-soft-bg: rgb(56 189 248 / 0.1);
-    --ui-accent-soft-bg-hover: rgb(56 189 248 / 0.14);
-    --ui-accent-soft-bg-strong: rgb(56 189 248 / 0.18);
-    --ui-accent-soft-border: rgb(56 189 248 / 0.22);
-    --ui-accent-soft-border-strong: rgb(125 211 252 / 0.3);
-    --ui-accent-soft-text: rgb(186 230 253);
-    --ui-accent-soft-icon: rgb(125 211 252);
-    --ui-accent-indicator: rgb(125 211 252);
-    --ui-accent-focus-bg: rgb(56 189 248 / 0.08);
-    --ui-accent-focus-border: rgb(56 189 248 / 0.52);
-    --ui-link-text: rgb(125 211 252);
-    --ui-link-hover-text: rgb(186 230 253);
-    --ui-focus-outline: rgb(56 189 248 / 0.42);
+    --ui-accent-strong-bg: rgb(34 108 175);
+    --ui-accent-strong-bg-hover: rgb(48 128 198);
+    --ui-accent-strong-border: rgb(70 155 220 / 0.5);
+    --ui-accent-strong-border-hover: rgb(90 170 230 / 0.55);
+    --ui-accent-strong-text: rgb(255 255 255);
+    --ui-accent-soft-bg: rgb(56 148 220 / 0.2);
+    --ui-accent-soft-bg-hover: rgb(56 148 220 / 0.28);
+    --ui-accent-soft-bg-strong: rgb(56 148 220 / 0.36);
+    --ui-accent-soft-border: rgb(56 148 220 / 0.4);
+    --ui-accent-soft-border-strong: rgb(56 148 220 / 0.55);
+    --ui-accent-soft-text: rgb(56 148 220);
+    --ui-accent-soft-icon: rgb(56 148 220);
+    --ui-accent-indicator: rgb(56 148 220);
+    --ui-accent-focus-bg: rgb(56 148 220 / 0.1);
+    --ui-accent-focus-border: rgb(56 148 220 / 0.55);
+    --ui-link-text: rgb(56 148 220);
+    --ui-link-hover-text: rgb(90 175 235);
+    --ui-focus-outline: rgb(56 148 220 / 0.45);
     --ui-success-soft-bg: rgb(16 185 129 / 0.16);
     --ui-success-soft-border: rgb(52 211 153 / 0.28);
     --ui-success-text: rgb(167 243 208);
-    --ui-info-soft-bg: rgb(56 189 248 / 0.16);
-    --ui-info-soft-border: rgb(56 189 248 / 0.26);
-    --ui-info-text: rgb(186 230 253);
+    --ui-info-soft-bg: rgb(96 165 250 / 0.16);
+    --ui-info-soft-border: rgb(96 165 250 / 0.26);
+    --ui-info-text: rgb(191 219 254);
     --ui-warning-soft-bg: rgb(245 158 11 / 0.18);
     --ui-warning-soft-border: rgb(251 191 36 / 0.28);
     --ui-warning-text: rgb(253 230 138);
@@ -390,17 +390,17 @@
   }
 
   .ui-accent-primary {
-    background-color: var(--ui-accent-soft-bg-hover);
-    border-color: var(--ui-accent-soft-border-strong);
-    color: var(--ui-accent-soft-text);
+    background-color: var(--ui-accent-strong-bg);
+    border-color: var(--ui-accent-strong-border);
+    color: var(--ui-accent-strong-text);
     box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
   }
 
   .ui-accent-primary:hover,
   .ui-accent-primary:focus-visible {
-    background-color: var(--ui-accent-soft-bg-strong);
-    border-color: var(--ui-accent-soft-border-strong);
-    color: var(--ui-accent-soft-text);
+    background-color: var(--ui-accent-strong-bg-hover);
+    border-color: var(--ui-accent-strong-border-hover);
+    color: var(--ui-accent-strong-text);
   }
 
   .ui-accent-focus:focus,
@@ -415,6 +415,7 @@
 
   .ui-accent-icon {
     color: var(--ui-accent-soft-icon);
+    accent-color: var(--ui-accent-indicator);
   }
 
   .ui-accent-option-active {
@@ -545,6 +546,24 @@
     background-color: var(--ui-surface-muted);
     border: 1px solid var(--ui-border-default);
     color: var(--ui-text-muted);
+  }
+
+  .ui-chip-accent {
+    background-color: var(--ui-accent-soft-bg);
+    border-color: var(--ui-accent-soft-border-strong);
+    color: var(--ui-accent-soft-text);
+  }
+
+  .ui-badge-accent {
+    background-color: var(--ui-accent-soft-bg);
+    border-color: var(--ui-accent-soft-border);
+    color: var(--ui-accent-soft-text);
+  }
+
+  .ui-info-note {
+    background-color: var(--ui-info-soft-bg);
+    border-color: var(--ui-info-soft-border);
+    color: var(--ui-info-text);
   }
 
   .ui-accent-slider {

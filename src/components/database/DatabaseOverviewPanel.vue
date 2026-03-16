@@ -1038,7 +1038,7 @@ async function handleCreateSchema() {
                   <button
                     v-tooltip="t.name"
                     type="button"
-                    class="truncate text-left hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors max-w-[200px] block"
+                    class="truncate text-left hover:text-(--ui-link-text) font-medium transition-colors max-w-[200px] block"
                     @click="$emit('open-table', { name: t.name })"
                   >
                     {{ t.name }}
@@ -1082,7 +1082,7 @@ async function handleCreateSchema() {
             :key="i"
             class="flex items-start gap-2 p-2 rounded-lg text-sm"
             :class="{
-              'bg-sky-100/50 dark:bg-sky-900/20': n.severity === 'info',
+              'bg-(--ui-info-soft-bg)': n.severity === 'info',
               'ui-surface-muted': n.severity === 'warn',
               'bg-red-100/50 dark:bg-red-900/30': n.severity === 'error'
             }"
@@ -1090,7 +1090,7 @@ async function handleCreateSchema() {
             <span
               class="mt-1.5 inline-block w-1.5 h-1.5 rounded-full shrink-0"
               :class="{
-                'bg-sky-500': n.severity === 'info',
+                'bg-(--ui-accent-indicator)': n.severity === 'info',
                 'bg-amber-500': n.severity === 'warn',
                 'bg-red-500': n.severity === 'error'
               }"
@@ -1098,7 +1098,7 @@ async function handleCreateSchema() {
             <div class="flex-1 min-w-0">
               <span
                 :class="{
-                  'text-sky-800 dark:text-sky-300': n.severity === 'info',
+                  'text-(--ui-info-text)': n.severity === 'info',
                   'text-amber-800 dark:text-amber-300': n.severity === 'warn',
                   'text-red-800 dark:text-red-300': n.severity === 'error'
                 }"
@@ -1109,7 +1109,7 @@ async function handleCreateSchema() {
                 :href="n.doc"
                 class="ml-2 text-xs font-medium hover:underline"
                 :class="{
-                  'text-sky-600 dark:text-sky-400': n.severity === 'info',
+                  'text-(--ui-link-text)': n.severity === 'info',
                   'text-amber-600 dark:text-amber-400': n.severity === 'warn',
                   'text-red-600 dark:text-red-300': n.severity === 'error'
                 }"

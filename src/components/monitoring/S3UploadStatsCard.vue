@@ -102,7 +102,7 @@ function getUploadStatus(status: string) {
         <div class="flex items-center gap-3">
           <!-- Overall progress indicator -->
           <div v-if="hasAnyUploads" class="text-right">
-            <div class="text-lg font-bold text-sky-600 dark:text-sky-400">
+            <div class="text-lg font-bold ui-accent-text">
               {{ overallProgress }}%
             </div>
             <div class="text-xs text-gray-500 dark:text-gray-400">
@@ -113,7 +113,7 @@ function getUploadStatus(status: string) {
           <button
             v-if="collapsible"
             type="button"
-            class="ui-surface-raised inline-flex h-8 w-8 items-center justify-center rounded-md border border-sky-200 text-sky-700 transition-all hover:bg-sky-50 dark:border-sky-700/50 dark:text-sky-300 dark:hover:bg-gray-800"
+            class="ui-surface-raised ui-accent-text inline-flex h-8 w-8 items-center justify-center rounded-md border border-(--ui-accent-soft-border) transition-all hover:bg-(--ui-accent-soft-bg) dark:hover:bg-(--ui-accent-soft-bg)"
             :aria-expanded="isExpanded"
             aria-label="Toggle upload"
             @click="emit('toggle')"
@@ -121,7 +121,7 @@ function getUploadStatus(status: string) {
             <ChevronDown class="h-4 w-4 transition-transform" :class="{ 'rotate-180': isOpen }" />
           </button>
           <span
-            class="inline-flex items-center rounded-full bg-sky-600 px-3 py-1.5 text-sm font-semibold text-white dark:bg-sky-500 dark:text-gray-900"
+            class="inline-flex items-center rounded-full bg-(--ui-accent-strong-bg) px-3 py-1.5 text-sm font-semibold text-(--ui-accent-strong-text)"
           >
             {{ statusCounts.total }}
           </span>
@@ -136,7 +136,7 @@ function getUploadStatus(status: string) {
             :class="
               overallProgress === 100
                 ? 'bg-emerald-500 dark:bg-emerald-400'
-                : 'bg-sky-500 dark:bg-sky-400'
+                : 'bg-(--ui-accent-indicator)'
             "
             :style="{ width: `${overallProgress}%` }"
           ></div>

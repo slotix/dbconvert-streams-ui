@@ -238,7 +238,7 @@
 
       <div class="ui-border-default rounded-xl border bg-transparent p-5">
         <div class="flex items-start">
-          <FileText class="mr-3 mt-0.5 h-5 w-5 shrink-0 text-sky-500 dark:text-sky-400" />
+          <FileText class="mr-3 mt-0.5 h-5 w-5 shrink-0 ui-accent-icon" />
           <div>
             <h4 class="mb-2 text-sm font-semibold text-gray-900 dark:text-gray-100">
               Supported File Formats

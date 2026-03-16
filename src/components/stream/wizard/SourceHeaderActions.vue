@@ -21,8 +21,8 @@ withDefaults(defineProps<Props>(), {
   selectLabel: 'Select All',
   clearLabel: 'Clear',
   selectClass:
-    'text-xs text-gray-500 dark:text-gray-400 hover:text-sky-500 dark:hover:text-sky-300 font-medium',
-  clearClass: 'text-xs text-gray-500 dark:text-gray-400 hover:text-sky-500 dark:hover:text-sky-300'
+    'text-xs text-gray-500 dark:text-gray-400 hover:text-(--ui-accent-soft-text) font-medium',
+  clearClass: 'text-xs text-gray-500 dark:text-gray-400 hover:text-(--ui-accent-soft-text)'
 })
 
 defineEmits<{

@@ -830,7 +830,7 @@ export default {
           <button
             v-if="!isView && isTableEditable"
             type="button"
-            class="ui-accent-primary inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-md border px-2.5 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+            class="ui-accent-text inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-md border border-(--ui-accent-soft-border-strong) bg-(--ui-accent-soft-bg) px-2.5 py-1 text-xs hover:bg-(--ui-accent-soft-bg-hover) disabled:cursor-not-allowed disabled:opacity-50"
             title="Stage a new row for insert"
             @click="openInsertRowPanelForNew"
           >

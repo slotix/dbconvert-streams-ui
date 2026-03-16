@@ -194,7 +194,7 @@ function cancelAndClose() {
         <!-- Edit actions -->
         <button
           type="button"
-          class="w-full text-left px-3 py-2 text-sm text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between"
+          class="ui-accent-action ui-accent-text w-full text-left px-3 py-2 text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between"
           :disabled="!canEditCell"
           @click="editCellAndClose"
         >
@@ -212,7 +212,7 @@ function cancelAndClose() {
         </button>
         <button
           type="button"
-          class="w-full text-left px-3 py-2 text-sm text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-colors flex items-center justify-between"
+          class="ui-accent-action ui-accent-text w-full text-left px-3 py-2 text-sm transition-colors flex items-center justify-between"
           @click="addRowAndClose"
         >
           <span>Add row</span>
@@ -233,7 +233,7 @@ function cancelAndClose() {
           <div class="ui-border-default my-1 border-t"></div>
           <button
             type="button"
-            class="w-full text-left px-3 py-2 text-sm text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-colors flex items-center justify-between"
+            class="ui-accent-action ui-accent-text w-full text-left px-3 py-2 text-sm transition-colors flex items-center justify-between"
             @click="saveAndClose"
           >
             <span>Save changes</span>

@@ -2,7 +2,7 @@
   <div>
     <div :class="containerClass">
       <div class="flex items-start">
-        <Info class="mt-0.5 h-5 w-5 shrink-0 text-sky-500 dark:text-sky-400" />
+        <Info class="mt-0.5 h-5 w-5 shrink-0 ui-accent-icon" />
         <div class="ml-3">
           <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100">
             Database Access Configuration
@@ -31,7 +31,7 @@
             href="https://docs.dbconvert.com/network-security/database-access-configuration.html"
             target="_blank"
             rel="noopener noreferrer"
-            class="mt-3 inline-flex items-center text-sm font-medium text-sky-600 hover:text-sky-700 dark:text-sky-400 dark:hover:text-sky-300"
+            class="mt-3 inline-flex items-center text-sm font-medium ui-link"
           >
             View setup guide
             <ExternalLink class="ml-1 h-4 w-4" />

@@ -132,7 +132,7 @@
                   :is="isSchemaExpanded(schemaGroup.schema) ? ChevronDown : ChevronRight"
                   class="h-4 w-4 text-gray-400"
                 />
-                <Grid2X2 class="w-4 h-4 text-sky-500 dark:text-sky-400 shrink-0" />
+                <Grid2X2 class="w-4 h-4 ui-accent-icon shrink-0" />
                 <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">{{
                   schemaGroup.schema
                 }}</span>

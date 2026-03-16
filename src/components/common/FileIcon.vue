@@ -62,7 +62,7 @@ const iconComponent = computed(() => {
 const iconColor = computed(() => {
   // S3 buckets - distinct blue color
   if (props.isBucket) {
-    return 'text-sky-500 dark:text-sky-400'
+    return 'ui-accent-icon'
   }
 
   // Manifest files and manifests folders use the shared accent.
