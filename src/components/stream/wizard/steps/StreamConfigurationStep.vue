@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-4">
+  <div class="space-y-5">
     <StreamSettings />
 
     <TabGroup :selected-index="selectedViewIndex" @change="selectedViewIndex = $event">
@@ -52,7 +52,7 @@
             <div>
               <section class="py-3 first:pt-0 last:pb-0">
                 <div
-                  class="ui-border-default relative -mx-4 overflow-hidden border-y px-4 py-5 sm:px-5"
+                  class="ui-border-default relative -mx-4 overflow-hidden border-b px-4 py-5 sm:px-5"
                 >
                   <div
                     class="pointer-events-none absolute left-12 right-12 top-[4.2rem] hidden xl:block"
@@ -73,7 +73,9 @@
                           <component :is="sourceKindIcon" class="w-5 h-5" />
                         </div>
                         <div class="min-w-0 flex-1">
-                          <div class="flex flex-wrap items-center gap-2">
+                          <div
+                            class="ui-surface-panel relative z-10 inline-flex w-fit flex-wrap items-center gap-2 pr-3"
+                          >
                             <p
                               class="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400"
                             >
@@ -172,7 +174,9 @@
                           <component :is="targetKindIcon" class="w-5 h-5" />
                         </div>
                         <div class="min-w-0 flex-1">
-                          <div class="flex flex-wrap items-center gap-2">
+                          <div
+                            class="ui-surface-panel relative z-10 inline-flex w-fit flex-wrap items-center gap-2 pr-3"
+                          >
                             <p
                               class="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400"
                             >
@@ -309,7 +313,7 @@
                 </div>
               </section>
 
-              <section v-if="customQueriesCount > 0" class="py-3 last:pb-0">
+              <section v-if="customQueriesCount > 0" class="pb-0 pt-6">
                 <h5
                   class="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-3"
                 >
