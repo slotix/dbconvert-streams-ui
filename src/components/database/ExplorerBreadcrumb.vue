@@ -115,7 +115,10 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
   <nav aria-label="Breadcrumb" class="text-sm relative min-w-0">
     <ol class="flex items-center gap-2 text-gray-600 dark:text-gray-400 min-w-0 overflow-hidden">
       <!-- Connection label (shown first, except in console mode where consoleName already includes it) -->
-      <li v-if="props.connectionLabel && !isConsoleMode" class="inline-flex shrink-0 items-center gap-2 min-w-0">
+      <li
+        v-if="props.connectionLabel && !isConsoleMode"
+        class="inline-flex shrink-0 items-center gap-2 min-w-0"
+      >
         <span class="text-gray-700 dark:text-gray-300 font-medium truncate">{{
           props.connectionLabel
         }}</span>

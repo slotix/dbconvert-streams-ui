@@ -1,5 +1,9 @@
 <template>
-  <div v-if="!breadcrumbData.isSqlConsole" class="mt-2 mb-3 px-2 min-w-0 overflow-hidden" :data-pane-id="paneId">
+  <div
+    v-if="!breadcrumbData.isSqlConsole"
+    class="mt-2 mb-3 px-2 min-w-0 overflow-hidden"
+    :data-pane-id="paneId"
+  >
     <!-- Database object breadcrumb -->
     <ExplorerBreadcrumb
       v-if="breadcrumbData.database"

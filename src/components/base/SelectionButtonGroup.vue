@@ -113,7 +113,7 @@ const activeDescription = computed(() => {
             <input
               :checked="checked"
               type="radio"
-              class="ui-accent-icon ui-surface-raised ui-border-default h-4 w-4 border focus:outline-none"
+              class="ui-accent-icon ui-surface-raised ui-border-default h-4 w-4 border focus:outline-none pointer-events-none"
             />
           </div>
           <div class="ml-3 flex-1">

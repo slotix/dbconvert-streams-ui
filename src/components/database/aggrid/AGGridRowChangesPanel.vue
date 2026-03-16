@@ -292,9 +292,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeyDown))
                   <tr
                     class="ui-border-default border-t"
                     :class="
-                      canExpandInsertRow(row)
-                        ? 'cursor-pointer hover:bg-(--ui-surface-muted)'
-                        : ''
+                      canExpandInsertRow(row) ? 'cursor-pointer hover:bg-(--ui-surface-muted)' : ''
                     "
                     @click="canExpandInsertRow(row) ? toggleExpanded(row.rowId) : undefined"
                   >

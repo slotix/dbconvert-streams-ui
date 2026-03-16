@@ -31,16 +31,12 @@
             ]"
           >
             <div class="mt-0.5 flex items-center h-5">
-              <span
-                :class="[
-                  'flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors',
-                  checked
-                    ? 'border-sky-600 dark:border-sky-400'
-                    : 'border-gray-400 dark:border-gray-500'
-                ]"
-              >
-                <span v-if="checked" class="h-2 w-2 rounded-full bg-sky-600 dark:bg-sky-400" />
-              </span>
+              <input
+                :checked="checked"
+                :disabled="disabled"
+                type="radio"
+                class="ui-accent-icon ui-surface-raised ui-border-default h-4 w-4 border focus:outline-none pointer-events-none"
+              />
             </div>
             <div class="ml-3 flex-1">
               <RadioGroupLabel

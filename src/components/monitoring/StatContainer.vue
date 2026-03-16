@@ -17,9 +17,7 @@
   >
     <!-- Source Stats - Blue Theme -->
     <div class="flex flex-col">
-      <div
-        class="px-3 py-2 border-b-2 border-b-blue-500 dark:border-b-blue-400 ui-surface-muted"
-      >
+      <div class="px-3 py-2 border-b-2 border-b-blue-500 dark:border-b-blue-400 ui-surface-muted">
         <div class="flex items-center justify-between gap-3 sm:gap-4">
           <div class="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
             <div class="shrink-0">
@@ -86,9 +84,7 @@
 
     <!-- Target Stats - Emerald Theme -->
     <div class="flex flex-col">
-      <div
-        class="px-3 py-2 border-b-2 border-b-red-500 dark:border-b-red-400 ui-surface-muted"
-      >
+      <div class="px-3 py-2 border-b-2 border-b-red-500 dark:border-b-red-400 ui-surface-muted">
         <div class="flex items-center justify-between gap-3 sm:gap-4">
           <div class="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
             <div class="shrink-0">

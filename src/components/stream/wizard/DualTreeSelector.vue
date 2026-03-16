@@ -19,9 +19,7 @@
                 />
               </div>
               <div class="min-w-0">
-                <h3
-                  class="text-base font-semibold text-gray-900 dark:text-gray-100 leading-tight"
-                >
+                <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100 leading-tight">
                   Source Connections
                 </h3>
                 <p class="text-xs text-gray-600 dark:text-gray-400 font-medium truncate">
@@ -86,9 +84,7 @@
                 />
               </div>
               <div class="min-w-0">
-                <h3
-                  class="text-base font-semibold text-gray-900 dark:text-gray-100 leading-tight"
-                >
+                <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100 leading-tight">
                   Target Connection
                 </h3>
                 <p class="text-xs text-gray-600 dark:text-gray-400 font-medium truncate">

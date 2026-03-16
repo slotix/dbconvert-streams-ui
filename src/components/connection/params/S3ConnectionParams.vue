@@ -63,26 +63,36 @@
               >Credential Source</label
             >
             <div class="md:col-span-2">
-              <div class="flex gap-4">
-                <label class="flex items-center cursor-pointer">
-                  <input
-                    v-model="credentialSource"
-                    type="radio"
-                    value="aws"
-                    class="ui-accent-icon mr-2 focus:ring-0"
-                  />
-                  <span class="text-sm text-gray-700 dark:text-gray-300">AWS Default Chain</span>
-                </label>
-                <label class="flex items-center cursor-pointer">
-                  <input
-                    v-model="credentialSource"
-                    type="radio"
-                    value="static"
-                    class="ui-accent-icon mr-2 focus:ring-0"
-                  />
-                  <span class="text-sm text-gray-700 dark:text-gray-300">Static Credentials</span>
-                </label>
-              </div>
+              <RadioGroup v-model="credentialSource" class="flex gap-4">
+                <RadioGroupOption v-slot="{ checked }" value="aws" as="template">
+                  <div class="flex items-center cursor-pointer">
+                    <input
+                      :checked="checked"
+                      type="radio"
+                      class="ui-accent-icon ui-surface-raised ui-border-default h-4 w-4 border focus:outline-none mr-2"
+                    />
+                    <RadioGroupLabel
+                      as="span"
+                      class="text-sm text-gray-700 dark:text-gray-300 cursor-pointer"
+                      >AWS Default Chain</RadioGroupLabel
+                    >
+                  </div>
+                </RadioGroupOption>
+                <RadioGroupOption v-slot="{ checked }" value="static" as="template">
+                  <div class="flex items-center cursor-pointer">
+                    <input
+                      :checked="checked"
+                      type="radio"
+                      class="ui-accent-icon ui-surface-raised ui-border-default h-4 w-4 border focus:outline-none mr-2"
+                    />
+                    <RadioGroupLabel
+                      as="span"
+                      class="text-sm text-gray-700 dark:text-gray-300 cursor-pointer"
+                      >Static Credentials</RadioGroupLabel
+                    >
+                  </div>
+                </RadioGroupOption>
+              </RadioGroup>
             </div>
           </div>
 
@@ -250,6 +260,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
+import { RadioGroup, RadioGroupLabel, RadioGroupOption } from '@headlessui/vue'
 import { Cloud, FileText } from 'lucide-vue-next'
 import Spinner from '@/components/common/Spinner.vue'
 import FormSelect from '@/components/base/FormSelect.vue'

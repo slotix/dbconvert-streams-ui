@@ -18,7 +18,9 @@ type ContextRowNode = {
 }
 
 type ContextColumnDef = {
-  editable?: boolean | ((params: { data: Record<string, unknown>; node?: ContextRowNode }) => boolean)
+  editable?:
+    | boolean
+    | ((params: { data: Record<string, unknown>; node?: ContextRowNode }) => boolean)
 }
 
 type ContextColumn = {

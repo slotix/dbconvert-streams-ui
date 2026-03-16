@@ -79,9 +79,7 @@
           v-for="option in groupOptions(openGroup)"
           :key="option.type"
           class="px-3 py-2"
-          :class="
-            isComingSoon(option) ? 'opacity-65' : 'hover:bg-(--ui-surface-muted)'
-          "
+          :class="isComingSoon(option) ? 'opacity-65' : 'hover:bg-(--ui-surface-muted)'"
         >
           <div
             :data-testid="`explorer-filter-option-${option.type}`"

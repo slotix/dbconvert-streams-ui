@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { RadioGroup, RadioGroupLabel, RadioGroupOption } from '@headlessui/vue'
 import {
   ChevronDown,
   ChevronUp,
@@ -250,38 +251,54 @@ onBeforeUnmount(() => {
             >Export Format</span
           >
         </div>
-        <div class="flex gap-2 mb-1.5 flex-wrap">
-          <label class="inline-flex items-center cursor-pointer">
-            <input
-              type="radio"
-              value="svg"
-              :checked="exportType === 'svg'"
-              class="form-radio h-3.5 w-3.5 text-slate-500 focus:outline-none"
-              @change="emit('update:exportType', 'svg')"
-            />
-            <span class="ml-1.5 text-xs text-slate-700 dark:text-slate-300">SVG</span>
-          </label>
-          <label class="inline-flex items-center cursor-pointer">
-            <input
-              type="radio"
-              value="png"
-              :checked="exportType === 'png'"
-              class="form-radio h-3.5 w-3.5 text-slate-500 focus:outline-none"
-              @change="emit('update:exportType', 'png')"
-            />
-            <span class="ml-1.5 text-xs text-slate-700 dark:text-slate-300">PNG</span>
-          </label>
-          <label class="inline-flex items-center cursor-pointer">
-            <input
-              type="radio"
-              value="pdf"
-              :checked="exportType === 'pdf'"
-              class="form-radio h-3.5 w-3.5 text-slate-500 focus:outline-none"
-              @change="emit('update:exportType', 'pdf')"
-            />
-            <span class="ml-1.5 text-xs text-slate-700 dark:text-slate-300">PDF</span>
-          </label>
-        </div>
+        <RadioGroup
+          :model-value="exportType"
+          class="flex gap-2 mb-1.5 flex-wrap"
+          @update:model-value="(val: ExportFormat) => emit('update:exportType', val)"
+        >
+          <RadioGroupOption v-slot="{ checked }" value="svg" as="template">
+            <div class="inline-flex items-center cursor-pointer">
+              <input
+                :checked="checked"
+                type="radio"
+                class="ui-accent-icon ui-surface-raised ui-border-default h-3.5 w-3.5 border focus:outline-none"
+              />
+              <RadioGroupLabel
+                as="span"
+                class="ml-1.5 text-xs text-slate-700 dark:text-slate-300 cursor-pointer"
+                >SVG</RadioGroupLabel
+              >
+            </div>
+          </RadioGroupOption>
+          <RadioGroupOption v-slot="{ checked }" value="png" as="template">
+            <div class="inline-flex items-center cursor-pointer">
+              <input
+                :checked="checked"
+                type="radio"
+                class="ui-accent-icon ui-surface-raised ui-border-default h-3.5 w-3.5 border focus:outline-none"
+              />
+              <RadioGroupLabel
+                as="span"
+                class="ml-1.5 text-xs text-slate-700 dark:text-slate-300 cursor-pointer"
+                >PNG</RadioGroupLabel
+              >
+            </div>
+          </RadioGroupOption>
+          <RadioGroupOption v-slot="{ checked }" value="pdf" as="template">
+            <div class="inline-flex items-center cursor-pointer">
+              <input
+                :checked="checked"
+                type="radio"
+                class="ui-accent-icon ui-surface-raised ui-border-default h-3.5 w-3.5 border focus:outline-none"
+              />
+              <RadioGroupLabel
+                as="span"
+                class="ml-1.5 text-xs text-slate-700 dark:text-slate-300 cursor-pointer"
+                >PDF</RadioGroupLabel
+              >
+            </div>
+          </RadioGroupOption>
+        </RadioGroup>
         <button
           class="w-full rounded-md bg-slate-700 py-1 text-xs font-semibold text-white transition-colors hover:bg-slate-800 focus:outline-none focus-visible:bg-slate-800 dark:bg-slate-600 dark:hover:bg-slate-500 dark:focus-visible:bg-slate-500 disabled:opacity-50"
           :disabled="exportProgress"
