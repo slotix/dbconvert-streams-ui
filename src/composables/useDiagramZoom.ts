@@ -70,7 +70,7 @@ export function useDiagramZoom(options: DiagramZoomOptions = {}) {
     bounds: { minX: number; minY: number; maxX: number; maxY: number },
     viewportWidth: number,
     viewportHeight: number,
-    padding: number = 120,
+    padding: number = 40,
     duration: number = 550
   ) {
     if (!svg || !zoom) return
