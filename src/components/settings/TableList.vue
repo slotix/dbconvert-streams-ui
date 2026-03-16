@@ -939,6 +939,11 @@ watch(
   async (newSourceId, oldSourceId) => {
     // Refresh tables if source ID changed
     if (newSourceId && newSourceId !== oldSourceId) {
+      // Fetch overview in parallel for row counts (non-blocking)
+      const database = currentStreamConfig.value.sourceDatabase
+      if (database) {
+        overviewStore.fetchOverview(newSourceId, database).catch(() => {})
+      }
       await refreshTables()
     }
   },
