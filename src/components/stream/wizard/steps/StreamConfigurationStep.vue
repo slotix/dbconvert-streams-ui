@@ -51,44 +51,21 @@
           <TabPanel>
             <div>
               <section class="py-3 first:pt-0 last:pb-0">
-                <div class="flex items-start justify-between gap-3 mb-3">
-                  <div>
-                    <h5
-                      class="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide"
-                    >
-                      Flow Overview
-                    </h5>
-                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      Review the source, operation, and output destination before updating the
-                      stream.
-                    </p>
-                  </div>
-                  <div
-                    class="hidden xl:flex items-center gap-2 text-[11px] font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500"
-                  >
-                    <span>Source</span>
-                    <ArrowRight class="w-3.5 h-3.5" />
-                    <span>Operation</span>
-                    <ArrowRight class="w-3.5 h-3.5" />
-                    <span>Target</span>
-                  </div>
-                </div>
-
                 <div
                   class="ui-border-default relative -mx-4 overflow-hidden border-y px-4 py-5 sm:px-5"
                 >
                   <div
                     class="pointer-events-none absolute left-12 right-12 top-[4.2rem] hidden xl:block"
                   >
-                    <div
-                      class="h-px bg-gray-200 dark:bg-gray-700/60"
-                    />
+                    <div class="h-px bg-gray-200 dark:bg-gray-700/60" />
                   </div>
 
                   <div
                     class="relative grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1fr)_3rem_minmax(16rem,0.85fr)_3rem_minmax(0,1fr)] xl:items-start"
                   >
-                    <section class="min-w-0 border-t-2 border-t-blue-500 dark:border-t-blue-400 pt-4">
+                    <section
+                      class="min-w-0 border-t-2 border-t-blue-500 dark:border-t-blue-400 pt-4"
+                    >
                       <div class="flex items-start gap-3">
                         <div
                           class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ui-surface-muted ui-border-default border text-gray-600 dark:text-gray-300"
@@ -320,8 +297,12 @@
               </section>
 
               <section v-if="riskWarningMessage" class="py-3">
-                <div class="flex items-start gap-2.5 rounded-lg border border-amber-300/50 px-3.5 py-3 dark:border-amber-600/30">
-                  <AlertTriangle class="h-4 w-4 shrink-0 text-amber-500 dark:text-amber-400/70 mt-px" />
+                <div
+                  class="flex items-start gap-2.5 rounded-lg border border-amber-300/50 px-3.5 py-3 dark:border-amber-600/30"
+                >
+                  <AlertTriangle
+                    class="h-4 w-4 shrink-0 text-amber-500 dark:text-amber-400/70 mt-px"
+                  />
                   <p class="text-sm text-amber-800/80 dark:text-amber-200/70">
                     {{ riskWarningMessage }}
                   </p>
