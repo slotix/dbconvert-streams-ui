@@ -94,7 +94,7 @@
               :checked="isTypeSelected(option.type)"
               :disabled="isComingSoon(option)"
               tabindex="-1"
-              class="ui-surface-raised ui-border-default pointer-events-none h-4 w-4 shrink-0 rounded border text-sky-600 focus:outline-none"
+              class="ui-surface-raised ui-border-default pointer-events-none h-4 w-4 shrink-0 rounded border text-emerald-600 focus:outline-none"
             />
             <img
               :src="option.logo"
@@ -169,8 +169,8 @@ const selectedTypes = computed(() => props.selectedTypes || [])
 
 const allChipClass = computed(() =>
   selectedTypes.value.length === 0
-    ? 'ui-surface-muted ui-border-default text-slate-700 dark:text-slate-200'
-    : 'ui-surface-raised ui-border-default text-slate-600 dark:text-gray-300 hover:[background-color:var(--ui-surface-muted)]'
+    ? 'bg-emerald-600/15 border-emerald-500/40 text-emerald-300 dark:bg-emerald-500/20 dark:border-emerald-400/40 dark:text-emerald-200'
+    : 'ui-surface-raised ui-border-default text-slate-600 dark:text-gray-400 hover:[background-color:var(--ui-surface-muted)]'
 )
 
 function setChipRef(key: FilterGroupKey, element: Element | ComponentPublicInstance | null) {
@@ -232,8 +232,8 @@ function groupChipClass(group: FilterGroupKey): string {
   const isActive = groupSelectedTypes(group).length > 0
   return [
     isActive
-      ? 'ui-surface-muted ui-border-default pr-7 text-slate-700 dark:text-slate-200'
-      : 'ui-surface-raised ui-border-default pr-2 text-slate-600 dark:text-gray-300 hover:[background-color:var(--ui-surface-muted)]',
+      ? 'bg-emerald-600/15 border-emerald-500/40 pr-7 text-emerald-300 dark:bg-emerald-500/20 dark:border-emerald-400/40 dark:text-emerald-200'
+      : 'ui-surface-raised ui-border-default pr-2 text-slate-600 dark:text-gray-400 hover:[background-color:var(--ui-surface-muted)]',
     openGroup.value === group ? 'ui-accent-selection-active' : ''
   ].join(' ')
 }
