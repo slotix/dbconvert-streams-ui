@@ -123,7 +123,7 @@
     </div>
 
     <!-- Execution Performance + Safety Limits -->
-    <div class="space-y-2">
+    <div>
       <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <!-- Execution Performance Section -->
         <div class="ui-surface-raised ui-border-default rounded-xl border p-6">
@@ -182,7 +182,10 @@
 
         <!-- Safety Limits Section -->
         <div class="ui-surface-raised ui-border-default rounded-xl border p-6">
-          <h4 class="text-base font-medium text-gray-900 dark:text-gray-100 mb-4">Safety Limits</h4>
+          <h4 class="text-base font-medium text-gray-900 dark:text-gray-100">Safety Limits</h4>
+          <p class="mt-1 mb-4 text-xs text-gray-500 dark:text-gray-400">
+            These limits apply per stream run.
+          </p>
           <div class="space-y-4">
             <div>
               <FormSwitch
@@ -240,7 +243,6 @@
           </div>
         </div>
       </div>
-      <p class="text-xs text-gray-500 dark:text-gray-400">These limits apply per stream run.</p>
     </div>
   </div>
 </template>
