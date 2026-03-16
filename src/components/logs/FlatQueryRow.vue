@@ -95,7 +95,7 @@ function toggleExpanded() {
       <!-- Expand/Collapse Icon -->
       <component
         :is="isLocationCollapsed ? ChevronRight : ChevronDown"
-        class="w-4 h-4 text-gray-700 dark:text-gray-300 flex-shrink-0"
+        class="w-4 h-4 text-gray-700 dark:text-gray-300 shrink-0"
       />
 
       <!-- Location Label -->
@@ -123,7 +123,7 @@ function toggleExpanded() {
         <span class="text-[0.65rem] font-mono text-gray-500 dark:text-gray-400">{{
           formatTime(log.startedAt)
         }}</span>
-        <span class="flex-shrink-0">
+        <span class="shrink-0">
           <span
             class="px-1.5 py-0.5 rounded font-semibold uppercase tracking-wide text-[0.65rem]"
             :class="getPurposePillClass(log.purpose)"

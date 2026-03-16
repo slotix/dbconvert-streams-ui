@@ -60,7 +60,7 @@ const handleChange = (value: boolean) => {
       :model-value="modelValue"
       :disabled="disabled"
       :class="[
-        'ui-focus-ring relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out',
+        'ui-focus-ring relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out',
         'focus:outline-none focus-visible:outline-none',
         modelValue
           ? 'ui-accent-switch-on'
@@ -113,7 +113,7 @@ const handleChange = (value: boolean) => {
       :model-value="modelValue"
       :disabled="disabled"
       :class="[
-        'ui-focus-ring relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out',
+        'ui-focus-ring relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out',
         'focus:outline-none focus-visible:outline-none',
         modelValue
           ? 'ui-accent-switch-on'

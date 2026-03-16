@@ -102,9 +102,7 @@ function getUploadStatus(status: string) {
         <div class="flex items-center gap-3">
           <!-- Overall progress indicator -->
           <div v-if="hasAnyUploads" class="text-right">
-            <div class="text-lg font-bold ui-accent-text">
-              {{ overallProgress }}%
-            </div>
+            <div class="text-lg font-bold ui-accent-text">{{ overallProgress }}%</div>
             <div class="text-xs text-gray-500 dark:text-gray-400">
               {{ formatDataSize(aggregateStats.bytesUploaded) }} /
               {{ formatDataSize(aggregateStats.bytesTotal) }}

@@ -158,15 +158,18 @@ function createBackgroundGrid(
 }
 
 function recreateGrid(width: number, height: number) {
-  if (!zoomGroup) return
+  const currentZoomGroup = zoomGroup
+  if (!currentZoomGroup) return
 
   gridLayer?.remove()
-  gridLayer = zoomGroup.insert('g', ':first-child').attr('class', 'grid-layer')
-  createBackgroundGrid(gridLayer, width, height)
+  const nextGridLayer = currentZoomGroup.insert('g', ':first-child').attr('class', 'grid-layer')
+  gridLayer = nextGridLayer
+  createBackgroundGrid(nextGridLayer, width, height)
 }
 
 function applyTheme() {
-  if (!zoomGroup) return
+  const currentZoomGroup = zoomGroup
+  if (!currentZoomGroup) return
 
   if (gridLayer) {
     gridLayer.select('pattern#grid path').attr('stroke', colors.value.gridLine)
@@ -211,7 +214,9 @@ function applyTheme() {
     })
   }
 
-  zoomGroup.selectAll<SVGTextElement, unknown>('text.no-data').attr('fill', colors.value.noDataText)
+  currentZoomGroup
+    .selectAll<SVGTextElement, unknown>('text.no-data')
+    .attr('fill', colors.value.noDataText)
 
   if (highlightingComposable.selectedTable.value) updateHighlighting()
 }
@@ -274,7 +279,7 @@ function createNodes(
     .attr('stroke', (d: TableNode) =>
       d.isView ? colors.value.viewBorder : colors.value.tableBorder
     )
-    .attr('stroke-width', (d: TableNode) => (d.isView ? 1.5 : 1))
+    .attr('stroke-width', (d: TableNode) => (d.isView ? 1 : 0.5))
     .attr('stroke-dasharray', (d: TableNode) => (d.isView ? '5,2' : 'none'))
     .attr('filter', 'url(#drop-shadow)')
 
@@ -288,7 +293,7 @@ function createNodes(
     .attr('stroke', (d: TableNode) =>
       d.isView ? colors.value.viewBorder : colors.value.tableBorder
     )
-    .attr('stroke-width', 1.5)
+    .attr('stroke-width', 0.5)
     .attr('stroke-dasharray', (d: TableNode) => (d.isView ? '5,2' : 'none'))
 
   // View icon
@@ -330,7 +335,7 @@ function createNodes(
     .attr('stroke', (d: TableNode) =>
       d.isView ? colors.value.viewBorder : colors.value.tableBorder
     )
-    .attr('stroke-width', (d: TableNode) => (d.isView ? 0.8 : 0.5))
+    .attr('stroke-width', (d: TableNode) => (d.isView ? 0.5 : 0.5))
     .attr('stroke-dasharray', (d: TableNode) => (d.isView ? '5,2' : 'none'))
 
   // Header text
@@ -462,7 +467,7 @@ function createLinks(
       if (d.isJunctionRelation) return BRAND_COLORS.secondary
       return BRAND_COLORS.primary
     })
-    .attr('stroke-width', '1.5')
+    .attr('stroke-width', '1.2')
     .attr('stroke-dasharray', (d: TableLink) => (d.isViewDependency ? '3,3' : 'none'))
     .attr('marker-start', (d: TableLink) => (d.sourceMarker ? `url(#${d.sourceMarker})` : ''))
     .attr('marker-end', (d: TableLink) => (d.targetMarker ? `url(#${d.targetMarker})` : ''))
@@ -529,46 +534,61 @@ function updateHighlighting() {
     ? highlightingComposable.findRelatedFields(selectedTableName, props.tables)
     : { relationships: [] }
 
+  // D3's Lab color interpolation produces green/teal artifacts when
+  // transitioning from red (#DC6B6B) to dark gray (#374151).
+  // Use instant (duration 0) for elements returning to default state,
+  // animate only elements becoming selected/related.
+
   // Update table highlighting
   node.each(function (d: TableNode) {
     const element = select(this as SVGGElement)
     const isSelected = d.name === selectedTableName
     const isRelated = relatedTables.has(d.name)
+    const isHighlighted = isSelected || isRelated
+    // Animate into highlight; snap back to default instantly
+    const dur = isHighlighted ? 300 : 0
 
-    element
-      .select('.table-header')
-      .select('path, rect')
+    element.classed('selected', isSelected).classed('related', isRelated)
+
+    const defaultBorder = d.isView ? colors.value.viewBorder : colors.value.tableBorder
+    const defaultHeaderBg = d.isView ? colors.value.viewHeader : colors.value.tableHeader
+    const defaultBodyBg = d.isView ? colors.value.viewBg : colors.value.tableBg
+
+    const headerEl = element.select('.table-header').select('path, rect')
+    headerEl.interrupt()
+    headerEl
       .transition()
-      .duration(300)
+      .duration(dur)
       .attr(
         'stroke',
         isSelected
           ? colors.value.selectedBorder
           : isRelated
             ? colors.value.relatedBorder
-            : colors.value.tableBorder
+            : defaultBorder
       )
-      .attr('stroke-width', isSelected || isRelated ? 2.5 : 1.5)
+      .attr('stroke-width', isHighlighted ? 1 : 0.5)
       .attr(
         'fill',
         isSelected
           ? colors.value.selectedHeaderBg
           : isRelated
             ? colors.value.relatedHeaderBg
-            : colors.value.tableHeader
+            : defaultHeaderBg
       )
 
-    element
-      .select('.table-body')
+    const bodyEl = element.select('.table-body')
+    bodyEl.interrupt()
+    bodyEl
       .transition()
-      .duration(300)
+      .duration(dur)
       .attr(
         'fill',
         isSelected
           ? colors.value.selectedBodyBg
           : isRelated
             ? colors.value.relatedBodyBg
-            : colors.value.tableBg
+            : defaultBodyBg
       )
       .attr(
         'stroke',
@@ -576,19 +596,23 @@ function updateHighlighting() {
           ? colors.value.selectedBorder
           : isRelated
             ? colors.value.relatedBorder
-            : colors.value.tableBorder
+            : defaultBorder
       )
-      .attr('stroke-width', isSelected || isRelated ? 1.5 : 1)
+      .attr('stroke-width', isHighlighted ? 1 : 0.5)
 
+    element.interrupt()
+    // Fade-in dimming is fine, but restoring opacity should also be instant
+    const opacityDur = !selectedTableName || isHighlighted ? 0 : 300
     element
       .transition()
-      .duration(300)
-      .style('opacity', !selectedTableName || isSelected || isRelated ? 1 : 0.4)
+      .duration(opacityDur)
+      .style('opacity', !selectedTableName || isHighlighted ? 1 : 0.4)
 
     element.selectAll<SVGTextElement, unknown>('.column-name').each(function (
       this: SVGTextElement
     ) {
       const text = select<SVGTextElement, unknown>(this)
+      text.interrupt()
       const fieldName = this.getAttribute('data-column-name') || ''
       const fieldRelationships = relationships.filter(
         (r) =>
@@ -602,30 +626,27 @@ function updateHighlighting() {
         )
         text
           .transition()
-          .duration(300)
+          .duration(dur)
           .style('font-weight', '600')
           .attr('fill', isPrimaryKey ? BRAND_COLORS.primary : BRAND_COLORS.secondary)
-      } else if (selectedTableName) {
-        text
-          .transition()
-          .duration(300)
-          .style('font-weight', '400')
-          .attr('fill', colors.value.columnText)
+      } else {
+        text.style('font-weight', '400').attr('fill', colors.value.columnText)
       }
     })
   })
 
   // Update link highlighting
   if (linkPaths) {
+    linkPaths.interrupt()
     linkPaths
       .transition()
-      .duration(300)
+      .duration(0)
       .attr('stroke-width', function (d: TableLink) {
         const source = typeof d.source === 'string' ? d.source : d.source.id
         const target = typeof d.target === 'string' ? d.target : d.target.id
         return selectedTableName && (source === selectedTableName || target === selectedTableName)
-          ? '2'
-          : '1.5'
+          ? '1.5'
+          : '1.2'
       })
       .style('opacity', function (d: TableLink) {
         if (!selectedTableName) return 1
@@ -1351,14 +1372,16 @@ function handleUpdateCollisionRadius(value: number) {
   filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
 }
 
-.table-node:hover .table-header rect,
-.view-node:hover .table-header rect {
-  stroke: var(--brand-primary-color, #14b8a6);
-  stroke-width: 2px;
+.table-node:not(.selected):not(.related):hover .table-header path,
+.table-node:not(.selected):not(.related):hover .table-header rect,
+.view-node:not(.selected):not(.related):hover .table-header path,
+.view-node:not(.selected):not(.related):hover .table-header rect {
+  stroke: var(--brand-primary-color, #3894dc);
+  stroke-width: 1px;
 }
 
 .relationship-line {
-  stroke-width: 1.5px;
+  stroke-width: 1.2px;
   shape-rendering: geometricPrecision;
   transition:
     stroke-width 0.2s ease,
@@ -1366,7 +1389,7 @@ function handleUpdateCollisionRadius(value: number) {
 }
 
 .relationship-line:hover {
-  stroke-width: 2px;
+  stroke-width: 1.5px;
 }
 
 marker {
@@ -1374,30 +1397,13 @@ marker {
 }
 
 marker path {
-  stroke-width: 2px;
+  stroke-width: 1.5px;
   fill: none;
   shape-rendering: geometricPrecision;
 }
 
-.table-header rect {
-  transition:
-    fill 0.3s ease,
-    stroke 0.3s ease;
-}
-
 .view-icon {
   opacity: 0.8;
-}
-
-line,
-marker path,
-rect,
-text {
-  transition:
-    stroke 0.3s ease,
-    stroke-width 0.3s ease,
-    fill 0.3s ease,
-    font-weight 0.3s ease;
 }
 
 .column-group text[data-tooltip] {
@@ -1405,7 +1411,7 @@ text {
 }
 
 :root {
-  --brand-primary-color: #14b8a6;
-  --brand-secondary-color: #f26627;
+  --brand-primary-color: #3894dc;
+  --brand-secondary-color: #dc6b6b;
 }
 </style>

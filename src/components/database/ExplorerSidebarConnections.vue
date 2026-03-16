@@ -46,6 +46,16 @@ const props = defineProps<{
 }>()
 
 type DefaultTab = 'structure' | 'data'
+type TreeSchemaPayload = { dbName: string; schemaName: string }
+type TreeOpenObjectPayload = {
+  connectionId: string
+  database: string
+  type: ObjectType
+  name: string
+  schema?: string
+  mode: 'preview' | 'pinned'
+}
+type TreeConnectionActionPayload = { connectionId: string }
 
 const emit = defineEmits<{
   (
@@ -1107,21 +1117,11 @@ function handleToggleDatabase(conn: Connection, dbName: string) {
   toggleDb(conn.id, dbName)
 }
 
-function handleToggleSchema(conn: Connection, payload: { dbName: string; schemaName: string }) {
+function handleToggleSchema(conn: Connection, payload: TreeSchemaPayload) {
   toggleSchema(conn.id, payload.dbName, payload.schemaName)
 }
 
-function handleOpenObject(
-  conn: Connection,
-  payload: {
-    connectionId: string
-    database: string
-    type: ObjectType
-    name: string
-    schema?: string
-    mode: 'preview' | 'pinned'
-  }
-) {
+function handleOpenObject(conn: Connection, payload: TreeOpenObjectPayload) {
   onOpen(
     payload.connectionId,
     payload.database,
@@ -1130,6 +1130,18 @@ function handleOpenObject(
     payload.mode,
     payload.schema
   )
+}
+
+function handleEditConnectionRequest(payload: TreeConnectionActionPayload) {
+  actions.editConnection(payload.connectionId)
+}
+
+function handleCloneConnectionRequest(payload: TreeConnectionActionPayload) {
+  actions.cloneConnection(payload.connectionId)
+}
+
+function handleDeleteConnectionRequest(payload: TreeConnectionActionPayload) {
+  actions.deleteConnection(payload.connectionId)
 }
 
 function handleContextMenuConnection(payload: { event: MouseEvent; connectionId: string }) {
@@ -1441,15 +1453,15 @@ defineExpose({ focus: () => internalSearchInputRef.value?.focus() })
             :search-matches="hasActiveSearch ? searchMatchesByConnection[conn.id] || null : null"
             @toggle-connection="handleToggleConnection(conn)"
             @select-connection="$emit('select-connection', $event)"
-            @toggle-database="(dbName) => handleToggleDatabase(conn, dbName)"
-            @toggle-schema="(p) => handleToggleSchema(conn, p)"
+            @toggle-database="(dbName: string) => handleToggleDatabase(conn, dbName)"
+            @toggle-schema="(payload: TreeSchemaPayload) => handleToggleSchema(conn, payload)"
             @select-database="$emit('select-database', $event)"
             @select-file="$emit('select-file', $event)"
-            @open-object="(p) => handleOpenObject(conn, p)"
+            @open-object="(payload: TreeOpenObjectPayload) => handleOpenObject(conn, payload)"
             @open-file="$emit('open-file', $event)"
-            @edit-connection="(p) => actions.editConnection(p.connectionId)"
-            @clone-connection="(p) => actions.cloneConnection(p.connectionId)"
-            @delete-connection="(p) => actions.deleteConnection(p.connectionId)"
+            @edit-connection="handleEditConnectionRequest"
+            @clone-connection="handleCloneConnectionRequest"
+            @delete-connection="handleDeleteConnectionRequest"
             @contextmenu-connection="handleContextMenuConnection"
             @contextmenu-database="handleContextMenuDatabase"
             @contextmenu-schema="handleContextMenuSchema"

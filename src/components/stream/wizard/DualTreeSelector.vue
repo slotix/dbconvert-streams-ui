@@ -11,7 +11,7 @@
         >
           <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div class="flex items-center gap-3 min-w-0">
-              <div class="flex-shrink-0">
+              <div class="shrink-0">
                 <img
                   src="/images/steps/source-step.svg"
                   alt="Source"
@@ -76,7 +76,7 @@
         >
           <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div class="flex items-center gap-3 min-w-0">
-              <div class="flex-shrink-0">
+              <div class="shrink-0">
                 <img
                   src="/images/steps/target-step.svg"
                   alt="Target"

@@ -75,7 +75,7 @@ function toggleExpand() {
       <!-- Expand/Collapse Icon (if expandable) -->
       <button
         v-if="expandable"
-        class="flex-shrink-0 rounded p-0.5 transition-colors hover:bg-(--ui-surface-muted)"
+        class="shrink-0 rounded p-0.5 transition-colors hover:bg-(--ui-surface-muted)"
         @click.stop="toggleExpand"
       >
         <component
@@ -86,7 +86,7 @@ function toggleExpand() {
 
       <!-- Timestamp -->
       <span
-        class="w-28 text-xs text-gray-500 dark:text-gray-400 font-mono whitespace-nowrap flex-shrink-0"
+        class="w-28 text-xs text-gray-500 dark:text-gray-400 font-mono whitespace-nowrap shrink-0"
       >
         {{ timestamp }}
       </span>
@@ -95,7 +95,7 @@ function toggleExpand() {
       <component
         :is="badge.icon"
         v-if="badge"
-        class="w-4 h-4 flex-shrink-0 transition-colors"
+        class="w-4 h-4 shrink-0 transition-colors"
         :class="[badge.colorClass]"
       />
 
@@ -107,7 +107,7 @@ function toggleExpand() {
       <!-- Copy Button (if copyable) -->
       <button
         v-if="copyText"
-        class="flex-shrink-0 p-1 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors rounded"
+        class="shrink-0 p-1 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors rounded"
         title="Copy"
         @click.stop="copyToClipboard"
       >

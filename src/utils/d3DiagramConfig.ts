@@ -10,8 +10,8 @@ function readCssVar(varName: string, fallback: string): string {
  * Brand colors for the diagram (matches the main component colors)
  */
 export const BRAND_COLORS = {
-  primary: '#14B8A6', // Teal-500 for calmer, consistent accents
-  secondary: '#F26627', // Orange (from logo)
+  primary: '#3894DC', // Blue accent for consistent theme
+  secondary: '#DC6B6B', // Muted red for FK accents
   gray: '#9ca3af', // Neutral gray for elements
   grayLight: '#e5e7eb', // Light neutral gray for backgrounds
   grayDark: '#374151', // Dark neutral gray for text
@@ -19,7 +19,7 @@ export const BRAND_COLORS = {
   white: '#FFFFFF',
   highlight: {
     blue: '#dbeafe', // Light blue highlight
-    orange: '#FFEDD5' // Light orange highlight
+    red: '#FEE2E2' // Light red highlight (FK relations)
   },
   // Dark theme colors
   dark: {
@@ -68,12 +68,12 @@ export function getDiagramColors(isDark: boolean) {
     tooltipBg: isDark ? gray950 : gray900,
     noDataText: isDark ? gray400 : gray500,
     // Selection highlight colors
-    selectedHeaderBg: isDark ? '#115e59' : '#ccfbf1', // Teal-800 / Teal-100
-    selectedBodyBg: isDark ? '#134e4a' : '#f0fdfa', // Teal-900 / Teal-50
-    selectedBorder: isDark ? '#14b8a6' : '#0d9488', // Teal-500 / Teal-600
-    relatedHeaderBg: isDark ? '#7c2d12' : '#FFEDD5', // Orange-900 / Orange-100
-    relatedBodyBg: isDark ? '#5c2410' : '#fff7ed', // Darker orange / Orange-50
-    relatedBorder: isDark ? '#f97316' : '#f97316' // Orange-500
+    selectedHeaderBg: isDark ? '#1e3a5f' : '#dbeafe', // Blue dark / Blue-100
+    selectedBodyBg: isDark ? '#172d4d' : '#eff6ff', // Blue darker / Blue-50
+    selectedBorder: isDark ? '#3894DC' : '#2264AF', // Blue accent / Blue dark
+    relatedHeaderBg: isDark ? '#4a2020' : '#FEE2E2', // Red dark / Red-100
+    relatedBodyBg: isDark ? '#3b1a1a' : '#FEF2F2', // Red darker / Red-50
+    relatedBorder: isDark ? '#DC6B6B' : '#B45454' // Red accent / Red dark
   }
 }
 
@@ -103,7 +103,7 @@ const MARKER_DEFINITIONS: Record<string, Omit<MarkerConfig, 'id'>> = {
     markerWidth: 12,
     markerHeight: 12,
     path: 'M-8,-8L-8,8',
-    strokeWidth: '2.5'
+    strokeWidth: '2'
   },
   'mandatory-many': {
     viewBox: '-10 -10 20 20',
@@ -112,7 +112,7 @@ const MARKER_DEFINITIONS: Record<string, Omit<MarkerConfig, 'id'>> = {
     markerWidth: 10,
     markerHeight: 10,
     path: 'M-8,0L0,-7M-8,0L0,7M-8,-7L-8,7',
-    strokeWidth: '2',
+    strokeWidth: '1.5',
     fill: 'none'
   },
   'mandatory-one-to-one': {
@@ -122,7 +122,7 @@ const MARKER_DEFINITIONS: Record<string, Omit<MarkerConfig, 'id'>> = {
     markerWidth: 10,
     markerHeight: 10,
     path: 'M-9,-7L-9,7M-5,-7L-5,7',
-    strokeWidth: '2'
+    strokeWidth: '1.5'
   },
   'optional-one': {
     viewBox: '-10 -10 20 20',
@@ -131,7 +131,7 @@ const MARKER_DEFINITIONS: Record<string, Omit<MarkerConfig, 'id'>> = {
     markerWidth: 10,
     markerHeight: 10,
     path: 'M-8,0 A3,3 0 1 1 -8,0.01M-8,4L-8,-4',
-    strokeWidth: '2',
+    strokeWidth: '1.5',
     fill: 'none'
   },
   'optional-many': {
@@ -141,7 +141,7 @@ const MARKER_DEFINITIONS: Record<string, Omit<MarkerConfig, 'id'>> = {
     markerWidth: 10,
     markerHeight: 10,
     path: 'M-8,0 A3,3 0 1 1 -8,0.01M-8,0L0,-7M-8,0L0,7M-8,-7L-8,7',
-    strokeWidth: '2',
+    strokeWidth: '1.5',
     fill: 'none'
   }
 }

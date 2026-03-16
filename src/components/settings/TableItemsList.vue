@@ -53,17 +53,17 @@
 
           <span
             v-if="showTableSize"
+            v-tooltip="'Table size'"
             class="w-16 text-right text-xs shrink-0 text-gray-500 dark:text-gray-400"
             :class="{ 'opacity-0': getTableSize(table.name) === undefined }"
-            v-tooltip="'Table size'"
           >
             {{ formatTableSize(getTableSize(table.name)) }}
           </span>
           <span
             v-if="showRowCount"
+            v-tooltip="'Approximate row count'"
             class="w-20 text-right text-xs shrink-0 text-gray-500 dark:text-gray-400"
             :class="{ 'opacity-0': getTableRowCount(table.name) === undefined }"
-            v-tooltip="'Approximate row count'"
           >
             {{ formatRowCount(getTableRowCount(table.name)) }}
           </span>
@@ -133,17 +133,17 @@
 
         <span
           v-if="showTableSize"
+          v-tooltip="'Table size'"
           class="w-16 text-right text-xs shrink-0 text-gray-500 dark:text-gray-400"
           :class="{ 'opacity-0': getTableSize(table.name) === undefined }"
-          v-tooltip="'Table size'"
         >
           {{ formatTableSize(getTableSize(table.name)) }}
         </span>
         <span
           v-if="showRowCount"
+          v-tooltip="'Approximate row count'"
           class="w-20 text-right text-xs shrink-0 text-gray-500 dark:text-gray-400"
           :class="{ 'opacity-0': getTableRowCount(table.name) === undefined }"
-          v-tooltip="'Approximate row count'"
         >
           {{ formatRowCount(getTableRowCount(table.name)) }}
         </span>
