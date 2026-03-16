@@ -309,6 +309,10 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
     rowHeight: GRID_ROW_HEIGHT,
     headerHeight: GRID_HEADER_HEIGHT,
     suppressCellFocus: false,
+    // Tab moves focus without entering edit mode on the destination cell.
+    // This prevents unintended value mutations (e.g. datetime reformatting)
+    // when navigating through cells with Tab.
+    tabToNextCell: (params) => params.nextCellPosition ?? false,
     getRowId,
     rowSelection: {
       mode: 'multiRow',

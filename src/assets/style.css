@@ -641,7 +641,7 @@
 }
 
 .Vue-Toastification__toast--success {
-  background-color: var(--ui-success-soft-bg) !important;
+  background-color: color-mix(in srgb, var(--ui-surface-raised) 78%, rgb(16 185 129)) !important;
   border-color: var(--ui-success-soft-border) !important;
   color: var(--ui-success-text) !important;
 }
@@ -651,7 +651,7 @@
 }
 
 .Vue-Toastification__toast--error {
-  background-color: var(--ui-danger-soft-bg) !important;
+  background-color: color-mix(in srgb, var(--ui-surface-raised) 78%, rgb(244 63 94)) !important;
   border-color: var(--ui-danger-soft-border-strong) !important;
   color: var(--ui-danger-text) !important;
 }
@@ -661,7 +661,7 @@
 }
 
 .Vue-Toastification__toast--warning {
-  background-color: var(--ui-warning-soft-bg) !important;
+  background-color: color-mix(in srgb, var(--ui-surface-raised) 78%, rgb(245 158 11)) !important;
   border-color: var(--ui-warning-soft-border) !important;
   color: var(--ui-warning-text) !important;
 }
@@ -671,11 +671,7 @@
 }
 
 .Vue-Toastification__toast--info {
-  background-color: color-mix(
-    in srgb,
-    var(--ui-surface-raised) 90%,
-    var(--ui-info-text) 10%
-  ) !important;
+  background-color: color-mix(in srgb, var(--ui-surface-raised) 85%, var(--ui-info-text)) !important;
   border-color: color-mix(in srgb, var(--ui-info-text) 28%, var(--ui-border-default)) !important;
   color: var(--ui-info-text) !important;
 }

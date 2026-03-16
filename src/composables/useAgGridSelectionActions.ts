@@ -1,4 +1,4 @@
-import { computed, onBeforeUnmount, onMounted, ref, type ComputedRef, type Ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch, type ComputedRef, type Ref } from 'vue'
 import type { GridApi } from 'ag-grid-community'
 import { formatRowsForClipboard, type CopyFormat } from '@/utils/agGridClipboard'
 import { exportData, type ExportFormat } from '@/composables/useDataExport'
@@ -340,6 +340,14 @@ export function useAgGridSelectionActions(options: UseAgGridSelectionActionsOpti
   // Undo stack: tracks cell edits in order for Ctrl+Z
   const undoStack = ref<Array<{ rowId: string; field: string }>>([])
   const MAX_UNDO = 100
+
+  // Clear undo stack when all changes are saved or discarded
+  watch(
+    () => options.hasUnsavedChanges.value,
+    (has) => {
+      if (!has) undoStack.value = []
+    }
+  )
 
   function pushUndo(rowId: string, field: string) {
     undoStack.value.push({ rowId, field })

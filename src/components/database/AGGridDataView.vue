@@ -1012,6 +1012,7 @@ export default {
       :can-edit-cell="canEditContextCell"
       :can-open-changes-panel="hasUnsavedChanges"
       :can-revert-cell="canRevertContextCell"
+      :has-unsaved-changes="hasUnsavedChanges"
       @close="selectionMenuOpen = false"
       @select-all="selectAllOnCurrentPage"
       @deselect-all="deselectAll"
@@ -1021,6 +1022,8 @@ export default {
       @add-row="openInsertRowPanelForNew"
       @delete="deleteSelectedRows"
       @revert-cell="revertContextCell"
+      @save="saveChanges"
+      @cancel="cancelChanges"
     />
 
     <AGGridRowChangesPanel

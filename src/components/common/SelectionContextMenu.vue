@@ -18,6 +18,7 @@ const props = defineProps<{
   canEditCell?: boolean
   canOpenChangesPanel?: boolean
   canRevertCell?: boolean
+  hasUnsavedChanges?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -30,6 +31,8 @@ const emit = defineEmits<{
   (e: 'add-row'): void
   (e: 'delete'): void
   (e: 'revert-cell'): void
+  (e: 'save'): void
+  (e: 'cancel'): void
 }>()
 
 const isMac = navigator.platform.toUpperCase().includes('MAC')
@@ -118,6 +121,16 @@ function revertCellAndClose() {
   emit('revert-cell')
   emit('close')
 }
+
+function saveAndClose() {
+  emit('save')
+  emit('close')
+}
+
+function cancelAndClose() {
+  emit('cancel')
+  emit('close')
+}
 </script>
 
 <template>
@@ -128,6 +141,7 @@ function revertCellAndClose() {
       :style="menuStyle"
       @click="onMenuClick"
     >
+      <!-- Selection -->
       <button
         type="button"
         class="w-full px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300 flex items-center justify-between"
@@ -145,18 +159,9 @@ function revertCellAndClose() {
         <span class="ml-4 text-xs text-gray-400 dark:text-gray-500">Esc</span>
       </button>
 
-      <button
-        v-if="canRevertCell"
-        type="button"
-        class="ui-accent-action ui-accent-text w-full px-3 py-2 text-left text-sm transition-colors flex items-center justify-between"
-        @click="revertCellAndClose"
-      >
-        <span>Revert cell</span>
-        <span class="ml-4 text-xs opacity-60">{{ metaKey }}Z</span>
-      </button>
-
       <div class="ui-border-default my-1 border-t"></div>
 
+      <!-- Clipboard -->
       <button
         type="button"
         class="w-full px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-300 flex items-center justify-between"
@@ -185,14 +190,8 @@ function revertCellAndClose() {
 
       <template v-if="isEditable">
         <div class="ui-border-default my-1 border-t"></div>
-        <button
-          type="button"
-          class="w-full text-left px-3 py-2 text-sm text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-300"
-          :disabled="!canOpenChangesPanel"
-          @click="openChangesPanelAndClose"
-        >
-          Open changes sidebar
-        </button>
+
+        <!-- Edit actions -->
         <button
           type="button"
           class="w-full text-left px-3 py-2 text-sm text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between"
@@ -201,6 +200,15 @@ function revertCellAndClose() {
         >
           <span>Edit cell</span>
           <span class="ml-4 text-xs opacity-60">Enter</span>
+        </button>
+        <button
+          v-if="canRevertCell"
+          type="button"
+          class="ui-accent-action ui-accent-text w-full px-3 py-2 text-left text-sm transition-colors flex items-center justify-between"
+          @click="revertCellAndClose"
+        >
+          <span>Revert cell</span>
+          <span class="ml-4 text-xs opacity-60">{{ metaKey }}Z</span>
         </button>
         <button
           type="button"
@@ -219,6 +227,33 @@ function revertCellAndClose() {
           <span>Delete selected rows</span>
           <span class="ml-4 text-xs opacity-60">Del</span>
         </button>
+
+        <!-- Changes -->
+        <template v-if="hasUnsavedChanges">
+          <div class="ui-border-default my-1 border-t"></div>
+          <button
+            type="button"
+            class="w-full text-left px-3 py-2 text-sm text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-colors flex items-center justify-between"
+            @click="saveAndClose"
+          >
+            <span>Save changes</span>
+            <span class="ml-4 text-xs opacity-60">{{ metaKey }}S</span>
+          </button>
+          <button
+            type="button"
+            class="w-full text-left px-3 py-2 text-sm text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+            @click="openChangesPanelAndClose"
+          >
+            Review changes
+          </button>
+          <button
+            type="button"
+            class="w-full text-left px-3 py-2 text-sm text-gray-700 transition-colors hover:[background-color:var(--ui-surface-muted)] dark:text-gray-300"
+            @click="cancelAndClose"
+          >
+            Discard changes
+          </button>
+        </template>
       </template>
     </div>
   </div>

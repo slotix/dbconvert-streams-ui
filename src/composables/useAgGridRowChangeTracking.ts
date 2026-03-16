@@ -323,6 +323,8 @@ export function useAgGridRowChangeTracking(options: UseAgGridRowChangeTrackingOp
               const node = api.getRowNode(rowId)
               if (node && row) node.setData(row)
             }
+            // Force re-evaluation of cellClassRules after pending state was cleared
+            api.refreshCells({ force: true })
           } else {
             api.purgeInfiniteCache()
           }
@@ -384,6 +386,8 @@ export function useAgGridRowChangeTracking(options: UseAgGridRowChangeTrackingOp
             }
 
             pendingEdits.value = {}
+            // Force re-evaluation of cellClassRules after pending state was cleared
+            api.refreshCells({ force: true })
             editSuccess = true
           } catch (e) {
             const msg = e instanceof Error ? e.message : 'Failed to save edits'
