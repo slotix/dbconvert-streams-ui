@@ -389,14 +389,14 @@ function setExportFeedback(message: string, tone: 'info' | 'success' | 'error') 
   }, 6000)
 }
 
-function handleExportFeedback(
+async function handleExportFeedback(
   format: ExportFormat,
   filenameBase: string,
   rows: Record<string, unknown>[]
 ) {
   const label = formatLabel(format)
 
-  const result = exportData(format, {
+  const result = await exportData(format, {
     columns: props.columns,
     rows,
     filename: filenameBase
@@ -422,13 +422,13 @@ function exportSingle(format: ExportFormat) {
   handleExportFeedback(format, 'query-results', props.rows)
 }
 
-function exportSet(format: ExportFormat, setIndex: number) {
+async function exportSet(format: ExportFormat, setIndex: number) {
   const set = displayResultSets.value[setIndex]
   if (!set || set.rows.length === 0) return
 
   const label = formatLabel(format)
 
-  const result = exportData(format, {
+  const result = await exportData(format, {
     columns: set.columns,
     rows: set.rows,
     filename: `query-results-${setIndex + 1}`

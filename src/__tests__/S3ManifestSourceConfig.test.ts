@@ -84,10 +84,10 @@ describe('S3ManifestSourceConfig', () => {
       variant: 'panel'
     })
 
-    expect(wrapper.text()).toContain('Manifest source')
     expect(wrapper.get('[data-test="selected-manifest-path"]').text()).toContain(
       's3://bucket/manifests/orders.json'
     )
+    expect(wrapper.get('[data-test="stub-select-manifest"]').text()).toContain('select')
   })
 
   it('switches back to folders/files mode and clears manifestPath', async () => {
@@ -133,18 +133,15 @@ describe('S3ManifestSourceConfig', () => {
     expect(streamsStore.currentStreamConfig?.files).toEqual([])
   })
 
-  it('clear manifest switches back to files mode', async () => {
+  it('panel mode does not render the header mode toggle controls', () => {
     const { wrapper, streamsStore } = mountComponent({
       sourceMode: 'manifest',
       manifestPath: 's3://bucket/manifests/orders.json',
       variant: 'panel'
     })
 
-    await wrapper.get('[data-test="clear-manifest"]').trigger('click')
-
-    expect(streamsStore.getS3SourceMode('conn-s3')).toBe('selection')
-    expect(streamsStore.currentStreamConfig?.source.connections?.[0].s3?.manifestPath).toBe(
-      undefined
-    )
+    expect(wrapper.find('[data-test="s3-source-mode-selection"]').exists()).toBe(false)
+    expect(wrapper.find('[data-test="s3-source-mode-manifest"]').exists()).toBe(false)
+    expect(streamsStore.getS3SourceMode('conn-s3')).toBe('manifest')
   })
 })

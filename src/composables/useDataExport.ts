@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx'
+import ExcelJS from 'exceljs'
 
 export type ExportFormat = 'csv' | 'json' | 'jsonl' | 'tsv' | 'sql' | 'markdown' | 'excel'
 
@@ -78,21 +78,27 @@ interface ExportResult {
 }
 
 /**
- * Export data to Excel format using xlsx library
+ * Export data to Excel format using exceljs library
  */
-function exportToExcel(options: ExportOptions): void {
+async function exportToExcel(options: ExportOptions): Promise<void> {
   const { columns, rows, filename = 'export' } = options
 
-  // Create worksheet from data
-  const wsData = [columns, ...rows.map((row) => columns.map((col) => row[col]))]
-  const worksheet = XLSX.utils.aoa_to_sheet(wsData)
+  const workbook = new ExcelJS.Workbook()
+  const worksheet = workbook.addWorksheet('Data')
 
-  // Create workbook and add sheet
-  const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, worksheet, 'Data')
+  worksheet.columns = columns.map((col) => ({ header: col, key: col }))
+  rows.forEach((row) => worksheet.addRow(row))
 
-  // Generate and download file
-  XLSX.writeFile(wb, `${filename}.xlsx`)
+  const buffer = await workbook.xlsx.writeBuffer()
+  const blob = new Blob([buffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${filename}.xlsx`
+  a.click()
+  URL.revokeObjectURL(url)
 }
 
 /**
@@ -189,7 +195,10 @@ function downloadTextFile(content: string, filename: string, mimeType: string): 
 /**
  * Export data to the specified format
  */
-export function exportData(format: ExportFormat, options: ExportOptions): ExportResult | null {
+export async function exportData(
+  format: ExportFormat,
+  options: ExportOptions
+): Promise<ExportResult | null> {
   const { columns, rows, filename = 'export' } = options
 
   if (rows.length === 0 || columns.length === 0) {
@@ -199,7 +208,7 @@ export function exportData(format: ExportFormat, options: ExportOptions): Export
 
   // Handle Excel separately (binary format)
   if (format === 'excel') {
-    exportToExcel(options)
+    await exportToExcel(options)
     return {
       format,
       filename: `${filename}.xlsx`,

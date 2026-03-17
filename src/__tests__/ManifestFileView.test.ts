@@ -56,7 +56,8 @@ describe('ManifestFileView', () => {
 
     expect(apiMocks.readS3Manifest).toHaveBeenCalledWith(
       's3://bucket/exports/orders/manifest.json',
-      'conn-s3'
+      'conn-s3',
+      undefined
     )
     expect(wrapper.text()).toContain('Manifest preview')
     expect(wrapper.text()).toContain('Referenced files')

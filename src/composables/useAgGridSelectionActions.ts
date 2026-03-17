@@ -418,11 +418,11 @@ export function useAgGridSelectionActions(options: UseAgGridSelectionActionsOpti
     return { columns, rows }
   }
 
-  function handleExport(format: ExportFormat) {
+  async function handleExport(format: ExportFormat) {
     const { columns, rows } = getVisibleData()
     if (rows.length === 0) return
 
-    exportData(format, {
+    await exportData(format, {
       columns,
       rows,
       filename: options.objectName.value || 'table-data',

@@ -115,7 +115,7 @@ function getTableSize(tableName: string): string | null {
   if (props.objectType !== 'table' || !props.tableSizes) return null
   const schema = props.schema?.trim()
   const key = schema ? `${schema}.${tableName}` : tableName
-  const sizeBytes = props.tableSizes[key]
+  const sizeBytes = props.tableSizes[key] ?? props.tableSizes[tableName]
   // Use zeroAsNA=true because system tables (performance_schema, information_schema) report 0
   return sizeBytes !== undefined ? formatDataSize(sizeBytes, true) : null
 }

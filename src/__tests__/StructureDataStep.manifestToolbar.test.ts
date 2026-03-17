@@ -178,7 +178,7 @@ describe('StructureDataStep manifest toolbar visibility', () => {
     expect(wrapper.get('[data-test="combined-toolbar"]').text()).toContain('Select all|Clear')
     expect(wrapper.find('[data-test="manifest-config-header"]').exists()).toBe(true)
     expect(wrapper.find('[data-test="manifest-config-panel"]').exists()).toBe(false)
-    expect(wrapper.find('[data-test="source-header-actions"]').exists()).toBe(false)
+    expect(wrapper.find('[data-test="source-header-actions"]').exists()).toBe(true)
     expect(wrapper.html().indexOf('conn-s3-header')).toBeLessThan(
       wrapper.html().indexOf('data-test="combined-toolbar"')
     )
@@ -193,7 +193,7 @@ describe('StructureDataStep manifest toolbar visibility', () => {
     expect(wrapper.get('[data-test="combined-toolbar"]').text()).toContain('Select all|Clear')
     expect(wrapper.find('[data-test="manifest-config-header"]').exists()).toBe(false)
     expect(wrapper.find('[data-test="manifest-config-panel"]').exists()).toBe(false)
-    expect(wrapper.find('[data-test="source-header-actions"]').exists()).toBe(false)
+    expect(wrapper.find('[data-test="source-header-actions"]').exists()).toBe(true)
   })
 
   it('does not pin the S3 mode header above the toolbar when multiple file sources exist', () => {

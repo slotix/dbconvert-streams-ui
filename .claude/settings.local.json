@@ -59,7 +59,9 @@
       "Bash(pushd /home/dm3/dbconvert/dbconvert-stream && go test ./internal/fileservice/ -v -count=1 -timeout 60s 2>&1 && popd)",
       "Bash(pushd /home/dm3/dbconvert/dbconvert-stream && go build -o ./bin/stream-api ./cmd/stream-api/ 2>&1 && popd)",
       "Bash(pushd /home/dm3/dbconvert/dbconvert-stream && go build -o ./bin/linux-amd64/stream-api ./cmd/stream-api/ 2>&1 && popd)",
-      "Bash(pushd /home/dm3/dbconvert/dbconvert-stream && go build ./internal/fileservice/ 2>&1 && go test ./internal/fileservice/ -count=1 -timeout 60s 2>&1 && popd)"
+      "Bash(pushd /home/dm3/dbconvert/dbconvert-stream && go build ./internal/fileservice/ 2>&1 && go test ./internal/fileservice/ -count=1 -timeout 60s 2>&1 && popd)",
+      "Bash(yarn audit:*)",
+      "Bash(npm view:*)"
     ],
     "deny": [],
     "ask": []
