@@ -25,7 +25,7 @@
                 <span
                   class="ui-accent-primary flex size-10 shrink-0 items-center justify-center rounded-full border shadow-sm"
                 >
-                  <Check class="ui-accent-icon size-6" aria-hidden="true" />
+                  <Check class="size-6 text-white" aria-hidden="true" />
                 </span>
                 <span class="ml-4 min-w-0">
                   <span class="block text-sm font-medium text-gray-900 dark:text-gray-100">

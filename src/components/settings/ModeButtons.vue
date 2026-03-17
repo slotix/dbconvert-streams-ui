@@ -31,12 +31,18 @@
             ]"
           >
             <div class="mt-0.5 flex items-center h-5">
-              <input
-                :checked="checked"
-                :disabled="disabled"
-                type="radio"
-                class="ui-accent-icon ui-surface-raised ui-border-default h-4 w-4 border focus:outline-none pointer-events-none"
-              />
+              <span
+                :class="[
+                  'flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full border-2 transition-colors duration-150',
+                  checked
+                    ? 'border-(--ui-accent-strong-bg) bg-(--ui-accent-strong-bg)'
+                    : disabled
+                      ? 'border-gray-500 dark:border-gray-600 bg-transparent'
+                      : 'border-gray-400 dark:border-gray-500 bg-transparent'
+                ]"
+              >
+                <span v-if="checked" class="h-2 w-2 rounded-full bg-white" />
+              </span>
             </div>
             <div class="ml-3 flex-1">
               <RadioGroupLabel
@@ -58,12 +64,13 @@
               >
                 {{ getModeDescription(option.id) }}
               </p>
-              <p
+              <div
                 v-if="disabled && disabledReasons[option.id]"
-                class="mt-0.5 text-xs text-gray-500 dark:text-gray-400"
+                class="mt-1.5 flex items-start gap-1.5 px-2 py-1.5 text-xs font-medium text-amber-600 dark:text-amber-400"
               >
-                {{ disabledReasons[option.id] }}
-              </p>
+                <TriangleAlert class="h-3.5 w-3.5 shrink-0 mt-px" />
+                <span>{{ disabledReasons[option.id] }}</span>
+              </div>
             </div>
           </div>
         </RadioGroupOption>
@@ -78,7 +85,7 @@ import { useStreamsStore } from '@/stores/streamConfig'
 import { useCommonStore } from '@/stores/common'
 import { type ModeOption } from '@/stores/common'
 import { RadioGroup, RadioGroupLabel, RadioGroupOption } from '@headlessui/vue'
-import { ArrowLeftRight } from 'lucide-vue-next'
+import { ArrowLeftRight, TriangleAlert } from 'lucide-vue-next'
 
 type ModeId = ModeOption['id']
 

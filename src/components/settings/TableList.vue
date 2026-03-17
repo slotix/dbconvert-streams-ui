@@ -382,7 +382,10 @@ function buildGroupedTables(tablesToGroup: Table[], initializeSchemas = false): 
   })
 
   if (initializeSchemas && !schemasInitialized.value && groups.length > 0) {
-    // Keep PostgreSQL schemas collapsed by default; user expands explicitly.
+    // Single source: auto-expand all schemas so tables are immediately visible
+    if (!isFederatedMode.value) {
+      groups.forEach((g) => expandedSchemas.value.add(g.schema))
+    }
     schemasInitialized.value = true
   }
 

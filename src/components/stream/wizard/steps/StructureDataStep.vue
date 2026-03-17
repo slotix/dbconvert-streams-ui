@@ -460,6 +460,7 @@ import { Code, Sheet, Cloud, FolderOpen } from 'lucide-vue-next'
 import type { S3SourceMode, StreamConnectionMapping } from '@/types/streamConfig'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
+import { useDatabaseOverviewStore } from '@/stores/databaseOverview'
 import type { ModeOption } from '@/stores/common'
 import {
   getConnectionKindFromSpec,
@@ -519,6 +520,7 @@ const activeDataTab = ref<'tables' | 'queries'>('tables')
 
 const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
+const overviewStore = useDatabaseOverviewStore()
 
 interface ObjectListStats {
   selected: number
@@ -549,11 +551,47 @@ const fileSourceCount = computed(
   () => streamSourceConnections.value.filter((conn) => isFileType(conn.connectionId)).length
 )
 
-// CDC only allowed with exactly 1 database source and no file/S3 sources
-const canUseCDCMode = computed(() => databaseSourceCount.value === 1 && fileSourceCount.value === 0)
+// Get all database source connections (moved up for CDC readiness check)
+const databaseSourceConnections = computed(() => {
+  const connections = streamsStore.currentStreamConfig?.source?.connections || []
+  return connections.filter((conn) => !isFileType(conn.connectionId))
+})
+
+// CDC structural check: exactly 1 database source, no file/S3 sources
+const hasValidCDCStructure = computed(
+  () => databaseSourceCount.value === 1 && fileSourceCount.value === 0
+)
+
+// CDC readiness check: source database must support CDC (wal_level=logical for PG, binlog enabled for MySQL)
+const sourceDbCdcReady = computed(() => {
+  if (!hasValidCDCStructure.value) return false
+  const sourceConn = databaseSourceConnections.value[0]
+  if (!sourceConn) return false
+
+  const conn = connectionsStore.connectionByID(sourceConn.connectionId)
+  if (!conn) return false
+
+  const dbName = sourceConn.database || conn.spec?.database?.database
+  if (!dbName) return false
+
+  const overview = overviewStore.getOverview(sourceConn.connectionId, dbName)
+  if (!overview) return true // Don't block while overview is loading
+
+  if (overview.engine === 'postgres') {
+    return overview.health?.wal?.level === 'logical'
+  }
+  if (overview.engine === 'mysql') {
+    return overview.health?.binlog?.enabled === true
+  }
+  return true // Unknown engine — don't block
+})
+
+// CDC allowed when structure is valid AND source database supports CDC
+const canUseCDCMode = computed(() => hasValidCDCStructure.value && sourceDbCdcReady.value)
 
 const cdcModeDisabledReason = computed(() => {
   if (canUseCDCMode.value) return ''
+  // Check structural issues first
   if (databaseSourceCount.value > 1 && fileSourceCount.value === 0) {
     return 'Requires exactly one database source.'
   }
@@ -562,6 +600,25 @@ const cdcModeDisabledReason = computed(() => {
   }
   if (databaseSourceCount.value === 0 && fileSourceCount.value > 0) {
     return 'File/S3 sources support Convert mode only.'
+  }
+  if (databaseSourceCount.value === 0) {
+    return 'Select one database source to enable CDC.'
+  }
+  // Structure is valid but database doesn't support CDC
+  if (hasValidCDCStructure.value && !sourceDbCdcReady.value) {
+    const sourceConn = databaseSourceConnections.value[0]
+    const conn = connectionsStore.connectionByID(sourceConn?.connectionId)
+    const dbName = sourceConn?.database || conn?.spec?.database?.database
+    if (conn && dbName) {
+      const overview = overviewStore.getOverview(sourceConn.connectionId, dbName)
+      if (overview?.engine === 'postgres') {
+        return `PostgreSQL wal_level is "${overview.health?.wal?.level ?? 'unknown'}" — must be "logical" for CDC.`
+      }
+      if (overview?.engine === 'mysql') {
+        return 'MySQL binary log is not enabled — required for CDC.'
+      }
+    }
+    return 'Source database does not support CDC.'
   }
   return 'Select one database source to enable CDC.'
 })
@@ -572,6 +629,24 @@ const disabledModeIds = computed<ModeId[]>(() => (canUseCDCMode.value ? [] : ['c
 const modeDisabledReasons = computed<Partial<Record<ModeId, string>>>(() => ({
   cdc: cdcModeDisabledReason.value
 }))
+
+// Fetch database overview for CDC readiness check when source connection changes
+watch(
+  databaseSourceConnections,
+  (connections) => {
+    if (connections.length !== 1) return
+    const sourceConn = connections[0]
+    const conn = connectionsStore.connectionByID(sourceConn.connectionId)
+    if (!conn) return
+    const dbName = sourceConn.database || conn.spec?.database?.database
+    if (!dbName) return
+    // Only fetch if not already cached
+    if (!overviewStore.getOverview(sourceConn.connectionId, dbName)) {
+      overviewStore.fetchOverview(sourceConn.connectionId, dbName)
+    }
+  },
+  { immediate: true }
+)
 
 // Reset activeDataTab to 'tables' when switching to CDC mode
 watch(currentMode, (newMode) => {
@@ -648,12 +723,6 @@ function isS3Type(connectionId: string): boolean {
 const fileSourceConnections = computed(() => {
   const connections = streamsStore.currentStreamConfig?.source?.connections || []
   return connections.filter((conn) => isFileType(conn.connectionId))
-})
-
-// Get all database source connections
-const databaseSourceConnections = computed(() => {
-  const connections = streamsStore.currentStreamConfig?.source?.connections || []
-  return connections.filter((conn) => !isFileType(conn.connectionId))
 })
 
 // Check if ALL sources are file connections (pure file mode)
