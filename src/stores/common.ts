@@ -535,7 +535,7 @@ export const useCommonStore = defineStore('common', {
               // Reset invalidated flag on successful initialization
               this.apiKeyInvalidated = false
 
-              toast.success('App initialized successfully')
+              toast.info('App initialized successfully')
               this.clearError()
 
               // Start real-time health monitoring

@@ -1038,7 +1038,7 @@ async function handleCreateSchema() {
                   <button
                     v-tooltip="t.name"
                     type="button"
-                    class="truncate text-left hover:text-(--ui-link-text) font-medium transition-colors max-w-[200px] block"
+                    class="truncate text-left text-gray-700 dark:text-gray-300 hover:text-(--ui-link-text) font-medium transition-colors max-w-[200px] block"
                     @click="$emit('open-table', { name: t.name })"
                   >
                     {{ t.name }}

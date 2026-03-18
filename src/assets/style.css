@@ -67,10 +67,10 @@
     --ui-text-subtle: rgb(117 128 142);
     --ui-icon-default: rgb(90 100 114);
     --ui-icon-muted: rgb(123 133 147);
-    --ui-accent-strong-bg: rgb(37 99 235);
-    --ui-accent-strong-bg-hover: rgb(29 78 216);
-    --ui-accent-strong-border: rgb(37 99 235);
-    --ui-accent-strong-border-hover: rgb(29 78 216);
+    --ui-accent-strong-bg: rgb(28 95 190);
+    --ui-accent-strong-bg-hover: rgb(24 82 170);
+    --ui-accent-strong-border: rgb(28 95 190);
+    --ui-accent-strong-border-hover: rgb(24 82 170);
     --ui-accent-strong-text: rgb(255 255 255);
     --ui-accent-soft-bg: rgb(59 130 246 / 0.1);
     --ui-accent-soft-bg-hover: rgb(59 130 246 / 0.14);
@@ -403,6 +403,17 @@
     color: var(--ui-accent-strong-text);
   }
 
+  .dark .ui-accent-primary {
+    background-color: color-mix(in srgb, var(--ui-surface-raised) 50%, var(--ui-accent-strong-bg));
+    border-color: var(--ui-accent-soft-border-strong);
+  }
+
+  .dark .ui-accent-primary:hover,
+  .dark .ui-accent-primary:focus-visible {
+    background-color: color-mix(in srgb, var(--ui-surface-raised) 40%, var(--ui-accent-strong-bg));
+    border-color: var(--ui-accent-soft-border-strong);
+  }
+
   .ui-accent-focus:focus,
   .ui-accent-focus:focus-visible {
     background-color: var(--ui-accent-focus-bg);
@@ -690,17 +701,22 @@
 }
 
 .Vue-Toastification__toast--info {
+  background-color: var(--ui-accent-strong-bg) !important;
+  border-color: var(--ui-accent-strong-border) !important;
+  color: var(--ui-accent-strong-text) !important;
+}
+
+.dark .Vue-Toastification__toast--info {
   background-color: color-mix(
     in srgb,
-    var(--ui-surface-raised) 85%,
-    var(--ui-info-text)
+    var(--ui-surface-raised) 50%,
+    var(--ui-accent-strong-bg)
   ) !important;
-  border-color: color-mix(in srgb, var(--ui-info-text) 28%, var(--ui-border-default)) !important;
-  color: var(--ui-info-text) !important;
+  border-color: var(--ui-accent-soft-border-strong) !important;
 }
 
 .Vue-Toastification__toast--info .Vue-Toastification__icon {
-  color: var(--ui-info-text) !important;
+  color: var(--ui-accent-strong-text) !important;
 }
 
 .Vue-Toastification__close-button {
