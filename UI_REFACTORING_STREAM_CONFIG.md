@@ -9,7 +9,7 @@ The UI's `StreamConfig` type currently has:
 - **Top-level fields**: `id`, `name`, `mode`, `description`, `created`, `reportingInterval`, `limits`
 - **File/Output fields at stream level**: `targetFileFormat`, `compressionType`, `subDirectory`
 - **Legacy fields**: `tables`, `files` (for compatibility)
-- **Nested in targetOptions**: `parquetConfig`, `csvConfig`, `snowflakeConfig`, `s3UploadConfig`, `performanceConfig`
+- **Nested in targetOptions**: `parquetConfig`, `csvConfig`, `snowflakeConfig`, `s3UploadConfig`
 
 ## Target Structure (NEW - Backend Aligned)
 
@@ -44,14 +44,12 @@ export interface TargetConfig {
 export interface TargetOptions {
   stagingDirectory?: string
   compressionType?: 'uncompressed' | 'gzip' | 'zstd' | 'none'
-  workerPoolSize?: number
   structureOptions?: { tables, indexes, foreignKeys }
   skipData?: boolean
   parquetConfig?: ParquetConfig
   csvConfig?: CSVConfig
   snowflakeConfig?: SnowflakeConfig
   s3UploadConfig?: S3UploadConfig
-  performanceConfig?: PerformanceConfig
 }
 ```
 
@@ -64,7 +62,7 @@ export interface TargetOptions {
 - Add `SourceConfig` and `TargetConfig` types (already partially defined)
 - Move `targetFileFormat` from root to `TargetConfig.fileFormat`
 - Move `compressionType` from root to `TargetConfig.options.compressionType`
-- Replace `dataBundleSize` with `source.options.dataBundleSize` and `target.options.performanceConfig.batchSize`
+- Replace `dataBundleSize` with `source.options.dataBundleSize`
 - Replace `reportingIntervals` object with single `reportingInterval` number
 - Replace `operations` array with `source.options.operations`
 - Replace `source`/`target` string IDs with `source: SourceConfig` and `target: TargetConfig`
@@ -189,12 +187,13 @@ export interface TargetOptions {
     options: {
       compressionType: 'zstd',
       structureOptions: { tables: true, indexes: true, foreignKeys: true },
-      performanceConfig: { batchSize: 500 }
     }
   },
   limits: { numberOfEvents: 0, elapsedTime: 0 }
 }
 ```
+
+Target-side `performanceConfig` is not part of the current UI payload contract and is not exposed in the product settings UI.
 
 ## Files Needing Updates
 

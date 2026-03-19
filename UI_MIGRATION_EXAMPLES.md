@@ -125,12 +125,6 @@ export const defaultStreamConfigOptions: StreamConfig = {
         tables: true,
         indexes: true,
         foreignKeys: true
-      },
-      performanceConfig: {
-        batchSize: 500,
-        workerPoolSize: 100,
-        channelBuffer: 1000,
-        flushIntervalMs: 250
       }
     }
   },
@@ -456,4 +450,3 @@ const compressionBadgeClass = computed(() => {
 6. **Reporting**: `config.reportingIntervals` → `config.reportingInterval` (single value)
 7. **Operations**: `config.operations` → `config.source.options.operations`
 8. **Tables**: `config.tables` → `config.source.tables`
-
