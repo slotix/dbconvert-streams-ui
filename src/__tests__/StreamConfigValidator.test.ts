@@ -356,14 +356,14 @@ describe('StreamConfigValidator', () => {
       expect(result.errors.some((e) => e.message === 'Table name is required')).toBe(true)
     })
 
-    it('should accept tables with optional filter', () => {
+    it('should accept tables with optional selection', () => {
       const config = {
         ...validConfig,
         source: {
           connections: [
             {
               connectionId: 'conn-123',
-              tables: [{ name: 'users', filter: { limit: 100 } }]
+              tables: [{ name: 'users', selection: { limit: 100 } }]
             }
           ]
         }
@@ -372,21 +372,21 @@ describe('StreamConfigValidator', () => {
       expect(result.valid).toBe(true)
     })
 
-    it('should reject filter that is not an object', () => {
+    it('should reject selection that is not an object', () => {
       const config = {
         ...validConfig,
         source: {
           connections: [
             {
               connectionId: 'conn-123',
-              tables: [{ name: 'users', filter: 'invalid' }]
+              tables: [{ name: 'users', selection: 'invalid' }]
             }
           ]
         }
       }
       const result = validateStreamConfig(config)
       expect(result.valid).toBe(false)
-      expect(result.errors.some((e) => e.message === 'Filter must be an object')).toBe(true)
+      expect(result.errors.some((e) => e.message === 'Selection must be an object')).toBe(true)
     })
 
     it('should validate dataBundleSize > 0', () => {

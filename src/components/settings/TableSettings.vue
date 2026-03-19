@@ -8,9 +8,9 @@
       :connection-id="sourceConnectionId"
       :database="sourceDatabase"
       :schema="tableSchema"
-      :initial-filter-state="table.filter"
+      :initial-selection-state="table.selection"
       height="120px"
-      @update:filter-state="onFilterStateUpdate"
+      @update:selection-state="onSelectionStateUpdate"
     />
   </div>
 </template>
@@ -22,7 +22,7 @@ import { useConnectionsStore } from '@/stores/connections'
 import { useExplorerNavigationStore } from '@/stores/explorerNavigation'
 import { QueryBuilder } from '@/components/query'
 import type { ColumnInfo } from '@/components/query'
-import { type StreamConfig, type Table, type TableFilterState } from '@/types/streamConfig'
+import { type StreamConfig, type Table, type TableSelectionState } from '@/types/streamConfig'
 import type { SchemaContext } from '@/types/sqlSchemaContext'
 import {
   getConnectionForTable,
@@ -100,10 +100,10 @@ const previewTableName = computed(() => {
   return stripAliasPrefix(props.table?.name || '', isFederated)
 })
 
-// Handle filter state updates from QueryBuilder
-const onFilterStateUpdate = (filterState: TableFilterState) => {
+// Handle selection state updates from QueryBuilder
+const onSelectionStateUpdate = (selectionState: TableSelectionState) => {
   if (props.table) {
-    props.table.filter = filterState
+    props.table.selection = selectionState
     updateStreamSettings()
   }
 }

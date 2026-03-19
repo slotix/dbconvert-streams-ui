@@ -24,9 +24,6 @@ const ALIAS_PREFIX_MAP: Record<string, string> = {
   gcs: 'gcs',
   azure: 'azure',
   files: 'files',
-  csv: 'csv',
-  parquet: 'pq',
-  jsonl: 'json'
 }
 
 /**

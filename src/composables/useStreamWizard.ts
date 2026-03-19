@@ -172,7 +172,7 @@ export function useStreamWizard() {
           tables: c.tables?.map((t) => ({
             name: t.name,
             selected: t.selected,
-            filter: t.filter
+            selection: t.selection
           })),
           queries: c.queries?.map((q) => ({
             name: q.name,

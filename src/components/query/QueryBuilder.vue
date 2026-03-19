@@ -199,15 +199,15 @@ import FilterBuilderShell from './FilterBuilderShell.vue'
 import type { ColumnInfo, FilterCondition, SortCondition, ColumnDef } from './types'
 import { UNARY_OPERATORS } from './types'
 import { operatorToSql } from './sql-utils'
-import type { TableFilterState } from '@/types/streamConfig'
+import type { TableSelectionState } from '@/types/streamConfig'
 import connections from '@/api/connections'
 
 interface Props {
   tableName: string
   dialect?: 'mysql' | 'pgsql' | 'sql'
   columns?: ColumnInfo[]
-  // Structured filter state for UI restoration
-  initialFilterState?: TableFilterState
+  // Structured selection state for UI restoration
+  initialSelectionState?: TableSelectionState
   // Preview support
   connectionId?: string
   database?: string
@@ -217,14 +217,14 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   dialect: 'sql',
   columns: () => [],
-  initialFilterState: undefined,
+  initialSelectionState: undefined,
   connectionId: '',
   database: '',
   schema: ''
 })
 
 const emit = defineEmits<{
-  (e: 'update:filterState', value: TableFilterState): void
+  (e: 'update:selectionState', value: TableSelectionState): void
 }>()
 
 // Reference to FilterBuilder
@@ -332,9 +332,9 @@ function clearAll() {
   emitUpdate()
 }
 
-// Emit structured filter state whenever local state changes
-function emitFilterState() {
-  const filterState: TableFilterState = {
+// Emit structured selection state whenever local state changes
+function emitSelectionState() {
+  const selectionState: TableSelectionState = {
     selectedColumns:
       selectedColumns.value.length === props.columns.length ? [] : [...selectedColumns.value],
     filters: filters.value.map((f) => ({
@@ -349,12 +349,12 @@ function emitFilterState() {
     })),
     limit: limit.value
   }
-  emit('update:filterState', filterState)
+  emit('update:selectionState', selectionState)
 }
 
-// Emit update to parent - only emit filter state (backend generates SQL)
+// Emit update to parent. The backend generates SQL from the structured selection state.
 function emitUpdate() {
-  emitFilterState()
+  emitSelectionState()
 }
 
 /**
@@ -451,35 +451,35 @@ const formatCellValue = (value: unknown): string => {
   return String(value)
 }
 
-// Flag to track if we've initialized from filter state
+// Flag to track if we've initialized from selection state
 const hasInitialized = ref(false)
 
-// Reset initialization flag when initialFilterState prop changes (for re-editing)
+// Reset initialization flag when initialSelectionState prop changes (for re-editing)
 watch(
-  () => props.initialFilterState,
-  (newFilterState, oldFilterState) => {
-    // If filter state changed (not just from undefined to undefined), allow re-initialization
-    if (JSON.stringify(newFilterState) !== JSON.stringify(oldFilterState)) {
+  () => props.initialSelectionState,
+  (newSelectionState, oldSelectionState) => {
+    // If selection state changed (not just from undefined to undefined), allow re-initialization
+    if (JSON.stringify(newSelectionState) !== JSON.stringify(oldSelectionState)) {
       hasInitialized.value = false
     }
   }
 )
 
-// Initialize from structured filter state when component mounts
+// Initialize from structured selection state when component mounts
 watch(
-  [() => props.initialFilterState, () => props.columns],
-  ([filterState, newColumns]) => {
+  [() => props.initialSelectionState, () => props.columns],
+  ([selectionState, newColumns]) => {
     // Only initialize once when we have columns
     if (hasInitialized.value) return
     if (newColumns.length === 0) return
 
-    // Use structured filter state if available (preferred)
-    if (filterState) {
+    // Use structured selection state if available (preferred)
+    if (selectionState) {
       // Set columns - if empty or undefined, use all columns
-      if (filterState.selectedColumns && filterState.selectedColumns.length > 0) {
-        selectedColumns.value = [...filterState.selectedColumns]
+      if (selectionState.selectedColumns && selectionState.selectedColumns.length > 0) {
+        selectedColumns.value = [...selectionState.selectedColumns]
         // Auto-expand column selector if not all columns are selected
-        if (filterState.selectedColumns.length < newColumns.length) {
+        if (selectionState.selectedColumns.length < newColumns.length) {
           showColumnSelector.value = true
         }
       } else {
@@ -487,22 +487,22 @@ watch(
       }
 
       // Set filters
-      if (filterState.filters && filterState.filters.length > 0) {
-        filters.value = filterState.filters.map((f) => ({ ...f })) as FilterCondition[]
+      if (selectionState.filters && selectionState.filters.length > 0) {
+        filters.value = selectionState.filters.map((f) => ({ ...f })) as FilterCondition[]
       } else {
         filters.value = []
       }
 
       // Set sorts
-      if (filterState.sorts && filterState.sorts.length > 0) {
-        orderBy.value = filterState.sorts.map((s) => ({ ...s }))
+      if (selectionState.sorts && selectionState.sorts.length > 0) {
+        orderBy.value = selectionState.sorts.map((s) => ({ ...s }))
       } else {
         orderBy.value = []
       }
 
       // Set limit
-      if (filterState.limit !== undefined && filterState.limit !== null) {
-        limit.value = filterState.limit
+      if (selectionState.limit !== undefined && selectionState.limit !== null) {
+        limit.value = selectionState.limit
       } else {
         limit.value = null
       }

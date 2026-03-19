@@ -327,7 +327,7 @@ const initTables =
 const tables = ref<Table[]>(
   initTables?.map((table: Table) => ({
     name: table.name,
-    filter: table.filter,
+    selection: table.selection,
     // If using _allTablesWithState, use the explicit selected property (default false if undefined)
     // If using connection tables, mark as selected because backend only stores selected tables
     selected: currentStreamConfig.value._allTablesWithState ? (table.selected ?? false) : true
@@ -701,8 +701,8 @@ function closeTableSettingsDrawer() {
 }
 
 function hasTableFilter(table: Table): boolean {
-  if (!table.filter) return false
-  const f = table.filter
+  if (!table.selection) return false
+  const f = table.selection
   const hasColumns = f.selectedColumns && f.selectedColumns.length > 0
   const hasFilters = f.filters && f.filters.length > 0
   const hasSorts = f.sorts && f.sorts.length > 0
@@ -732,15 +732,15 @@ const refreshTables = async () => {
       // Multi-source mode: Load tables from all connections
       const allTableNames: string[] = []
 
-      // Build maps of existing selections and filters to preserve state
+      // Build maps of existing selections and query selections to preserve state
       const existingSelections = new Map<string, boolean>()
-      const existingFilters = new Map<string, Table['filter']>()
+      const existingTableSelections = new Map<string, Table['selection']>()
 
       // First, get selections from component state (includes unselected tables)
       tables.value.forEach((table) => {
         existingSelections.set(table.name, table.selected ?? false)
-        if (table.filter) {
-          existingFilters.set(table.name, table.filter)
+        if (table.selection) {
+          existingTableSelections.set(table.name, table.selection)
         }
       })
 
@@ -753,15 +753,15 @@ const refreshTables = async () => {
           conn.tables.forEach((table) => {
             // Store with original saved name
             existingSelections.set(table.name, table.selected ?? true)
-            if (table.filter) {
-              existingFilters.set(table.name, table.filter)
+            if (table.selection) {
+              existingTableSelections.set(table.name, table.selection)
             }
             // Also store with alias prefix for federated mode matching
             if (conn.alias) {
               const aliasedName = `${conn.alias}.${table.name}`
               existingSelections.set(aliasedName, table.selected ?? true)
-              if (table.filter) {
-                existingFilters.set(aliasedName, table.filter)
+              if (table.selection) {
+                existingTableSelections.set(aliasedName, table.selection)
               }
             }
           })
@@ -803,7 +803,7 @@ const refreshTables = async () => {
         }
       }
 
-      // Map table names and preserve existing selections/filters.
+      // Map table names and preserve existing selections/query selections.
       // New tables default to unselected; explicit previous selections are preserved.
 
       tables.value = allTableNames.map((name: string) => {
@@ -812,7 +812,7 @@ const refreshTables = async () => {
         // Keep existing explicit state; otherwise default to unselected.
         const selected = hasExistingSelection ? existingSelections.get(name)! : false
 
-        const filter = existingFilters.get(name)
+        const selection = existingTableSelections.get(name)
 
         if (currentStreamConfig.value.mode === 'cdc') {
           return {
@@ -822,7 +822,7 @@ const refreshTables = async () => {
         } else {
           return {
             name,
-            filter,
+            selection,
             selected
           }
         }
@@ -884,13 +884,13 @@ const refreshTables = async () => {
     // Create a map of existing selections to preserve state
     // Check both the component's tables ref AND the stream config
     const existingSelections = new Map<string, boolean>()
-    const existingFilters = new Map<string, Table['filter']>()
+    const existingTableSelections = new Map<string, Table['selection']>()
 
     // First, get selections from component state (includes unselected tables)
     tables.value.forEach((table) => {
       existingSelections.set(table.name, table.selected ?? false)
-      if (table.filter) {
-        existingFilters.set(table.name, table.filter)
+      if (table.selection) {
+        existingTableSelections.set(table.name, table.selection)
       }
     })
 
@@ -901,8 +901,8 @@ const refreshTables = async () => {
       if (conn.tables) {
         conn.tables.forEach((table) => {
           existingSelections.set(table.name, table.selected ?? true)
-          if (table.filter) {
-            existingFilters.set(table.name, table.filter)
+          if (table.selection) {
+            existingTableSelections.set(table.name, table.selection)
           }
 
           if (!table.name.includes('.')) {
@@ -910,8 +910,8 @@ const refreshTables = async () => {
             if (schema) {
               const schemaName = `${schema}.${table.name}`
               existingSelections.set(schemaName, table.selected ?? true)
-              if (table.filter) {
-                existingFilters.set(schemaName, table.filter)
+              if (table.selection) {
+                existingTableSelections.set(schemaName, table.selection)
               }
             }
           }
@@ -928,7 +928,7 @@ const refreshTables = async () => {
       // Keep existing explicit state; otherwise default to unselected.
       const selected = hasExistingSelection ? existingSelections.get(name)! : false
 
-      const filter = existingFilters.get(name)
+      const selection = existingTableSelections.get(name)
 
       if (currentStreamConfig.value.mode === 'cdc') {
         return {
@@ -938,7 +938,7 @@ const refreshTables = async () => {
       } else {
         return {
           name,
-          filter,
+          selection,
           selected
         }
       }

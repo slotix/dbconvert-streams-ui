@@ -21,7 +21,7 @@ import { updateStreamsViewState } from '@/utils/streamsViewState'
 import connectionsApi from '@/api/connections'
 import streamsApi from '@/api/streams'
 import type { Connection } from '@/types/connections'
-import type { StreamConfig, TableFilterState } from '@/types/streamConfig'
+import type { StreamConfig, TableSelectionState } from '@/types/streamConfig'
 import { buildFileTargetSpec } from '@/utils/specBuilder'
 
 // Local storage key for the shared export connection ID
@@ -167,10 +167,10 @@ export function useStreamExport() {
     return newConnectionId
   }
 
-  function buildTableFilterState(
+  function buildTableSelectionState(
     objectKey?: string,
     allColumns?: string[]
-  ): TableFilterState | undefined {
+  ): TableSelectionState | undefined {
     if (!objectKey) return undefined
     const panelState = tabStateStore.getFilterPanelState(objectKey)
     if (!panelState) return undefined
@@ -208,7 +208,7 @@ export function useStreamExport() {
   ): Promise<string> {
     const { connectionId, database, schema, table, format, objectKey, allColumns } = options
 
-    const filter = buildTableFilterState(objectKey, allColumns)
+    const selection = buildTableSelectionState(objectKey, allColumns)
 
     // Create stream config
     const defaultStreamName = buildExportStreamName(table, format)
@@ -233,7 +233,7 @@ export function useStreamExport() {
             tables: [
               {
                 name: table,
-                ...(filter ? { filter } : {})
+                ...(selection ? { selection } : {})
               }
             ]
           }

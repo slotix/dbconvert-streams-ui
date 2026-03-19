@@ -424,20 +424,20 @@ export const buildStreamPayload = (stream: StreamConfig): Partial<StreamConfig> 
     return filteredStream
   }
 
-  // Helper to filter tables with their filters
+  // Helper to filter tables with their query selection state
   function filterTables(tables: Table[]): Table[] {
     return tables.map((table) => {
       const filteredTable: Partial<Table> = { name: table.name }
 
-      // Include structured filter if it has any meaningful data
-      if (stream.mode === 'convert' && table.filter) {
+      // Include structured selection if it has any meaningful data
+      if (stream.mode === 'convert' && table.selection) {
         const hasContent =
-          (table.filter.selectedColumns && table.filter.selectedColumns.length > 0) ||
-          (table.filter.filters && table.filter.filters.length > 0) ||
-          (table.filter.sorts && table.filter.sorts.length > 0) ||
-          (table.filter.limit !== undefined && table.filter.limit !== null)
+          (table.selection.selectedColumns && table.selection.selectedColumns.length > 0) ||
+          (table.selection.filters && table.selection.filters.length > 0) ||
+          (table.selection.sorts && table.selection.sorts.length > 0) ||
+          (table.selection.limit !== undefined && table.selection.limit !== null)
         if (hasContent) {
-          filteredTable.filter = table.filter
+          filteredTable.selection = table.selection
         }
       }
 

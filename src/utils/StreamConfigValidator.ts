@@ -416,11 +416,11 @@ function validateConnectionTables(
       errors.push({ path: `${connPath}.tables[${index}].name`, message: 'Table name is required' })
     }
 
-    // Filter is optional but if present must be an object
-    if (t.filter !== undefined && (typeof t.filter !== 'object' || t.filter === null)) {
+    // Selection is optional but if present must be an object
+    if (t.selection !== undefined && (typeof t.selection !== 'object' || t.selection === null)) {
       errors.push({
-        path: `${connPath}.tables[${index}].filter`,
-        message: 'Filter must be an object'
+        path: `${connPath}.tables[${index}].selection`,
+        message: 'Selection must be an object'
       })
     }
   })

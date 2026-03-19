@@ -25,22 +25,16 @@
             v-tooltip="hasTableFilter(table) ? 'Edit filter' : 'Add filter'"
             :aria-label="hasTableFilter(table) ? 'Edit filter' : 'Add filter'"
             :aria-pressed="isTableSettingsOpen(table.name)"
-            class="w-4 h-4 shrink-0 flex items-center justify-center rounded transition-all"
-            :class="
-              isTableSettingsOpen(table.name)
-                ? 'ui-accent-icon'
-                : hasTableFilter(table)
-                  ? 'ui-accent-icon'
-                  : 'text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400'
-            "
+            class="ui-focus-ring h-4 w-4 shrink-0 flex items-center justify-center rounded transition-all"
+            :class="getFilterButtonClass(table)"
             @click="emit('toggle-filter', table.name)"
           >
-            <Filter class="w-3.5 h-3.5" />
+            <Filter :class="['h-3.5 w-3.5 transition-all', getFilterIconClass(table)]" />
           </button>
           <Filter
             v-else-if="hasTableFilter(table)"
             v-tooltip="'Has active filter'"
-            class="w-4 h-4 ui-accent-icon shrink-0"
+            class="ui-accent-icon h-4 w-4 shrink-0 fill-current"
           />
           <TableIcon v-else class="h-4 w-4 text-gray-400 dark:text-gray-500 shrink-0" />
 
@@ -105,22 +99,16 @@
           v-tooltip="hasTableFilter(table) ? 'Edit filter' : 'Add filter'"
           :aria-label="hasTableFilter(table) ? 'Edit filter' : 'Add filter'"
           :aria-pressed="isTableSettingsOpen(table.name)"
-          class="w-4 h-4 shrink-0 flex items-center justify-center rounded transition-all"
-          :class="
-            isTableSettingsOpen(table.name)
-              ? 'ui-accent-icon'
-              : hasTableFilter(table)
-                ? 'ui-accent-icon'
-                : 'text-gray-300 dark:text-gray-600 opacity-0 group-hover:opacity-100 hover:text-gray-500 dark:hover:text-gray-400'
-          "
+          class="ui-focus-ring h-4 w-4 shrink-0 flex items-center justify-center rounded transition-all"
+          :class="getFilterButtonClass(table, true)"
           @click="emit('toggle-filter', table.name)"
         >
-          <Filter class="w-3.5 h-3.5" />
+          <Filter :class="['h-3.5 w-3.5 transition-all', getFilterIconClass(table)]" />
         </button>
         <Filter
           v-else-if="hasTableFilter(table)"
           v-tooltip="'Has active filter'"
-          class="w-4 h-4 ui-accent-icon shrink-0"
+          class="ui-accent-icon h-4 w-4 shrink-0 fill-current"
         />
         <TableIcon v-else class="h-4 w-4 text-gray-400 dark:text-gray-500 shrink-0" />
 
@@ -206,4 +194,18 @@ const {
 const virtualContainerHeight = computed(() =>
   Math.min(props.tables.length * ITEM_HEIGHT, MAX_VIRTUAL_HEIGHT)
 )
+
+function getFilterButtonClass(table: Table, isVirtual = false): string {
+  if (props.hasTableFilter(table) || props.isTableSettingsOpen(table.name)) {
+    return 'ui-accent-icon'
+  }
+
+  return isVirtual
+    ? 'text-gray-300 dark:text-gray-600 opacity-0 group-hover:opacity-100 hover:text-gray-500 dark:hover:text-gray-400'
+    : 'text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400'
+}
+
+function getFilterIconClass(table: Table): string {
+  return props.hasTableFilter(table) ? 'fill-current' : ''
+}
 </script>

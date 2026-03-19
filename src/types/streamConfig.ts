@@ -20,10 +20,10 @@ export interface TableSort {
 }
 
 /**
- * Structured filter state for table configuration
+ * Structured selection state for table configuration
  * Backend generates SQL from this structure
  */
-export interface TableFilterState {
+export interface TableSelectionState {
   selectedColumns?: string[] // Empty or undefined means all columns (*)
   filters?: TableFilter[]
   sorts?: TableSort[]
@@ -32,7 +32,7 @@ export interface TableFilterState {
 
 export interface Table {
   name: string
-  filter?: TableFilterState // Structured filter state - backend generates SQL from this
+  selection?: TableSelectionState // Structured selection state - backend generates SQL from this
   selected?: boolean
 }
 

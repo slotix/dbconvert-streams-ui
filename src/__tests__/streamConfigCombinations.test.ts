@@ -44,7 +44,17 @@ describe('buildStreamPayload combinations', () => {
             connectionId: 'conn-pg',
             database: 'postgres',
             schema: 'public',
-            tables: [{ name: 'customers' }]
+            tables: [
+              {
+                name: 'customers',
+                selection: {
+                  selectedColumns: ['id', 'email'],
+                  filters: [{ id: 'f-1', column: 'active', operator: '=', value: 'true' }],
+                  sorts: [{ column: 'created_at', direction: 'DESC' }],
+                  limit: 25
+                }
+              }
+            ]
           }
         ]
       },
@@ -58,7 +68,17 @@ describe('buildStreamPayload combinations', () => {
         connectionId: 'conn-pg',
         database: 'postgres',
         schema: 'public',
-        tables: [{ name: 'customers' }]
+        tables: [
+          {
+            name: 'customers',
+            selection: {
+              selectedColumns: ['id', 'email'],
+              filters: [{ id: 'f-1', column: 'active', operator: '=', value: 'true' }],
+              sorts: [{ column: 'created_at', direction: 'DESC' }],
+              limit: 25
+            }
+          }
+        ]
       }
     ])
   })
