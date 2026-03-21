@@ -2,18 +2,18 @@
   <template v-if="showFallback">
     <section
       v-if="isPanelOpen"
-      class="fixed right-5 bottom-24 z-[121] h-[560px] w-[360px] overflow-hidden rounded-xl border border-[#0b4f4a]/60 bg-gray-950 shadow-2xl"
+      class="fixed right-5 bottom-24 z-[121] h-[560px] w-[360px] overflow-hidden rounded-xl border border-[#24496b]/60 bg-gray-950 shadow-2xl"
     >
       <header
         class="flex items-center justify-between border-b border-gray-800 px-3 py-2"
-        style="background-color: #0b4f4a"
+        style="background-color: #24496b"
       >
         <p class="text-sm font-semibold text-white">Support Chat</p>
         <div class="flex items-center gap-2">
           <button
             type="button"
             aria-label="Close support chat"
-            class="grid h-7 w-7 place-items-center rounded-md text-white transition-colors hover:bg-[#0d6b65]"
+            class="grid h-7 w-7 place-items-center rounded-md text-white transition-colors hover:bg-[#2d5a80]"
             @click="isPanelOpen = false"
           >
             ×
