@@ -9,16 +9,21 @@
     <span v-else class="sr-only">GitHub Discussions</span>
     <div v-if="showTooltips && isCollapsed" :class="tooltipClass">GitHub Discussions</div>
   </button>
-  <button type="button" :class="linkClass" @click="openUrl(docsUrl)">
+  <RouterLink
+    to="/docs"
+    :class="[linkClass, isDocsActive ? docsActiveClass : '']"
+    @click="emit('navigate')"
+  >
     <BookOpen :class="iconClass" :stroke-width="iconStroke" aria-hidden="true" />
     <span v-if="!isCollapsed" class="truncate">Documentation</span>
     <span v-else class="sr-only">Documentation</span>
     <div v-if="showTooltips && isCollapsed" :class="tooltipClass">Documentation</div>
-  </button>
+  </RouterLink>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { RouterLink, useRoute } from 'vue-router'
 import { BookOpen } from 'lucide-vue-next'
 
 const props = withDefaults(
@@ -29,12 +34,14 @@ const props = withDefaults(
     isCollapsed?: boolean
     showTooltips?: boolean
     tooltipClass?: string
+    docsActiveClass?: string
   }>(),
   {
     isCollapsed: false,
     showTooltips: false,
     tooltipClass:
-      'absolute left-full ml-2 top-1/2 transform -translate-y-1/2 hidden group-hover:block bg-gray-900 dark:bg-gray-800 text-white px-2 py-1 rounded text-sm whitespace-nowrap z-9999 pointer-events-none'
+      'absolute left-full ml-2 top-1/2 transform -translate-y-1/2 hidden group-hover:block bg-gray-900 dark:bg-gray-800 text-white px-2 py-1 rounded text-sm whitespace-nowrap z-9999 pointer-events-none',
+    docsActiveClass: 'ui-nav-active shadow-sm'
   }
 )
 
@@ -42,9 +49,10 @@ const emit = defineEmits<{
   (e: 'navigate'): void
 }>()
 
+const route = useRoute()
 const githubUrl = 'https://github.com/slotix/dbconvert-streams-public/discussions'
-const docsUrl = 'https://docs.dbconvert.com'
 
+const isDocsActive = computed(() => route.path === '/docs')
 const isCollapsed = computed(() => props.isCollapsed)
 const showTooltips = computed(() => props.showTooltips)
 const linkClass = computed(() => props.linkClass)

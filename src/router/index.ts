@@ -57,6 +57,11 @@ const routes = [
     props: true
   },
   {
+    path: '/docs',
+    name: 'Docs',
+    component: () => import('@/views/DocsView.vue')
+  },
+  {
     path: '/:catchAll(.*)',
     component: NotFound
   }
