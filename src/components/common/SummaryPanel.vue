@@ -327,11 +327,11 @@ function getCardinalityLabel(indicator: string): string {
               </th>
             </tr>
           </thead>
-          <tbody class="ui-surface-raised divide-y border-(--ui-border-default)">
+          <tbody class="ui-surface-raised">
             <tr
               v-for="col in summary.columns"
               :key="col.name"
-              class="hover:bg-[var(--ui-surface-muted)]"
+              class="ui-border-default border-b last:border-b-0 hover:bg-[var(--ui-surface-muted)]"
             >
               <td class="px-4 py-3 whitespace-nowrap">
                 <div class="flex flex-col gap-1">
