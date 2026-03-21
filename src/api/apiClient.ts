@@ -364,7 +364,7 @@ const getSystemDefaults = async (): Promise<SystemDefaults> => {
 
 export async function getLoggingSettings(): Promise<LoggingSettings> {
   try {
-    const response: ApiResponse<LoggingSettings> = await apiClient.get('/system/logging')
+    const response: ApiResponse<LoggingSettings> = await apiClient.get('/system/sql-logging')
     return response.data
   } catch (error) {
     throw handleApiError(error)
@@ -375,7 +375,7 @@ export async function updateLoggingSettings(
   payload: Partial<LoggingSettings>
 ): Promise<LoggingSettings> {
   try {
-    const response: ApiResponse<LoggingSettings> = await apiClient.put('/system/logging', payload)
+    const response: ApiResponse<LoggingSettings> = await apiClient.put('/system/sql-logging', payload)
     return response.data
   } catch (error) {
     throw handleApiError(error)

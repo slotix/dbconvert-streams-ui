@@ -12,17 +12,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useThemeStore } from '@/stores/theme'
 import { useDesktopZoom } from '@/utils/desktopZoom'
 
-const docsUrl = import.meta.env.DEV
-  ? 'http://localhost:3000/docs/?embed=1'
-  : 'https://streams.dbconvert.com/docs/?embed=1'
+const baseUrl = import.meta.env.DEV
+  ? 'http://localhost:3000/docs/'
+  : 'https://streams.dbconvert.com/docs/'
 
-const iframeRef = ref<HTMLIFrameElement | null>(null)
 const themeStore = useThemeStore()
 const { zoomLevel } = useDesktopZoom()
+const iframeRef = ref<HTMLIFrameElement | null>(null)
+
+const docsUrl = computed(() => {
+  const theme = themeStore.isDark ? 'dark' : 'light'
+  return `${baseUrl}?embed=1&theme=${theme}&zoom=${zoomLevel.value}`
+})
 
 function postToIframe(message: Record<string, unknown>) {
   iframeRef.value?.contentWindow?.postMessage(message, '*')
