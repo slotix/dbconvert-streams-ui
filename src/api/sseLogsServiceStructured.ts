@@ -166,7 +166,7 @@ class SSELogsService {
       this.backendAvailable = true
     })
 
-    eventSource.addEventListener('message', (event: MessageEvent) => {
+    const handlePayload = (event: MessageEvent) => {
       try {
         const data: unknown = JSON.parse(event.data)
 
@@ -181,12 +181,16 @@ class SSELogsService {
           return
         }
 
-        // Route log based on category
         this.routeLog(data, logsStore)
       } catch (error) {
         console.error('Failed to parse structured log:', error, event.data)
       }
-    })
+    }
+
+    // The backend emits explicit "log" and "sql" event names so payload
+    // families stay distinct on the shared SSE stream.
+    eventSource.addEventListener('log', handlePayload)
+    eventSource.addEventListener('sql', handlePayload)
 
     eventSource.addEventListener('error', (_error) => {
       // Only log errors if we think backend should be available
