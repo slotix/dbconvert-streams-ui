@@ -862,6 +862,16 @@ export default {
           <template v-if="hasUnsavedChanges">
             <button
               type="button"
+              class="ui-accent-action-active text-xs rounded-md px-2.5 py-1 border inline-flex shrink-0 items-center justify-center gap-1 transition-colors whitespace-nowrap"
+              title="Review pending changes"
+              aria-label="Review pending changes"
+              @click="openFirstEditedRowPanel"
+            >
+              <PanelLeftOpen class="h-3.5 w-3.5 shrink-0" :stroke-width="iconStroke" />
+              <span class="badge-text">Review</span>
+            </button>
+            <button
+              type="button"
               class="ui-accent-primary text-xs rounded-md px-2.5 py-1 border disabled:opacity-50 disabled:cursor-not-allowed shrink-0 whitespace-nowrap"
               title="Save pending changes"
               :disabled="isSaving"
@@ -872,15 +882,6 @@ export default {
                   ? 'Saving…'
                   : `Save (${pendingInsertCount + pendingEditCount + pendingDeleteCount})`
               }}
-            </button>
-            <button
-              type="button"
-              class="ui-accent-action-active text-xs rounded-md p-1.5 border inline-flex shrink-0 items-center justify-center transition-colors"
-              title="Review pending changes"
-              aria-label="Review pending changes"
-              @click="openFirstEditedRowPanel"
-            >
-              <PanelLeftOpen class="h-3.5 w-3.5 shrink-0" :stroke-width="iconStroke" />
             </button>
             <button
               type="button"

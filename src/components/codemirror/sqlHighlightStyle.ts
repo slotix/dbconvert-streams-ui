@@ -100,8 +100,8 @@ const sqlDarkSearchTheme = EditorView.theme(
       cursor: 'pointer'
     },
     '.cm-panel.cm-search .cm-button:hover': {
-      backgroundColor: 'rgba(20,184,166,.18)',
-      borderColor: 'rgba(20,184,166,.4)'
+      backgroundColor: 'rgba(59,130,246,.18)',
+      borderColor: 'rgba(59,130,246,.4)'
     },
     '.cm-panel.cm-search label': {
       color: '#9ca3af'
@@ -131,8 +131,8 @@ const sqlLightSearchTheme = EditorView.theme(
       cursor: 'pointer'
     },
     '.cm-panel.cm-search .cm-button:hover': {
-      backgroundColor: 'rgba(20,184,166,.12)',
-      borderColor: 'rgba(20,184,166,.4)'
+      backgroundColor: 'rgba(59,130,246,.12)',
+      borderColor: 'rgba(59,130,246,.4)'
     },
     '.cm-panel.cm-search label': {
       color: '#94a3b8'

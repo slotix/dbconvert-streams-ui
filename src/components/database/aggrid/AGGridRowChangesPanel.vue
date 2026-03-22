@@ -228,7 +228,12 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeyDown))
         </div>
       </div>
 
-      <div v-for="kind in visibleKinds" :key="kind" class="space-y-2">
+      <div
+        v-for="(kind, idx) in visibleKinds"
+        :key="kind"
+        class="space-y-2"
+        :class="{ 'ui-border-default border-t pt-4': idx > 0 && sectionCount(kind) > 0 }"
+      >
         <div v-if="sectionCount(kind) > 0" class="flex items-center justify-between px-1">
           <div class="flex items-center gap-2">
             <h3
@@ -355,7 +360,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeyDown))
           v-else-if="kind === 'delete' && sectionCount(kind) > 0"
           class="ui-border-default rounded-md border"
         >
-          <ul class="divide-y border-(--ui-border-default)">
+          <ul class="divide-y divide-(--ui-border-default)">
             <li
               v-for="row in deleteRows"
               :key="`delete-list-${row.rowId}`"

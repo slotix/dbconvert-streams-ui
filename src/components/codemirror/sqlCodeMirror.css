@@ -5,13 +5,13 @@
   --sql-editor-popup-bg: #ffffff;
   --sql-editor-popup-border: rgba(148, 163, 184, 0.35);
   --sql-editor-active-line: rgba(15, 23, 42, 0.06);
-  --sql-editor-selected-item: rgba(13, 148, 136, 0.18);
-  --sql-editor-selection-bg: rgba(13, 148, 136, 0.24);
+  --sql-editor-selected-item: rgba(37, 99, 235, 0.18);
+  --sql-editor-selection-bg: rgba(37, 99, 235, 0.24);
   --sql-editor-text: #0f172a;
   --sql-editor-detail: #64748b;
   --sql-editor-gutter-text: #64748b;
-  --sql-editor-active-gutter-text: #0f766e;
-  --sql-editor-active-gutter-bg: rgba(20, 184, 166, 0.16);
+  --sql-editor-active-gutter-text: #1d4ed8;
+  --sql-editor-active-gutter-bg: rgba(59, 130, 246, 0.16);
   --sql-hover-card-bg: var(--sql-editor-popup-bg);
   --sql-hover-card-border: transparent;
   --sql-hover-heading: #0f172a;
@@ -19,7 +19,7 @@
   --sql-hover-type: #334155;
   --sql-hover-badge-text: #94a3b8;
   --sql-hover-badge-bg: rgba(0, 0, 0, 0.05);
-  --sql-hover-row-accent: rgba(20, 184, 166, 0.65);
+  --sql-hover-row-accent: rgba(59, 130, 246, 0.65);
   --sql-hover-name-active: #f1f5f9;
   --sql-hover-more: #94a3b8;
   --sql-type-keyword: #2563eb;
@@ -33,7 +33,7 @@
   --sql-search-input-focus-ring: rgba(139, 92, 246, 0.18);
   --sql-search-button-bg: rgba(0, 0, 0, 0.05);
   --sql-search-button-border: rgba(148, 163, 184, 0.35);
-  --sql-search-button-hover: rgba(20, 184, 166, 0.12);
+  --sql-search-button-hover: rgba(59, 130, 246, 0.12);
   --sql-search-checkbox-border: rgba(100, 116, 139, 0.6);
   --sql-search-muted: #94a3b8;
 }
@@ -44,14 +44,14 @@
   --sql-editor-border: rgba(148, 163, 184, 0.22);
   --sql-editor-popup-bg: var(--ui-surface-raised);
   --sql-editor-popup-border: rgba(148, 163, 184, 0.28);
-  --sql-editor-active-line: rgba(13, 148, 136, 0.09);
-  --sql-editor-selected-item: rgba(13, 148, 136, 0.25);
-  --sql-editor-selection-bg: rgba(20, 184, 166, 0.34);
+  --sql-editor-active-line: rgba(37, 99, 235, 0.09);
+  --sql-editor-selected-item: rgba(37, 99, 235, 0.25);
+  --sql-editor-selection-bg: rgba(59, 130, 246, 0.34);
   --sql-editor-text: #e5e7eb;
   --sql-editor-detail: #9ca3af;
   --sql-editor-gutter-text: #6b7280;
-  --sql-editor-active-gutter-text: #5eead4;
-  --sql-editor-active-gutter-bg: rgba(20, 184, 166, 0.18);
+  --sql-editor-active-gutter-text: #93c5fd;
+  --sql-editor-active-gutter-bg: rgba(59, 130, 246, 0.18);
   --sql-hover-card-bg: var(--sql-editor-popup-bg);
   --sql-hover-card-border: transparent;
   --sql-hover-heading: #f3f4f6;
@@ -59,7 +59,7 @@
   --sql-hover-type: #d1d5db;
   --sql-hover-badge-text: #9ca3af;
   --sql-hover-badge-bg: rgba(0, 0, 0, 0.22);
-  --sql-hover-row-accent: rgba(45, 212, 191, 0.85);
+  --sql-hover-row-accent: rgba(96, 165, 250, 0.85);
   --sql-hover-name-active: #f9fafb;
   --sql-hover-more: #6b7280;
   --sql-type-keyword: #93c5fd;
@@ -73,7 +73,7 @@
   --sql-search-input-focus-ring: rgba(139, 92, 246, 0.2);
   --sql-search-button-bg: rgba(255, 255, 255, 0.08);
   --sql-search-button-border: rgba(148, 163, 184, 0.28);
-  --sql-search-button-hover: rgba(20, 184, 166, 0.18);
+  --sql-search-button-hover: rgba(59, 130, 246, 0.18);
   --sql-search-checkbox-border: rgba(148, 163, 184, 0.45);
   --sql-search-muted: #9ca3af;
 }
@@ -83,13 +83,13 @@
   font-family: 'JetBrains Mono', 'Fira Code', 'SFMono-Regular', ui-monospace, Menlo, monospace;
   font-size: calc(13.5px * var(--sql-ui-scale));
   line-height: 1.5;
-  caret-color: #2dd4bf;
+  caret-color: #60a5fa;
   background: var(--sql-editor-bg);
   color: var(--sql-editor-text);
 }
 
 :deep(.cm-cursor, .cm-dropCursor) {
-  border-left-color: #2dd4bf !important;
+  border-left-color: #60a5fa !important;
 }
 
 :deep(.cm-content) {
@@ -216,8 +216,8 @@
 }
 
 :deep(.cm-panel.cm-search input[type='checkbox']:checked) {
-  background: #14b8a6;
-  border-color: #14b8a6;
+  background: #3b82f6;
+  border-color: #3b82f6;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' d='M2 6l3 3 5-5'/%3E%3C/svg%3E");
   background-size: calc(9px * var(--sql-ui-scale));
   background-position: center;
@@ -225,7 +225,7 @@
 }
 
 :deep(.cm-panel.cm-search input[type='checkbox']:focus-visible) {
-  outline: 2px solid rgba(20, 184, 166, 0.45);
+  outline: 2px solid rgba(59, 130, 246, 0.45);
   outline-offset: 1px;
 }
 
@@ -245,7 +245,7 @@
 
 :deep(.cm-panel.cm-search .cm-button:hover) {
   background: var(--sql-search-button-hover);
-  border-color: rgba(20, 184, 166, 0.4);
+  border-color: rgba(59, 130, 246, 0.4);
 }
 
 :deep(.cm-panel.cm-search [name='close']) {
@@ -342,7 +342,7 @@
 }
 
 :deep(.sql-signature-tooltip-param) {
-  color: #14b8a6;
+  color: #3b82f6;
   font-weight: 700;
 }
 

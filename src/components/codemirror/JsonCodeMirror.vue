@@ -46,6 +46,7 @@ import { json } from '@codemirror/lang-json'
 import { oneDark } from '@codemirror/theme-one-dark'
 import { syntaxTree } from '@codemirror/language'
 import CodeMirrorContextMenu from './CodeMirrorContextMenu.vue'
+import { createCodeMirrorActiveEditorHandle } from './codeMirrorActiveEditor'
 import { useCodeMirrorContextMenu } from './useCodeMirrorContextMenu'
 
 interface Props {
@@ -78,6 +79,7 @@ const editorContainerRef = ref<HTMLElement | null>(null)
 const editorHost = ref<HTMLElement | null>(null)
 const editorView = shallowRef<EditorView | null>(null)
 const themeStore = useThemeStore()
+const activeEditorHandle = createCodeMirrorActiveEditorHandle()
 
 const readOnlyCompartment = new Compartment()
 const themeCompartment = new Compartment()
@@ -93,6 +95,7 @@ let resizeUpListener: (() => void) | null = null
 let isResizing = false
 let containerResizeObserver: ResizeObserver | null = null
 let remeasureAnimationFrameId: number | null = null
+let focusInListener: (() => void) | null = null
 
 const showResizeGrip = computed(() => props.resizable && !props.fillParent)
 
@@ -338,6 +341,7 @@ function focus() {
 function openSearch() {
   const view = editorView.value
   if (!view) return
+  activeEditorHandle.markActive()
   openSearchPanel(view)
   view.focus()
 }
@@ -471,12 +475,24 @@ function mountEditor() {
     parent: editorHost.value
   })
   attachEditorContextMenuListener(editorView.value)
+  focusInListener = () => {
+    activeEditorHandle.markActive()
+  }
+  editorView.value.dom.addEventListener('focusin', focusInListener)
+}
+
+function handleWailsFind() {
+  if (!activeEditorHandle.isActive()) {
+    return
+  }
+  openSearch()
 }
 
 onMounted(() => {
   mountEditor()
   setupContainerResizeObserver()
   requestEditorRemeasure()
+  window.addEventListener('wails:find', handleWailsFind)
 })
 
 watch(
@@ -520,6 +536,12 @@ watch(isDarkTheme, (darkModeEnabled) => {
 })
 
 onBeforeUnmount(() => {
+  window.removeEventListener('wails:find', handleWailsFind)
+  if (editorView.value && focusInListener) {
+    editorView.value.dom.removeEventListener('focusin', focusInListener)
+    focusInListener = null
+  }
+  activeEditorHandle.clear()
   closeContextMenu()
   stopResize()
   cleanupContainerResizeObserver()
@@ -547,12 +569,12 @@ defineExpose({
   --json-editor-popup-bg: #ffffff;
   --json-editor-popup-border: rgba(148, 163, 184, 0.35);
   --json-editor-active-line: rgba(15, 23, 42, 0.06);
-  --json-editor-selected-item: rgba(13, 148, 136, 0.18);
-  --json-editor-selection-bg: rgba(13, 148, 136, 0.24);
+  --json-editor-selected-item: rgba(37, 99, 235, 0.18);
+  --json-editor-selection-bg: rgba(37, 99, 235, 0.24);
   --json-editor-text: #0f172a;
   --json-editor-gutter-text: #64748b;
-  --json-editor-active-gutter-text: #0f766e;
-  --json-editor-active-gutter-bg: rgba(20, 184, 166, 0.16);
+  --json-editor-active-gutter-text: #1d4ed8;
+  --json-editor-active-gutter-bg: rgba(59, 130, 246, 0.16);
   --json-search-panel-bg: var(--json-editor-popup-bg);
   --json-search-panel-border: rgba(148, 163, 184, 0.15);
   --json-search-input-bg: #ffffff;
@@ -562,7 +584,7 @@ defineExpose({
   --json-search-input-focus-ring: rgba(139, 92, 246, 0.18);
   --json-search-button-bg: rgba(0, 0, 0, 0.05);
   --json-search-button-border: rgba(148, 163, 184, 0.35);
-  --json-search-button-hover: rgba(20, 184, 166, 0.12);
+  --json-search-button-hover: rgba(59, 130, 246, 0.12);
   --json-search-checkbox-border: rgba(100, 116, 139, 0.6);
   --json-search-muted: #64748b;
 }
@@ -573,13 +595,13 @@ defineExpose({
   --json-editor-border: rgba(148, 163, 184, 0.22);
   --json-editor-popup-bg: var(--color-gray-850);
   --json-editor-popup-border: rgba(148, 163, 184, 0.28);
-  --json-editor-active-line: rgba(13, 148, 136, 0.09);
-  --json-editor-selected-item: rgba(13, 148, 136, 0.25);
-  --json-editor-selection-bg: rgba(20, 184, 166, 0.34);
+  --json-editor-active-line: rgba(37, 99, 235, 0.09);
+  --json-editor-selected-item: rgba(37, 99, 235, 0.25);
+  --json-editor-selection-bg: rgba(59, 130, 246, 0.34);
   --json-editor-text: #e5e7eb;
   --json-editor-gutter-text: #6b7280;
-  --json-editor-active-gutter-text: #5eead4;
-  --json-editor-active-gutter-bg: rgba(20, 184, 166, 0.18);
+  --json-editor-active-gutter-text: #93c5fd;
+  --json-editor-active-gutter-bg: rgba(59, 130, 246, 0.18);
   --json-search-panel-bg: var(--json-editor-popup-bg);
   --json-search-panel-border: rgba(148, 163, 184, 0.1);
   --json-search-input-bg: #ffffff;
@@ -589,7 +611,7 @@ defineExpose({
   --json-search-input-focus-ring: rgba(139, 92, 246, 0.2);
   --json-search-button-bg: rgba(255, 255, 255, 0.08);
   --json-search-button-border: rgba(148, 163, 184, 0.28);
-  --json-search-button-hover: rgba(20, 184, 166, 0.18);
+  --json-search-button-hover: rgba(59, 130, 246, 0.18);
   --json-search-checkbox-border: rgba(148, 163, 184, 0.45);
   --json-search-muted: #9ca3af;
 }
@@ -599,13 +621,13 @@ defineExpose({
   font-family: 'JetBrains Mono', 'Fira Code', 'SFMono-Regular', ui-monospace, Menlo, monospace;
   font-size: calc(13.5px * var(--json-ui-scale));
   line-height: 1.5;
-  caret-color: #2dd4bf;
+  caret-color: #60a5fa;
   background: var(--json-editor-bg);
   color: var(--json-editor-text);
 }
 
 :deep(.cm-cursor, .cm-dropCursor) {
-  border-left-color: #2dd4bf !important;
+  border-left-color: #60a5fa !important;
 }
 
 :deep(.cm-content) {
@@ -730,8 +752,8 @@ defineExpose({
 }
 
 :deep(.cm-panel.cm-search input[type='checkbox']:checked) {
-  background: #14b8a6;
-  border-color: #14b8a6;
+  background: #3b82f6;
+  border-color: #3b82f6;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' d='M2 6l3 3 5-5'/%3E%3C/svg%3E");
   background-size: calc(9px * var(--json-ui-scale));
   background-position: center;
@@ -739,7 +761,7 @@ defineExpose({
 }
 
 :deep(.cm-panel.cm-search input[type='checkbox']:focus-visible) {
-  outline: 2px solid rgba(20, 184, 166, 0.45);
+  outline: 2px solid rgba(59, 130, 246, 0.45);
   outline-offset: 1px;
 }
 
@@ -759,7 +781,7 @@ defineExpose({
 
 :deep(.cm-panel.cm-search .cm-button:hover) {
   background: var(--json-search-button-hover);
-  border-color: rgba(20, 184, 166, 0.4);
+  border-color: rgba(59, 130, 246, 0.4);
 }
 
 :deep(.cm-panel.cm-search [name='close']) {
@@ -808,7 +830,7 @@ defineExpose({
 }
 
 .json-code-resize-grip:hover {
-  color: rgba(20, 184, 166, 0.9);
+  color: rgba(59, 130, 246, 0.9);
 }
 
 :global(.dark) .json-code-resize-grip {
@@ -816,6 +838,6 @@ defineExpose({
 }
 
 :global(.dark) .json-code-resize-grip:hover {
-  color: rgba(45, 212, 191, 0.95);
+  color: rgba(96, 165, 250, 0.95);
 }
 </style>

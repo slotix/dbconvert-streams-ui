@@ -194,29 +194,29 @@ function cancelAndClose() {
         <!-- Edit actions -->
         <button
           type="button"
-          class="ui-accent-action ui-accent-text w-full text-left px-3 py-2 text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between"
+          class="w-full text-left px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-(--ui-surface-muted) disabled:opacity-50 disabled:cursor-not-allowed dark:text-gray-300 flex items-center justify-between"
           :disabled="!canEditCell"
           @click="editCellAndClose"
         >
           <span>Edit cell</span>
-          <span class="ml-4 text-xs opacity-60">Enter</span>
+          <span class="ml-4 text-xs text-gray-400 dark:text-gray-500">Enter</span>
         </button>
         <button
           v-if="canRevertCell"
           type="button"
-          class="ui-accent-action ui-accent-text w-full px-3 py-2 text-left text-sm transition-colors flex items-center justify-between"
+          class="w-full px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-(--ui-surface-muted) dark:text-gray-300 flex items-center justify-between"
           @click="revertCellAndClose"
         >
           <span>Revert cell</span>
-          <span class="ml-4 text-xs opacity-60">{{ metaKey }}Z</span>
+          <span class="ml-4 text-xs text-gray-400 dark:text-gray-500">{{ metaKey }}Z</span>
         </button>
         <button
           type="button"
-          class="ui-accent-action ui-accent-text w-full text-left px-3 py-2 text-sm transition-colors flex items-center justify-between"
+          class="w-full text-left px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-(--ui-surface-muted) dark:text-gray-300 flex items-center justify-between"
           @click="addRowAndClose"
         >
           <span>Add row</span>
-          <span class="ml-4 text-xs opacity-60">{{ metaKey }}I</span>
+          <span class="ml-4 text-xs text-gray-400 dark:text-gray-500">{{ metaKey }}I</span>
         </button>
         <button
           type="button"
@@ -248,10 +248,10 @@ function cancelAndClose() {
           </button>
           <button
             type="button"
-            class="w-full text-left px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-(--ui-surface-muted) dark:text-gray-300"
+            class="w-full text-left px-3 py-2 text-sm text-red-600 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
             @click="cancelAndClose"
           >
-            Discard changes
+            Cancel
           </button>
         </template>
       </template>

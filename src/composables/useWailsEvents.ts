@@ -168,6 +168,9 @@ export function initializeWailsEventBridge(router: Router, pinia: Pinia) {
       }),
       eventsOn('menu:show-about', () => {
         window.dispatchEvent(new CustomEvent('wails:show-about'))
+      }),
+      eventsOn('menu:find', () => {
+        window.dispatchEvent(new CustomEvent('wails:find'))
       })
     ])
   }

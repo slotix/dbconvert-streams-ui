@@ -87,7 +87,7 @@
               :disabled="!dirty"
               @click="applyFilters"
             >
-              <Play class="w-3.5 h-3.5" />
+              <Check class="w-3.5 h-3.5" />
               Apply
             </button>
           </div>
@@ -99,7 +99,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
-import { ArrowUpDown, Columns2, Play, Plus } from 'lucide-vue-next'
+import { ArrowUpDown, Check, Columns2, Plus } from 'lucide-vue-next'
 import type { ColDef, SortModelItem } from 'ag-grid-community'
 import { useObjectTabStateStore, type FilterConfig, type SortConfig } from '@/stores/objectTabState'
 import {

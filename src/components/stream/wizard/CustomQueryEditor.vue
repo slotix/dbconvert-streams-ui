@@ -90,6 +90,15 @@
               />
               <button
                 type="button"
+                class="ui-surface-raised ui-border-default ui-accent-action inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors shadow-sm dark:text-gray-300"
+                title="Find in SQL (Ctrl+F)"
+                @click="openEditorFind"
+              >
+                <Search class="w-4 h-4" />
+                <span>Find</span>
+              </button>
+              <button
+                type="button"
                 class="ui-accent-primary inline-flex items-center gap-1.5 rounded-md border px-4 py-1.5 text-sm font-medium transition-colors shadow-sm"
                 title="Preview query results"
                 :disabled="isRunning === activeQueryIndex || !activeQuery.query?.trim()"
@@ -112,6 +121,7 @@
             :style="{ width: `${editorWidth}%` }"
           >
             <SqlCodeMirror
+              ref="sqlEditorRef"
               v-model="activeQuery.query"
               :dialect="connectionDialect"
               :lsp-context="sqlLspContext"
@@ -252,9 +262,11 @@ import {
   FileText,
   Play,
   RefreshCw,
+  Search,
   Sheet
 } from 'lucide-vue-next'
 import SqlCodeMirror from '@/components/codemirror/SqlCodeMirror.vue'
+import type { SqlCodeMirrorExpose } from '@/components/codemirror/sqlCodeMirrorTypes'
 import { SqlQueryTabs, SqlTemplatePicker } from '@/components/database/sql-console'
 import { useStreamsStore } from '@/stores/streamConfig'
 import { useConnectionsStore } from '@/stores/connections'
@@ -289,6 +301,7 @@ const emit = defineEmits<{
 
 const streamsStore = useStreamsStore()
 const connectionsStore = useConnectionsStore()
+const sqlEditorRef = ref<SqlCodeMirrorExpose | null>(null)
 
 // Context-aware template sources
 const templateSources = computed<FederatedTemplateSource[]>(() =>
@@ -313,6 +326,10 @@ function handleTemplateSelect(query: string) {
     activeQuery.value.validated = false
     activeQuery.value.columns = undefined
   }
+}
+
+function openEditorFind() {
+  sqlEditorRef.value?.openSearchPanel?.()
 }
 
 // Federated execution needed when multiple DB sources or mixed DB+file sources

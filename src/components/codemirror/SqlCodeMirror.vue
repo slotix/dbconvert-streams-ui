@@ -40,6 +40,7 @@ import {
 import { basicSetup } from 'codemirror'
 import { Compartment, EditorState } from '@codemirror/state'
 import { EditorView, keymap } from '@codemirror/view'
+import { openSearchPanel, search, searchKeymap } from '@codemirror/search'
 import { sql, MySQL, PostgreSQL } from '@codemirror/lang-sql'
 import { sqlDarkThemeExtension, sqlLightThemeExtension } from './sqlHighlightStyle'
 import { type Diagnostic, setDiagnostics } from '@codemirror/lint'
@@ -66,6 +67,7 @@ import {
   shouldTriggerClauseCompletion,
   shouldTriggerDuckDBReadArgumentCompletion
 } from './sqlCodeMirrorCompletionUtils'
+import { createCodeMirrorActiveEditorHandle } from './codeMirrorActiveEditor'
 import { useCodeMirrorContextMenu } from './useCodeMirrorContextMenu'
 import { useSqlCodeMirrorLspSession } from './useSqlCodeMirrorLspSession'
 import { useSqlCodeMirrorTooltips } from './useSqlCodeMirrorTooltips'
@@ -123,6 +125,7 @@ const editorHost = ref<HTMLElement | null>(null)
 const editorView = shallowRef<EditorView | null>(null)
 const themeStore = useThemeStore()
 const commonStore = useCommonStore()
+const activeEditorHandle = createCodeMirrorActiveEditorHandle()
 
 const languageCompartment = new Compartment()
 const readOnlyCompartment = new Compartment()
@@ -137,6 +140,7 @@ let suppressModelSync = false
 let cachedSelectionRange: SqlCodeMirrorSelectionRange | null = null
 let lastSelectionState: boolean | null = null
 let lspUnavailableWarningShown = false
+let focusInListener: (() => void) | null = null
 const textDocumentUri = `inmemory://sql/${Date.now()}-${Math.random().toString(36).slice(2)}`
 
 const lspContextSignature = computed(() => getSqlLspConnectionContextSignature(props.lspContext))
@@ -601,15 +605,23 @@ function createEditorState() {
         startCompletion(view)
         return true
       }
-    }
+    },
+    {
+      key: 'Mod-f',
+      scope: 'editor search-panel',
+      preventDefault: true,
+      run: openSearchPanel
+    },
+    ...searchKeymap
   ])
 
   return EditorState.create({
     doc: props.modelValue || '',
     extensions: [
-      basicSetup,
-      editorLayout,
       keymaps,
+      basicSetup,
+      search(),
+      editorLayout,
       languageCompartment.of(getLanguageExtension()),
       readOnlyCompartment.of(EditorState.readOnly.of(props.readOnly)),
       themeCompartment.of(getThemeExtension(resolveDarkMode())),
@@ -675,6 +687,10 @@ function recreateEditor() {
     parent: editorHost.value
   })
   editorView.value = view
+  focusInListener = () => {
+    activeEditorHandle.markActive()
+  }
+  view.dom.addEventListener('focusin', focusInListener)
   attachHoverDomListeners(view)
   attachEditorContextMenuListener(view)
 
@@ -773,13 +789,37 @@ watch(lspReady, (ready) => {
   }
 })
 
+function handleWailsFind() {
+  const view = editorView.value
+  if (!view || !activeEditorHandle.isActive()) return
+  openSearchPanel(view)
+  view.focus()
+}
+
+function openSearch() {
+  const view = editorView.value
+  if (!view) {
+    return
+  }
+  activeEditorHandle.markActive()
+  openSearchPanel(view)
+  view.focus()
+}
+
 onMounted(() => {
   recreateEditor()
   connectLspSession()
   refreshLspCompartment()
+  window.addEventListener('wails:find', handleWailsFind)
 })
 
 onBeforeUnmount(() => {
+  window.removeEventListener('wails:find', handleWailsFind)
+  if (editorView.value && focusInListener) {
+    editorView.value.dom.removeEventListener('focusin', focusInListener)
+    focusInListener = null
+  }
+  activeEditorHandle.clear()
   closeContextMenu()
   disconnectLspSession()
   disposeTooltips(editorView.value)
@@ -796,7 +836,8 @@ defineExpose({
   getSelectedSql,
   getCachedSelectionRange,
   formatDocumentWithLsp,
-  goToDefinitionAtPosition
+  goToDefinitionAtPosition,
+  openSearchPanel: openSearch
 })
 </script>
 

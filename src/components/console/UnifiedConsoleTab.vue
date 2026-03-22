@@ -31,12 +31,13 @@
       <!-- Settings gear (always visible) -->
       <button
         type="button"
-        class="sources-inline-trigger group shrink-0 inline-flex items-center p-0.5"
-        title="Edit sources"
-        aria-label="Edit sources"
+        class="sources-inline-trigger ui-accent-text group shrink-0 inline-flex items-center gap-1 rounded px-1 py-1 text-xs font-medium transition-opacity hover:opacity-80 focus:outline-none"
+        title="Manage sources"
+        aria-label="Manage sources"
         @click="isSourceDrawerOpen = true"
       >
         <Settings class="sources-settings-icon" />
+        <span>Manage sources</span>
       </button>
     </div>
 
@@ -55,6 +56,13 @@
       @reopen-closed-tab="reopenQueryTab"
     />
 
+    <!-- Unified Toolbar -->
+    <div
+      class="@container/toolbar ui-surface-toolbar ui-border-default flex items-center gap-1.5 border-b px-2.5 py-1.5 @[620px]/toolbar:gap-2 @[620px]/toolbar:px-3"
+    >
+      <span :id="editorToolbarId" class="contents"></span>
+    </div>
+
     <!-- Main Content Area -->
     <div ref="splitContainerRef" class="flex-1 flex overflow-hidden min-h-0">
       <!-- Editor Pane -->
@@ -71,6 +79,7 @@
           :format-state="formatState"
           :templates="queryTemplates"
           :history="queryHistory"
+          :toolbar-target="`#${editorToolbarId}`"
           @execute="handleExecute"
           @format="handleFormatRequest"
           @select-template="insertTemplate"
@@ -170,6 +179,7 @@ const connectionsStore = useConnectionsStore()
 const confirmDialogStore = useConfirmDialogStore()
 const paneTabsStore = usePaneTabsStore()
 const isSourceDrawerOpen = ref(false)
+const editorToolbarId = `tb-${Math.random().toString(36).slice(2, 8)}`
 const { pillsContainerRef, overflowCount, recomputePillOverflow, setupPillsObserver } =
   useSourcePillsOverflow()
 
@@ -448,36 +458,17 @@ defineExpose({
 }
 
 .sources-inline-trigger {
-  border: 0;
-  background: transparent;
   cursor: pointer;
-}
-
-.sources-inline-trigger:focus-visible {
-  outline: 2px solid #14b8a6;
-  outline-offset: 2px;
-  border-radius: 0.375rem;
+  transition: transform 140ms ease;
 }
 
 .sources-settings-icon {
   width: 1rem;
   height: 1rem;
-  color: #0f766e;
-  transition:
-    color 140ms ease,
-    transform 140ms ease;
-}
-
-:global(.dark) .sources-settings-icon {
-  color: #5eead4;
+  transition: transform 140ms ease;
 }
 
 .sources-inline-trigger:hover .sources-settings-icon {
-  color: #0d9488;
   transform: rotate(30deg);
-}
-
-:global(.dark) .sources-inline-trigger:hover .sources-settings-icon {
-  color: #99f6e4;
 }
 </style>

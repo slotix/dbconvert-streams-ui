@@ -89,6 +89,8 @@
     "vue-tsc": "^3.2.5"
   },
   "resolutions": {
-    "postcss": "^8.5.8"
+    "postcss": "^8.5.8",
+    "@codemirror/state": "6.6.0",
+    "@codemirror/view": "6.40.0"
   }
 }

@@ -122,6 +122,30 @@ if (isWailsContext()) {
   })
 }
 
+const isCodeMirrorFocusTarget = (target: EventTarget | null): target is HTMLElement => {
+  return target instanceof HTMLElement && Boolean(target.closest('.cm-editor, .cm-panels'))
+}
+
+document.addEventListener(
+  'keydown',
+  (event) => {
+    if (event.defaultPrevented || event.altKey || event.shiftKey) {
+      return
+    }
+    if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== 'f') {
+      return
+    }
+    if (!isCodeMirrorFocusTarget(event.target)) {
+      return
+    }
+
+    event.preventDefault()
+    event.stopPropagation()
+    window.dispatchEvent(new CustomEvent('wails:find'))
+  },
+  true
+)
+
 const restoreDesktopRoute = async () => {
   const currentRoute = router.currentRoute.value
   // Skip if already on a non-overview route (e.g., navigated via URL)

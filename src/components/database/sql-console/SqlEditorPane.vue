@@ -1,234 +1,253 @@
 <template>
   <div class="flex flex-col min-h-0 h-full">
     <!-- Toolbar -->
-    <div
-      class="@container/toolbar ui-surface-toolbar ui-border-default flex items-center gap-1.5 border-b px-2.5 py-1.5 @[620px]/toolbar:gap-2 @[620px]/toolbar:px-3"
-    >
-      <button
-        :disabled="isExecuting"
-        :title="`Run query (${runShortcutHint})`"
-        class="ui-accent-primary inline-flex items-center whitespace-nowrap rounded border px-3 py-1.5 text-xs font-medium shadow-sm focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-        @click="handleRunClick"
+    <Teleport :to="toolbarTarget ?? 'body'" :disabled="!toolbarTarget" defer>
+      <div
+        :class="
+          toolbarTarget
+            ? 'contents'
+            : '@container/toolbar ui-surface-toolbar ui-border-default flex items-center gap-1.5 border-b px-2.5 py-1.5 @[620px]/toolbar:gap-2 @[620px]/toolbar:px-3'
+        "
       >
-        <Play class="h-3.5 w-3.5 mr-1.5" />
-        {{ isExecuting ? 'Running...' : hasSelectedSql ? 'Run selected' : 'Run' }}
-      </button>
-
-      <div ref="formatDropdownRef" class="relative inline-flex">
         <button
-          :disabled="isFormatClickDebounced"
-          class="ui-surface-raised ui-border-default ui-accent-focus inline-flex items-center rounded-l border border-r-0 px-2 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-(--ui-surface-muted) focus:outline-none dark:text-gray-300"
-          :title="formatButtonTitle"
-          @click="handleFormatClick"
+          :disabled="isExecuting"
+          :title="`Run query (${runShortcutHint})`"
+          class="ui-accent-primary inline-flex items-center whitespace-nowrap rounded border px-3 py-1.5 text-xs font-medium shadow-sm focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+          @click="handleRunClick"
         >
-          <Wand2 class="h-3.5 w-3.5" />
-          <span class="ml-1 hidden @[620px]/toolbar:inline">Format</span>
+          <Play class="h-3.5 w-3.5 mr-1.5" />
+          {{ isExecuting ? 'Running...' : hasSelectedSql ? 'Run selected' : 'Run' }}
         </button>
 
-        <button
-          :disabled="isFormatClickDebounced"
-          class="ui-surface-raised ui-border-default ui-accent-focus inline-flex items-center justify-center rounded-r border px-2 py-1.5 text-gray-600 shadow-sm hover:bg-(--ui-surface-muted) focus:outline-none dark:text-gray-300"
-          :class="formatState === 'compacted' ? 'ui-accent-text' : ''"
-          :title="'More formatting options'"
-          @click.stop="toggleFormatMenu"
-        >
-          <ChevronDown class="h-3.5 w-3.5" />
-        </button>
-
-        <div
-          v-if="showFormatMenu"
-          ref="formatMenuRef"
-          class="ui-surface-floating ui-border-default absolute left-0 top-full z-210 mt-1 min-w-[140px] overflow-hidden rounded-md border"
-        >
+        <div ref="formatDropdownRef" class="relative inline-flex">
           <button
-            type="button"
-            class="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-200"
-            :title="compactButtonTitle"
-            @click="handleCompactClick"
+            :disabled="isFormatClickDebounced"
+            class="ui-surface-raised ui-border-default ui-accent-focus inline-flex items-center rounded-l border border-r-0 px-2 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-(--ui-surface-muted) focus:outline-none dark:text-gray-300"
+            :title="formatButtonTitle"
+            @click="handleFormatClick"
           >
-            <AlignJustify class="h-3.5 w-3.5" />
-            <span>Compact</span>
+            <Wand2 class="h-3.5 w-3.5" />
+            <span class="ml-1 hidden @[620px]/toolbar:inline">Format</span>
+          </button>
+
+          <button
+            :disabled="isFormatClickDebounced"
+            class="ui-surface-raised ui-border-default ui-accent-focus inline-flex items-center justify-center rounded-r border px-2 py-1.5 text-gray-600 shadow-sm hover:bg-(--ui-surface-muted) focus:outline-none dark:text-gray-300"
+            :class="formatState === 'compacted' ? 'ui-accent-text' : ''"
+            :title="'More formatting options'"
+            @click.stop="toggleFormatMenu"
+          >
+            <ChevronDown class="h-3.5 w-3.5" />
+          </button>
+
+          <div
+            v-if="showFormatMenu"
+            ref="formatMenuRef"
+            class="ui-surface-floating ui-border-default absolute left-0 top-full z-210 mt-1 min-w-[140px] overflow-hidden rounded-md border"
+          >
+            <button
+              type="button"
+              class="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-gray-700 hover:bg-(--ui-surface-muted) dark:text-gray-200"
+              :title="compactButtonTitle"
+              @click="handleCompactClick"
+            >
+              <AlignJustify class="h-3.5 w-3.5" />
+              <span>Compact</span>
+            </button>
+          </div>
+        </div>
+
+        <button
+          :disabled="!hasQueryToCopy"
+          class="ui-surface-raised ui-border-default ui-accent-focus inline-flex items-center rounded border px-2 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-(--ui-surface-muted) focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-300"
+          :title="isCopyFeedbackVisible ? 'Copied' : 'Copy SQL'"
+          @click="copyCurrentQuery"
+        >
+          <Check v-if="isCopyFeedbackVisible" class="ui-accent-icon h-3.5 w-3.5" />
+          <Copy v-else class="h-3.5 w-3.5" />
+        </button>
+
+        <button
+          type="button"
+          class="ui-surface-raised ui-border-default ui-accent-focus inline-flex items-center rounded border px-2 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-(--ui-surface-muted) focus:outline-none dark:text-gray-300"
+          title="Find in SQL (Ctrl+F)"
+          @click="openEditorFind"
+        >
+          <Search class="h-3.5 w-3.5 @[620px]/toolbar:mr-1" />
+          <span class="hidden @[620px]/toolbar:inline">Find</span>
+        </button>
+
+        <!-- Divider -->
+        <div class="ui-border-default mx-1 h-5 w-px bg-[var(--ui-border-default)]"></div>
+
+        <!-- Templates Dropdown -->
+        <div v-if="templates.length > 0" ref="templatesDropdownRef" class="relative">
+          <button
+            class="ui-surface-raised ui-border-default ui-accent-focus inline-flex items-center rounded border px-2 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-(--ui-surface-muted) focus:outline-none dark:text-gray-300"
+            :title="`Open template picker (${shortcutHint})`"
+            @click="toggleTemplates"
+          >
+            <FileText class="h-3.5 w-3.5 @[620px]/toolbar:mr-1" />
+            <span class="hidden @[620px]/toolbar:inline">Templates</span>
+            <ChevronDown class="h-3 w-3 ml-0.5 @[620px]/toolbar:ml-1" />
           </button>
         </div>
-      </div>
+        <SqlTemplatePicker
+          ref="templatePickerRef"
+          :templates="templates"
+          :dialect="dialect"
+          :trigger-ref="templatesDropdownRef"
+          @select="selectTemplate"
+        />
 
-      <button
-        :disabled="!hasQueryToCopy"
-        class="ui-surface-raised ui-border-default ui-accent-focus inline-flex items-center rounded border px-2 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-(--ui-surface-muted) focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-300"
-        :title="isCopyFeedbackVisible ? 'Copied' : 'Copy SQL'"
-        @click="copyCurrentQuery"
-      >
-        <Check v-if="isCopyFeedbackVisible" class="ui-accent-icon h-3.5 w-3.5" />
-        <Copy v-else class="h-3.5 w-3.5" />
-      </button>
-
-      <!-- Divider -->
-      <div class="ui-border-default mx-1 h-5 w-px bg-[var(--ui-border-default)]"></div>
-
-      <!-- Templates Dropdown -->
-      <div v-if="templates.length > 0" ref="templatesDropdownRef" class="relative">
-        <button
-          class="ui-surface-raised ui-border-default ui-accent-focus inline-flex items-center rounded border px-2 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-(--ui-surface-muted) focus:outline-none dark:text-gray-300"
-          :title="`Open template picker (${shortcutHint})`"
-          @click="toggleTemplates"
-        >
-          <FileText class="h-3.5 w-3.5 @[620px]/toolbar:mr-1" />
-          <span class="hidden @[620px]/toolbar:inline">Templates</span>
-          <ChevronDown class="h-3 w-3 ml-0.5 @[620px]/toolbar:ml-1" />
-        </button>
-      </div>
-      <SqlTemplatePicker
-        ref="templatePickerRef"
-        :templates="templates"
-        :dialect="dialect"
-        :trigger-ref="templatesDropdownRef"
-        @select="selectTemplate"
-      />
-
-      <!-- History Dropdown -->
-      <div ref="historyDropdownRef" class="relative">
-        <button
-          class="ui-surface-raised ui-border-default ui-accent-focus inline-flex items-center rounded border px-2 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-(--ui-surface-muted) focus:outline-none dark:text-gray-300"
-          :disabled="history.length === 0"
-          :class="{ 'opacity-50 cursor-not-allowed': history.length === 0 }"
-          :title="historyButtonTitle"
-          @click="toggleHistory"
-        >
-          <Clock class="h-3.5 w-3.5 @[620px]/toolbar:mr-1" />
-          <span class="hidden @[620px]/toolbar:inline">History</span>
-          <span v-if="history.length > 0" class="ml-1 text-gray-400 hidden @[620px]/toolbar:inline">
-            ({{ history.length }})
-          </span>
-          <span
-            v-if="history.length > 0"
-            class="ui-chip-muted ml-1 rounded-full px-1.5 py-0.5 text-[10px] leading-none @[620px]/toolbar:hidden"
+        <!-- History Dropdown -->
+        <div ref="historyDropdownRef" class="relative">
+          <button
+            class="ui-surface-raised ui-border-default ui-accent-focus inline-flex items-center rounded border px-2 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-(--ui-surface-muted) focus:outline-none dark:text-gray-300"
+            :disabled="history.length === 0"
+            :class="{ 'opacity-50 cursor-not-allowed': history.length === 0 }"
+            :title="historyButtonTitle"
+            @click="toggleHistory"
           >
-            {{ history.length }}
-          </span>
-        </button>
-      </div>
-      <Teleport to="body">
-        <div
-          v-if="showHistory && history.length > 0"
-          ref="historyMenuRef"
-          class="ui-surface-floating ui-border-default z-210 flex flex-col overflow-hidden rounded-lg border"
-          :style="historyMenuStyle"
-        >
-          <div class="ui-border-default border-b px-3 pt-2.5 pb-2">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-semibold text-gray-700 dark:text-gray-300">History</span>
-              <span class="text-[10px] text-gray-500 dark:text-gray-400">
-                {{ filteredHistory.length }} / {{ history.length }}
-              </span>
-            </div>
-            <div class="mt-2 relative">
-              <Search
-                class="h-3.5 w-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"
-              />
-              <input
-                ref="historySearchInputRef"
-                v-model="historySearch"
-                type="text"
-                placeholder="Search history..."
-                class="ui-surface-raised ui-border-default ui-accent-focus w-full rounded-md border py-1.5 pl-8 pr-2 text-xs text-gray-900 focus:outline-none dark:text-gray-100"
-              />
-            </div>
-          </div>
-          <div class="min-h-0 flex-1 overflow-y-auto p-1.5 pb-3" role="list">
-            <div
-              v-for="(item, index) in filteredHistory"
-              :key="historyKey(item, index)"
-              class="group relative mb-1 flex items-center gap-2 rounded-md border border-transparent px-2 py-1.5 transition-colors hover:bg-(--ui-surface-muted) hover:border-(--ui-border-default)"
-              :class="{
-                'ui-accent-selection-checked':
-                  mostRecentHistoryId && item.id === mostRecentHistoryId,
-                'font-semibold': item.pinned
-              }"
-              role="listitem"
-              tabindex="0"
-              @click="selectHistoryItem(item)"
-              @keydown.enter.prevent="selectHistoryItem(item)"
-              @keydown.space.prevent="selectHistoryItem(item)"
+            <Clock class="h-3.5 w-3.5 @[620px]/toolbar:mr-1" />
+            <span class="hidden @[620px]/toolbar:inline">History</span>
+            <span
+              v-if="history.length > 0"
+              class="ml-1 text-gray-400 hidden @[620px]/toolbar:inline"
             >
-              <span
-                class="ui-tab-indicator absolute left-0 top-1 bottom-1 w-0.5 rounded-full opacity-0 group-hover:opacity-70"
-                :class="{ 'opacity-100': mostRecentHistoryId && item.id === mostRecentHistoryId }"
-              />
-              <span class="shrink-0 text-[10px] text-gray-500 dark:text-gray-400 w-[74px]">
-                {{ formatHistoryTime(item.timestamp) }}
-              </span>
-              <span
-                class="min-w-0 flex-1 font-mono text-[12px] leading-5 text-gray-700 dark:text-gray-300 truncate"
-              >
-                {{ historyQueryPreview(item.query) }}
-              </span>
-              <span
-                class="ui-chip-muted ui-border-default shrink-0 rounded-full border px-1.5 py-0.5 text-[10px] leading-none"
-              >
-                {{ historyAliasBadge(item) }}
-              </span>
-              <span
-                class="shrink-0 inline-flex items-center gap-0.5 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity"
-              >
-                <button
-                  type="button"
-                  class="ui-accent-action p-1 rounded text-gray-500"
-                  title="Re-run"
-                  @click.stop="rerunHistoryItem(item)"
-                >
-                  <Play class="h-3.5 w-3.5" />
-                </button>
-                <button
-                  type="button"
-                  class="rounded p-1 text-gray-500 hover:bg-[var(--ui-surface-muted)] hover:text-gray-700 dark:hover:text-gray-200"
-                  title="Copy SQL"
-                  @click.stop="copyHistoryQuery(item)"
-                >
-                  <Copy class="h-3.5 w-3.5" />
-                </button>
-                <button
-                  type="button"
-                  class="p-1 rounded text-gray-500 hover:text-amber-500 hover:bg-amber-100/70 dark:hover:bg-amber-900/25"
-                  :title="item.pinned ? 'Unpin' : 'Pin'"
-                  @click.stop="toggleHistoryPin(item)"
-                >
-                  <Pin
-                    class="h-3.5 w-3.5"
-                    :class="{ 'fill-current text-amber-500': item.pinned }"
-                  />
-                </button>
-                <button
-                  type="button"
-                  class="p-1 rounded text-gray-500 hover:text-blue-600 hover:bg-blue-100/70 dark:hover:text-blue-300 dark:hover:bg-blue-900/30"
-                  title="Open in new tab"
-                  @click.stop="openHistoryNewTab(item)"
-                >
-                  <ExternalLink class="h-3.5 w-3.5" />
-                </button>
-                <button
-                  type="button"
-                  class="p-1 rounded text-gray-500 hover:text-red-600 hover:bg-red-100/70 dark:hover:text-red-300 dark:hover:bg-red-900/25"
-                  title="Delete from history"
-                  @click.stop="deleteHistoryItem(item)"
-                >
-                  <Trash2 class="h-3.5 w-3.5" />
-                </button>
-              </span>
-            </div>
-
-            <div
-              v-if="filteredHistory.length === 0"
-              class="px-2 py-3 text-xs text-gray-500 dark:text-gray-400"
+              ({{ history.length }})
+            </span>
+            <span
+              v-if="history.length > 0"
+              class="ui-chip-muted ml-1 rounded-full px-1.5 py-0.5 text-[10px] leading-none @[620px]/toolbar:hidden"
             >
-              No history matches "{{ historySearch }}".
-            </div>
-            <div aria-hidden="true" class="h-2"></div>
-          </div>
+              {{ history.length }}
+            </span>
+          </button>
         </div>
-      </Teleport>
+        <Teleport to="body">
+          <div
+            v-if="showHistory && history.length > 0"
+            ref="historyMenuRef"
+            class="ui-surface-floating ui-border-default z-210 flex flex-col overflow-hidden rounded-lg border"
+            :style="historyMenuStyle"
+          >
+            <div class="ui-border-default border-b px-3 pt-2.5 pb-2">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-gray-700 dark:text-gray-300">History</span>
+                <span class="text-[10px] text-gray-500 dark:text-gray-400">
+                  {{ filteredHistory.length }} / {{ history.length }}
+                </span>
+              </div>
+              <div class="mt-2 relative">
+                <Search
+                  class="h-3.5 w-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"
+                />
+                <input
+                  ref="historySearchInputRef"
+                  v-model="historySearch"
+                  type="text"
+                  placeholder="Search history..."
+                  class="ui-surface-raised ui-border-default ui-accent-focus w-full rounded-md border py-1.5 pl-8 pr-2 text-xs text-gray-900 focus:outline-none dark:text-gray-100"
+                />
+              </div>
+            </div>
+            <div class="min-h-0 flex-1 overflow-y-auto p-1.5 pb-3" role="list">
+              <div
+                v-for="(item, index) in filteredHistory"
+                :key="historyKey(item, index)"
+                class="group relative mb-1 flex items-center gap-2 rounded-md border border-transparent px-2 py-1.5 transition-colors hover:bg-(--ui-surface-muted) hover:border-(--ui-border-default)"
+                :class="{
+                  'ui-accent-selection-checked':
+                    mostRecentHistoryId && item.id === mostRecentHistoryId,
+                  'font-semibold': item.pinned
+                }"
+                role="listitem"
+                tabindex="0"
+                @click="selectHistoryItem(item)"
+                @keydown.enter.prevent="selectHistoryItem(item)"
+                @keydown.space.prevent="selectHistoryItem(item)"
+              >
+                <span
+                  class="ui-tab-indicator absolute left-0 top-1 bottom-1 w-0.5 rounded-full opacity-0 group-hover:opacity-70"
+                  :class="{ 'opacity-100': mostRecentHistoryId && item.id === mostRecentHistoryId }"
+                />
+                <span class="shrink-0 text-[10px] text-gray-500 dark:text-gray-400 w-[74px]">
+                  {{ formatHistoryTime(item.timestamp) }}
+                </span>
+                <span
+                  class="min-w-0 flex-1 font-mono text-[12px] leading-5 text-gray-700 dark:text-gray-300 truncate"
+                >
+                  {{ historyQueryPreview(item.query) }}
+                </span>
+                <span
+                  class="ui-chip-muted ui-border-default shrink-0 rounded-full border px-1.5 py-0.5 text-[10px] leading-none"
+                >
+                  {{ historyAliasBadge(item) }}
+                </span>
+                <span
+                  class="shrink-0 inline-flex items-center gap-0.5 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity"
+                >
+                  <button
+                    type="button"
+                    class="ui-accent-action p-1 rounded text-gray-500"
+                    title="Re-run"
+                    @click.stop="rerunHistoryItem(item)"
+                  >
+                    <Play class="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    class="rounded p-1 text-gray-500 hover:bg-[var(--ui-surface-muted)] hover:text-gray-700 dark:hover:text-gray-200"
+                    title="Copy SQL"
+                    @click.stop="copyHistoryQuery(item)"
+                  >
+                    <Copy class="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    class="p-1 rounded text-gray-500 hover:text-amber-500 hover:bg-amber-100/70 dark:hover:bg-amber-900/25"
+                    :title="item.pinned ? 'Unpin' : 'Pin'"
+                    @click.stop="toggleHistoryPin(item)"
+                  >
+                    <Pin
+                      class="h-3.5 w-3.5"
+                      :class="{ 'fill-current text-amber-500': item.pinned }"
+                    />
+                  </button>
+                  <button
+                    type="button"
+                    class="p-1 rounded text-gray-500 hover:text-blue-600 hover:bg-blue-100/70 dark:hover:text-blue-300 dark:hover:bg-blue-900/30"
+                    title="Open in new tab"
+                    @click.stop="openHistoryNewTab(item)"
+                  >
+                    <ExternalLink class="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    class="p-1 rounded text-gray-500 hover:text-red-600 hover:bg-red-100/70 dark:hover:text-red-300 dark:hover:bg-red-900/25"
+                    title="Delete from history"
+                    @click.stop="deleteHistoryItem(item)"
+                  >
+                    <Trash2 class="h-3.5 w-3.5" />
+                  </button>
+                </span>
+              </div>
 
-      <div class="flex-1"></div>
-    </div>
+              <div
+                v-if="filteredHistory.length === 0"
+                class="px-2 py-3 text-xs text-gray-500 dark:text-gray-400"
+              >
+                No history matches "{{ historySearch }}".
+              </div>
+              <div aria-hidden="true" class="h-2"></div>
+            </div>
+          </div>
+        </Teleport>
+
+        <div v-if="!toolbarTarget" class="flex-1"></div>
+      </div>
+    </Teleport>
 
     <!-- SQL Editor -->
     <div class="ui-surface-app h-full min-h-0 flex-1 overflow-hidden">
@@ -289,6 +308,7 @@ const props = defineProps<{
   formatState?: 'formatted' | 'compacted'
   templates?: Template[]
   history?: HistoryItem[]
+  toolbarTarget?: string
 }>()
 
 const emit = defineEmits<{
@@ -766,6 +786,10 @@ function handleGlobalShortcut(e: KeyboardEvent) {
     e.preventDefault()
     templatePickerRef.value?.open()
   }
+}
+
+function openEditorFind() {
+  sqlEditorRef.value?.openSearchPanel?.()
 }
 
 watch(showHistory, async (isOpen) => {

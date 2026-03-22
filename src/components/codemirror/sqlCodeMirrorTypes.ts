@@ -159,4 +159,5 @@ export interface SqlCodeMirrorExpose {
   getSelectedSql?: () => string
   formatDocumentWithLsp?: () => Promise<boolean> | boolean
   goToDefinitionAtPosition?: (pos: number) => Promise<boolean> | boolean
+  openSearchPanel?: () => void
 }
