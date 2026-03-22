@@ -61,6 +61,16 @@ onMounted(() => {
   void loadSchema(false)
 })
 
+// Watch for external focus changes (e.g., "Show diagram" on a different table while tab is open)
+watch(
+  () => objectTabStateStore.getDiagramSelectedTable(diagramObjectKey.value),
+  (newFocus) => {
+    if (newFocus && newFocus !== localFocusTable.value) {
+      localFocusTable.value = newFocus
+    }
+  }
+)
+
 // Watch for prop changes and reload schema if needed
 watch(
   () => [props.connectionId, props.database],

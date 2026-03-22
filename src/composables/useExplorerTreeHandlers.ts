@@ -10,6 +10,7 @@ import type { useExplorerState } from '@/composables/useExplorerState'
 import type { useExplorerTabManager } from '@/composables/useExplorerTabManager'
 import { parseRoutineName } from '@/utils/routineUtils'
 import { useUnsavedChangesGuard } from '@/composables/useUnsavedChangesGuard'
+import { useObjectTabStateStore } from '@/stores/objectTabState'
 
 type PaneTabsStore = ReturnType<typeof usePaneTabsStore>
 type NavigationStore = ReturnType<typeof useExplorerNavigationStore>
@@ -153,6 +154,12 @@ export function useExplorerTreeHandlers({
 
       // Create a diagram tab
       const tabId = `diagram:${payload.connectionId}:${payload.database}`
+
+      // Persist focus table so DiagramTab picks it up on mount
+      if (payload.focus) {
+        const objectTabStateStore = useObjectTabStateStore()
+        objectTabStateStore.setDiagramSelectedTable(tabId, payload.focus.name)
+      }
 
       paneTabsStore.addTab(
         'left',
