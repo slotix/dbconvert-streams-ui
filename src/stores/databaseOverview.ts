@@ -67,10 +67,21 @@ export const useDatabaseOverviewStore = defineStore('databaseOverview', () => {
    * Get row count for a specific table
    * Prefers exact count (for small tables ≤10k rows) over approximate count
    */
-  function getTableRowCount(tableName: string, connId: string, dbName: string): number | undefined {
+  function getTableRowCount(
+    tableName: string,
+    connId: string,
+    dbName: string,
+    schema?: string
+  ): number | undefined {
     const overview = getOverview(connId, dbName)
     if (!overview?.allTablesByRows) return undefined
-    const table = overview.allTablesByRows.find((t) => t.name === tableName)
+    // Overview stores names as "schema.table" (e.g., "private.actor").
+    // Try schema-qualified match first, then exact match, then suffix match.
+    const fullName = schema ? `${schema}.${tableName}` : tableName
+    const table =
+      overview.allTablesByRows.find((t) => t.name === fullName) ??
+      overview.allTablesByRows.find((t) => t.name === tableName) ??
+      overview.allTablesByRows.find((t) => t.name.endsWith(`.${tableName}`))
     // Prefer exact count (populated for small tables ≤10k rows in backend)
     // Fall back to approximate count for larger tables
     return table?.exactRows ?? table?.approxRows

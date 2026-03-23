@@ -21,10 +21,21 @@ const tableName = computed(() => {
     : (props.tableMeta as SQLTableMeta).name
 })
 
+const tableSchema = computed(() => {
+  return props.isView
+    ? (props.tableMeta as SQLViewMeta).schema
+    : (props.tableMeta as SQLTableMeta).schema
+})
+
 // Get approximate row count from store (reactive)
 const approxRows = computed(() => {
   if (props.isView) return -1 // Views have unknown count (-1)
-  return overviewStore.getTableRowCount(tableName.value, props.connectionId, props.database)
+  return overviewStore.getTableRowCount(
+    tableName.value,
+    props.connectionId,
+    props.database,
+    tableSchema.value || undefined
+  )
 })
 
 // Fetch overview data on mount

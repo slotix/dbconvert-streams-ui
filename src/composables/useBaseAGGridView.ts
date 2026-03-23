@@ -120,6 +120,11 @@ function resolveEffectiveTotalCount(params: {
   const { userLimit, resultTotalCount, currentTotalRowCount } = params
 
   if (!userLimit) {
+    // When skip_count is used, backend returns -1 (or 0 via omitempty).
+    // Preserve the existing known count instead of overwriting with -1/0.
+    if (resultTotalCount <= 0 && currentTotalRowCount > 0) {
+      return currentTotalRowCount
+    }
     return resultTotalCount
   }
 
