@@ -8,6 +8,7 @@ import { Loader2 } from 'lucide-vue-next'
  * Variants:
  * - primary: Main actions (Create, Save, Start) - Teal background
  * - secondary: Supporting actions (Cancel, Back) - White background, gray border
+ * - accent: Active supporting actions (Review, selected state) - Accent-tinted raised surface
  * - danger: Destructive actions (Delete) - White background, red border
  * - ghost: Tertiary actions (Edit, View) - Transparent background
  *
@@ -17,8 +18,8 @@ import { Loader2 } from 'lucide-vue-next'
  * <BaseButton variant="danger" @click="handleDelete">Delete</BaseButton>
  */
 
-type Variant = 'primary' | 'secondary' | 'danger' | 'ghost'
-type Size = 'sm' | 'md' | 'lg'
+type Variant = 'primary' | 'secondary' | 'accent' | 'danger' | 'ghost'
+type Size = 'xs' | 'sm' | 'md' | 'lg'
 
 interface Props {
   variant?: Variant
@@ -50,6 +51,8 @@ const variantClasses: Record<Variant, string> = {
     'ui-accent-primary border disabled:bg-(--ui-surface-inset) disabled:border-(--ui-border-default) disabled:text-(--ui-text-subtle)',
   secondary:
     'ui-surface-raised ui-border-default ui-text-default border hover:bg-(--ui-surface-muted) focus-visible:bg-(--ui-surface-muted) disabled:bg-(--ui-surface-inset) disabled:border-(--ui-border-default) disabled:text-(--ui-text-subtle)',
+  accent:
+    'ui-accent-action-active ui-surface-raised ui-text-default border hover:bg-(--ui-accent-soft-bg-hover) focus-visible:bg-(--ui-accent-soft-bg-hover) disabled:bg-(--ui-surface-inset) disabled:border-(--ui-border-default) disabled:text-(--ui-text-subtle)',
   danger:
     'ui-surface-raised border text-(--ui-danger-text) border-(--ui-danger-soft-border-strong) hover:bg-(--ui-danger-soft-bg) focus-visible:bg-(--ui-danger-soft-bg) focus-visible:border-(--ui-danger-soft-border-strong) disabled:bg-(--ui-surface-inset) disabled:border-(--ui-border-default) disabled:text-(--ui-text-subtle)',
   ghost:
@@ -57,6 +60,7 @@ const variantClasses: Record<Variant, string> = {
 }
 
 const sizeClasses: Record<Size, string> = {
+  xs: 'px-3 py-1.5 text-xs',
   sm: 'px-3 py-1.5 text-sm',
   md: 'px-4 py-2 text-sm',
   lg: 'px-6 py-3 text-base'

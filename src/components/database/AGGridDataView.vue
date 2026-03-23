@@ -28,6 +28,7 @@ import AGGridRowCountControls from '@/components/database/aggrid/AGGridRowCountC
 import { useAgGridRowChangeTracking } from '@/composables/useAgGridRowChangeTracking'
 import { useExactRowCount } from '@/composables/useExactRowCount'
 import { useAgGridSelectionActions } from '@/composables/useAgGridSelectionActions'
+import BaseButton from '@/components/base/BaseButton.vue'
 import { buildRowChangeRows } from '@/utils/rowChangeRows'
 import { PanelLeftOpen, Plus, Trash2, Download, ChevronDown, Filter } from 'lucide-vue-next'
 import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/vue'
@@ -827,28 +828,30 @@ export default {
 
         <!-- Right side: Actions -->
         <div class="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2">
-          <button
+          <BaseButton
             v-if="!isView && isTableEditable"
-            type="button"
-            class="ui-accent-text inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-md border border-(--ui-accent-soft-border-strong) bg-(--ui-accent-soft-bg) px-2.5 py-1 text-xs hover:bg-(--ui-accent-soft-bg-hover) disabled:cursor-not-allowed disabled:opacity-50"
+            variant="secondary"
+            size="xs"
+            class="shrink-0 whitespace-nowrap"
             title="Stage a new row for insert"
             @click="openInsertRowPanelForNew"
           >
             <Plus class="h-3.5 w-3.5" :stroke-width="iconStroke" />
             <span class="badge-text">Add row</span>
-          </button>
+          </BaseButton>
 
-          <button
+          <BaseButton
             v-if="!isView && isTableEditable"
-            type="button"
-            class="ui-status-danger-badge inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-md border px-2.5 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+            variant="danger"
+            size="xs"
+            class="shrink-0 whitespace-nowrap"
             :disabled="baseGrid.selectedRowCount.value === 0"
             title="Stage selected rows for delete (Delete)"
             @click="deleteSelectedRows"
           >
             <Trash2 class="h-3.5 w-3.5" :stroke-width="iconStroke" />
             <span class="badge-text">Delete</span>
-          </button>
+          </BaseButton>
 
           <span
             v-if="baseGrid.selectedRowCount.value > 0"
@@ -860,19 +863,21 @@ export default {
           </span>
 
           <template v-if="hasUnsavedChanges">
-            <button
-              type="button"
-              class="ui-accent-action-active text-xs rounded-md px-2.5 py-1 border inline-flex shrink-0 items-center justify-center gap-1 transition-colors whitespace-nowrap"
+            <BaseButton
+              variant="accent"
+              size="xs"
+              class="shrink-0 whitespace-nowrap"
               title="Review pending changes"
               aria-label="Review pending changes"
               @click="openFirstEditedRowPanel"
             >
               <PanelLeftOpen class="h-3.5 w-3.5 shrink-0" :stroke-width="iconStroke" />
               <span class="badge-text">Review</span>
-            </button>
-            <button
-              type="button"
-              class="ui-accent-primary text-xs rounded-md px-2.5 py-1 border disabled:opacity-50 disabled:cursor-not-allowed shrink-0 whitespace-nowrap"
+            </BaseButton>
+            <BaseButton
+              variant="primary"
+              size="xs"
+              class="shrink-0 whitespace-nowrap"
               title="Save pending changes"
               :disabled="isSaving"
               @click="saveChanges"
@@ -882,16 +887,17 @@ export default {
                   ? 'Saving…'
                   : `Save (${pendingInsertCount + pendingEditCount + pendingDeleteCount})`
               }}
-            </button>
-            <button
-              type="button"
-              class="ui-surface-raised ui-border-default ui-accent-action ui-text-default inline-flex shrink-0 whitespace-nowrap rounded-md border px-2.5 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+            </BaseButton>
+            <BaseButton
+              variant="secondary"
+              size="xs"
+              class="shrink-0 whitespace-nowrap"
               title="Discard pending changes"
               :disabled="isSaving"
               @click="cancelChanges"
             >
               Cancel
-            </button>
+            </BaseButton>
           </template>
 
           <!-- Export dropdown -->

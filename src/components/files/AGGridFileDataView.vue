@@ -24,6 +24,7 @@ import SelectionContextMenu from '@/components/common/SelectionContextMenu.vue'
 import { useAgGridRowChangeTracking } from '@/composables/useAgGridRowChangeTracking'
 import { useAgGridDataViewColumnDefs } from '@/composables/useAgGridDataViewColumnDefs'
 import { useAgGridSelectionActions } from '@/composables/useAgGridSelectionActions'
+import BaseButton from '@/components/base/BaseButton.vue'
 import { buildRowChangeRows } from '@/utils/rowChangeRows'
 import AGGridRowChangesPanel from '@/components/database/aggrid/AGGridRowChangesPanel.vue'
 import AGGridInsertRowPanel from '@/components/database/aggrid/AGGridInsertRowPanel.vue'
@@ -849,28 +850,30 @@ export default {
       </div>
 
       <div class="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2">
-        <button
+        <BaseButton
           v-if="isTableEditable"
-          type="button"
-          class="ui-accent-primary inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-md border px-2.5 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+          variant="secondary"
+          size="xs"
+          class="shrink-0 whitespace-nowrap"
           title="Stage a new row for insert"
           @click="openInsertRowPanelForNew"
         >
           <Plus class="h-3.5 w-3.5" :stroke-width="iconStroke" />
           <span class="badge-text">Add row</span>
-        </button>
+        </BaseButton>
 
-        <button
+        <BaseButton
           v-if="isTableEditable"
-          type="button"
-          class="ui-status-danger-badge inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-md border px-2.5 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+          variant="danger"
+          size="xs"
+          class="shrink-0 whitespace-nowrap"
           :disabled="baseGrid.selectedRowCount.value === 0"
           title="Stage selected rows for delete (Delete)"
           @click="deleteSelectedRows"
         >
           <Trash2 class="h-3.5 w-3.5" :stroke-width="iconStroke" />
           <span class="badge-text">Delete</span>
-        </button>
+        </BaseButton>
 
         <span
           v-if="baseGrid.selectedRowCount.value > 0"
@@ -882,9 +885,21 @@ export default {
         </span>
 
         <template v-if="hasUnsavedChanges">
-          <button
-            type="button"
-            class="ui-accent-primary text-xs rounded-md px-2.5 py-1 border disabled:opacity-50 disabled:cursor-not-allowed shrink-0 whitespace-nowrap"
+          <BaseButton
+            variant="accent"
+            size="xs"
+            class="shrink-0 whitespace-nowrap"
+            title="Review pending changes"
+            aria-label="Review pending changes"
+            @click="openFirstEditedRowPanel"
+          >
+            <PanelLeftOpen class="h-3.5 w-3.5 shrink-0" :stroke-width="iconStroke" />
+            <span class="badge-text">Review</span>
+          </BaseButton>
+          <BaseButton
+            variant="primary"
+            size="xs"
+            class="shrink-0 whitespace-nowrap"
             title="Save pending changes"
             :disabled="isSaving"
             @click="saveChanges"
@@ -894,25 +909,17 @@ export default {
                 ? 'Saving…'
                 : `Save (${pendingInsertCount + pendingEditCount + pendingDeleteCount})`
             }}
-          </button>
-          <button
-            type="button"
-            class="ui-accent-action-active text-xs rounded-md p-1.5 border inline-flex shrink-0 items-center justify-center transition-colors"
-            title="Review pending changes"
-            aria-label="Review pending changes"
-            @click="openFirstEditedRowPanel"
-          >
-            <PanelLeftOpen class="h-3.5 w-3.5 shrink-0" :stroke-width="iconStroke" />
-          </button>
-          <button
-            type="button"
-            class="ui-surface-raised ui-border-default ui-text-default text-xs rounded-md px-2.5 py-1 border hover:bg-(--ui-surface-muted) disabled:opacity-50 disabled:cursor-not-allowed shrink-0 whitespace-nowrap"
+          </BaseButton>
+          <BaseButton
+            variant="secondary"
+            size="xs"
+            class="shrink-0 whitespace-nowrap"
             title="Discard pending changes"
             :disabled="isSaving"
             @click="cancelChanges"
           >
             Cancel
-          </button>
+          </BaseButton>
         </template>
       </div>
     </div>
