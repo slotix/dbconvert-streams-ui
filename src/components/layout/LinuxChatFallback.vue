@@ -64,13 +64,15 @@
 import { computed, ref } from 'vue'
 import { useDesktopMode } from '@/composables/useDesktopMode'
 
+const screenshotMode = import.meta.env.VITE_SCREENSHOT_MODE === 'true'
+
 const TAWK_DIRECT_CHAT_URL = 'https://tawk.to/chat/69908ca3bf87551c353078f0/1jheaano8'
 
 const { isDesktop } = useDesktopMode()
 const isPanelOpen = ref(false)
 
 const showFallback = computed(() => {
-  if (!isDesktop.value || typeof navigator === 'undefined') {
+  if (screenshotMode || !isDesktop.value || typeof navigator === 'undefined') {
     return false
   }
   return navigator.userAgent.toLowerCase().includes('linux')

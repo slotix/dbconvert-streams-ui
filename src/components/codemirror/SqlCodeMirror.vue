@@ -1,5 +1,6 @@
 <template>
   <div
+    ref="editorContainerRef"
     :class="[
       'relative border codemirror-editor-container',
       props.rounded ? 'rounded-lg' : 'rounded-none',
@@ -37,15 +38,37 @@ import {
   getSqlLspConnectionContextSignature,
   type SqlLspConnectionContext
 } from '@/composables/useSqlLspProviders'
-import { basicSetup } from 'codemirror'
 import { Compartment, EditorState } from '@codemirror/state'
-import { EditorView, keymap } from '@codemirror/view'
-import { openSearchPanel, search, searchKeymap } from '@codemirror/search'
+import {
+  crosshairCursor,
+  drawSelection,
+  dropCursor,
+  EditorView,
+  highlightActiveLine,
+  highlightActiveLineGutter,
+  highlightSpecialChars,
+  keymap,
+  lineNumbers,
+  rectangularSelection,
+  tooltips
+} from '@codemirror/view'
+import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
+import {
+  bracketMatching,
+  defaultHighlightStyle,
+  foldGutter,
+  foldKeymap,
+  indentOnInput,
+  syntaxHighlighting
+} from '@codemirror/language'
+import { highlightSelectionMatches, openSearchPanel, search, searchKeymap } from '@codemirror/search'
 import { sql, MySQL, PostgreSQL } from '@codemirror/lang-sql'
 import { sqlDarkThemeExtension, sqlLightThemeExtension } from './sqlHighlightStyle'
-import { type Diagnostic, setDiagnostics } from '@codemirror/lint'
+import { lintKeymap, type Diagnostic, setDiagnostics } from '@codemirror/lint'
 import {
   autocompletion,
+  closeBrackets,
+  closeBracketsKeymap,
   startCompletion,
   type CompletionContext,
   type CompletionResult
@@ -59,6 +82,10 @@ import {
   toCodeMirrorDiagnostic,
   toLspPosition
 } from './sqlCodeMirrorLspUtils'
+import {
+  formatDuckDBSqlDocument,
+  isDuckDBFormattingContext
+} from './sqlCodeMirrorFormatUtils'
 import {
   getDuckDBReadOptionCompletionRange,
   getDuckDBReadPathCompletionRange,
@@ -87,6 +114,7 @@ import type {
 const MAX_COMPLETION_ITEMS = 200
 const LSP_TRIGGER_KIND_INVOKED = 1
 const LSP_TRIGGER_KIND_TRIGGER_CHARACTER = 2
+const SCREENSHOT_MODE = import.meta.env.VITE_SCREENSHOT_MODE === 'true'
 
 interface Props {
   modelValue?: string
@@ -121,6 +149,7 @@ const emit = defineEmits<{
   (e: 'format'): void
 }>()
 
+const editorContainerRef = ref<HTMLElement | null>(null)
 const editorHost = ref<HTMLElement | null>(null)
 const editorView = shallowRef<EditorView | null>(null)
 const themeStore = useThemeStore()
@@ -135,12 +164,39 @@ const editorLayout = EditorView.theme({
   '&': { height: '100%' },
   '.cm-scroller': { overflow: 'auto' }
 })
+const sqlEditorBaseSetup = [
+  lineNumbers(),
+  highlightActiveLineGutter(),
+  highlightSpecialChars(),
+  history(),
+  foldGutter(),
+  drawSelection(),
+  dropCursor(),
+  EditorState.allowMultipleSelections.of(true),
+  indentOnInput(),
+  syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+  bracketMatching(),
+  closeBrackets(),
+  rectangularSelection(),
+  crosshairCursor(),
+  highlightActiveLine(),
+  highlightSelectionMatches(),
+  keymap.of([
+    ...closeBracketsKeymap,
+    ...defaultKeymap,
+    ...historyKeymap,
+    ...foldKeymap,
+    ...lintKeymap
+  ])
+]
 
 let suppressModelSync = false
 let cachedSelectionRange: SqlCodeMirrorSelectionRange | null = null
 let lastSelectionState: boolean | null = null
 let lspUnavailableWarningShown = false
 let focusInListener: (() => void) | null = null
+let containerResizeObserver: ResizeObserver | null = null
+let remeasureAnimationFrameId: number | null = null
 const textDocumentUri = `inmemory://sql/${Date.now()}-${Math.random().toString(36).slice(2)}`
 
 const lspContextSignature = computed(() => getSqlLspConnectionContextSignature(props.lspContext))
@@ -180,6 +236,86 @@ function resolveDarkMode(): boolean {
 
 function getThemeExtension(isDark: boolean) {
   return isDark ? sqlDarkThemeExtension : sqlLightThemeExtension
+}
+
+function getTooltipExtension() {
+  return tooltips({
+    // Desktop mode uses CSS zoom plus inverse editor zoom. Fixed-position tooltips
+    // can drift or disappear under that setup, so keep them in editor layout space.
+    position: 'absolute',
+    tooltipSpace: () => {
+      const container = editorContainerRef.value
+      if (!container) {
+        const viewportWidth =
+          typeof document === 'undefined' ? 0 : document.documentElement.clientWidth
+        const viewportHeight =
+          typeof document === 'undefined' ? 0 : document.documentElement.clientHeight
+        return {
+          left: 0,
+          top: 0,
+          right: viewportWidth,
+          bottom: viewportHeight
+        }
+      }
+      return container.getBoundingClientRect()
+    }
+  })
+}
+
+function requestEditorRemeasure() {
+  const view = editorView.value
+  if (!view) {
+    return
+  }
+
+  if (typeof window === 'undefined') {
+    view.requestMeasure()
+    return
+  }
+
+  if (remeasureAnimationFrameId !== null) {
+    window.cancelAnimationFrame(remeasureAnimationFrameId)
+  }
+
+  remeasureAnimationFrameId = window.requestAnimationFrame(() => {
+    remeasureAnimationFrameId = null
+    view.requestMeasure()
+  })
+}
+
+function setupContainerResizeObserver() {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  const target = editorContainerRef.value
+  if (!target) {
+    return
+  }
+
+  if (typeof ResizeObserver !== 'undefined') {
+    containerResizeObserver = new ResizeObserver(() => {
+      requestEditorRemeasure()
+    })
+    containerResizeObserver.observe(target)
+  }
+
+  window.addEventListener('resize', requestEditorRemeasure)
+}
+
+function cleanupContainerResizeObserver() {
+  if (containerResizeObserver) {
+    containerResizeObserver.disconnect()
+    containerResizeObserver = null
+  }
+
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('resize', requestEditorRemeasure)
+    if (remeasureAnimationFrameId !== null) {
+      window.cancelAnimationFrame(remeasureAnimationFrameId)
+      remeasureAnimationFrameId = null
+    }
+  }
 }
 
 function applyLspDiagnostics(diagnostics: LspDiagnostic[]) {
@@ -428,6 +564,27 @@ async function formatDocumentWithLsp() {
     return false
   }
 
+  if (isDuckDBFormattingContext(props.lspContext)) {
+    const formatted = formatDuckDBSqlDocument(view.state.doc.toString(), props.dialect)
+    if (formatted === null) {
+      return false
+    }
+    if (formatted === view.state.doc.toString()) {
+      return true
+    }
+
+    view.dispatch({
+      changes: {
+        from: 0,
+        to: view.state.doc.length,
+        insert: formatted
+      }
+    })
+    hideHoverTooltip()
+    hideSignatureTooltip()
+    return true
+  }
+
   flushPendingDidChangeNotification()
   const options: LspFormattingOptions = {
     tabSize: 2,
@@ -568,7 +725,7 @@ function getLspAutocompletionExtension() {
     override: [provideLspCompletions],
     activateOnTyping: true,
     maxRenderedOptions: 80,
-    closeOnBlur: true
+    closeOnBlur: !SCREENSHOT_MODE
   })
 }
 
@@ -619,9 +776,10 @@ function createEditorState() {
     doc: props.modelValue || '',
     extensions: [
       keymaps,
-      basicSetup,
+      sqlEditorBaseSetup,
       search(),
       editorLayout,
+      getTooltipExtension(),
       languageCompartment.of(getLanguageExtension()),
       readOnlyCompartment.of(EditorState.readOnly.of(props.readOnly)),
       themeCompartment.of(getThemeExtension(resolveDarkMode())),
@@ -695,6 +853,7 @@ function recreateEditor() {
   attachEditorContextMenuListener(view)
 
   emitSelectionState(view.state)
+  requestEditorRemeasure()
 }
 
 watch(
@@ -808,6 +967,7 @@ function openSearch() {
 
 onMounted(() => {
   recreateEditor()
+  setupContainerResizeObserver()
   connectLspSession()
   refreshLspCompartment()
   window.addEventListener('wails:find', handleWailsFind)
@@ -815,6 +975,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('wails:find', handleWailsFind)
+  cleanupContainerResizeObserver()
   if (editorView.value && focusInListener) {
     editorView.value.dom.removeEventListener('focusin', focusInListener)
     focusInListener = null

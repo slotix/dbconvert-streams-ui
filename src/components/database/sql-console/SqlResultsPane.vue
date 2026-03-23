@@ -1,5 +1,5 @@
 <template>
-  <div ref="resultsPaneRef" class="ui-surface-raised flex min-h-0 h-full flex-col">
+  <div ref="resultsPaneRef" class="ui-surface-raised flex min-h-0 min-w-0 h-full flex-col">
     <!-- Results Toolbar -->
     <div
       ref="resultsToolbarRef"

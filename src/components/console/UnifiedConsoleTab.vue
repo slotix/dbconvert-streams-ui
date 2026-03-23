@@ -68,7 +68,7 @@
       <!-- Editor Pane -->
       <div
         ref="leftPaneRef"
-        class="ui-border-default min-h-0 shrink-0 border-r"
+        class="ui-border-default min-h-0 min-w-0 shrink-0 overflow-hidden border-r flex flex-col"
         :style="{ width: `calc(${editorWidth}% - 2px)` }"
       >
         <SqlEditorPane
@@ -98,7 +98,10 @@
       ></div>
 
       <!-- Results Pane -->
-      <div class="shrink-0 min-h-0" :style="{ width: `calc(${100 - editorWidth}% - 2px)` }">
+      <div
+        class="min-h-0 min-w-0 shrink-0 overflow-hidden flex flex-col"
+        :style="{ width: `calc(${100 - editorWidth}% - 2px)` }"
+      >
         <SqlResultsPane
           :columns="resultColumns"
           :rows="queryResults"

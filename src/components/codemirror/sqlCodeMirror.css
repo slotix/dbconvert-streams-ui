@@ -120,10 +120,12 @@
 }
 
 :deep(.cm-tooltip.cm-tooltip-autocomplete) {
-  border-radius: calc(10px * var(--sql-ui-scale));
+  border-radius: 0;
   border: none;
   background: var(--sql-editor-popup-bg);
   color: var(--sql-editor-text);
+  box-sizing: border-box;
+  max-width: calc(100% - calc(12px * var(--sql-ui-scale)));
   box-shadow:
     0 calc(12px * var(--sql-ui-scale)) calc(36px * var(--sql-ui-scale)) rgba(0, 0, 0, 0.55),
     0 calc(2px * var(--sql-ui-scale)) calc(8px * var(--sql-ui-scale)) rgba(0, 0, 0, 0.3);
@@ -140,7 +142,7 @@
   right: 0;
   height: 1px;
   background: rgba(255, 255, 255, 0.06);
-  border-radius: calc(10px * var(--sql-ui-scale)) calc(10px * var(--sql-ui-scale)) 0 0;
+  border-radius: 0;
   pointer-events: none;
 }
 
@@ -548,17 +550,34 @@
 :deep(.cm-tooltip-autocomplete ul li) {
   padding: calc(5px * var(--sql-ui-scale)) calc(10px * var(--sql-ui-scale));
   border-bottom: none;
+  overflow: hidden;
 }
 
 :deep(.cm-tooltip-autocomplete ul) {
   max-height: calc(320px * var(--sql-ui-scale));
+  max-width: 100%;
   scrollbar-width: thin;
+}
+
+:deep(.cm-completionLabel) {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
+  white-space: nowrap;
 }
 
 :deep(.cm-completionDetail) {
   color: var(--sql-editor-detail);
+  display: inline-block;
   opacity: 0.85;
   font-size: calc(11.5px * var(--sql-ui-scale));
+  max-width: 45%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
+  white-space: nowrap;
 }
 
 :deep(.cm-tooltip-autocomplete ul::-webkit-scrollbar) {

@@ -104,6 +104,24 @@ The SQL editor and completion popup are themed for both:
 
 Selection highlight and autocomplete colors are aligned to current app palette.
 
+### 5.1) Screenshot mode
+
+For desktop screenshot/debug sessions started through `make desktop-dev`, the UI supports:
+
+```bash
+SCREENSHOT_MODE=true make desktop-dev
+```
+
+This is forwarded into the UI as `VITE_SCREENSHOT_MODE=true`.
+
+Current screenshot-mode behavior:
+- SQL autocomplete stays open on blur (`closeOnBlur: false`) to make screenshots easier
+- embedded Tawk/chat UI is disabled to reduce visual noise
+
+Normal runtime behavior remains:
+- autocomplete closes on blur
+- chat is enabled unless disabled by deployment/runtime configuration
+
 ## Architecture notes
 
 - SQL intelligence source is backend LSP:

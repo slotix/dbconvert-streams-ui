@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col min-h-0 h-full">
+  <div class="flex min-h-0 min-w-0 h-full flex-col">
     <!-- Toolbar -->
     <Teleport :to="toolbarTarget ?? 'body'" :disabled="!toolbarTarget" defer>
       <div
@@ -250,7 +250,7 @@
     </Teleport>
 
     <!-- SQL Editor -->
-    <div class="ui-surface-app h-full min-h-0 flex-1 overflow-hidden">
+    <div class="ui-surface-app h-full min-h-0 min-w-0 flex-1 overflow-hidden">
       <SqlCodeMirror
         ref="sqlEditorRef"
         :model-value="modelValue"
