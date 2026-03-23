@@ -117,6 +117,7 @@ This is forwarded into the UI as `VITE_SCREENSHOT_MODE=true`.
 Current screenshot-mode behavior:
 - SQL autocomplete stays open on blur (`closeOnBlur: false`) to make screenshots easier
 - embedded Tawk/chat UI is disabled to reduce visual noise
+- the native desktop app menu bar is hidden
 
 Normal runtime behavior remains:
 - autocomplete closes on blur
