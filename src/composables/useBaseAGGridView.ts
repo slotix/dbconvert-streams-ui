@@ -22,6 +22,7 @@ import { useAGGridFiltering } from '@/composables/useAGGridFiltering'
 import { useManagedTimeout } from '@/composables/useManagedTimeout'
 import { useObjectTabStateStore } from '@/stores/objectTabState'
 import { getSqlDialectFromType } from '@/types/specs'
+import { shouldSuppressDeleteCellClearForRowSelection } from '@/composables/useAgGridSelectionActions'
 import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-alpine.css'
 import '@/styles/agGridTheme.css'
@@ -156,6 +157,18 @@ function resolveLastRow(params: {
   }
 
   return undefined
+}
+
+function isEditableEventTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false
+  if (target.isContentEditable) return true
+  const tagName = target.tagName
+  return (
+    tagName === 'INPUT' ||
+    tagName === 'TEXTAREA' ||
+    tagName === 'SELECT' ||
+    target.closest('[contenteditable="true"]') !== null
+  )
 }
 
 /**
@@ -351,7 +364,18 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
       filter: false,
       resizable: true,
       suppressHeaderFilterButton: true,
-      suppressHeaderMenuButton: false
+      suppressHeaderMenuButton: false,
+      suppressKeyboardEvent: (params) =>
+        shouldSuppressDeleteCellClearForRowSelection({
+          key: params.event?.key ?? '',
+          defaultPrevented: Boolean(params.event?.defaultPrevented),
+          ctrlKey: Boolean(params.event?.ctrlKey),
+          metaKey: Boolean(params.event?.metaKey),
+          altKey: Boolean(params.event?.altKey),
+          shiftKey: Boolean(params.event?.shiftKey),
+          selectedRowCount: selectedRows.value.length,
+          isEditableTarget: isEditableEventTarget(params.event?.target ?? null)
+        })
     }
   }))
 

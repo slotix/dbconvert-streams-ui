@@ -5,6 +5,17 @@ import { exportData, type ExportFormat } from '@/composables/useDataExport'
 import { useStreamExport, type StreamExportFormat } from '@/composables/useStreamExport'
 import type { SqlDialect } from '@/types/specs'
 
+type DeleteSelectionShortcutDecisionOptions = {
+  key: string
+  defaultPrevented: boolean
+  ctrlKey: boolean
+  metaKey: boolean
+  altKey: boolean
+  shiftKey: boolean
+  selectedRowCount: number
+  isEditableTarget: boolean
+}
+
 type ToastLike = {
   success: (message: string) => void
   error: (message: string) => void
@@ -90,6 +101,17 @@ export function canEditGridContextCell(options: {
   }
 
   return Boolean(colDef.editable)
+}
+
+export function shouldSuppressDeleteCellClearForRowSelection(
+  options: DeleteSelectionShortcutDecisionOptions
+): boolean {
+  if (options.key !== 'Delete') return false
+  if (options.defaultPrevented) return false
+  if (options.ctrlKey || options.metaKey || options.altKey || options.shiftKey) return false
+  if (options.selectedRowCount === 0) return false
+  if (options.isEditableTarget) return false
+  return true
 }
 
 export function useAgGridSelectionActions(options: UseAgGridSelectionActionsOptions) {
@@ -264,13 +286,22 @@ export function useAgGridSelectionActions(options: UseAgGridSelectionActionsOpti
   }
 
   function handleDeleteShortcut(event: KeyboardEvent) {
-    if (event.key !== 'Delete') return
-    if (event.defaultPrevented) return
-    if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return
+    if (
+      !shouldSuppressDeleteCellClearForRowSelection({
+        key: event.key,
+        defaultPrevented: event.defaultPrevented,
+        ctrlKey: event.ctrlKey,
+        metaKey: event.metaKey,
+        altKey: event.altKey,
+        shiftKey: event.shiftKey,
+        selectedRowCount: options.selectedRowCount.value,
+        isEditableTarget: isEditableTarget(event.target)
+      })
+    ) {
+      return
+    }
     if (!isEventInOwnPane(event)) return
     if (!options.isTableEditable.value) return
-    if (options.selectedRowCount.value === 0) return
-    if (isEditableTarget(event.target)) return
 
     event.preventDefault()
     deleteSelectedRows()

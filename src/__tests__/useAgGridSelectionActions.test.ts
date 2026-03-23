@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { canEditGridContextCell } from '@/composables/useAgGridSelectionActions'
+import {
+  canEditGridContextCell,
+  shouldSuppressDeleteCellClearForRowSelection
+} from '@/composables/useAgGridSelectionActions'
 
 describe('canEditGridContextCell', () => {
   it('allows editing when the current cell editable callback returns true', () => {
@@ -54,5 +57,65 @@ describe('canEditGridContextCell', () => {
     })
 
     expect(result).toBe(false)
+  })
+})
+
+describe('shouldSuppressDeleteCellClearForRowSelection', () => {
+  it('suppresses cell clearing when delete is pressed with selected rows', () => {
+    const result = shouldSuppressDeleteCellClearForRowSelection({
+      key: 'Delete',
+      defaultPrevented: false,
+      ctrlKey: false,
+      metaKey: false,
+      altKey: false,
+      shiftKey: false,
+      selectedRowCount: 3,
+      isEditableTarget: false
+    })
+
+    expect(result).toBe(true)
+  })
+
+  it('does not suppress delete while typing in an editor input', () => {
+    const result = shouldSuppressDeleteCellClearForRowSelection({
+      key: 'Delete',
+      defaultPrevented: false,
+      ctrlKey: false,
+      metaKey: false,
+      altKey: false,
+      shiftKey: false,
+      selectedRowCount: 3,
+      isEditableTarget: true
+    })
+
+    expect(result).toBe(false)
+  })
+
+  it('does not suppress non-delete shortcuts or modifier-based shortcuts', () => {
+    expect(
+      shouldSuppressDeleteCellClearForRowSelection({
+        key: 'Backspace',
+        defaultPrevented: false,
+        ctrlKey: false,
+        metaKey: false,
+        altKey: false,
+        shiftKey: false,
+        selectedRowCount: 2,
+        isEditableTarget: false
+      })
+    ).toBe(false)
+
+    expect(
+      shouldSuppressDeleteCellClearForRowSelection({
+        key: 'Delete',
+        defaultPrevented: false,
+        ctrlKey: true,
+        metaKey: false,
+        altKey: false,
+        shiftKey: false,
+        selectedRowCount: 2,
+        isEditableTarget: false
+      })
+    ).toBe(false)
   })
 })
