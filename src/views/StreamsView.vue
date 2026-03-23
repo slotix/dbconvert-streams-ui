@@ -29,7 +29,7 @@
       </div>
 
       <!-- Streams with resizable sidebar -->
-      <div v-else class="flex-1 flex flex-col min-h-0 pl-1 pr-4 sm:pl-2 sm:pr-6 lg:pl-3 lg:pr-8">
+      <div v-else class="flex-1 flex flex-col min-h-0 pl-1 pr-1 sm:pl-2 sm:pr-2 lg:pl-3 lg:pr-3">
         <div
           :ref="(el) => (sidebar.sidebarContainerRef.value = el as HTMLElement)"
           class="flex-1 flex flex-row items-stretch min-w-0 overflow-x-hidden min-h-0"
@@ -86,7 +86,7 @@
             :style="{ flexBasis: '0px' }"
             class="grow min-w-0 min-h-0 overflow-x-hidden flex flex-col"
           >
-            <div v-if="selectedStreamId && selectedStream">
+            <div v-if="selectedStreamId && selectedStream" class="flex-1 min-h-0 flex flex-col">
               <StreamDetailsPanel
                 :stream="selectedStream"
                 :source="connectionByID(selectedStream.source?.connections?.[0]?.connectionId)"

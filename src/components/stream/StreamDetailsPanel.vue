@@ -1,5 +1,5 @@
 <template>
-  <div class="ui-surface-app h-[calc(100vh-140px)] flex flex-col">
+  <div class="ui-surface-app flex-1 min-h-0 flex flex-col">
     <!-- Top Level Tabs (always visible) -->
     <div class="ui-surface-panel ui-border-default px-6 pt-4 pb-0 shrink-0 border-b">
       <nav class="flex gap-4" aria-label="Tabs">
@@ -287,8 +287,8 @@
       </div>
 
       <!-- Monitor Tab -->
-      <div v-else-if="activeTab === 'monitor'" class="p-6">
-        <div v-if="hasActiveRun" class="space-y-6">
+      <div v-else-if="activeTab === 'monitor'" class="p-0">
+        <div v-if="hasActiveRun" class="space-y-3">
           <!-- Performance Stats -->
           <StatContainer
             :stream="stream"
