@@ -38,9 +38,12 @@ function syncState() {
   postToIframe({ type: 'zoom', value: zoomLevel.value })
 }
 
-watch(() => themeStore.isDark, (isDark) => {
-  postToIframe({ type: 'theme', value: isDark ? 'dark' : 'light' })
-})
+watch(
+  () => themeStore.isDark,
+  (isDark) => {
+    postToIframe({ type: 'theme', value: isDark ? 'dark' : 'light' })
+  }
+)
 
 watch(zoomLevel, (level) => {
   postToIframe({ type: 'zoom', value: level })

@@ -127,8 +127,8 @@ function updateCanProceed() {
 
   const canProceed = Boolean(
     (props.sourceConnections.length > 0 || primarySourceId.value) &&
-      props.targetConnectionId &&
-      !hasSourceTargetConflict
+    props.targetConnectionId &&
+    !hasSourceTargetConflict
   )
   emit('update:can-proceed', canProceed)
 }

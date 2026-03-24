@@ -2,7 +2,9 @@ import { format as formatSql } from 'sql-formatter'
 
 import type { SqlLspConnectionContext } from '@/composables/useSqlLspProviders'
 
-function normalizeSqlFormatterLanguage(dialect: string): 'mysql' | 'postgresql' | 'snowflake' | 'sql' {
+function normalizeSqlFormatterLanguage(
+  dialect: string
+): 'mysql' | 'postgresql' | 'snowflake' | 'sql' {
   const normalized = dialect.trim().toLowerCase()
   if (normalized.includes('mysql')) return 'mysql'
   if (normalized.includes('pgsql') || normalized.includes('postgre')) return 'postgresql'

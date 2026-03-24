@@ -41,12 +41,12 @@ export function useExplorerTabManager({
     const matchesSelection = (tab: PaneTab | null | undefined) =>
       Boolean(
         tab &&
-          tab.tabType === 'database' &&
-          tab.connectionId === payload.connectionId &&
-          tab.database === payload.database &&
-          tab.type === payload.type &&
-          tab.name === payload.name &&
-          (tab.schema || undefined) === (schema || undefined)
+        tab.tabType === 'database' &&
+        tab.connectionId === payload.connectionId &&
+        tab.database === payload.database &&
+        tab.type === payload.type &&
+        tab.name === payload.name &&
+        (tab.schema || undefined) === (schema || undefined)
       )
 
     // If the matching tab already exists, just activate it.

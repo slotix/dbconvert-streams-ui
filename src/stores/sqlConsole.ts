@@ -516,10 +516,10 @@ export const useSqlConsoleStore = defineStore('sqlConsole', () => {
     const placeholder = state.tabs.length === 1 ? state.tabs[0] : null
     const canReplacePlaceholder = Boolean(
       placeholder &&
-        !placeholder.query.trim() &&
-        !placeholder.tableContext &&
-        !placeholder.fileContext &&
-        /^Query\s+\d+$/i.test(placeholder.name.trim())
+      !placeholder.query.trim() &&
+      !placeholder.tableContext &&
+      !placeholder.fileContext &&
+      /^Query\s+\d+$/i.test(placeholder.name.trim())
     )
 
     if (canReplacePlaceholder && placeholder) {

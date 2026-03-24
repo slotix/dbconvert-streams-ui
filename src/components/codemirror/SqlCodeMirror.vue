@@ -61,7 +61,12 @@ import {
   indentOnInput,
   syntaxHighlighting
 } from '@codemirror/language'
-import { highlightSelectionMatches, openSearchPanel, search, searchKeymap } from '@codemirror/search'
+import {
+  highlightSelectionMatches,
+  openSearchPanel,
+  search,
+  searchKeymap
+} from '@codemirror/search'
 import { sql, MySQL, PostgreSQL } from '@codemirror/lang-sql'
 import { sqlDarkThemeExtension, sqlLightThemeExtension } from './sqlHighlightStyle'
 import { lintKeymap, type Diagnostic, setDiagnostics } from '@codemirror/lint'
@@ -82,10 +87,7 @@ import {
   toCodeMirrorDiagnostic,
   toLspPosition
 } from './sqlCodeMirrorLspUtils'
-import {
-  formatDuckDBSqlDocument,
-  isDuckDBFormattingContext
-} from './sqlCodeMirrorFormatUtils'
+import { formatDuckDBSqlDocument, isDuckDBFormattingContext } from './sqlCodeMirrorFormatUtils'
 import {
   getDuckDBReadOptionCompletionRange,
   getDuckDBReadPathCompletionRange,

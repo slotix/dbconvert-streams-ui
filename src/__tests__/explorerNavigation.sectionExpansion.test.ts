@@ -14,9 +14,8 @@ describe('explorerNavigation section expansion', () => {
   })
 
   it('tracks tables and views independently and persists collapsed sections', async () => {
-    const { getExplorerObjectSectionKey, useExplorerNavigationStore } = await import(
-      '@/stores/explorerNavigation'
-    )
+    const { getExplorerObjectSectionKey, useExplorerNavigationStore } =
+      await import('@/stores/explorerNavigation')
 
     const store = useExplorerNavigationStore()
     const tablesKey = getExplorerObjectSectionKey({
@@ -54,9 +53,8 @@ describe('explorerNavigation section expansion', () => {
       })
     )
 
-    const { getExplorerObjectSectionKey, useExplorerNavigationStore } = await import(
-      '@/stores/explorerNavigation'
-    )
+    const { getExplorerObjectSectionKey, useExplorerNavigationStore } =
+      await import('@/stores/explorerNavigation')
 
     const store = useExplorerNavigationStore()
     const viewsKey = getExplorerObjectSectionKey({

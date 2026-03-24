@@ -294,8 +294,8 @@ export function useStreamWizard() {
 
     return Boolean(
       sourceConnections.value.length > 0 &&
-        selection.value.targetConnectionId &&
-        !hasSourceTargetConflict
+      selection.value.targetConnectionId &&
+      !hasSourceTargetConflict
     )
   })
 

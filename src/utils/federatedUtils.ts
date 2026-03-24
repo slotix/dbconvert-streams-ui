@@ -23,7 +23,7 @@ const ALIAS_PREFIX_MAP: Record<string, string> = {
   s3: 's3',
   gcs: 'gcs',
   azure: 'azure',
-  files: 'files',
+  files: 'files'
 }
 
 /**

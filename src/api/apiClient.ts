@@ -375,7 +375,10 @@ export async function updateLoggingSettings(
   payload: Partial<LoggingSettings>
 ): Promise<LoggingSettings> {
   try {
-    const response: ApiResponse<LoggingSettings> = await apiClient.put('/system/sql-logging', payload)
+    const response: ApiResponse<LoggingSettings> = await apiClient.put(
+      '/system/sql-logging',
+      payload
+    )
     return response.data
   } catch (error) {
     throw handleApiError(error)
