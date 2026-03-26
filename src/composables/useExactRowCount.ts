@@ -53,6 +53,8 @@ export function useExactRowCount(deps: ExactRowCountDeps) {
   })
 
   // Sync approxRows into totalRowCount unless an exact count is already saved.
+  // Not immediate — initial datasource is set by onGridReady; this only handles
+  // subsequent approxRows changes (e.g. switching databases).
   watch(
     () => deps.approxRows.value,
     (newApproxRows) => {
@@ -80,6 +82,8 @@ export function useExactRowCount(deps: ExactRowCountDeps) {
   )
 
   // Restore state when object changes.
+  // Not immediate — initial state restoration happens in onGridReady.
+  // This watch handles subsequent object switches (tab changes).
   watch(
     () => deps.getCacheKey(),
     () => {
@@ -107,8 +111,7 @@ export function useExactRowCount(deps: ExactRowCountDeps) {
       if (deps.gridApi.value && !deps.gridApi.value.isDestroyed()) {
         deps.recreateDatasource()
       }
-    },
-    { immediate: true }
+    }
   )
 
   // Auto-calculate exact count when backend returns unknown count (-1) and no filters are applied.
@@ -180,9 +183,9 @@ export function useExactRowCount(deps: ExactRowCountDeps) {
         exactCountCache.value.set(deps.getCacheKey(), result.count)
       }
 
-      if (deps.gridApi.value) {
-        deps.gridApi.value.purgeInfiniteCache()
-      }
+      // The totalRowCount watcher in useBaseAGGridView will handle refreshing
+      // the grid's pagination. No need to purge the cache here — the rows
+      // themselves haven't changed, only the total count is now exact.
     } catch (err) {
       console.error('Error calculating exact count:', err)
       countError.value = err instanceof Error ? err.message : 'Failed to calculate count'

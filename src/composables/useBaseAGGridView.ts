@@ -737,14 +737,13 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
   )
 
   /**
-   * Watch for totalRowCount changes and update AG Grid's pagination
-   * This ensures AG Grid displays the correct total when count is updated after initial load
+   * Watch for totalRowCount changes and update AG Grid's pagination.
+   * Uses refreshInfiniteCache() instead of purgeInfiniteCache() so that
+   * already-loaded rows stay visible while the grid updates its total count.
    */
   watch(
     () => totalRowCount.value,
     (newCount, oldCount) => {
-      // If count changed from unknown/zero to a known value, or changed to a different value
-      // we need to tell AG Grid by recreating the datasource
       if (
         gridApi.value &&
         !gridApi.value.isDestroyed() &&
@@ -752,8 +751,7 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
         newCount !== oldCount &&
         (oldCount === -1 || oldCount === 0 || oldCount !== newCount)
       ) {
-        // Purge cache and refresh to update pagination with new total
-        gridApi.value.purgeInfiniteCache()
+        gridApi.value.refreshInfiniteCache()
       }
     }
   )

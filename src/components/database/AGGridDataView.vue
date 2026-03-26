@@ -988,7 +988,7 @@ export default {
     <!-- AG Grid -->
     <div
       :ref="(el) => (baseGrid.gridContainerRef.value = el as HTMLElement)"
-      class="ag-theme-alpine select-none flex-1 min-h-0"
+      class="ag-theme-alpine select-none flex-1 min-h-0 relative"
       :style="{
         width: '100%',
         height: '100%'
@@ -1008,6 +1008,30 @@ export default {
         @column-moved="saveColumnState"
         @column-resized="saveColumnState"
       />
+      <!-- Loading overlay -->
+      <div
+        v-if="baseGrid.isLoading.value"
+        class="absolute inset-0 z-10 flex items-center justify-center bg-(--ui-surface-default)/50 pointer-events-none"
+      >
+        <div class="flex items-center gap-2 px-4 py-2 rounded-lg ui-surface-raised shadow-md">
+          <svg class="animate-spin h-4 w-4 ui-text-muted" viewBox="0 0 24 24" fill="none">
+            <circle
+              class="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="4"
+            />
+            <path
+              class="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+            />
+          </svg>
+          <span class="text-sm ui-text-muted">Loading data...</span>
+        </div>
+      </div>
     </div>
 
     <SelectionContextMenu
