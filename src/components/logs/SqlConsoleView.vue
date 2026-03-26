@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Info } from 'lucide-vue-next'
+import { DatabaseZap, Info } from 'lucide-vue-next'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import type { ExportFormat } from '@/stores/logs'
 import { useLogsStore } from '@/stores/logs'
@@ -10,6 +10,15 @@ const logsStore = useLogsStore()
 const searchInputRef = ref<HTMLInputElement | null>(null)
 
 const logsWithHeaders = computed(() => logsStore.logsWithHeaders)
+const isCaptureOff = computed(() => logsStore.runtimeLoggingSettings.sqlCaptureMode === 'off')
+
+async function enableMinimalCapture() {
+  try {
+    await logsStore.updateRuntimeLoggingSettings({ sqlCaptureMode: 'minimal' })
+  } catch {
+    // Error exposed via logsStore.runtimeLoggingError
+  }
+}
 
 function handleExport(format: ExportFormat) {
   logsStore.exportLogs(format)
@@ -63,9 +72,30 @@ onUnmounted(() => {
     <!-- Filter Header -->
     <LogFilters @export="handleExport" />
 
-    <!-- Empty State -->
+    <!-- Empty State: Capture Off -->
     <div
-      v-if="logsWithHeaders.length === 0"
+      v-if="isCaptureOff"
+      class="flex items-center justify-center h-full text-gray-500 dark:text-gray-400"
+    >
+      <div class="text-center max-w-sm">
+        <DatabaseZap class="w-12 h-12 mx-auto mb-4 text-gray-400 dark:text-gray-500" />
+        <p class="font-medium text-gray-700 dark:text-gray-200 mb-2">SQL capture is off</p>
+        <p class="text-sm mb-4">
+          Enable capture to start recording SQL queries executed during stream operations.
+        </p>
+        <button
+          class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 dark:bg-blue-500 rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors shadow-sm"
+          :disabled="logsStore.runtimeLoggingSaving"
+          @click="enableMinimalCapture"
+        >
+          Enable Minimal Capture
+        </button>
+      </div>
+    </div>
+
+    <!-- Empty State: No Queries -->
+    <div
+      v-else-if="logsWithHeaders.length === 0"
       class="flex items-center justify-center h-full text-gray-500 dark:text-gray-400"
     >
       <div class="text-center">

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useLogsStore } from '@/stores/logs'
-import type { ExportFormat, QueryPurpose } from '@/stores/logs'
+import type { ExportFormat, QueryPurpose, SQLCaptureMode } from '@/stores/logs'
 import FormCheckbox from '@/components/base/FormCheckbox.vue'
 import {
   AlertTriangle,
@@ -95,6 +95,25 @@ const errorsOnly = computed({
     logsStore.setErrorsOnly(val)
   }
 })
+
+// SQL Capture Level control
+const sqlCaptureModes: SQLCaptureMode[] = ['off', 'minimal', 'verbose']
+const sqlCaptureModeLabels: Record<SQLCaptureMode, string> = {
+  off: 'Off',
+  minimal: 'Min',
+  verbose: 'Verbose'
+}
+const currentCaptureMode = computed(() => logsStore.runtimeLoggingSettings.sqlCaptureMode)
+const isSaving = computed(() => logsStore.runtimeLoggingSaving)
+
+async function setCaptureMode(mode: SQLCaptureMode) {
+  if (mode === currentCaptureMode.value || isSaving.value) return
+  try {
+    await logsStore.updateRuntimeLoggingSettings({ sqlCaptureMode: mode })
+  } catch {
+    // Error exposed via logsStore.runtimeLoggingError
+  }
+}
 
 const sortOrder = computed(() => logsStore.sortOrder)
 const collapsedLocationCount = computed(() => logsStore.collapsedLocations.size)
@@ -214,6 +233,8 @@ function handleKeyboardShortcut(event: KeyboardEvent) {
 onMounted(() => {
   document.addEventListener('click', handleDocumentClick)
   document.addEventListener('keydown', handleKeyboardShortcut)
+  // Ensure capture level is fresh from the backend
+  void logsStore.loadRuntimeLoggingSettings()
 })
 
 onBeforeUnmount(() => {
@@ -226,6 +247,40 @@ onBeforeUnmount(() => {
   <div
     class="ui-surface-panel ui-border-default flex items-center gap-2 px-4 py-2 border-b shadow-sm"
   >
+    <!-- SQL Capture Level Segmented Control -->
+    <div class="flex items-center gap-1">
+      <span class="text-[11px] font-medium text-gray-500 dark:text-gray-400 mr-1">Capture</span>
+      <div
+        class="ui-surface-muted ui-border-default inline-flex rounded-md border p-0.5"
+        :class="{ 'opacity-50 pointer-events-none': isSaving }"
+      >
+        <button
+          v-for="mode in sqlCaptureModes"
+          :key="mode"
+          v-tooltip="
+            mode === 'off'
+              ? 'Stop capturing SQL queries'
+              : mode === 'minimal'
+                ? 'Capture query text only'
+                : 'Capture queries with parameters and plans'
+          "
+          :class="[
+            'px-2.5 py-1 text-xs font-medium rounded transition-colors',
+            currentCaptureMode === mode
+              ? mode === 'off'
+                ? 'bg-gray-500 text-white dark:bg-gray-600 shadow-sm'
+                : 'ui-accent-selection-checked text-white shadow-sm'
+              : 'text-gray-600 dark:text-gray-300 hover:bg-(--ui-surface-inset)'
+          ]"
+          @click="setCaptureMode(mode)"
+        >
+          {{ sqlCaptureModeLabels[mode] }}
+        </button>
+      </div>
+    </div>
+
+    <div class="ui-border-default hidden h-6 border-l sm:block" />
+
     <div class="flex items-center gap-2">
       <!-- Visual Grouping Toggle -->
       <button
@@ -233,7 +288,7 @@ onBeforeUnmount(() => {
         :class="[
           'flex items-center gap-1.5 px-3 py-1.5 text-xs border rounded transition-colors',
           visuallyGrouped
-            ? 'ui-surface-muted ui-border-default text-gray-700 dark:text-gray-200 hover:bg-[var(--ui-surface-inset)]'
+            ? 'ui-surface-muted ui-border-default text-gray-700 dark:text-gray-200 hover:bg-(--ui-surface-inset)'
             : 'ui-surface-raised ui-border-default text-gray-600 dark:text-gray-300 hover:bg-(--ui-surface-muted)'
         ]"
         @click="toggleVisualGrouping"

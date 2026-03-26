@@ -239,116 +239,18 @@
               </div>
             </div>
             <div class="mt-4 border-t pt-3 ui-border-default">
-              <div class="ui-surface-muted grid grid-cols-2 gap-1 rounded-md border p-1">
-                <button
-                  type="button"
+              <div class="flex items-center gap-1.5 mb-2">
+                <span
                   :class="[
-                    'rounded-md px-2 py-1.5 text-xs font-medium transition-colors',
-                    settingsTab === 'logging'
-                      ? 'ui-surface-raised ui-border-default border text-gray-900 shadow-sm dark:text-white'
-                      : 'text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white'
+                    'h-2 w-2 rounded-full',
+                    commonStore.isBackendConnected ? 'bg-emerald-500' : 'bg-red-500'
                   ]"
-                  @click="settingsTab = 'logging'"
+                ></span>
+                <span class="text-xs font-medium text-gray-700 dark:text-gray-200"
+                  >System Status</span
                 >
-                  Logging
-                </button>
-                <button
-                  type="button"
-                  :class="[
-                    'rounded-md px-2 py-1.5 text-xs font-medium transition-colors',
-                    settingsTab === 'system'
-                      ? 'ui-surface-raised ui-border-default border text-gray-900 shadow-sm dark:text-white'
-                      : 'text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white'
-                  ]"
-                  @click="settingsTab = 'system'"
-                >
-                  <span class="inline-flex items-center gap-1.5">
-                    <span
-                      :class="[
-                        'h-2 w-2 rounded-full',
-                        commonStore.isBackendConnected ? 'bg-emerald-500' : 'bg-red-500'
-                      ]"
-                    ></span>
-                    <span>System Status</span>
-                  </span>
-                </button>
               </div>
-
-              <div v-if="settingsTab === 'logging'" class="mt-3 space-y-3">
-                <div class="ui-surface-muted space-y-2 rounded-md border p-2">
-                  <div class="flex items-center justify-between">
-                    <div class="text-xs font-medium text-gray-600 dark:text-gray-300">
-                      SQL Capture Level
-                    </div>
-                    <div class="text-xs text-gray-600 dark:text-gray-300">
-                      {{ currentSQLCaptureLabel }}
-                    </div>
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="2"
-                    step="1"
-                    :value="sqlCaptureSliderValue"
-                    :disabled="logsStore.runtimeLoggingSaving"
-                    class="ui-accent-slider h-2 w-full disabled:opacity-50"
-                    aria-label="SQL Capture Level"
-                    @input="onSQLCaptureSliderInput"
-                    @change="onSQLCaptureSliderInput"
-                  />
-                  <div class="flex justify-between text-[11px] text-gray-500 dark:text-gray-400">
-                    <span :class="sqlCaptureSliderValue === 0 ? 'ui-accent-text' : ''">Off</span>
-                    <span :class="sqlCaptureSliderValue === 1 ? 'ui-accent-text' : ''">
-                      Minimal
-                    </span>
-                    <span :class="sqlCaptureSliderValue === 2 ? 'ui-accent-text' : ''">
-                      Verbose
-                    </span>
-                  </div>
-                </div>
-
-                <div class="ui-surface-raised ui-border-default space-y-2 rounded-md border p-2">
-                  <div class="text-[11px] font-medium uppercase tracking-wide text-gray-500">
-                    Logs Folder
-                  </div>
-                  <div
-                    v-for="line in systemStatusMeta"
-                    :key="line"
-                    class="text-[11px] leading-4 text-gray-600 dark:text-gray-300 break-all"
-                  >
-                    {{ line }}
-                  </div>
-                  <div
-                    v-if="!systemStatusMeta.length"
-                    class="text-[11px] text-gray-500 dark:text-gray-400"
-                  >
-                    Logs folder path unavailable
-                  </div>
-                  <button
-                    v-if="canOpenLogsFolder"
-                    type="button"
-                    class="ui-surface-raised ui-border-default inline-flex items-center gap-2 rounded-md border px-2.5 py-1 text-[11px] font-medium text-gray-700 transition-colors hover:bg-(--ui-surface-muted) dark:text-gray-200"
-                    @click="openLogsFolder"
-                  >
-                    Open Logs Folder
-                  </button>
-                  <div
-                    v-if="systemStatusError"
-                    class="text-[11px] whitespace-pre-wrap text-red-500 dark:text-red-300"
-                  >
-                    {{ systemStatusError }}
-                  </div>
-                </div>
-
-                <div
-                  v-if="logsStore.runtimeLoggingError"
-                  class="text-[11px] text-amber-600 dark:text-amber-300"
-                >
-                  {{ logsStore.runtimeLoggingError }}
-                </div>
-              </div>
-
-              <div v-else class="ui-surface-raised mt-3 rounded-lg border p-3 shadow-sm">
+              <div class="ui-surface-raised mt-1 rounded-lg border p-3 shadow-sm">
                 <div class="max-h-[45vh] overflow-y-auto">
                   <SystemStatusPanel
                     compact
@@ -426,7 +328,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { AlertCircle, CircleUser, FileText, Menu, Moon, Settings, Sun } from 'lucide-vue-next'
 import { useCommonStore } from '@/stores/common'
-import { useLogsStore, type SQLCaptureMode } from '@/stores/logs'
+import { useLogsStore } from '@/stores/logs'
 import { useThemeStore } from '@/stores/theme'
 import { useDesktopMode } from '@/composables/useDesktopMode'
 import { useContextualIconSizes } from '@/composables/useIconSizes'
@@ -451,43 +353,18 @@ const themeStore = useThemeStore()
 const { isDesktop } = useDesktopMode()
 const { strokeWidth: iconStroke } = useLucideIcons()
 const iconSizes = useContextualIconSizes()
-const {
-  meta: systemStatusMeta,
-  canOpenLogsFolder,
-  openLogsFolder,
-  error: systemStatusError,
-  refresh
-} = useSystemStatus()
-
-type SettingsTab = 'logging' | 'system'
+const { refresh } = useSystemStatus()
 
 const settingsOpen = ref(false)
 const settingsPopoverRef = ref<HTMLElement | null>(null)
-const settingsTab = ref<SettingsTab>('logging')
-
-const sqlCaptureModeLabels: Record<SQLCaptureMode, string> = {
-  off: 'Off',
-  minimal: 'Minimal',
-  verbose: 'Verbose'
-}
-
-const sqlCaptureModes: SQLCaptureMode[] = ['off', 'minimal', 'verbose']
 
 const loadSettingsData = () => {
-  void logsStore.loadRuntimeLoggingSettings()
   void refresh()
-}
-
-const openLoggingSettings = () => {
-  settingsOpen.value = true
-  settingsTab.value = 'logging'
-  loadSettingsData()
 }
 
 const toggleSettings = () => {
   settingsOpen.value = !settingsOpen.value
   if (settingsOpen.value) {
-    settingsTab.value = 'logging'
     loadSettingsData()
   }
 }
@@ -513,46 +390,14 @@ const handleSettingsKeydown = (event: KeyboardEvent) => {
 
 const openStatusPanelFromSidebar = () => {
   settingsOpen.value = true
-  settingsTab.value = 'system'
   loadSettingsData()
-}
-
-const onSQLCaptureModeChange = async (value: unknown) => {
-  const mode: SQLCaptureMode = value === 'off' || value === 'verbose' ? value : 'minimal'
-  try {
-    await logsStore.updateRuntimeLoggingSettings({ sqlCaptureMode: mode })
-  } catch {
-    // Error text is exposed via logsStore.runtimeLoggingError
-  }
-}
-
-const sqlCaptureSliderValue = computed(() => {
-  const mode = logsStore.runtimeLoggingSettings.sqlCaptureMode
-  if (mode === 'off') return 0
-  if (mode === 'verbose') return 2
-  return 1
-})
-
-const currentSQLCaptureLabel = computed(
-  () => sqlCaptureModeLabels[logsStore.runtimeLoggingSettings.sqlCaptureMode]
-)
-
-const onSQLCaptureSliderInput = async (event: Event) => {
-  const target = event.target as HTMLInputElement | null
-  if (!target) return
-
-  const raw = Number(target.value)
-  const rounded = Number.isFinite(raw) ? Math.round(raw) : 1
-  const clamped = Math.max(0, Math.min(2, rounded))
-  const mode = sqlCaptureModes[clamped] ?? 'minimal'
-
-  await onSQLCaptureModeChange(mode)
 }
 
 const handleOpenSettingsEvent = (event: Event) => {
   const custom = event as CustomEvent<{ section?: string }>
   if (custom.detail?.section === 'logging') {
-    openLoggingSettings()
+    // SQL capture level is now in the SQL Logs tab — open the logs panel
+    logsStore.toggleLogsPanel()
     return
   }
   if (custom.detail?.section === 'system') {
@@ -560,7 +405,6 @@ const handleOpenSettingsEvent = (event: Event) => {
     return
   }
   settingsOpen.value = true
-  settingsTab.value = 'logging'
   loadSettingsData()
 }
 

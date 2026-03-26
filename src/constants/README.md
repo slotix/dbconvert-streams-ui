@@ -348,23 +348,19 @@ type MyType = typeof MY_CONST.VALUE // Literal type 'myValue', not string
 ## Adding New Constants
 
 1. **Identify Repeated Values**
-
    - Look for the same string/number used 2+ times
    - Check if it's configuration that might change
 
 2. **Create or Update File**
-
    - Add to existing file if related
    - Create new file for new category
 
 3. **Follow Naming Convention**
-
    - Use SCREAMING_SNAKE_CASE for constants
    - Use camelCase for helper functions
    - Add TSDoc comments
 
 4. **Export from Index**
-
    - Add export to `index.ts`
 
 5. **Update Documentation**
