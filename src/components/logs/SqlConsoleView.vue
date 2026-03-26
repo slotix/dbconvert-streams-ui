@@ -84,7 +84,7 @@ onUnmounted(() => {
           Enable capture to start recording SQL queries executed during stream operations.
         </p>
         <button
-          class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 dark:bg-blue-500 rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors shadow-sm"
+          class="ui-surface-raised ui-border-default ui-accent-action inline-flex items-center gap-2 rounded-md border px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors dark:text-gray-200 disabled:opacity-50"
           :disabled="logsStore.runtimeLoggingSaving"
           @click="enableMinimalCapture"
         >
