@@ -6,7 +6,7 @@
  * AG Grid header sorting is enabled, but it syncs back to panel state.
  */
 
-import { ref, computed, watch, onBeforeUnmount, type Ref } from 'vue'
+import { ref, computed, watch, onBeforeUnmount, onMounted, type Ref } from 'vue'
 import { ModuleRegistry, AllCommunityModule } from 'ag-grid-community'
 import type {
   GridApi,
@@ -279,6 +279,69 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
 
   // AG Grid options for Infinite Row Model
   // Sorting is enabled and synchronized with panel state; filtering remains panel-driven only.
+
+  // Fix AG Grid column-drag under CSS zoom.
+  // AG Grid's DragService reads clientX/clientY (visual px) to position the ghost
+  // AND to hit-test column drop zones. Under CSS zoom on <html>, visual px ≠ layout px,
+  // so both the ghost and the drop indicator land in the wrong place.
+  // Fix: intercept mouse events in the capture phase during AG Grid drags and convert
+  // coordinates from visual to layout space (÷ zoom). AG Grid then works as if zoom = 1.
+  let cleanupDragGhostFix: (() => void) | null = null
+
+  const startDragZoomFix = () => {
+    const getZoom = () =>
+      parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--app-zoom')) || 1
+
+    let dragging = false
+
+    // Detect AG Grid drag start/end via .ag-dnd-ghost appearing/disappearing.
+    const bodyObserver = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        for (const node of m.addedNodes) {
+          if (node instanceof HTMLElement && node.classList.contains('ag-dnd-ghost')) {
+            dragging = true
+            return
+          }
+        }
+        for (const node of m.removedNodes) {
+          if (node instanceof HTMLElement && node.classList.contains('ag-dnd-ghost')) {
+            dragging = false
+          }
+        }
+      }
+    })
+    bodyObserver.observe(document.body, { childList: true })
+
+    // Patch mouse coordinates on the event instance so AG Grid (which listens on
+    // document in the bubble phase) sees layout-px values instead of visual-px.
+    const patchEvent = (e: MouseEvent) => {
+      if (!dragging) return
+      const zoom = getZoom()
+      if (zoom === 1) return
+      const props = ['clientX', 'clientY', 'pageX', 'pageY', 'x', 'y'] as const
+      for (const prop of props) {
+        const original = e[prop]
+        if (Number.isFinite(original)) {
+          Object.defineProperty(e, prop, { value: original / zoom, configurable: true })
+        }
+      }
+    }
+
+    // Capture phase fires before AG Grid's bubble-phase handlers.
+    document.addEventListener('mousemove', patchEvent, true)
+    document.addEventListener('mouseup', patchEvent, true)
+
+    return () => {
+      bodyObserver.disconnect()
+      document.removeEventListener('mousemove', patchEvent, true)
+      document.removeEventListener('mouseup', patchEvent, true)
+    }
+  }
+
+  onMounted(() => {
+    cleanupDragGhostFix = startDragZoomFix()
+  })
+
   // Fix AG Grid popup positioning for non-100% zoom.
   const postProcessPopup = (params: PostProcessPopupParams) => {
     if (!params.ePopup) {
@@ -774,6 +837,8 @@ export function useBaseAGGridView(options: BaseAGGridViewOptions) {
    * Cleanup on unmount
    */
   onBeforeUnmount(() => {
+    cleanupDragGhostFix?.()
+    cleanupDragGhostFix = null
     clearManagedTimeout(contextMenuListenerAttachTimer)
     contextMenuListenerAttachTimer = null
     clearAllManagedTimeouts()
