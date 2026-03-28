@@ -1,4 +1,5 @@
 import ExcelJS from 'exceljs'
+import { isWailsContext } from './useWailsEvents'
 
 export type ExportFormat = 'csv' | 'json' | 'jsonl' | 'tsv' | 'sql' | 'markdown' | 'excel'
 
@@ -71,10 +72,12 @@ interface ExportOptions {
   tableName?: string
 }
 
-interface ExportResult {
+export interface ExportResult {
   format: ExportFormat
   filename: string
   extension: string
+  /** Absolute path on disk (desktop mode only, undefined for browser downloads) */
+  savedPath?: string
 }
 
 /**
@@ -180,7 +183,7 @@ function generateExportContent(
 }
 
 /**
- * Download a text file
+ * Download a text file via browser
  */
 function downloadTextFile(content: string, filename: string, mimeType: string): void {
   const blob = new Blob([content], { type: mimeType })
@@ -192,8 +195,24 @@ function downloadTextFile(content: string, filename: string, mimeType: string): 
   URL.revokeObjectURL(url)
 }
 
+type WailsApp = {
+  SaveFile?: (defaultFilename: string, content: string) => Promise<string>
+  SaveFileBytes?: (defaultFilename: string, content: number[]) => Promise<string>
+  OpenContainingFolder?: (path: string) => Promise<void>
+}
+
+function getWailsApp(): WailsApp | null {
+  if (!isWailsContext()) return null
+  return (
+    window as unknown as {
+      go?: { main?: { App?: WailsApp } }
+    }
+  ).go?.main?.App ?? null
+}
+
 /**
- * Export data to the specified format
+ * Export data to the specified format.
+ * In desktop mode, shows a native save dialog. In browser mode, triggers a download.
  */
 export async function exportData(
   format: ExportFormat,
@@ -206,24 +225,53 @@ export async function exportData(
     return null
   }
 
+  const app = getWailsApp()
+
   // Handle Excel separately (binary format)
   if (format === 'excel') {
-    await exportToExcel(options)
-    return {
-      format,
-      filename: `${filename}.xlsx`,
-      extension: 'xlsx'
+    const fullFilename = `${filename}.xlsx`
+
+    if (app?.SaveFileBytes) {
+      const workbook = new ExcelJS.Workbook()
+      const worksheet = workbook.addWorksheet('Data')
+      worksheet.columns = columns.map((col) => ({ header: col, key: col }))
+      rows.forEach((row) => worksheet.addRow(row))
+      const buffer = await workbook.xlsx.writeBuffer()
+      const bytes = Array.from(new Uint8Array(buffer as ArrayBuffer))
+      const savedPath = await app.SaveFileBytes(fullFilename, bytes)
+      if (!savedPath) return null // user cancelled
+      return { format, filename: fullFilename, extension: 'xlsx', savedPath }
     }
+
+    await exportToExcel(options)
+    return { format, filename: fullFilename, extension: 'xlsx' }
   }
 
   // Generate content for text-based formats
   const { content, mimeType, extension } = generateExportContent(format, options)
   const fullFilename = `${filename}.${extension}`
+
+  if (app?.SaveFile) {
+    const savedPath = await app.SaveFile(fullFilename, content)
+    if (!savedPath) return null // user cancelled
+    return { format, filename: fullFilename, extension, savedPath }
+  }
+
   downloadTextFile(content, fullFilename, mimeType)
-  return {
-    format,
-    filename: fullFilename,
-    extension
+  return { format, filename: fullFilename, extension }
+}
+
+/**
+ * Open the containing folder for a saved file (desktop mode only)
+ */
+export async function revealExportedFile(path: string): Promise<boolean> {
+  const app = getWailsApp()
+  if (!app?.OpenContainingFolder) return false
+  try {
+    await app.OpenContainingFolder(path)
+    return true
+  } catch {
+    return false
   }
 }
 

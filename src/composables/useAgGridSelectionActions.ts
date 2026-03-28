@@ -1,7 +1,7 @@
-import { computed, onBeforeUnmount, onMounted, ref, watch, type ComputedRef, type Ref } from 'vue'
+import { computed, h, onBeforeUnmount, onMounted, ref, watch, type ComputedRef, type Ref } from 'vue'
 import type { GridApi } from 'ag-grid-community'
 import { formatRowsForClipboard, type CopyFormat } from '@/utils/agGridClipboard'
-import { exportData, type ExportFormat } from '@/composables/useDataExport'
+import { exportData, revealExportedFile, type ExportFormat } from '@/composables/useDataExport'
 import { useStreamExport, type StreamExportFormat } from '@/composables/useStreamExport'
 import type { SqlDialect } from '@/types/specs'
 
@@ -16,10 +16,12 @@ type DeleteSelectionShortcutDecisionOptions = {
   isEditableTarget: boolean
 }
 
+type ToastContent = string | ReturnType<typeof h>
+
 type ToastLike = {
-  success: (message: string) => void
-  error: (message: string) => void
-  info: (message: string) => void
+  success: (message: ToastContent) => void
+  error: (message: ToastContent) => void
+  info: (message: ToastContent) => void
 }
 
 type ContextRowNode = {
@@ -451,14 +453,47 @@ export function useAgGridSelectionActions(options: UseAgGridSelectionActionsOpti
 
   async function handleExport(format: ExportFormat) {
     const { columns, rows } = getVisibleData()
-    if (rows.length === 0) return
+    if (rows.length === 0) {
+      options.toast.info('No data to export')
+      return
+    }
 
-    await exportData(format, {
-      columns,
-      rows,
-      filename: options.objectName.value || 'table-data',
-      tableName: options.objectName.value
-    })
+    try {
+      const result = await exportData(format, {
+        columns,
+        rows,
+        filename: options.objectName.value || 'table-data',
+        tableName: options.objectName.value
+      })
+
+      if (result) {
+        const message = `Exported ${rows.length} rows as ${result.filename}`
+        if (result.savedPath) {
+          const savedPath = result.savedPath
+          options.toast.success(
+            h('div', [
+              h('div', message),
+              h(
+                'button',
+                {
+                  style:
+                    'margin-top:4px;font-size:0.8em;text-decoration:underline;opacity:0.85;cursor:pointer;background:none;border:none;color:inherit;padding:0',
+                  onClick: (e: MouseEvent) => {
+                    e.stopPropagation()
+                    revealExportedFile(savedPath)
+                  }
+                },
+                'Show in folder'
+              )
+            ])
+          )
+        } else {
+          options.toast.success(message)
+        }
+      }
+    } catch (err) {
+      options.toast.error(`Export failed: ${err instanceof Error ? err.message : String(err)}`)
+    }
   }
 
   const { exportTable, isExporting: isStreamExporting } = useStreamExport()
